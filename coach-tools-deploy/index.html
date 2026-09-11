@@ -628,6 +628,13 @@
         <div class="ht-sub">Squads &amp; new members</div>
       </div>
     </div>
+    <div class="home-tile" id="tileSwimmerProfile">
+      <div class="ht-icon">🏊</div>
+      <div>
+        <div class="ht-title">Swimmer</div>
+        <div class="ht-sub">Attendance, feedback &amp; results in one place</div>
+      </div>
+    </div>
   </div>
 
   <!-- ============ ATTENDANCE: SETUP ============ -->
@@ -975,6 +982,50 @@
   </div>
 
   <!-- ============ ADMIN: LANDING ============ -->
+  <!-- ============ SWIMMER PROFILE ============ -->
+  <div class="view" id="viewSwimmerProfile">
+    <a class="back-home" id="backHomeSwp">Home</a>
+
+    <div class="card">
+      <h2>Swimmer</h2>
+      <div class="autocomplete-wrap">
+        <input type="text" id="swpSwimmerSearch" placeholder="Start typing a name…" autocomplete="off">
+        <div class="ac-results" id="swpAcResults"></div>
+      </div>
+      <div class="selected-pill" id="swpSelectedPill">
+        <span id="swpSelectedName"></span>
+        <button type="button" id="swpClearSwimmer">change</button>
+      </div>
+    </div>
+
+    <div id="swpContent" style="display:none;">
+      <div class="card">
+        <h2>Attendance</h2>
+        <div class="done-tally">
+          <div class="done-stat in-stat"><div class="ds-num" id="swpAtt30"></div><div class="ds-label">Last 30 days</div></div>
+          <div class="done-stat in-stat"><div class="ds-num" id="swpAtt90"></div><div class="ds-label">Last 90 days</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Personal bests <span class="opt">(tap an event for history)</span></h2>
+        <div id="swpPbList"></div>
+      </div>
+
+      <div class="mi-chart-card" id="swpEventDetailCard" style="display:none;">
+        <button type="button" id="swpBackToPb" style="background:none;border:none;color:var(--accent);font-weight:700;font-size:.8rem;cursor:pointer;padding:0;margin-bottom:8px;">‹ Back to personal bests</button>
+        <div class="mi-chart-title" id="swpEventDetailTitle"></div>
+        <div class="mi-canvas-wrap"><canvas id="swpEventCanvas"></canvas></div>
+        <div id="swpEventHistoryList" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card">
+        <h2>Feedback archive</h2>
+        <div id="swpFeedbackList"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="view" id="viewAdmin">
     <a class="back-home" id="backHomeAdmin">Home</a>
     <div class="home-tile" id="adminSquadsTile">
@@ -1144,6 +1195,10 @@ $("backMI1").addEventListener("click", () => showView("viewMI"));
 // Admin routing
 $("tileAdmin").addEventListener("click", () => showView("viewAdmin"));
 $("backHomeAdmin").addEventListener("click", () => showView("viewHome"));
+
+// Swimmer profile routing
+$("tileSwimmerProfile").addEventListener("click", () => { resetSwimmerProfile(); showView("viewSwimmerProfile"); });
+$("backHomeSwp").addEventListener("click", () => showView("viewHome"));
 $("adminSquadsTile").addEventListener("click", () => { showView("viewAdminSquads"); loadSquadEditList(); });
 $("adminAddMemberTile").addEventListener("click", () => { openAddMember(); });
 $("adminMoveTile").addEventListener("click", () => { openMoveSquad(); });
@@ -3044,6 +3099,215 @@ function renderMIChart(){
       }
     }
   });
+}
+
+// ===================================================================
+// SWIMMER PROFILE
+// ===================================================================
+let swpAllSwimmers = [];
+let swpSelected = null;
+let swpResults = [];
+let swpChart = null;
+
+async function resetSwimmerProfile(){
+  swpSelected = null;
+  $("swpSelectedPill").style.display = "none";
+  $("swpSwimmerSearch").style.display = "block";
+  $("swpSwimmerSearch").value = "";
+  $("swpContent").style.display = "none";
+  $("swpEventDetailCard").style.display = "none";
+  if (swpChart){ swpChart.destroy(); swpChart = null; }
+  if (!swpAllSwimmers.length) await loadSwpSwimmers();
+}
+async function loadSwpSwimmers(){
+  const { data, error } = await sb.from("swimmers").select("id, full_name, squad").eq("active", true).order("full_name");
+  if (error){ console.error(error); return; }
+  swpAllSwimmers = data || [];
+}
+
+const swpSearchInput = $("swpSwimmerSearch");
+const swpAcResults = $("swpAcResults");
+swpSearchInput.addEventListener("input", () => {
+  const q = swpSearchInput.value.trim().toLowerCase();
+  if (!q){ swpAcResults.style.display = "none"; return; }
+  const matches = swpAllSwimmers.filter(s => s.full_name.toLowerCase().includes(q)).slice(0, 25);
+  swpAcResults.innerHTML = matches.length
+    ? matches.map(s => `<div data-id="${s.id}">${escapeHtml(s.full_name)}${s.squad ? `<span class="squad-tag">${escapeHtml(s.squad)}</span>` : ""}</div>`).join("")
+    : '<div style="color:var(--text-dim);cursor:default;">No matches</div>';
+  swpAcResults.style.display = "block";
+});
+swpAcResults.addEventListener("click", (e) => {
+  const row = e.target.closest("div[data-id]");
+  if (!row) return;
+  const s = swpAllSwimmers.find(x => x.id === row.dataset.id);
+  swpSelectSwimmer(s);
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#viewSwimmerProfile .autocomplete-wrap")) swpAcResults.style.display = "none";
+});
+$("swpClearSwimmer").addEventListener("click", resetSwimmerProfile);
+
+async function swpSelectSwimmer(s){
+  swpSelected = s;
+  $("swpSelectedName").textContent = s.full_name + (s.squad ? " · " + s.squad : "");
+  $("swpSelectedPill").style.display = "flex";
+  swpSearchInput.value = "";
+  swpSearchInput.style.display = "none";
+  swpAcResults.style.display = "none";
+  $("swpContent").style.display = "block";
+  $("swpEventDetailCard").style.display = "none";
+  if (swpChart){ swpChart.destroy(); swpChart = null; }
+
+  $("swpAtt30").textContent = "…";
+  $("swpAtt90").textContent = "…";
+  $("swpPbList").innerHTML = '<div class="empty">Loading…</div>';
+  $("swpFeedbackList").innerHTML = '<div class="empty">Loading…</div>';
+
+  await Promise.all([swpLoadAttendance(s.id), swpLoadResults(s.id), swpLoadFeedback(s.id)]);
+}
+
+// --- Attendance: counts of PRESENT sessions in the trailing 30 / 90 days ---
+async function swpLoadAttendance(swimmerId){
+  const since90 = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
+  const since30 = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+  const { data, error } = await sb.from("attendance_records")
+    .select("session_date, present")
+    .eq("swimmer_id", swimmerId)
+    .gte("session_date", since90);
+  if (error){ console.error(error); $("swpAtt30").textContent = "–"; $("swpAtt90").textContent = "–"; return; }
+  const rows = data || [];
+  $("swpAtt90").textContent = rows.filter(r => r.present).length;
+  $("swpAtt30").textContent = rows.filter(r => r.present && r.session_date >= since30).length;
+}
+
+// --- Results: full archive (both courses), used for both the PB list and event drill-down ---
+async function swpLoadResults(swimmerId){
+  const { data, error } = await sb.from("swim_results")
+    .select("event, course, swim_time_display, meet_date, meet_name, is_pb")
+    .eq("swimmer_id", swimmerId)
+    .order("meet_date", { ascending: true })
+    .limit(5000);
+  if (error){ console.error(error); swpResults = []; $("swpPbList").innerHTML = '<div class="empty">Could not load results.</div>'; return; }
+  swpResults = data || [];
+  swpRenderPbList();
+}
+
+// Current PBs = rows already flagged is_pb (one per event/course, same flag
+// the rest of the app already computes — not re-derived here).
+function swpRenderPbList(){
+  const pbs = swpResults.filter(r => r.is_pb)
+    .sort((a, b) => a.event.localeCompare(b.event) || a.course.localeCompare(b.course));
+  const list = $("swpPbList");
+  if (!pbs.length){
+    list.innerHTML = '<div class="empty">No personal bests on record.</div>';
+    return;
+  }
+  list.innerHTML = pbs.map(r => `
+    <div class="hist-item" data-event="${escapeAttr(r.event)}" style="cursor:pointer;">
+      <div class="hist-top">
+        <span class="hist-crit" style="margin-top:0;">${escapeHtml(r.event)}</span>
+        <span class="mi-course-badge ${r.course}">${r.course}</span>
+      </div>
+      <div class="hist-field">${escapeHtml(r.swim_time_display || "—")}<span class="fl" style="margin-left:8px;">${fmtDate(r.meet_date)}</span></div>
+    </div>
+  `).join("");
+  list.querySelectorAll("[data-event]").forEach(el => {
+    el.addEventListener("click", () => swpShowEventDetail(el.dataset.event));
+  });
+}
+
+// Drill-down: every attempt for this event, both courses, oldest → newest for
+// the chart, newest → oldest for the list below it.
+function swpShowEventDetail(eventName){
+  const rows = swpResults
+    .filter(r => r.event === eventName)
+    .map(r => ({ ...r, _secs: parseTimeStr(r.swim_time_display) }))
+    .filter(r => r._secs != null)
+    .sort((a, b) => a.meet_date.localeCompare(b.meet_date));
+
+  $("swpEventDetailTitle").textContent = eventName;
+  $("swpEventDetailCard").style.display = "block";
+  $("swpEventDetailCard").scrollIntoView({ behavior: "smooth", block: "start" });
+
+  if (swpChart){ swpChart.destroy(); swpChart = null; }
+
+  if (rows.length){
+    const toPts = list => list.map(r => ({ x: decYear(r.meet_date), y: r._secs, meet_date: r.meet_date, is_pb: r.is_pb }));
+    const scRows = toPts(rows.filter(r => r.course === "SC"));
+    const lcRows = toPts(rows.filter(r => r.course === "LC"));
+    const datasets = [];
+    if (scRows.length) datasets.push({
+      label: "SC", data: scRows, showLine: true, fill: false, tension: 0,
+      borderColor: "#2a78d6", borderWidth: 2, backgroundColor: "#2a78d6",
+      pointStyle: "circle", pointRadius: scRows.map(p => p.is_pb ? 7 : 5),
+      pointBorderColor: scRows.map(p => p.is_pb ? "#f2a340" : "#fff"), pointBorderWidth: 1.5
+    });
+    if (lcRows.length) datasets.push({
+      label: "LC", data: lcRows, showLine: true, fill: false, tension: 0,
+      borderColor: "#0f7a3e", borderWidth: 2, backgroundColor: "#0f7a3e",
+      pointStyle: "triangle", pointRadius: lcRows.map(p => p.is_pb ? 7 : 5),
+      pointBorderColor: lcRows.map(p => p.is_pb ? "#f2a340" : "#fff"), pointBorderWidth: 1.5
+    });
+    const ctx = $("swpEventCanvas").getContext("2d");
+    swpChart = new Chart(ctx, {
+      type: "line",
+      data: { datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        parsing: false,
+        scales: {
+          x: { type: "linear", ticks: { callback: v => (Math.round(v) === v ? String(Math.round(v)) : "") } },
+          y: { ticks: { callback: v => secToTime(v) } }
+        },
+        plugins: {
+          legend: { display: true, position: "bottom", labels: { boxWidth: 12, font: { size: 10 } } },
+          tooltip: { callbacks: { label: c => `${fmtDate(c.raw.meet_date)}: ${secToTime(c.parsed.y)}` } }
+        }
+      }
+    });
+  }
+
+  $("swpEventHistoryList").innerHTML = rows.slice().reverse().map(r => `
+    <div class="hist-item">
+      <div class="hist-top">
+        <span class="hist-date">${fmtDate(r.meet_date)}</span>
+        <span class="mi-course-badge ${r.course}">${r.course}</span>
+        ${r.is_pb ? '<span class="mi-pb-tag">PB</span>' : ""}
+      </div>
+      <div class="hist-field">${escapeHtml(r.swim_time_display)}${r.meet_name ? ` · ${escapeHtml(r.meet_name)}` : ""}</div>
+    </div>
+  `).join("") || '<div class="empty">No history for this event.</div>';
+}
+$("swpBackToPb").addEventListener("click", () => { $("swpEventDetailCard").style.display = "none"; });
+
+// --- Feedback archive: full history, newest first, media playable inline via mediaGridHtml ---
+async function swpLoadFeedback(swimmerId){
+  const { data, error } = await sb.from("swimmer_feedback")
+    .select("id, category, criterion, status, observation, remedial_action, note, media, session_date")
+    .eq("swimmer_id", swimmerId)
+    .order("session_date", { ascending: false })
+    .order("created_at", { ascending: false });
+  const list = $("swpFeedbackList");
+  if (error){ console.error(error); list.innerHTML = '<div class="empty">Could not load feedback.</div>'; return; }
+  const rows = data || [];
+  if (!rows.length){ list.innerHTML = '<div class="empty">No feedback on record.</div>'; return; }
+  list.innerHTML = rows.map(r => {
+    const badgeClass = r.status ? (r.status === "Not discussed" ? "Not" : r.status) : null;
+    const obs = r.observation || r.note || "";
+    return `<div class="hist-item">
+      <div class="hist-top">
+        <span class="hist-date">${fmtDate(r.session_date)}</span>
+        <span class="hist-cat">${escapeHtml(r.category || "")}</span>
+        ${badgeClass ? `<span class="hist-badge ${badgeClass}">${r.status}</span>` : ""}
+      </div>
+      ${r.criterion ? `<div class="hist-crit">${escapeHtml(r.criterion)}</div>` : ""}
+      ${obs ? `<div class="hist-field"><span class="fl">Observation</span>${escapeHtml(obs)}</div>` : ""}
+      ${r.remedial_action ? `<div class="hist-field"><span class="fl">Remedial action</span>${escapeHtml(r.remedial_action)}</div>` : ""}
+      ${(r.note && r.observation) ? `<div class="hist-field"><span class="fl">Additional notes</span>${escapeHtml(r.note)}</div>` : ""}
+      ${mediaGridHtml(r.media)}
+    </div>`;
+  }).join("");
 }
 
 // ===================================================================
