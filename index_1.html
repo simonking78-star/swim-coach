@@ -1,0 +1,3116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>Coach Tools</title>
+
+<!-- Home-screen / standalone app behaviour -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b2545">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Coach Tools">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#0b2545;
+    --navy-light:#13355e;
+    --accent:#00a8e8;
+    --green:#2e7d32;
+    --red:#c62828;
+    --amber:#e08e00;
+    --grey-bg:#f4f6f9;
+    --card:#ffffff;
+    --border:#dde3ea;
+    --text:#1a2332;
+    --text-dim:#5b6b7f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--grey-bg);
+    color:var(--text);
+    padding-bottom:60px;
+    overscroll-behavior-y:contain;
+  }
+  header{
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);
+    color:#fff;
+    padding:22px 20px 26px;
+  }
+  header h1{margin:0;font-size:1.3rem;font-weight:700;letter-spacing:.2px;}
+  header p{margin:4px 0 0;font-size:.85rem;color:#b9cbe0;}
+  .club-bar{margin-top:12px;}
+  .club-bar label{display:block;margin:0 0 4px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#b9cbe0;}
+  #clubSelect{width:100%;padding:9px 11px;border-radius:9px;border:1.5px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#fff;font-size:.9rem;font-weight:600;font-family:inherit;}
+  #clubSelect option{color:#1a2332;}
+  main{
+    max-width:560px;
+    margin:-16px auto 0;
+    padding:0 16px;
+  }
+  .card{
+    background:var(--card);
+    border-radius:14px;
+    box-shadow:0 4px 18px rgba(11,37,69,.08);
+    padding:18px;
+    margin-bottom:16px;
+    border:1px solid var(--border);
+  }
+  .card h2{
+    font-size:.78rem;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:var(--text-dim);
+    margin:0 0 12px;
+    font-weight:700;
+  }
+  .card h2 .count{
+    font-weight:400;
+    text-transform:none;
+    letter-spacing:0;
+    color:var(--text-dim);
+  }
+  label{
+    display:block;
+    font-size:.82rem;
+    font-weight:600;
+    color:var(--text);
+    margin:14px 0 6px;
+  }
+  label:first-of-type{margin-top:0;}
+  label .opt{font-weight:400;color:var(--text-dim);}
+  input[type=text],input[type=date],input[type=time],textarea,select{
+    width:100%;
+    padding:11px 12px;
+    border:1.5px solid var(--border);
+    border-radius:9px;
+    font-size:.95rem;
+    background:#fff;
+    color:var(--text);
+    font-family:inherit;
+  }
+  input:focus,textarea:focus,select:focus{
+    outline:none;
+    border-color:var(--accent);
+  }
+  textarea{resize:vertical;min-height:64px;}
+  .autocomplete-wrap{position:relative;}
+  .ac-results{
+    position:absolute;
+    left:0;right:0;top:100%;
+    background:#fff;
+    border:1.5px solid var(--border);
+    border-top:none;
+    border-radius:0 0 9px 9px;
+    max-height:220px;
+    overflow-y:auto;
+    z-index:20;
+    display:none;
+    box-shadow:0 8px 18px rgba(11,37,69,.12);
+  }
+  .ac-results div{
+    padding:10px 12px;
+    font-size:.9rem;
+    border-bottom:1px solid #f0f2f5;
+    cursor:pointer;
+  }
+  .ac-results div:last-child{border-bottom:none;}
+  .ac-results div:hover,.ac-results div.active{background:var(--grey-bg);}
+  .ac-results .squad-tag{
+    font-size:.7rem;
+    color:var(--text-dim);
+    margin-left:6px;
+  }
+  .selected-pill{
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+    background:#eaf6fc;
+    border:1.5px solid var(--accent);
+    border-radius:9px;
+    padding:10px 12px;
+    font-size:.92rem;
+    font-weight:600;
+    margin-top:8px;
+  }
+  .selected-pill button{
+    background:none;border:none;color:var(--navy);
+    font-size:.8rem;text-decoration:underline;cursor:pointer;padding:0;font-weight:600;
+  }
+  .toggle-row{display:flex;gap:8px;margin-top:6px;}
+  .toggle-btn{
+    flex:1;
+    padding:10px;
+    border-radius:9px;
+    border:1.5px solid var(--border);
+    background:#fff;
+    font-size:.85rem;
+    font-weight:700;
+    color:var(--text-dim);
+    cursor:pointer;
+    text-align:center;
+  }
+  .toggle-btn.active{
+    background:var(--navy);
+    color:#fff;
+    border-color:var(--navy);
+  }
+  .status-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;}
+  .status-btn{
+    padding:11px 6px;
+    border-radius:9px;
+    border:1.5px solid var(--border);
+    background:#fff;
+    font-size:.85rem;
+    font-weight:700;
+    cursor:pointer;
+    text-align:center;
+    color:var(--text-dim);
+  }
+  .status-btn.active[data-status="Not discussed"]{background:#eceff2;border-color:#9aa7b5;color:var(--text);}
+  .status-btn.active[data-status="Started"]{background:#fff4e0;border-color:var(--amber);color:#8a5a00;}
+  .status-btn.active[data-status="Developing"]{background:#e6f0ff;border-color:var(--accent);color:#0a5c8a;}
+  .status-btn.active[data-status="Embedded"]{background:#e6f4e8;border-color:var(--green);color:var(--green);}
+  .hint{font-size:.75rem;color:var(--text-dim);margin-top:5px;}
+  .submit-btn{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    background:var(--accent);
+    color:#fff;
+    font-size:1rem;
+    font-weight:700;
+    margin-top:18px;
+    cursor:pointer;
+  }
+  .submit-btn:disabled{background:#a9c6d4;cursor:default;}
+  .msg{
+    text-align:center;
+    font-size:.85rem;
+    font-weight:600;
+    margin-top:10px;
+    min-height:18px;
+  }
+  .msg.ok{color:var(--green);}
+  .msg.err{color:var(--red);}
+  .empty{color:var(--text-dim);font-size:.85rem;text-align:center;padding:10px 0;}
+  .scope-row{display:flex;gap:8px;margin-bottom:12px;}
+  .scope-btn{
+    flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--border);
+    background:#fff;font-size:.8rem;font-weight:700;color:var(--text-dim);cursor:pointer;
+  }
+  .scope-btn.active{background:var(--navy-light);color:#fff;border-color:var(--navy-light);}
+
+  .match-banner{
+    display:none;
+    background:#fff8e6;
+    border:1.5px solid #f0d580;
+    border-radius:9px;
+    padding:10px 12px;
+    margin-top:8px;
+    font-size:.82rem;
+  }
+  .match-banner .mb-title{font-weight:700;color:#8a5a00;margin-bottom:2px;}
+  .match-banner button{
+    margin-top:6px;
+    background:#8a5a00;
+    color:#fff;
+    border:none;
+    border-radius:7px;
+    padding:6px 10px;
+    font-size:.78rem;
+    font-weight:700;
+    cursor:pointer;
+  }
+
+  .hist-item{padding:12px 0;border-bottom:1px solid #f0f2f5;}
+  .hist-item:last-child{border-bottom:none;}
+  .hist-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+  .hist-date{font-size:.72rem;font-weight:700;color:var(--text-dim);letter-spacing:.3px;}
+  .hist-cat{
+    display:inline-block;font-size:.68rem;font-weight:700;color:#fff;
+    background:var(--navy-light);border-radius:20px;padding:2px 9px;margin-left:6px;
+  }
+  .hist-badge{display:inline-block;font-size:.7rem;font-weight:700;padding:2px 9px;border-radius:20px;}
+  .hist-badge.Started{background:#fff4e0;color:#8a5a00;}
+  .hist-badge.Developing{background:#e6f0ff;color:#0a5c8a;}
+  .hist-badge.Embedded{background:#e6f4e8;color:var(--green);}
+  .hist-badge.Not{background:#eceff2;color:var(--text-dim);}
+  .hist-crit{font-size:.85rem;font-weight:700;margin-top:5px;color:var(--text);}
+  .hist-field{font-size:.82rem;margin-top:4px;line-height:1.4;}
+  .hist-field .fl{font-weight:700;color:var(--text-dim);font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:1px;}
+  .hist-name{font-weight:700;color:var(--navy);font-size:.86rem;}
+
+  /* Stroke filter chips (feedback) */
+  .stroke-filter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+  .stroke-chip{
+    padding:6px 12px;border-radius:20px;border:1.5px solid var(--border);
+    background:#fff;font-size:.78rem;font-weight:700;color:var(--text-dim);cursor:pointer;
+  }
+  .stroke-chip.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+  /* Thread cards (collapsed = latest only) */
+  .thread-card{
+    border:1px solid var(--border);border-radius:11px;padding:12px;margin-bottom:10px;background:#fff;
+  }
+  .thread-latest-tag{
+    font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+    color:var(--accent);margin-bottom:4px;
+  }
+  .thread-actions{display:flex;gap:8px;margin-top:10px;}
+  .thread-btn{
+    flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--border);background:#fff;
+    font-size:.8rem;font-weight:700;cursor:pointer;color:var(--navy);
+  }
+  .thread-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .thread-count{font-size:.7rem;color:var(--text-dim);font-weight:600;}
+  .thread-history{
+    margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);
+  }
+  .thread-history .hist-item:first-child{padding-top:0;}
+  .thread-history-label{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--text-dim);margin-bottom:6px;}
+  .thread-origin-tag{font-size:.62rem;color:var(--text-dim);font-weight:700;}
+  .updating-banner{
+    background:#eaf6fc;border:1.5px solid var(--accent);border-radius:9px;padding:10px 12px;
+    font-size:.82rem;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;
+  }
+  .updating-banner .ub-title{font-weight:700;color:var(--navy);}
+  .updating-banner button{background:none;border:none;color:var(--navy);text-decoration:underline;font-weight:700;font-size:.76rem;cursor:pointer;}
+
+  /* Feedback tab bar */
+  .fb-tabs{
+    display:flex;gap:4px;background:#e7edf3;border-radius:11px;padding:4px;margin-bottom:14px;
+    position:sticky;top:8px;z-index:15;
+  }
+  .fb-tab{
+    flex:1;padding:10px 6px;border-radius:8px;border:none;background:transparent;
+    font-size:.8rem;font-weight:700;color:var(--text-dim);cursor:pointer;text-align:center;
+    display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.1;
+  }
+  .fb-tab .fb-tab-num{
+    font-size:.62rem;font-weight:800;opacity:.6;
+  }
+  .fb-tab.active{background:#fff;color:var(--navy);box-shadow:0 2px 6px rgba(11,37,69,.12);}
+  .fb-tab:disabled{opacity:.4;cursor:default;}
+  .fb-tab .fb-tab-badge{
+    font-size:.6rem;font-weight:800;background:var(--accent);color:#fff;border-radius:20px;
+    padding:0 6px;margin-top:1px;min-width:16px;
+  }
+  .fb-panel{display:none;}
+  .fb-panel.active{display:block;}
+
+  .media-btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .media-input-wrap{
+    border:1.5px dashed var(--border);border-radius:9px;padding:14px 10px;
+    text-align:center;cursor:pointer;background:#fafbfc;
+  }
+  .media-input-wrap:active{background:var(--grey-bg);}
+  .media-input-wrap .mi-label{font-size:.85rem;font-weight:700;color:var(--navy);}
+  .media-input-wrap .mi-hint{font-size:.7rem;color:var(--text-dim);margin-top:3px;line-height:1.3;}
+  #mediaInputGallery,#mediaInputCamera{display:none;}
+  .media-preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+  .media-preview-item{position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1/1;background:#eceff2;}
+  .media-preview-item img,.media-preview-item video{width:100%;height:100%;object-fit:cover;display:block;}
+  .media-preview-item .mp-video-tag{
+    position:absolute;bottom:3px;left:3px;background:rgba(11,37,69,.8);color:#fff;
+    font-size:.6rem;font-weight:700;padding:1px 5px;border-radius:5px;
+  }
+  .media-preview-item .mp-remove{
+    position:absolute;top:3px;right:3px;background:rgba(11,37,69,.85);color:#fff;
+    border:none;border-radius:50%;width:20px;height:20px;font-size:.75rem;font-weight:700;
+    cursor:pointer;line-height:1;
+  }
+  .upload-progress{font-size:.78rem;color:var(--text-dim);margin-top:8px;text-align:center;}
+  .hist-media-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px;}
+  .hist-media-grid a{display:block;border-radius:7px;overflow:hidden;aspect-ratio:1/1;background:#eceff2;position:relative;}
+  .hist-media-grid img,.hist-media-grid video{width:100%;height:100%;object-fit:cover;}
+  .hist-media-grid .hm-video-tag{
+    position:absolute;bottom:2px;left:2px;background:rgba(11,37,69,.8);color:#fff;
+    font-size:.55rem;font-weight:700;padding:0 4px;border-radius:4px;
+  }
+
+  /* ===== New: views / navigation ===== */
+  .view{display:none;}
+  .view.active{display:block;}
+  .back-home{
+    display:inline-block;margin-top:22px;margin-bottom:12px;font-size:.82rem;font-weight:700;
+    color:var(--navy-light);text-decoration:none;cursor:pointer;
+  }
+  .back-home:before{content:"← ";}
+
+  /* Home menu */
+  .home-tile{
+    display:flex;align-items:center;gap:14px;
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:18px;margin-bottom:14px;box-shadow:0 4px 18px rgba(11,37,69,.08);
+    cursor:pointer;
+  }
+  .home-tile:active{background:#f7f9fb;}
+  .home-tile .ht-icon{font-size:1.8rem;width:44px;text-align:center;}
+  .home-tile .ht-title{font-weight:700;font-size:1rem;color:var(--navy);}
+  .home-tile .ht-sub{font-size:.78rem;color:var(--text-dim);margin-top:2px;}
+
+  /* Pool size buttons */
+  .pool-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px;}
+  .pool-btn{
+    padding:12px 4px;border-radius:9px;border:1.5px solid var(--border);
+    background:#fff;font-size:.9rem;font-weight:700;color:var(--text-dim);
+    cursor:pointer;text-align:center;
+  }
+  .pool-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+  /* Attendance mark screen */
+  .session-info-line{
+    font-size:.82rem;color:var(--text-dim);text-align:center;margin-bottom:14px;font-weight:600;
+  }
+  .progress-line{font-size:.78rem;color:var(--text-dim);text-align:center;margin-bottom:10px;}
+  .progress-bar-track{
+    height:6px;background:#e4e8ee;border-radius:4px;overflow:hidden;margin-bottom:16px;
+  }
+  .progress-bar-fill{
+    height:100%;background:var(--accent);border-radius:4px;transition:width .2s ease;
+  }
+
+  .swipe-stage{
+    position:relative;height:260px;margin-bottom:14px;
+    display:flex;align-items:center;justify-content:center;
+    touch-action:none;
+  }
+  .swipe-card{
+    position:absolute;width:88%;max-width:320px;height:220px;
+    background:#fff;border-radius:18px;border:1.5px solid var(--border);
+    box-shadow:0 10px 26px rgba(11,37,69,.15);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    cursor:grab;user-select:none;
+    transition:transform .25s ease, opacity .25s ease;
+  }
+  .swipe-card.dragging{transition:none;}
+  .swipe-card-name{font-size:1.3rem;font-weight:700;color:var(--navy);text-align:center;padding:0 16px;}
+  .swipe-card-sub{font-size:.78rem;color:var(--text-dim);margin-top:8px;}
+  .swipe-overlay{
+    position:absolute;top:16px;padding:6px 14px;border-radius:8px;
+    font-size:1rem;font-weight:800;letter-spacing:1px;opacity:0;
+    border:3px solid;
+  }
+  .swipe-overlay-in{right:16px;color:var(--green);border-color:var(--green);transform:rotate(-8deg);}
+  .swipe-overlay-out{left:16px;color:var(--red);border-color:var(--red);transform:rotate(8deg);}
+  .swipe-tap-btns{display:flex;gap:10px;margin-bottom:6px;}
+  .swipe-tap-btn{
+    flex:1;padding:13px;border-radius:10px;border:none;font-weight:700;font-size:.9rem;color:#fff;cursor:pointer;
+  }
+  .swipe-tap-btn.out{background:var(--red);}
+  .swipe-tap-btn.in{background:var(--green);}
+
+  .tick-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 4px;border-bottom:1px solid #f0f2f5;
+  }
+  .tick-row:last-child{border-bottom:none;}
+  .tick-name{font-size:.92rem;font-weight:600;}
+  .tick-box{
+    width:30px;height:30px;border-radius:8px;border:2px solid var(--border);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;color:#fff;cursor:pointer;flex-shrink:0;
+  }
+  .tick-box.ticked{background:var(--green);border-color:var(--green);}
+
+  .finish-btn{
+    width:100%;padding:14px;border:none;border-radius:10px;
+    background:var(--navy);color:#fff;font-size:1rem;font-weight:700;
+    margin-top:6px;cursor:pointer;
+  }
+
+  .done-tally{display:flex;gap:10px;margin-bottom:18px;}
+  .done-stat{
+    flex:1;text-align:center;padding:16px 8px;border-radius:12px;
+  }
+  .done-stat.in-stat{background:#e6f4e8;}
+  .done-stat.out-stat{background:#fdeaea;}
+  .done-stat .ds-num{font-size:1.7rem;font-weight:800;}
+  .done-stat.in-stat .ds-num{color:var(--green);}
+  .done-stat.out-stat .ds-num{color:var(--red);}
+  .done-stat .ds-label{font-size:.72rem;color:var(--text-dim);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px;}
+
+  .next-step-row{display:flex;gap:10px;margin-top:6px;}
+  .next-step-btn{
+    flex:1;padding:16px 8px;border-radius:12px;border:1.5px solid var(--border);
+    background:#fff;text-align:center;cursor:pointer;
+  }
+  .next-step-btn .ns-icon{font-size:1.4rem;}
+  .next-step-btn .ns-label{font-size:.85rem;font-weight:700;color:var(--navy);margin-top:4px;}
+
+  .session-placeholder{text-align:center;padding:50px 18px;}
+  .session-placeholder .sp-icon{font-size:2.4rem;}
+  .session-placeholder h2{
+    text-transform:none;font-size:1.05rem;color:var(--navy);margin-top:12px;letter-spacing:0;
+  }
+
+  /* ===== Session plans ===== */
+  .sp-toolbar{display:flex;gap:8px;margin-bottom:14px;}
+  .sp-primary-btn{
+    flex:1;padding:12px;border:none;border-radius:10px;background:var(--accent);
+    color:#fff;font-weight:700;font-size:.9rem;cursor:pointer;
+  }
+  .sp-search{margin-bottom:12px;}
+  .plan-list-item{
+    background:var(--card);border:1px solid var(--border);border-radius:12px;
+    padding:14px;margin-bottom:10px;cursor:pointer;box-shadow:0 3px 12px rgba(11,37,69,.06);
+  }
+  .plan-list-item:active{background:#f7f9fb;}
+  .plan-li-title{font-weight:700;color:var(--navy);font-size:.95rem;}
+  .plan-li-meta{font-size:.74rem;color:var(--text-dim);margin-top:3px;}
+  .plan-li-tags{margin-top:6px;display:flex;flex-wrap:wrap;gap:5px;}
+  .plan-tag{
+    font-size:.66rem;font-weight:700;color:#fff;background:var(--navy-light);
+    border-radius:20px;padding:2px 8px;
+  }
+  .plan-tag.dist{background:var(--accent);}
+
+  /* Editor blocks */
+  .blk{
+    border:1.5px solid var(--border);border-radius:10px;padding:10px;margin-bottom:10px;
+    background:#fff;position:relative;
+  }
+  .blk.heading-blk{background:#f2f6fb;}
+  .blk.repeat-blk{background:#fbf7ee;border-color:#e7d9b8;}
+  .blk-type-label{
+    font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+    color:var(--text-dim);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .blk-controls button{
+    background:none;border:none;color:var(--text-dim);font-size:.9rem;cursor:pointer;
+    padding:2px 5px;font-weight:700;
+  }
+  .blk-controls button:active{color:var(--navy);}
+  .blk textarea, .blk input[type=text]{
+    width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 10px;
+    font-size:.9rem;font-family:inherit;
+  }
+  .blk .parsed-hint{font-size:.72rem;color:var(--text-dim);margin-top:5px;min-height:14px;}
+  .blk .parsed-hint.warn{color:var(--amber);}
+  .heading-opts{display:flex;gap:14px;margin-top:8px;font-size:.78rem;}
+  .heading-opts label{margin:0;display:flex;align-items:center;gap:5px;font-weight:600;}
+  .heading-opts input{width:auto;}
+
+  .repeat-reps-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .repeat-reps-row input{width:70px;text-align:center;font-weight:700;}
+  .repeat-reps-row span{font-size:.82rem;color:var(--text-dim);font-weight:600;}
+  .repeat-children{
+    border-left:3px solid #e7d9b8;padding-left:10px;margin-left:2px;
+  }
+  .repeat-child{
+    display:flex;gap:6px;align-items:flex-start;margin-bottom:7px;
+  }
+  .repeat-child input{flex:1;}
+  .repeat-child .rc-remove{
+    background:none;border:none;color:var(--text-dim);font-size:1rem;cursor:pointer;padding:6px 4px 0;
+  }
+  .repeat-child .rc-dist{font-size:.68rem;color:var(--text-dim);white-space:nowrap;padding-top:10px;min-width:44px;text-align:right;}
+  .add-child-btn{
+    background:#fff;border:1.5px dashed var(--border);border-radius:8px;
+    padding:7px;font-size:.78rem;font-weight:700;color:var(--navy-light);cursor:pointer;width:100%;
+  }
+  .add-block-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 4px;}
+  .add-block-btn{
+    background:#fff;border:1.5px dashed var(--border);border-radius:9px;padding:11px;
+    font-size:.8rem;font-weight:700;color:var(--navy-light);cursor:pointer;
+  }
+  .plan-total-bar{
+    position:sticky;bottom:0;background:var(--navy);color:#fff;border-radius:12px;
+    padding:12px 16px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;
+    box-shadow:0 -4px 14px rgba(11,37,69,.15);
+  }
+  .plan-total-bar .ptb-num{font-size:1.15rem;font-weight:800;}
+  .plan-total-bar .ptb-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;color:#b9cbe0;}
+
+  /* Viewer (read-only rendered plan) */
+  .pv-heading{font-weight:800;color:var(--navy);margin:14px 0 6px;font-size:.98rem;}
+  .pv-heading.underline{text-decoration:underline;}
+  .pv-set{font-size:.9rem;margin:3px 0;font-variant-numeric:tabular-nums;}
+  .pv-repeat{margin:6px 0;}
+  .pv-repeat-head{font-weight:700;font-size:.9rem;}
+  .pv-repeat-children{border-left:3px solid var(--accent);padding-left:12px;margin:4px 0 4px 4px;}
+  .pv-repeat-child{font-size:.88rem;margin:3px 0;font-variant-numeric:tabular-nums;}
+  .pv-note{font-size:.86rem;color:var(--text-dim);font-style:italic;margin:4px 0;}
+  .pv-dist{font-size:.7rem;color:var(--text-dim);margin-left:8px;}
+
+  .link-plan-box{
+    background:#eef4fb;border:1.5px solid #cfe0f0;border-radius:10px;padding:12px;margin-top:10px;
+  }
+  .link-plan-box .lpb-title{font-size:.76rem;font-weight:700;color:var(--navy);margin-bottom:8px;}
+  .plan-pick-item{
+    padding:9px 10px;background:#fff;border:1px solid var(--border);border-radius:8px;
+    margin-bottom:6px;font-size:.85rem;cursor:pointer;
+  }
+  .plan-pick-item:active{background:#f2f6fb;}
+  .plan-pick-item.selected{border-color:var(--accent);background:#eaf6fc;font-weight:700;}
+  .linked-plan-pill{
+    display:flex;justify-content:space-between;align-items:center;
+    background:#e6f4e8;border:1.5px solid var(--green);border-radius:9px;padding:9px 12px;
+    font-size:.84rem;font-weight:600;color:#1c5222;margin-top:8px;
+  }
+  .linked-plan-pill button{background:none;border:none;color:#1c5222;text-decoration:underline;font-weight:700;cursor:pointer;font-size:.78rem;}
+
+  /* ===== Management Information ===== */
+  .mi-select-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;}
+  .mi-sex-row{display:flex;gap:8px;margin-top:6px;}
+  .mi-empty{color:var(--text-dim);font-size:.85rem;text-align:center;padding:22px 0;}
+  .mi-chart-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 3px 12px rgba(11,37,69,.06);}
+  .mi-chart-title{font-weight:700;color:var(--navy);font-size:.95rem;}
+  .mi-chart-sub{font-size:.76rem;color:var(--text-dim);margin-top:2px;margin-bottom:10px;}
+  .mi-legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;font-size:.72rem;color:var(--text-dim);}
+  .mi-legend span{display:inline-flex;align-items:center;gap:5px;}
+  .mi-legend i{width:14px;height:3px;display:inline-block;border-radius:2px;}
+  .mi-canvas-wrap{position:relative;height:260px;}
+  .mi-flags{margin-top:10px;}
+  .mi-flag{font-size:.76rem;color:#8a5a00;background:#fff8e6;border:1px solid #f0d580;border-radius:8px;padding:7px 10px;margin-top:6px;}
+  .mi-forecast-badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;}
+  .mi-forecast-badge{font-size:.72rem;font-weight:700;background:#eaf6fc;border:1.5px solid var(--accent);color:#0a5c8a;border-radius:20px;padding:3px 10px;}
+  .mi-course-badge{display:inline-block;font-size:.68rem;font-weight:700;border-radius:20px;padding:2px 9px;margin-left:6px;}
+  .mi-course-badge.SC{background:#e6f0ff;color:#0a5c8a;}
+  .mi-course-badge.LC{background:#e6f4e8;color:var(--green);}
+  .mi-table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:4px;}
+  .mi-table th{text-align:left;font-size:.66rem;text-transform:uppercase;letter-spacing:.4px;color:var(--text-dim);padding:6px 8px;border-bottom:1.5px solid var(--border);}
+  .mi-table td{padding:8px;border-bottom:1px solid #f0f2f5;white-space:nowrap;}
+  .mi-table tr:last-child td{border-bottom:none;}
+  .mi-table td:last-child{white-space:normal;color:var(--text-dim);font-size:.8rem;}
+  .mi-pb-tag{font-size:.6rem;font-weight:800;background:#e6f4e8;color:var(--green);border-radius:20px;padding:1px 7px;margin-left:6px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Coach Tools</h1>
+  <p>Attendance · Feedback · Session planning</p>
+  <div class="club-bar">
+    <label for="clubSelect">Club</label>
+    <select id="clubSelect"><option>Loading…</option></select>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ HOME ============ -->
+  <div class="view active" id="viewHome">
+    <div class="home-tile" id="tileAttendance">
+      <div class="ht-icon">✅</div>
+      <div>
+        <div class="ht-title">Mark Attendance</div>
+        <div class="ht-sub">Card swipe or tick list, date &amp; time stamped</div>
+      </div>
+    </div>
+    <div class="home-tile" id="tileFeedback">
+      <div class="ht-icon">📝</div>
+      <div>
+        <div class="ht-title">Feedback Update</div>
+        <div class="ht-sub">Log a status review or a freeform note</div>
+      </div>
+    </div>
+    <div class="home-tile" id="tileSession">
+      <div class="ht-icon">🗓️</div>
+      <div>
+        <div class="ht-title">Session Plan</div>
+        <div class="ht-sub">Write &amp; archive plans, link to sessions</div>
+      </div>
+    </div>
+    <div class="home-tile" id="tileMI">
+      <div class="ht-icon">📊</div>
+      <div>
+        <div class="ht-title">Management Information</div>
+        <div class="ht-sub">Regression analysis &amp; club-level reporting</div>
+      </div>
+    </div>
+    <div class="home-tile" id="tileAdmin">
+      <div class="ht-icon">⚙️</div>
+      <div>
+        <div class="ht-title">Administrator</div>
+        <div class="ht-sub">Squads &amp; new members</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ATTENDANCE: SETUP ============ -->
+  <div class="view" id="viewAttendanceSetup">
+    <a class="back-home" id="backHome1">Home</a>
+    <div class="card">
+      <h2>Squad</h2>
+      <div class="scope-row">
+        <button type="button" class="scope-btn active" id="attScopeCDJ">CDJ squad</button>
+        <button type="button" class="scope-btn" id="attScopeAll">Whole club</button>
+      </div>
+
+      <h2 style="margin-top:6px;">Session</h2>
+      <label for="attDate">Date</label>
+      <input type="date" id="attDate">
+      <label for="attTime">Time</label>
+      <input type="time" id="attTime">
+      <label>Pool</label>
+      <div class="pool-grid" id="poolGrid">
+        <div class="pool-btn" data-pool="17m">17m</div>
+        <div class="pool-btn" data-pool="25m">25m</div>
+        <div class="pool-btn" data-pool="50m">50m</div>
+      </div>
+
+      <label style="margin-top:16px;">Session plan used <span class="opt">(optional)</span></label>
+      <div id="attPlanPickWrap">
+        <select id="attPlanSelect"><option value="">— none / not linked —</option></select>
+      </div>
+
+      <h2 style="margin-top:20px;">Marking method</h2>
+      <div class="toggle-row">
+        <div class="toggle-btn active" data-mode="swipe" id="attModeSwipeBtn">Card swipe</div>
+        <div class="toggle-btn" data-mode="tick" id="attModeTickBtn">Tick list</div>
+      </div>
+      <p class="hint">Swipe: right = In, left = Out. Tick list: ticked = In, unticked = Out. Either way, every change is saved instantly with its own date and time stamp.</p>
+
+      <button class="submit-btn" id="startAttendanceBtn">Start marking</button>
+      <div class="msg" id="attSetupMsg"></div>
+    </div>
+  </div>
+
+  <!-- ============ ATTENDANCE: MARKING ============ -->
+  <div class="view" id="viewAttendanceMark">
+    <a class="back-home" id="backHome2">Home</a>
+    <div class="card">
+      <div class="session-info-line" id="sessionInfoLine"></div>
+
+      <div id="swipeModeBlock">
+        <div class="progress-line" id="progressLine"></div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill" style="width:0%;"></div></div>
+        <div class="swipe-stage" id="swipeStage"></div>
+        <div class="swipe-tap-btns">
+          <button type="button" class="swipe-tap-btn out" id="tapOutBtn">✕ Out</button>
+          <button type="button" class="swipe-tap-btn in" id="tapInBtn">✓ In</button>
+        </div>
+      </div>
+
+      <div id="tickModeBlock" style="display:none;">
+        <div id="tickListStage"></div>
+      </div>
+
+      <button class="finish-btn" id="finishAttendanceBtn">Finish session</button>
+    </div>
+  </div>
+
+  <!-- ============ ATTENDANCE: DONE ============ -->
+  <div class="view" id="viewAttendanceDone">
+    <div class="card">
+      <h2>Session complete</h2>
+      <div class="session-info-line" id="doneSessionLine"></div>
+      <div class="done-tally">
+        <div class="done-stat in-stat"><div class="ds-num" id="doneInCount">0</div><div class="ds-label">In</div></div>
+        <div class="done-stat out-stat"><div class="ds-num" id="doneOutCount">0</div><div class="ds-label">Out</div></div>
+      </div>
+      <p class="hint" style="margin-bottom:10px;">What next?</p>
+      <div class="next-step-row">
+        <div class="next-step-btn" id="goFeedbackBtn">
+          <div class="ns-icon">📝</div>
+          <div class="ns-label">Feedback</div>
+        </div>
+        <div class="next-step-btn" id="goSessionBtn">
+          <div class="ns-icon">🗓️</div>
+          <div class="ns-label">Session</div>
+        </div>
+      </div>
+      <a class="back-home" id="backHome3" style="display:block;text-align:center;margin-top:18px;">Home</a>
+    </div>
+  </div>
+
+  <!-- ============ FEEDBACK (existing tool) ============ -->
+  <div class="view" id="viewFeedback">
+    <a class="back-home" id="backHome4">Home</a>
+
+    <div class="fb-tabs">
+      <button type="button" class="fb-tab active" id="fbTabSwimmer" data-panel="fbPanelSwimmer">
+        <span class="fb-tab-num">1</span>Swimmer
+      </button>
+      <button type="button" class="fb-tab" id="fbTabHistory" data-panel="fbPanelHistory" disabled>
+        History<span class="fb-tab-badge" id="fbHistoryBadge" style="display:none;">0</span>
+      </button>
+      <button type="button" class="fb-tab" id="fbTabForm" data-panel="fbPanelForm" disabled>
+        <span class="fb-tab-num">2</span>Stroke / skill
+      </button>
+    </div>
+
+    <div class="fb-panel active" id="fbPanelSwimmer">
+    <div class="card">
+      <h2>1 · Swimmer</h2>
+      <label for="fbSquadSelect">Squad</label>
+      <select id="fbSquadSelect">
+        <option value="ALL">All squads (whole club)</option>
+      </select>
+      <div class="autocomplete-wrap" style="margin-top:12px;">
+        <input type="text" id="swimmerSearch" placeholder="Start typing a name…" autocomplete="off">
+        <div class="ac-results" id="acResults"></div>
+      </div>
+      <div class="selected-pill" id="selectedPill">
+        <span id="selectedName"></span>
+        <button type="button" id="clearSwimmer">change</button>
+      </div>
+    </div>
+
+    <div class="card" id="globalRecentCard">
+      <h2>Recently logged (all swimmers)</h2>
+      <div id="recentList"><div class="empty">Loading…</div></div>
+    </div>
+    </div>
+
+    <div class="fb-panel" id="fbPanelHistory">
+    <div class="card" id="historyCard">
+      <h2>History for this swimmer <span class="count" id="historyCount"></span></h2>
+      <div class="stroke-filter" id="strokeFilter"></div>
+      <div id="historyList"><div class="empty">Pick a swimmer first.</div></div>
+    </div>
+    </div>
+
+    <div class="fb-panel" id="fbPanelForm">
+    <div class="card" id="formCard">
+      <div class="updating-banner" id="updatingBanner" style="display:none;">
+        <div>
+          <div class="ub-title" id="updatingTitle"></div>
+          <div class="thread-count" id="updatingSub"></div>
+        </div>
+        <button type="button" id="cancelUpdateBtn">Start new instead</button>
+      </div>
+      <h2>2 · Stroke / skill</h2>
+      <select id="category">
+        <option value="" disabled selected>Choose one…</option>
+        <option>Free</option>
+        <option>Back</option>
+        <option>Breast</option>
+        <option>Fly</option>
+        <option>Dive</option>
+        <option>Transition</option>
+        <option>Touch turn</option>
+        <option>Tumble turn</option>
+        <option>Training mindset</option>
+        <option>Racing mindset</option>
+      </select>
+
+      <label style="margin-top:20px;">Entry type</label>
+      <div class="toggle-row">
+        <div class="toggle-btn active" data-type="status" id="typeStatusBtn">Status review</div>
+        <div class="toggle-btn" data-type="note" id="typeNoteBtn">Freeform note</div>
+      </div>
+
+      <div id="criterionBlock">
+        <label for="criterion">Criterion</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="criterion" placeholder="e.g. Backstroke push-off position" list="criterionList" autocomplete="off">
+          <datalist id="criterionList"></datalist>
+        </div>
+        <div class="match-banner" id="matchBanner">
+          <div class="mb-title" id="matchTitle"></div>
+          <div id="matchBody"></div>
+          <button type="button" id="prefillBtn">Load into fields to edit</button>
+        </div>
+      </div>
+
+      <div id="statusBlock">
+        <label>Status</label>
+        <div class="status-grid" id="statusGrid">
+          <div class="status-btn" data-status="Not discussed">Not discussed</div>
+          <div class="status-btn" data-status="Started">Started</div>
+          <div class="status-btn" data-status="Developing">Developing</div>
+          <div class="status-btn" data-status="Embedded">Embedded</div>
+        </div>
+      </div>
+
+      <label for="observation">Observation</label>
+      <textarea id="observation" placeholder="What did you see? The fact of the session…"></textarea>
+
+      <label for="remedialAction">Remedial action <span class="opt">(optional)</span></label>
+      <textarea id="remedialAction" placeholder="What's the fix — drill, cue, focus for next time…"></textarea>
+
+      <label for="additionalNotes">Additional notes <span class="opt">(optional)</span></label>
+      <textarea id="additionalNotes" placeholder="Anything else — effort, attitude, context…"></textarea>
+
+      <label>Photo / video <span class="opt">(optional)</span></label>
+      <div class="media-btn-row">
+        <div class="media-input-wrap" id="mediaGalleryWrap">
+          <div class="mi-label">🖼️ Choose from gallery</div>
+          <div class="mi-hint">Pick existing photos/videos from your phone — add more than one</div>
+        </div>
+        <div class="media-input-wrap" id="mediaCameraWrap">
+          <div class="mi-label">📷 Take photo/video</div>
+          <div class="mi-hint">Open the camera and capture a new one</div>
+        </div>
+      </div>
+      <input type="file" id="mediaInputGallery" accept="image/*,video/*" multiple>
+      <input type="file" id="mediaInputCamera" accept="image/*,video/*" capture="environment">
+      <div class="media-preview-grid" id="mediaPreviewGrid"></div>
+      <div class="upload-progress" id="uploadProgress"></div>
+
+      <label for="sessionDate">Date</label>
+      <input type="date" id="sessionDate">
+
+      <label for="fbPlanSelect">Session plan <span class="opt">(optional — link this feedback to the plan the swimmer worked from)</span></label>
+      <select id="fbPlanSelect"><option value="">— none / not linked —</option></select>
+
+      <p class="hint">Saving always adds a new dated entry — it never overwrites a previous one. This date becomes the date-stamp for this change the moment you hit Save.</p>
+
+      <button class="submit-btn" id="submitBtn">Save entry</button>
+      <div class="msg" id="msg"></div>
+    </div>
+    </div>
+
+  </div>
+
+  <!-- ============ SESSION PLANS: ARCHIVE LIST ============ -->
+  <div class="view" id="viewSession">
+    <a class="back-home" id="backHome5">Home</a>
+    <div class="sp-toolbar">
+      <button class="sp-primary-btn" id="newPlanBtn">+ New plan</button>
+    </div>
+    <input type="text" id="planSearch" class="sp-search" placeholder="Search plans by title or tag…" autocomplete="off">
+    <div id="planList"><div class="empty">Loading plans…</div></div>
+  </div>
+
+  <!-- ============ SESSION PLANS: EDITOR ============ -->
+  <div class="view" id="viewPlanEditor">
+    <a class="back-home" id="backSessionList1">Plans</a>
+    <div class="card">
+      <label for="planTitle">Plan title</label>
+      <input type="text" id="planTitle" placeholder="e.g. CDJ Mon AM — Aerobic threshold">
+
+      <div class="add-block-row" style="grid-template-columns:1fr 1fr 1fr;">
+        <button class="add-block-btn" data-add="heading">+ Heading</button>
+        <button class="add-block-btn" data-add="set">+ Set line</button>
+        <button class="add-block-btn" data-add="repeat_group">+ Repeat</button>
+      </div>
+      <div class="add-block-row" style="grid-template-columns:1fr;">
+        <button class="add-block-btn" data-add="note">+ Note</button>
+      </div>
+
+      <div id="blocksContainer"></div>
+
+      <details style="margin-top:14px;">
+        <summary style="font-size:.8rem;font-weight:700;color:var(--text-dim);cursor:pointer;">Optional planning details</summary>
+        <label for="planSquad" style="margin-top:10px;">Squad scope</label>
+        <input type="text" id="planSquad" placeholder="e.g. CDJ, CDJ1–2, Whole club">
+        <label>Pool</label>
+        <div class="pool-grid" id="planPoolGrid">
+          <div class="pool-btn" data-pool="17m">17m</div>
+          <div class="pool-btn" data-pool="25m">25m</div>
+          <div class="pool-btn" data-pool="50m">50m</div>
+        </div>
+        <label for="planIntendedDate">Intended date <span class="opt">(optional)</span></label>
+        <input type="date" id="planIntendedDate">
+        <label for="planNotes">Notes <span class="opt">(optional)</span></label>
+        <textarea id="planNotes" placeholder="Anything else about this plan…"></textarea>
+      </details>
+
+      <button class="submit-btn" id="savePlanBtn">Save plan</button>
+      <div class="msg" id="planMsg"></div>
+    </div>
+
+    <div class="plan-total-bar">
+      <div>
+        <div class="ptb-label">Planned distance</div>
+        <div class="hint" id="planTotalBreakdown" style="color:#b9cbe0;margin-top:2px;"></div>
+      </div>
+      <div class="ptb-num"><span id="planTotalNum">0</span> m</div>
+    </div>
+  </div>
+
+  <!-- ============ SESSION PLANS: VIEWER ============ -->
+  <div class="view" id="viewPlanView">
+    <a class="back-home" id="backSessionList2">Plans</a>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <h2 id="pvTitle" style="text-transform:none;letter-spacing:0;font-size:1.1rem;color:var(--navy);margin:0;"></h2>
+        <button id="editPlanBtn" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;font-weight:700;font-size:.78rem;color:var(--navy);cursor:pointer;flex-shrink:0;">Edit</button>
+      </div>
+      <div class="plan-li-meta" id="pvMeta" style="margin-bottom:10px;"></div>
+      <div id="pvBody"></div>
+    </div>
+  </div>
+
+  <!-- ============ MANAGEMENT INFORMATION: LANDING ============ -->
+  <div class="view" id="viewMI">
+    <a class="back-home" id="backHomeMI">Home</a>
+    <div class="home-tile" id="miRegressionTile">
+      <div class="ht-icon">📈</div>
+      <div>
+        <div class="ht-title">Regression Analysis</div>
+        <div class="ht-sub">Swimmer &amp; event trend vs county qualifying times</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MANAGEMENT INFORMATION: REGRESSION ANALYSIS ============ -->
+  <div class="view" id="viewMIRegression">
+    <a class="back-home" id="backMI1">Management Information</a>
+    <div class="card">
+      <h2>Swimmer &amp; event</h2>
+      <div class="autocomplete-wrap">
+        <input type="text" id="miSwimmerSearch" placeholder="Start typing a name…" autocomplete="off">
+        <div class="ac-results" id="miAcResults"></div>
+      </div>
+      <div class="selected-pill" id="miSelectedPill">
+        <span id="miSelectedName"></span>
+        <button type="button" id="miClearSwimmer">change</button>
+      </div>
+
+      <div id="miControls" style="display:none;">
+        <div class="mi-select-row">
+          <div>
+            <label for="miEventSelect" style="margin-top:14px;">Event</label>
+            <select id="miEventSelect"><option value="">— choose —</option></select>
+          </div>
+          <div>
+            <label style="margin-top:14px;">Sex <span class="opt">(for county standards)</span></label>
+            <div class="mi-sex-row">
+              <div class="toggle-btn" data-sex="female" id="miSexFemaleBtn" style="flex:1;">Female</div>
+              <div class="toggle-btn" data-sex="male" id="miSexMaleBtn" style="flex:1;">Male</div>
+            </div>
+          </div>
+        </div>
+        <p class="hint" id="miDobHint"></p>
+      </div>
+    </div>
+
+    <div id="miResultArea"></div>
+  </div>
+
+  <!-- ============ ADMIN: LANDING ============ -->
+  <div class="view" id="viewAdmin">
+    <a class="back-home" id="backHomeAdmin">Home</a>
+    <div class="home-tile" id="adminSquadsTile">
+      <div class="ht-icon">🏷️</div>
+      <div>
+        <div class="ht-title">Manage squads</div>
+        <div class="ht-sub">Rename squads · add a new squad</div>
+      </div>
+    </div>
+    <div class="home-tile" id="adminAddMemberTile">
+      <div class="ht-icon">➕</div>
+      <div>
+        <div class="ht-title">Add new member</div>
+        <div class="ht-sub">Register a swimmer &amp; parent contact</div>
+      </div>
+    </div>
+    <div class="home-tile" id="adminMoveTile">
+      <div class="ht-icon">🔄</div>
+      <div>
+        <div class="ht-title">Move a swimmer's squad</div>
+        <div class="ht-sub">Date-stamped — tracks time in each squad</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ADMIN: MANAGE SQUADS ============ -->
+  <div class="view" id="viewAdminSquads">
+    <a class="back-home" id="backAdmin1">Administrator</a>
+    <div class="card">
+      <h2>Add a new squad</h2>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="newSquadName" placeholder="New squad name">
+        <button class="sp-primary-btn" style="flex:0 0 auto;padding:11px 16px;" id="addSquadBtn">Add</button>
+      </div>
+      <div class="msg" id="addSquadMsg"></div>
+    </div>
+    <div class="card">
+      <h2>Rename existing squads</h2>
+      <p class="hint" style="margin-top:0;margin-bottom:10px;">Renaming updates the squad name on every swimmer in it.</p>
+      <div id="squadEditList"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- ============ ADMIN: ADD MEMBER ============ -->
+  <div class="view" id="viewAdminAddMember">
+    <a class="back-home" id="backAdmin2">Administrator</a>
+    <div class="card">
+      <h2>Swimmer</h2>
+      <label for="amFullName">Full name</label>
+      <input type="text" id="amFullName" placeholder="First and last name">
+      <label for="amDob">Date of birth</label>
+      <input type="date" id="amDob">
+      <label for="amSeId">Swim England ID <span class="opt">(optional)</span></label>
+      <input type="text" id="amSeId" placeholder="e.g. 1234567" inputmode="numeric">
+      <label for="amSquad">Squad</label>
+      <select id="amSquad"><option value="">— choose a squad —</option></select>
+      <label for="amJoinDate">Date joined club</label>
+      <input type="date" id="amJoinDate">
+      <p class="hint">This date-stamps when the swimmer joined the club. Joining the squad above is date-stamped separately as today, so time-in-squad can be tracked.</p>
+
+      <h2 style="margin-top:22px;">Parent / guardian</h2>
+      <label for="amParentName">Parent name</label>
+      <input type="text" id="amParentName" placeholder="Parent or guardian full name">
+      <label for="amParentPhone">Telephone number</label>
+      <input type="text" id="amParentPhone" placeholder="Mobile or landline" inputmode="tel">
+      <label for="amParentEmail">Email address</label>
+      <input type="text" id="amParentEmail" placeholder="name@example.com" inputmode="email">
+
+      <button class="submit-btn" id="addMemberBtn">Add member</button>
+      <div class="msg" id="addMemberMsg"></div>
+    </div>
+  </div>
+
+  <!-- ============ ADMIN: MOVE SQUAD ============ -->
+  <div class="view" id="viewAdminMove">
+    <a class="back-home" id="backAdmin3">Administrator</a>
+    <div class="card">
+      <h2>Move a swimmer to a different squad</h2>
+      <div class="autocomplete-wrap">
+        <input type="text" id="moveSwimmerSearch" placeholder="Search swimmer by name…" autocomplete="off">
+        <div class="ac-results" id="moveAcResults"></div>
+      </div>
+      <div class="selected-pill" id="moveSelectedPill">
+        <span id="moveSelectedName"></span>
+        <button type="button" id="moveClearSwimmer">change</button>
+      </div>
+
+      <div id="moveDetails" style="display:none;">
+        <div class="plan-li-meta" id="moveCurrentInfo" style="margin:10px 0;"></div>
+        <label for="moveNewSquad">Move to squad</label>
+        <select id="moveNewSquad"><option value="">— choose a squad —</option></select>
+        <label for="moveDate">Date of move</label>
+        <input type="date" id="moveDate">
+        <p class="hint">This closes the current squad membership (setting its end date) and opens a new one from the date above, so the length of time in each squad is preserved.</p>
+        <button class="submit-btn" id="doMoveBtn">Confirm move</button>
+        <div class="msg" id="moveMsg"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const SUPABASE_URL = "https://nxlgeykipnvswyeshrbl.supabase.co";
+const SUPABASE_KEY = "sb_publishable_BYuKct-F0f4H04Gl_S58uQ_gKzuW_Ff";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = id => document.getElementById(id);
+
+// ===================================================================
+// Club selector — top-level control. Persisted in localStorage, drives
+// every swimmer query across Attendance, Feedback, MI and Admin so the
+// coach only ever sees/marks one club's swimmers at a time.
+// ===================================================================
+let selectedClub = localStorage.getItem("ct_club") || "";
+let clubList = [];
+
+async function initClubSelector(){
+  const sel = $("clubSelect");
+  const { data, error } = await sb.from("swimmers").select("club").eq("active", true);
+  if (error){ console.error(error); sel.innerHTML = '<option value="">Could not load clubs</option>'; return; }
+  clubList = [...new Set((data || []).map(r => r.club).filter(Boolean))].sort();
+  if (!clubList.length){ sel.innerHTML = '<option value="">No clubs on file</option>'; return; }
+
+  if (!selectedClub || !clubList.includes(selectedClub)){
+    selectedClub = clubList.includes("Crawley Swimming Club") ? "Crawley Swimming Club" : clubList[0];
+  }
+  sel.innerHTML = clubList.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join("");
+  sel.value = selectedClub;
+  localStorage.setItem("ct_club", selectedClub);
+}
+
+$("clubSelect").addEventListener("change", () => {
+  selectedClub = $("clubSelect").value;
+  localStorage.setItem("ct_club", selectedClub);
+  refreshForClubChange();
+});
+
+// Clears cached swimmer lists and, if the coach is mid-way through a
+// screen, reloads that screen's swimmer list for the newly selected club.
+function refreshForClubChange(){
+  allSwimmers = [];
+  miAllSwimmers = [];
+  moveSwimmers = [];
+  const active = document.querySelector(".view.active");
+  if (!active) return;
+  if (active.id === "viewFeedback") loadSwimmers();
+  else if (active.id === "viewMIRegression") loadMISwimmers();
+  else if (active.id === "viewAdminMove") loadMoveSwimmers();
+}
+
+function fmtDate(d){
+  const dt = new Date(d + "T00:00:00");
+  return dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+// ===================================================================
+// View routing
+// ===================================================================
+function showView(id){
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  $(id).classList.add("active");
+  window.scrollTo(0, 0);
+}
+$("tileAttendance").addEventListener("click", () => { resetAttendanceSetup(); showView("viewAttendanceSetup"); });
+$("tileFeedback").addEventListener("click", () => { showView("viewFeedback"); resetFbTabs(); populateFbPlanSelect(); loadFbSquadOptions(); });
+$("tileSession").addEventListener("click", () => { showView("viewSession"); loadPlanList(); });
+["backHome1","backHome2","backHome3","backHome4","backHome5"].forEach(id => {
+  $(id).addEventListener("click", () => showView("viewHome"));
+});
+$("goFeedbackBtn").addEventListener("click", () => {
+  showView("viewFeedback");
+  resetFbTabs();
+  populateFbPlanSelect(attSession.plan_id);  // carry the attended session's plan across
+  loadFbSquadOptions();
+});
+$("goSessionBtn").addEventListener("click", () => { showView("viewSession"); loadPlanList(); });
+$("backSessionList1").addEventListener("click", () => { showView("viewSession"); loadPlanList(); });
+$("backSessionList2").addEventListener("click", () => { showView("viewSession"); loadPlanList(); });
+
+// --- Feedback tabs ---
+function setFbTab(panelId){
+  const tab = document.querySelector(`.fb-tab[data-panel="${panelId}"]`);
+  if (tab && tab.disabled) return;                 // ignore clicks on locked tabs
+  document.querySelectorAll(".fb-tab").forEach(t => t.classList.toggle("active", t.dataset.panel === panelId));
+  document.querySelectorAll(".fb-panel").forEach(p => p.classList.toggle("active", p.id === panelId));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll(".fb-tab").forEach(tab => {
+  tab.addEventListener("click", () => setFbTab(tab.dataset.panel));
+});
+// Enable/disable the History & Stroke tabs based on whether a swimmer is chosen.
+function setFbTabsEnabled(on){
+  $("fbTabHistory").disabled = !on;
+  $("fbTabForm").disabled = !on;
+}
+// Reset to the Swimmer tab with History/Stroke locked (used on entering the view / clearing swimmer).
+function resetFbTabs(){
+  setFbTabsEnabled(!!selectedSwimmer);
+  setFbTab(selectedSwimmer ? "fbPanelForm" : "fbPanelSwimmer");
+}
+
+// Management Information routing
+$("tileMI").addEventListener("click", () => { showView("viewMI"); });
+$("backHomeMI").addEventListener("click", () => showView("viewHome"));
+$("miRegressionTile").addEventListener("click", () => { resetMIRegression(); showView("viewMIRegression"); });
+$("backMI1").addEventListener("click", () => showView("viewMI"));
+
+// Admin routing
+$("tileAdmin").addEventListener("click", () => showView("viewAdmin"));
+$("backHomeAdmin").addEventListener("click", () => showView("viewHome"));
+$("adminSquadsTile").addEventListener("click", () => { showView("viewAdminSquads"); loadSquadEditList(); });
+$("adminAddMemberTile").addEventListener("click", () => { openAddMember(); });
+$("adminMoveTile").addEventListener("click", () => { openMoveSquad(); });
+$("backAdmin1").addEventListener("click", () => showView("viewAdmin"));
+$("backAdmin2").addEventListener("click", () => showView("viewAdmin"));
+$("backAdmin3").addEventListener("click", () => showView("viewAdmin"));
+
+// ===================================================================
+// SESSION PLANS
+// ===================================================================
+
+// --- Parser: "10 x 100 @2:00 Free" etc. ---
+function parseSetLine(raw){
+  if (!raw) return null;
+  const text = raw.trim();
+  const m = text.match(/^(\d+)\s*[xX×]\s*(\d+)\b(.*)$/);
+  if (!m) return null;
+  const reps = parseInt(m[1], 10);
+  const dist = parseInt(m[2], 10);
+  let rest = (m[3] || "").trim();
+  let interval = null;
+  const atIdx = rest.indexOf("@");
+  if (atIdx >= 0){
+    interval = rest.slice(atIdx + 1).trim();
+    rest = rest.slice(0, atIdx).trim();
+  }
+  return { reps, dist, interval: interval || null, remainder: rest || null, distance_m: reps * dist };
+}
+function blockDistance(block){
+  if (!block) return 0;
+  if (block.type === "set"){ const p = parseSetLine(block.text); return p ? p.distance_m : 0; }
+  if (block.type === "repeat_group"){
+    const reps = Number(block.reps) || 0;
+    const inner = (block.children || []).reduce((s, c) => s + blockDistance(c), 0);
+    return reps * inner;
+  }
+  return 0;
+}
+function planDistance(content){ return (content || []).reduce((s, b) => s + blockDistance(b), 0); }
+
+// --- Editor state ---
+let editorBlocks = [];      // working array of blocks
+let editingPlanId = null;   // null = new plan
+
+function blankBlock(type){
+  if (type === "heading") return { type:"heading", text:"", bold:true, underline:true };
+  if (type === "set") return { type:"set", text:"" };
+  if (type === "repeat_group") return { type:"repeat_group", reps:1, children:[{ type:"set", text:"" }] };
+  if (type === "note") return { type:"note", text:"" };
+}
+
+function openEditor(plan){
+  if (plan){
+    editingPlanId = plan.id;
+    $("planTitle").value = plan.title || "";
+    editorBlocks = JSON.parse(JSON.stringify(plan.content || []));
+    $("planSquad").value = plan.squad_scope || "";
+    $("planIntendedDate").value = plan.intended_date || "";
+    $("planNotes").value = plan.notes || "";
+    document.querySelectorAll("#planPoolGrid .pool-btn").forEach(b =>
+      b.classList.toggle("active", b.dataset.pool === plan.pool_size));
+  } else {
+    editingPlanId = null;
+    $("planTitle").value = "";
+    editorBlocks = [ blankBlock("heading") ];
+    editorBlocks[0].text = "Warm up";
+    $("planSquad").value = "";
+    $("planIntendedDate").value = "";
+    $("planNotes").value = "";
+    document.querySelectorAll("#planPoolGrid .pool-btn").forEach(b => b.classList.remove("active"));
+  }
+  $("planMsg").textContent = "";
+  renderBlocks();
+  showView("viewPlanEditor");
+}
+
+function renderBlocks(){
+  const c = $("blocksContainer");
+  c.innerHTML = editorBlocks.map((b, i) => renderBlockEditor(b, i)).join("");
+  wireBlockEditors();
+  updatePlanTotal();
+}
+
+function renderBlockEditor(b, i){
+  const controls = `
+    <span class="blk-controls">
+      <button data-act="up" data-i="${i}" title="Move up">▲</button>
+      <button data-act="down" data-i="${i}" title="Move down">▼</button>
+      <button data-act="del" data-i="${i}" title="Delete">✕</button>
+    </span>`;
+
+  if (b.type === "heading"){
+    return `<div class="blk heading-blk">
+      <div class="blk-type-label">Heading ${controls}</div>
+      <input type="text" data-field="text" data-i="${i}" value="${escapeAttr(b.text)}" placeholder="Section heading e.g. Main set">
+      <div class="heading-opts">
+        <label><input type="checkbox" data-field="bold" data-i="${i}" ${b.bold ? "checked":""}> Bold</label>
+        <label><input type="checkbox" data-field="underline" data-i="${i}" ${b.underline ? "checked":""}> Underline</label>
+      </div>
+    </div>`;
+  }
+  if (b.type === "set"){
+    const p = parseSetLine(b.text);
+    const hint = b.text.trim()
+      ? (p ? `${p.reps} × ${p.dist}m = <strong>${p.distance_m}m</strong>${p.interval ? " @ " + escapeHtml(p.interval) : ""}`
+           : `<span class="warn">Free text — not counted in distance total</span>`)
+      : "";
+    return `<div class="blk">
+      <div class="blk-type-label">Set line ${controls}</div>
+      <input type="text" data-field="text" data-i="${i}" value="${escapeAttr(b.text)}" placeholder="10 x 100 @2:00 Free">
+      <div class="parsed-hint ${(b.text.trim() && !p) ? "warn":""}">${hint}</div>
+    </div>`;
+  }
+  if (b.type === "repeat_group"){
+    const inner = (b.children || []).reduce((s, ch) => s + blockDistance(ch), 0);
+    const total = (Number(b.reps)||0) * inner;
+    const childrenHtml = (b.children || []).map((ch, ci) => {
+      const p = parseSetLine(ch.text);
+      const dist = p ? p.distance_m + "m" : "—";
+      return `<div class="repeat-child">
+        <input type="text" data-rfield="text" data-i="${i}" data-ci="${ci}" value="${escapeAttr(ch.text)}" placeholder="2 x 75 @1:45 IM as 25 sprint, 50 drill">
+        <span class="rc-dist">${dist}</span>
+        <button class="rc-remove" data-ract="delchild" data-i="${i}" data-ci="${ci}">✕</button>
+      </div>`;
+    }).join("");
+    return `<div class="blk repeat-blk">
+      <div class="blk-type-label">Repeat group ${controls}</div>
+      <div class="repeat-reps-row">
+        <input type="number" min="1" data-field="reps" data-i="${i}" value="${b.reps || 1}">
+        <span>× the lines below &nbsp;·&nbsp; ${inner}m/round → <strong>${total}m</strong></span>
+      </div>
+      <div class="repeat-children">${childrenHtml}</div>
+      <button class="add-child-btn" data-ract="addchild" data-i="${i}">+ Add line to this repeat</button>
+    </div>`;
+  }
+  if (b.type === "note"){
+    return `<div class="blk">
+      <div class="blk-type-label">Note ${controls}</div>
+      <textarea data-field="text" data-i="${i}" placeholder="Free text — coaching note, not counted in distance">${escapeHtml(b.text)}</textarea>
+    </div>`;
+  }
+  return "";
+}
+
+function wireBlockEditors(){
+  const c = $("blocksContainer");
+  // top-level field edits
+  c.querySelectorAll("[data-field]").forEach(el => {
+    const evt = (el.type === "checkbox") ? "change" : "input";
+    el.addEventListener(evt, () => {
+      const i = Number(el.dataset.i);
+      const f = el.dataset.field;
+      if (el.type === "checkbox") editorBlocks[i][f] = el.checked;
+      else if (f === "reps") editorBlocks[i][f] = Number(el.value) || 0;
+      else editorBlocks[i][f] = el.value;
+      // live-update only distance-affecting bits without full re-render (keep focus)
+      if (f === "text" || f === "reps") updateInlineDistances(i);
+      updatePlanTotal();
+    });
+  });
+  // repeat child text edits
+  c.querySelectorAll("[data-rfield]").forEach(el => {
+    el.addEventListener("input", () => {
+      const i = Number(el.dataset.i), ci = Number(el.dataset.ci);
+      editorBlocks[i].children[ci].text = el.value;
+      updateInlineDistances(i);
+      updatePlanTotal();
+    });
+  });
+  // controls (move/delete)
+  c.querySelectorAll(".blk-controls button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const i = Number(btn.dataset.i), act = btn.dataset.act;
+      if (act === "up" && i > 0){ [editorBlocks[i-1], editorBlocks[i]] = [editorBlocks[i], editorBlocks[i-1]]; }
+      if (act === "down" && i < editorBlocks.length-1){ [editorBlocks[i+1], editorBlocks[i]] = [editorBlocks[i], editorBlocks[i+1]]; }
+      if (act === "del"){ editorBlocks.splice(i, 1); }
+      renderBlocks();
+    });
+  });
+  // repeat add/remove child
+  c.querySelectorAll("[data-ract]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const i = Number(btn.dataset.i);
+      if (btn.dataset.ract === "addchild"){ editorBlocks[i].children.push({ type:"set", text:"" }); }
+      if (btn.dataset.ract === "delchild"){ editorBlocks[i].children.splice(Number(btn.dataset.ci), 1); }
+      renderBlocks();
+    });
+  });
+}
+
+// Update the little distance hints in place without re-rendering (preserves input focus)
+function updateInlineDistances(i){
+  const b = editorBlocks[i];
+  const blkEls = $("blocksContainer").children;
+  const el = blkEls[i];
+  if (!el) return;
+  if (b.type === "set"){
+    const p = parseSetLine(b.text);
+    const hintEl = el.querySelector(".parsed-hint");
+    if (hintEl){
+      if (!b.text.trim()){ hintEl.innerHTML = ""; hintEl.classList.remove("warn"); }
+      else if (p){ hintEl.innerHTML = `${p.reps} × ${p.dist}m = <strong>${p.distance_m}m</strong>${p.interval ? " @ " + escapeHtml(p.interval) : ""}`; hintEl.classList.remove("warn"); }
+      else { hintEl.innerHTML = `<span class="warn">Free text — not counted in distance total</span>`; hintEl.classList.add("warn"); }
+    }
+  }
+  if (b.type === "repeat_group"){
+    const inner = (b.children || []).reduce((s, ch) => s + blockDistance(ch), 0);
+    const total = (Number(b.reps)||0) * inner;
+    const label = el.querySelector(".repeat-reps-row span");
+    if (label) label.innerHTML = `× the lines below &nbsp;·&nbsp; ${inner}m/round → <strong>${total}m</strong>`;
+    (b.children || []).forEach((ch, ci) => {
+      const p = parseSetLine(ch.text);
+      const distEl = el.querySelectorAll(".rc-dist")[ci];
+      if (distEl) distEl.textContent = p ? p.distance_m + "m" : "—";
+    });
+  }
+}
+
+function updatePlanTotal(){
+  const total = planDistance(editorBlocks);
+  $("planTotalNum").textContent = total.toLocaleString();
+  // brief breakdown: count sets + repeats
+  const nSets = editorBlocks.filter(b => b.type === "set").length;
+  const nReps = editorBlocks.filter(b => b.type === "repeat_group").length;
+  const bits = [];
+  if (nSets) bits.push(`${nSets} set line${nSets>1?"s":""}`);
+  if (nReps) bits.push(`${nReps} repeat${nReps>1?"s":""}`);
+  $("planTotalBreakdown").textContent = bits.join(" · ");
+}
+
+// add-block buttons
+document.querySelectorAll("[data-add]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    editorBlocks.push(blankBlock(btn.dataset.add));
+    renderBlocks();
+    // scroll new block into view
+    const c = $("blocksContainer");
+    if (c.lastElementChild) c.lastElementChild.scrollIntoView({ behavior:"smooth", block:"center" });
+  });
+});
+
+document.querySelectorAll("#planPoolGrid .pool-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const wasActive = btn.classList.contains("active");
+    document.querySelectorAll("#planPoolGrid .pool-btn").forEach(b => b.classList.remove("active"));
+    if (!wasActive) btn.classList.add("active"); // allow toggling off
+  });
+});
+
+$("newPlanBtn").addEventListener("click", () => openEditor(null));
+
+$("savePlanBtn").addEventListener("click", async () => {
+  const msg = $("planMsg");
+  msg.textContent = ""; msg.className = "msg";
+  const title = $("planTitle").value.trim();
+  if (!title){ msg.textContent = "Give the plan a title."; msg.className = "msg err"; return; }
+
+  // prune fully-empty blocks
+  const content = editorBlocks.filter(b => {
+    if (b.type === "repeat_group") return (b.children||[]).some(c => c.text.trim());
+    return (b.text || "").trim();
+  });
+
+  const poolBtn = document.querySelector("#planPoolGrid .pool-btn.active");
+  const payload = {
+    title,
+    content,
+    total_distance_m: planDistance(content),
+    squad_scope: $("planSquad").value.trim() || null,
+    pool_size: poolBtn ? poolBtn.dataset.pool : null,
+    intended_date: $("planIntendedDate").value || null,
+    notes: $("planNotes").value.trim() || null,
+    updated_at: new Date().toISOString()
+  };
+
+  $("savePlanBtn").disabled = true;
+  let error;
+  if (editingPlanId){
+    ({ error } = await sb.from("session_plans").update(payload).eq("id", editingPlanId));
+  } else {
+    ({ error } = await sb.from("session_plans").insert(payload));
+  }
+  $("savePlanBtn").disabled = false;
+
+  if (error){ msg.textContent = "Save failed — " + error.message; msg.className = "msg err"; console.error(error); return; }
+  msg.textContent = "Plan saved."; msg.className = "msg ok";
+  setTimeout(() => { showView("viewSession"); loadPlanList(); }, 500);
+});
+
+// --- Archive list ---
+let allPlans = [];
+async function loadPlanList(){
+  const el = $("planList");
+  el.innerHTML = '<div class="empty">Loading plans…</div>';
+  const { data, error } = await sb
+    .from("session_plans")
+    .select("id, title, total_distance_m, squad_scope, pool_size, intended_date, updated_at, content")
+    .order("updated_at", { ascending: false });
+  if (error){ el.innerHTML = '<div class="empty">Could not load plans.</div>'; console.error(error); return; }
+  allPlans = data || [];
+  renderPlanList(allPlans);
+}
+function renderPlanList(plans){
+  const el = $("planList");
+  if (!plans.length){ el.innerHTML = '<div class="empty">No plans yet. Tap “+ New plan” to write one.</div>'; return; }
+  el.innerHTML = plans.map(p => {
+    const tags = [];
+    if (p.pool_size) tags.push(`<span class="plan-tag">${p.pool_size}</span>`);
+    if (p.squad_scope) tags.push(`<span class="plan-tag">${escapeHtml(p.squad_scope)}</span>`);
+    if (p.total_distance_m) tags.push(`<span class="plan-tag dist">${p.total_distance_m.toLocaleString()}m</span>`);
+    const meta = [];
+    if (p.intended_date) meta.push("For " + fmtDate(p.intended_date));
+    meta.push("Updated " + fmtDate(p.updated_at.slice(0,10)));
+    return `<div class="plan-list-item" data-id="${p.id}">
+      <div class="plan-li-title">${escapeHtml(p.title)}</div>
+      <div class="plan-li-meta">${meta.join(" · ")}</div>
+      ${tags.length ? `<div class="plan-li-tags">${tags.join("")}</div>` : ""}
+    </div>`;
+  }).join("");
+  el.querySelectorAll(".plan-list-item").forEach(item => {
+    item.addEventListener("click", () => openPlanViewer(item.dataset.id));
+  });
+}
+$("planSearch").addEventListener("input", () => {
+  const q = $("planSearch").value.trim().toLowerCase();
+  if (!q){ renderPlanList(allPlans); return; }
+  renderPlanList(allPlans.filter(p =>
+    (p.title||"").toLowerCase().includes(q) ||
+    (p.squad_scope||"").toLowerCase().includes(q) ||
+    (p.pool_size||"").toLowerCase().includes(q)
+  ));
+});
+
+// --- Viewer ---
+let viewingPlan = null;
+async function openPlanViewer(id){
+  const { data, error } = await sb.from("session_plans").select("*").eq("id", id).single();
+  if (error){ console.error(error); return; }
+  viewingPlan = data;
+  $("pvTitle").textContent = data.title;
+  const meta = [];
+  if (data.intended_date) meta.push("For " + fmtDate(data.intended_date));
+  if (data.squad_scope) meta.push(data.squad_scope);
+  if (data.pool_size) meta.push(data.pool_size);
+  if (data.total_distance_m) meta.push(data.total_distance_m.toLocaleString() + "m");
+  $("pvMeta").textContent = meta.join(" · ");
+  $("pvBody").innerHTML = renderPlanReadonly(data.content || []) +
+    (data.notes ? `<div class="pv-note" style="margin-top:12px;">${escapeHtml(data.notes)}</div>` : "");
+  showView("viewPlanView");
+}
+function renderPlanReadonly(content){
+  return (content || []).map(b => {
+    if (b.type === "heading"){
+      const style = `${b.bold ? "font-weight:800;" : "font-weight:600;"}`;
+      return `<div class="pv-heading ${b.underline ? "underline":""}" style="${style}">${escapeHtml(b.text)}</div>`;
+    }
+    if (b.type === "set"){
+      const p = parseSetLine(b.text);
+      return `<div class="pv-set">${escapeHtml(b.text)}${p ? `<span class="pv-dist">${p.distance_m}m</span>` : ""}</div>`;
+    }
+    if (b.type === "repeat_group"){
+      const inner = (b.children||[]).reduce((s,ch)=>s+blockDistance(ch),0);
+      const total = (Number(b.reps)||0)*inner;
+      const kids = (b.children||[]).map(ch => {
+        const p = parseSetLine(ch.text);
+        return `<div class="pv-repeat-child">${escapeHtml(ch.text)}${p ? `<span class="pv-dist">${p.distance_m}m</span>` : ""}</div>`;
+      }).join("");
+      return `<div class="pv-repeat">
+        <div class="pv-repeat-head">${b.reps} x <span class="pv-dist" style="margin-left:0;">(${total}m)</span></div>
+        <div class="pv-repeat-children">${kids}</div>
+      </div>`;
+    }
+    if (b.type === "note"){ return `<div class="pv-note">${escapeHtml(b.text)}</div>`; }
+    return "";
+  }).join("");
+}
+$("editPlanBtn").addEventListener("click", () => { if (viewingPlan) openEditor(viewingPlan); });
+
+// --- small escapers ---
+function escapeHtml(s){ return (s==null?"":String(s)).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+function escapeAttr(s){ return (s==null?"":String(s)).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+function genUuid(){ return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0; const v = c==='x'?r:(r&0x3|0x8); return v.toString(16); }); }
+
+// Populate the feedback form's plan selector (optionally preselecting one)
+async function populateFbPlanSelect(preselectId){
+  const sel = $("fbPlanSelect");
+  if (!sel) return;
+  const { data, error } = await sb
+    .from("session_plans")
+    .select("id, title, intended_date, total_distance_m")
+    .order("updated_at", { ascending: false })
+    .limit(100);
+  if (error){ console.error(error); return; }
+  const opts = ['<option value="">— none / not linked —</option>'];
+  (data || []).forEach(p => {
+    const bits = [p.title];
+    if (p.intended_date) bits.push(fmtDate(p.intended_date));
+    if (p.total_distance_m) bits.push(p.total_distance_m + "m");
+    opts.push(`<option value="${p.id}">${escapeHtml(bits.join(" · "))}</option>`);
+  });
+  sel.innerHTML = opts.join("");
+  if (preselectId) sel.value = preselectId;
+}
+
+// ===================================================================
+// ATTENDANCE
+// ===================================================================
+let attScope = "CDJ";
+let attSwimmers = [];      // [{id, full_name, present}]
+let attIndex = 0;
+let attMode = "swipe";
+let attSession = { date: "", time: "", pool: "", plan_id: null };
+
+function resetAttendanceSetup(){
+  const now = new Date();
+  $("attDate").value = now.toISOString().slice(0,10);
+  $("attTime").value = now.toTimeString().slice(0,5);
+  $("attSetupMsg").textContent = "";
+  $("attSetupMsg").className = "msg";
+  populateAttPlanSelect();
+}
+
+async function populateAttPlanSelect(){
+  const sel = $("attPlanSelect");
+  const { data, error } = await sb
+    .from("session_plans")
+    .select("id, title, intended_date, pool_size, total_distance_m")
+    .order("updated_at", { ascending: false })
+    .limit(100);
+  if (error){ console.error(error); return; }
+  const opts = ['<option value="">— none / not linked —</option>'];
+  (data || []).forEach(p => {
+    const bits = [p.title];
+    if (p.intended_date) bits.push(fmtDate(p.intended_date));
+    if (p.total_distance_m) bits.push(p.total_distance_m + "m");
+    opts.push(`<option value="${p.id}">${escapeHtml(bits.join(" · "))}</option>`);
+  });
+  sel.innerHTML = opts.join("");
+}
+
+$("attScopeCDJ").addEventListener("click", () => setAttScope("CDJ"));
+$("attScopeAll").addEventListener("click", () => setAttScope("ALL"));
+function setAttScope(s){
+  attScope = s;
+  $("attScopeCDJ").classList.toggle("active", s === "CDJ");
+  $("attScopeAll").classList.toggle("active", s === "ALL");
+}
+
+document.querySelectorAll("#poolGrid .pool-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#poolGrid .pool-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  });
+});
+
+$("attModeSwipeBtn").addEventListener("click", () => setAttMode("swipe"));
+$("attModeTickBtn").addEventListener("click", () => setAttMode("tick"));
+function setAttMode(m){
+  attMode = m;
+  $("attModeSwipeBtn").classList.toggle("active", m === "swipe");
+  $("attModeTickBtn").classList.toggle("active", m === "tick");
+}
+
+$("startAttendanceBtn").addEventListener("click", async () => {
+  const msg = $("attSetupMsg");
+  msg.textContent = ""; msg.className = "msg";
+
+  const date = $("attDate").value;
+  const time = $("attTime").value;
+  const poolBtn = document.querySelector("#poolGrid .pool-btn.active");
+
+  if (!date){ msg.textContent = "Set a date."; msg.className = "msg err"; return; }
+  if (!time){ msg.textContent = "Set a time."; msg.className = "msg err"; return; }
+  if (!poolBtn){ msg.textContent = "Choose a pool size."; msg.className = "msg err"; return; }
+
+  attSession = { date, time, pool: poolBtn.dataset.pool, plan_id: $("attPlanSelect").value || null };
+
+  $("startAttendanceBtn").disabled = true;
+  msg.textContent = "Loading swimmers…"; msg.className = "msg";
+
+  // Swimmers in scope
+  let sq = sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club", selectedClub).order("full_name");
+  if (attScope === "CDJ") sq = sq.eq("squad", "CDJ");
+  const { data: swimmers, error: sErr } = await sq;
+  $("startAttendanceBtn").disabled = false;
+  if (sErr){ msg.textContent = "Could not load swimmers — " + sErr.message; msg.className = "msg err"; return; }
+
+  // Any existing marks already logged for this exact session
+  const { data: existing, error: eErr } = await sb
+    .from("attendance_records")
+    .select("swimmer_id, present")
+    .eq("session_date", date)
+    .eq("session_time", time + ":00")
+    .eq("pool_size", attSession.pool);
+  if (eErr) console.error(eErr);
+  const existingMap = {};
+  (existing || []).forEach(r => { existingMap[r.swimmer_id] = r.present; });
+
+  attSwimmers = (swimmers || []).map(s => ({
+    id: s.id,
+    full_name: s.full_name,
+    present: existingMap.hasOwnProperty(s.id) ? existingMap[s.id] : false
+  }));
+  attIndex = 0;
+
+  const sessionLabel = `${fmtDate(date)} · ${time} · ${attSession.pool} · ${attScope === "CDJ" ? "CDJ squad" : "Whole club"}`;
+  $("sessionInfoLine").textContent = sessionLabel;
+
+  if (attMode === "swipe"){
+    $("swipeModeBlock").style.display = "block";
+    $("tickModeBlock").style.display = "none";
+    renderSwipeCard();
+  } else {
+    $("swipeModeBlock").style.display = "none";
+    $("tickModeBlock").style.display = "block";
+    renderTickList();
+  }
+
+  showView("viewAttendanceMark");
+});
+
+async function upsertAttendance(swimmerId, present){
+  const payload = {
+    swimmer_id: swimmerId,
+    session_date: attSession.date,
+    session_time: attSession.time + ":00",
+    pool_size: attSession.pool,
+    present: present,
+    session_plan_id: attSession.plan_id,
+    marked_at: new Date().toISOString(),
+    coach: "Simon"
+  };
+  const { error } = await sb.from("attendance_records").upsert(payload, {
+    onConflict: "swimmer_id,session_date,session_time,pool_size"
+  });
+  if (error) console.error("Attendance save failed:", error);
+  return !error;
+}
+
+// --- Swipe mode ---
+function updateProgress(){
+  $("progressLine").textContent = `${Math.min(attIndex + 1, attSwimmers.length)} of ${attSwimmers.length}`;
+  const pct = attSwimmers.length ? Math.round((attIndex / attSwimmers.length) * 100) : 0;
+  $("progressFill").style.width = pct + "%";
+}
+
+function renderSwipeCard(){
+  updateProgress();
+  const stage = $("swipeStage");
+  if (attIndex >= attSwimmers.length){
+    stage.innerHTML = '<div class="empty">All swimmers marked — tap Finish session below.</div>';
+    return;
+  }
+  const s = attSwimmers[attIndex];
+  stage.innerHTML = `
+    <div class="swipe-card" id="swipeCardEl">
+      <div class="swipe-overlay swipe-overlay-out" id="ovOut">OUT</div>
+      <div class="swipe-overlay swipe-overlay-in" id="ovIn">IN</div>
+      <div class="swipe-card-name">${s.full_name}</div>
+      <div class="swipe-card-sub">Swipe right = In · Swipe left = Out</div>
+    </div>`;
+  attachSwipeHandlers($("swipeCardEl"));
+}
+
+function attachSwipeHandlers(card){
+  let startX = 0, dx = 0, dragging = false;
+  const threshold = 90;
+
+  const onDown = (x) => { dragging = true; startX = x; card.classList.add("dragging"); };
+  const onMove = (x) => {
+    if (!dragging) return;
+    dx = x - startX;
+    const rot = dx / 12;
+    card.style.transform = `translateX(${dx}px) rotate(${rot}deg)`;
+    const amt = Math.min(Math.abs(dx) / threshold, 1);
+    $("ovIn").style.opacity = dx > 0 ? amt : 0;
+    $("ovOut").style.opacity = dx < 0 ? amt : 0;
+  };
+  const onUp = () => {
+    if (!dragging) return;
+    dragging = false;
+    card.classList.remove("dragging");
+    if (dx > threshold) commitSwipe(true);
+    else if (dx < -threshold) commitSwipe(false);
+    else { card.style.transform = "translateX(0) rotate(0)"; $("ovIn").style.opacity = 0; $("ovOut").style.opacity = 0; }
+    dx = 0;
+  };
+
+  card.addEventListener("pointerdown", (e) => onDown(e.clientX));
+  card.addEventListener("pointermove", (e) => onMove(e.clientX));
+  card.addEventListener("pointerup", onUp);
+  card.addEventListener("pointerleave", () => { if (dragging) onUp(); });
+}
+
+function commitSwipe(present){
+  const card = $("swipeCardEl");
+  if (card){
+    card.style.transition = "transform .25s ease, opacity .25s ease";
+    card.style.transform = `translateX(${present ? 600 : -600}px) rotate(${present ? 25 : -25}deg)`;
+    card.style.opacity = "0";
+  }
+  const s = attSwimmers[attIndex];
+  s.present = present;
+  upsertAttendance(s.id, present);
+  attIndex++;
+  setTimeout(renderSwipeCard, 200);
+}
+
+$("tapOutBtn").addEventListener("click", () => { if (attIndex < attSwimmers.length) commitSwipe(false); });
+$("tapInBtn").addEventListener("click", () => { if (attIndex < attSwimmers.length) commitSwipe(true); });
+
+// --- Tick list mode ---
+function renderTickList(){
+  const el = $("tickListStage");
+  el.innerHTML = attSwimmers.map((s, i) => `
+    <div class="tick-row">
+      <span class="tick-name">${s.full_name}</span>
+      <span class="tick-box ${s.present ? "ticked" : ""}" data-i="${i}">${s.present ? "✓" : ""}</span>
+    </div>`).join("");
+  el.querySelectorAll(".tick-box").forEach(box => {
+    box.addEventListener("click", async () => {
+      const i = Number(box.dataset.i);
+      attSwimmers[i].present = !attSwimmers[i].present;
+      box.classList.toggle("ticked", attSwimmers[i].present);
+      box.textContent = attSwimmers[i].present ? "✓" : "";
+      await upsertAttendance(attSwimmers[i].id, attSwimmers[i].present);
+    });
+  });
+}
+
+// --- Finish ---
+$("finishAttendanceBtn").addEventListener("click", async () => {
+  $("finishAttendanceBtn").disabled = true;
+  $("finishAttendanceBtn").textContent = "Saving…";
+
+  if (attMode === "swipe"){
+    // Anyone not yet swiped defaults to Out — "no swipe = Out", same rule as the tick list.
+    for (let i = attIndex; i < attSwimmers.length; i++){
+      await upsertAttendance(attSwimmers[i].id, attSwimmers[i].present);
+    }
+  }
+
+  const inCount = attSwimmers.filter(s => s.present).length;
+  const outCount = attSwimmers.length - inCount;
+  $("doneInCount").textContent = inCount;
+  $("doneOutCount").textContent = outCount;
+  $("doneSessionLine").textContent = $("sessionInfoLine").textContent;
+
+  $("finishAttendanceBtn").disabled = false;
+  $("finishAttendanceBtn").textContent = "Finish session";
+  showView("viewAttendanceDone");
+});
+
+// ===================================================================
+// FEEDBACK (existing tool, unchanged behaviour)
+// ===================================================================
+let allSwimmers = [];
+let scope = "ALL";   // "ALL" = whole club, otherwise a squad name
+let selectedSwimmer = null;
+let entryType = "status";
+let selectedStatus = null;
+let swimmerHistory = [];
+let criterionPool = [];
+let pendingFiles = [];
+
+$("sessionDate").value = new Date().toISOString().slice(0,10);
+
+const MAX_FILE_MB = 100;
+
+$("mediaGalleryWrap").addEventListener("click", () => $("mediaInputGallery").click());
+$("mediaCameraWrap").addEventListener("click", () => $("mediaInputCamera").click());
+$("mediaInputGallery").addEventListener("change", handleMediaFiles);
+$("mediaInputCamera").addEventListener("change", handleMediaFiles);
+
+function handleMediaFiles(e){
+  const files = Array.from(e.target.files || []);
+  for (const f of files){
+    if (f.size > MAX_FILE_MB * 1024 * 1024){
+      alert(`${f.name} is over ${MAX_FILE_MB}MB and won't be added — try a shorter clip or lower-res photo.`);
+      continue;
+    }
+    pendingFiles.push(f);
+  }
+  e.target.value = "";
+  renderMediaPreview();
+}
+
+function renderMediaPreview(){
+  const grid = $("mediaPreviewGrid");
+  grid.innerHTML = pendingFiles.map((f, i) => {
+    const url = URL.createObjectURL(f);
+    const isVideo = f.type.startsWith("video/");
+    return `<div class="media-preview-item">
+      ${isVideo
+        ? `<video src="${url}" muted></video><span class="mp-video-tag">VIDEO</span>`
+        : `<img src="${url}">`}
+      <button type="button" class="mp-remove" data-i="${i}">×</button>
+    </div>`;
+  }).join("");
+  grid.querySelectorAll(".mp-remove").forEach(btn => {
+    btn.addEventListener("click", () => {
+      pendingFiles.splice(Number(btn.dataset.i), 1);
+      renderMediaPreview();
+    });
+  });
+}
+
+async function uploadPendingFiles(swimmerId){
+  const uploaded = [];
+  const progressEl = $("uploadProgress");
+  for (let i = 0; i < pendingFiles.length; i++){
+    const f = pendingFiles[i];
+    progressEl.textContent = `Uploading ${i + 1} of ${pendingFiles.length}…`;
+    const safeName = f.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${swimmerId}/${Date.now()}-${i}-${safeName}`;
+    const { error: upErr } = await sb.storage.from("feedback-media").upload(path, f, {
+      contentType: f.type || "application/octet-stream",
+      upsert: false
+    });
+    if (upErr){
+      progressEl.textContent = "";
+      throw new Error(`Upload failed for ${f.name}: ${upErr.message}`);
+    }
+    const { data: pub } = sb.storage.from("feedback-media").getPublicUrl(path);
+    uploaded.push({
+      url: pub.publicUrl,
+      type: f.type.startsWith("video/") ? "video" : "image",
+      name: f.name
+    });
+  }
+  progressEl.textContent = "";
+  return uploaded;
+}
+
+function mediaGridHtml(mediaArr){
+  if (!mediaArr || !mediaArr.length) return "";
+  return `<div class="hist-media-grid">${mediaArr.map(m =>
+    m.type === "video"
+      ? `<a href="${m.url}" target="_blank" rel="noopener"><video src="${m.url}" muted preload="metadata"></video><span class="hm-video-tag">▶</span></a>`
+      : `<a href="${m.url}" target="_blank" rel="noopener"><img src="${m.url}"></a>`
+  ).join("")}</div>`;
+}
+
+async function loadSwimmers(){
+  let query = sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club", selectedClub).order("full_name");
+  if (scope && scope !== "ALL") query = query.eq("squad", scope);
+  const { data, error } = await query;
+  if (error){ console.error(error); return; }
+  allSwimmers = data || [];
+}
+
+// Populate the feedback squad dropdown from the squads table.
+async function loadFbSquadOptions(){
+  const sel = $("fbSquadSelect");
+  const { data, error } = await sb.from("squads").select("name").order("name");
+  if (error){ console.error(error); return; }
+  const opts = ['<option value="ALL">All squads (whole club)</option>'];
+  (data || []).forEach(q => opts.push(`<option value="${escapeHtml(q.name)}">${escapeHtml(q.name)}</option>`));
+  sel.innerHTML = opts.join("");
+  sel.value = scope;
+}
+
+$("fbSquadSelect").addEventListener("change", () => {
+  scope = $("fbSquadSelect").value;
+  // clear any in-progress swimmer selection since the pool changed
+  if (selectedSwimmer){
+    selectedSwimmer = null;
+    $("selectedPill").style.display = "none";
+    $("globalRecentCard").style.display = "block";
+    searchInput.style.display = "block";
+    searchInput.value = "";
+    setFbTabsEnabled(false);
+    setFbTab("fbPanelSwimmer");
+    $("historyList").innerHTML = '<div class="empty">Pick a swimmer first.</div>';
+  }
+  loadSwimmers();
+});
+
+const searchInput = $("swimmerSearch");
+const acResults = $("acResults");
+searchInput.addEventListener("input", () => {
+  const q = searchInput.value.trim().toLowerCase();
+  if (!q){ acResults.style.display = "none"; return; }
+  const matches = allSwimmers.filter(s => s.full_name.toLowerCase().includes(q)).slice(0, 25);
+  if (!matches.length){
+    acResults.innerHTML = '<div style="color:var(--text-dim);cursor:default;">No matches</div>';
+    acResults.style.display = "block";
+    return;
+  }
+  acResults.innerHTML = matches.map(s =>
+    `<div data-id="${s.id}">${s.full_name}${s.squad ? `<span class="squad-tag">${s.squad}</span>` : ""}</div>`
+  ).join("");
+  acResults.style.display = "block";
+});
+acResults.addEventListener("click", (e) => {
+  const row = e.target.closest("div[data-id]");
+  if (!row) return;
+  const s = allSwimmers.find(x => x.id === row.dataset.id);
+  selectSwimmer(s);
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".autocomplete-wrap")) acResults.style.display = "none";
+});
+
+async function selectSwimmer(s){
+  selectedSwimmer = s;
+  $("selectedName").textContent = s.full_name + (s.squad ? " · " + s.squad : "");
+  $("selectedPill").style.display = "flex";
+  searchInput.value = "";
+  searchInput.style.display = "none";
+  acResults.style.display = "none";
+  $("globalRecentCard").style.display = "none";
+
+  strokeFilter = "ALL";
+  expandedThreads = {};
+  clearThreadUpdate();
+
+  await loadHistoryForSwimmer(s.id);
+  checkForMatch();
+
+  // Unlock the History & Stroke tabs and drop the coach on History so the string is seen first.
+  setFbTabsEnabled(true);
+  setFbTab("fbPanelHistory");
+}
+
+$("clearSwimmer").addEventListener("click", () => {
+  selectedSwimmer = null;
+  swimmerHistory = [];
+  pendingFiles = [];
+  clearThreadUpdate();
+  strokeFilter = "ALL";
+  expandedThreads = {};
+  renderMediaPreview();
+  $("selectedPill").style.display = "none";
+  $("globalRecentCard").style.display = "block";
+  $("historyList").innerHTML = '<div class="empty">Pick a swimmer first.</div>';
+  searchInput.style.display = "block";
+  searchInput.value = "";
+  setFbTabsEnabled(false);
+  setFbTab("fbPanelSwimmer");
+  searchInput.focus();
+});
+
+// Thread state: which existing thread (if any) the next save will extend.
+let activeThreadId = null;   // null = new thread
+let strokeFilter = "ALL";    // stroke chip filter for the history view
+let expandedThreads = {};    // thread_id -> bool (history expanded?)
+
+async function loadHistoryForSwimmer(swimmerId){
+  const el = $("historyList");
+  el.innerHTML = '<div class="empty">Loading…</div>';
+  const { data, error } = await sb
+    .from("swimmer_feedback")
+    .select("id, thread_id, entry_type, category, criterion, status, observation, remedial_action, note, media, session_date, created_at")
+    .eq("swimmer_id", swimmerId)
+    .order("session_date", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (error){
+    el.innerHTML = '<div class="empty">Could not load history.</div>';
+    console.error(error);
+    swimmerHistory = [];
+    return;
+  }
+
+  swimmerHistory = data || [];
+  $("historyCount").textContent = swimmerHistory.length ? `(${swimmerHistory.length} entr${swimmerHistory.length === 1 ? "y" : "ies"})` : "";
+  const badge = $("fbHistoryBadge");
+  if (swimmerHistory.length){ badge.style.display = "inline-block"; badge.textContent = swimmerHistory.length; }
+  else { badge.style.display = "none"; }
+  renderStrokeFilter();
+  renderThreads();
+}
+
+// Build stroke chips from the strokes present in this swimmer's history.
+function renderStrokeFilter(){
+  const wrap = $("strokeFilter");
+  if (!swimmerHistory.length){ wrap.innerHTML = ""; return; }
+  const strokes = [...new Set(swimmerHistory.map(r => r.category).filter(Boolean))];
+  const chips = [`<span class="stroke-chip ${strokeFilter==="ALL"?"active":""}" data-stroke="ALL">All</span>`];
+  strokes.forEach(s => chips.push(`<span class="stroke-chip ${strokeFilter===s?"active":""}" data-stroke="${escapeAttr(s)}">${escapeHtml(s)}</span>`));
+  wrap.innerHTML = chips.join("");
+  wrap.querySelectorAll(".stroke-chip").forEach(chip => {
+    chip.addEventListener("click", () => { strokeFilter = chip.dataset.stroke; renderStrokeFilter(); renderThreads(); });
+  });
+}
+
+// Group entries into threads; show only the latest per thread (collapsed), with expand + update.
+function renderThreads(){
+  const el = $("historyList");
+  if (!swimmerHistory.length){
+    el.innerHTML = '<div class="empty">No feedback on record yet for this swimmer.</div>';
+    return;
+  }
+
+  // group by thread_id
+  const threads = {};
+  swimmerHistory.forEach(r => {
+    (threads[r.thread_id] = threads[r.thread_id] || []).push(r);
+  });
+  // each thread's rows are already newest-first from the query
+  let threadList = Object.values(threads);
+
+  // filter by stroke: keep a thread if its LATEST entry matches (that's the stroke the thread currently concerns)
+  if (strokeFilter !== "ALL"){
+    threadList = threadList.filter(t => t[0].category === strokeFilter);
+  }
+
+  // order threads by their latest entry date, newest first
+  threadList.sort((a,b) => (b[0].session_date + b[0].created_at).localeCompare(a[0].session_date + a[0].created_at));
+
+  if (!threadList.length){
+    el.innerHTML = '<div class="empty">No feedback for that stroke.</div>';
+    return;
+  }
+
+  el.innerHTML = threadList.map(t => {
+    const latest = t[0];
+    const tid = latest.thread_id;
+    const isExpanded = !!expandedThreads[tid];
+    const count = t.length;
+
+    const latestHtml = feedbackEntryHtml(latest, true);
+
+    let historyHtml = "";
+    if (isExpanded){
+      // show the whole string oldest -> newest so the development reads in order
+      const chrono = t.slice().reverse();
+      historyHtml = `<div class="thread-history">
+        <div class="thread-history-label">Full string — original to present (${count})</div>
+        ${chrono.map((r, idx) => `
+          <div class="hist-item">
+            <div class="hist-top">
+              <span class="hist-date">${fmtDate(r.session_date)}</span>
+              <span class="hist-cat">${escapeHtml(r.category || "")}</span>
+              ${r.status ? `<span class="hist-badge ${r.status==="Not discussed"?"Not":r.status}">${r.status}</span>` : ""}
+              ${idx===0 ? `<span class="thread-origin-tag">ORIGINAL</span>` : ""}
+            </div>
+            ${r.criterion ? `<div class="hist-crit">${escapeHtml(r.criterion)}</div>` : ""}
+            ${(r.observation||r.note) ? `<div class="hist-field"><span class="fl">Observation</span>${escapeHtml(r.observation||r.note)}</div>` : ""}
+            ${r.remedial_action ? `<div class="hist-field"><span class="fl">Remedial action</span>${escapeHtml(r.remedial_action)}</div>` : ""}
+            ${(r.note && r.observation) ? `<div class="hist-field"><span class="fl">Additional notes</span>${escapeHtml(r.note)}</div>` : ""}
+            ${mediaGridHtml(r.media)}
+          </div>`).join("")}
+      </div>`;
+    }
+
+    return `<div class="thread-card" data-tid="${tid}">
+      <div class="thread-latest-tag">Latest${count>1?` · ${count} in this string`:""}</div>
+      ${latestHtml}
+      <div class="thread-actions">
+        <button type="button" class="thread-btn primary" data-act="update" data-tid="${tid}">Update</button>
+        ${count>1 ? `<button type="button" class="thread-btn" data-act="toggle" data-tid="${tid}">${isExpanded?"Hide history":"View history"}</button>` : ""}
+      </div>
+      ${historyHtml}
+    </div>`;
+  }).join("");
+
+  // wire actions
+  el.querySelectorAll('.thread-btn[data-act="toggle"]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tid = btn.dataset.tid;
+      expandedThreads[tid] = !expandedThreads[tid];
+      renderThreads();
+    });
+  });
+  el.querySelectorAll('.thread-btn[data-act="update"]').forEach(btn => {
+    btn.addEventListener("click", () => startThreadUpdate(btn.dataset.tid));
+  });
+}
+
+// Render a single feedback entry's body (used for the "latest" view).
+function feedbackEntryHtml(r, isLatest){
+  const badgeClass = r.status ? (r.status === "Not discussed" ? "Not" : r.status) : null;
+  const obs = r.observation || r.note || "";
+  return `<div class="hist-top">
+      <span class="hist-date">${fmtDate(r.session_date)}</span>
+      <span class="hist-cat">${escapeHtml(r.category || "")}</span>
+      ${badgeClass ? `<span class="hist-badge ${badgeClass}">${r.status}</span>` : ""}
+    </div>
+    ${r.criterion ? `<div class="hist-crit">${escapeHtml(r.criterion)}</div>` : ""}
+    ${obs ? `<div class="hist-field"><span class="fl">Observation</span>${escapeHtml(obs)}</div>` : ""}
+    ${r.remedial_action ? `<div class="hist-field"><span class="fl">Remedial action</span>${escapeHtml(r.remedial_action)}</div>` : ""}
+    ${(r.note && r.observation) ? `<div class="hist-field"><span class="fl">Additional notes</span>${escapeHtml(r.note)}</div>` : ""}
+    ${mediaGridHtml(r.media)}`;
+}
+
+// Begin adding a fresh, date-stamped entry onto an existing thread.
+function startThreadUpdate(threadId){
+  const thread = swimmerHistory.filter(r => r.thread_id === threadId);
+  if (!thread.length) return;
+  const latest = thread[0];
+  activeThreadId = threadId;
+
+  // bind the form to this thread and prefill from the latest entry
+  $("category").value = latest.category || "";
+  loadCriterionPool(latest.category || "");
+  setType(latest.entry_type || "status");
+  $("criterion").value = latest.criterion || "";
+  $("observation").value = "";                     // fresh observation for the new date-stamp
+  $("remedialAction").value = latest.remedial_action || "";
+  $("additionalNotes").value = "";
+  document.querySelectorAll(".status-grid .status-btn").forEach(b => b.classList.toggle("active", b.dataset.status === latest.status));
+  selectedStatus = latest.status || null;
+
+  $("updatingBanner").style.display = "flex";
+  $("updatingTitle").textContent = `Updating: ${latest.category}${latest.criterion ? " — " + latest.criterion : ""}`;
+  $("updatingSub").textContent = `Adds a new dated entry to this string (started ${fmtDate(thread[thread.length-1].session_date)})`;
+  $("matchBanner").style.display = "none";
+  setFbTab("fbPanelForm");   // jump to the Stroke / skill tab to complete the update
+}
+
+function clearThreadUpdate(){
+  activeThreadId = null;
+  $("updatingBanner").style.display = "none";
+}
+$("cancelUpdateBtn").addEventListener("click", () => {
+  clearThreadUpdate();
+  // reset the form to a clean new-thread state
+  $("category").value = "";
+  $("criterion").value = "";
+  $("observation").value = "";
+  $("remedialAction").value = "";
+  $("additionalNotes").value = "";
+  document.querySelectorAll(".status-grid .status-btn").forEach(b => b.classList.remove("active"));
+  selectedStatus = null;
+});
+
+async function loadRecent(){
+  const { data, error } = await sb
+    .from("swimmer_feedback")
+    .select("id, entry_type, category, criterion, status, observation, remedial_action, note, media, session_date, swimmers(full_name)")
+    .order("created_at", { ascending: false })
+    .limit(15);
+  const el = $("recentList");
+  if (error){ el.innerHTML = '<div class="empty">Could not load recent entries.</div>'; console.error(error); return; }
+  if (!data || !data.length){ el.innerHTML = '<div class="empty">No entries logged yet.</div>'; return; }
+  el.innerHTML = data.map(r => {
+    const name = r.swimmers ? r.swimmers.full_name : "Unknown swimmer";
+    const badgeClass = r.status ? (r.status === "Not discussed" ? "Not" : r.status) : null;
+    const obs = r.observation || r.note || "";
+    return `<div class="hist-item">
+      <div class="hist-top">
+        <span class="hist-name">${name}</span>
+        <span class="hist-date">${fmtDate(r.session_date)}</span>
+      </div>
+      <div class="hist-top" style="margin-top:2px;">
+        <span class="hist-cat">${r.category || ""}</span>
+        ${badgeClass ? `<span class="hist-badge ${badgeClass}">${r.status}</span>` : ""}
+      </div>
+      ${r.criterion ? `<div class="hist-crit">${r.criterion}</div>` : ""}
+      ${obs ? `<div class="hist-field"><span class="fl">Observation</span>${obs}</div>` : ""}
+      ${r.remedial_action ? `<div class="hist-field"><span class="fl">Remedial action</span>${r.remedial_action}</div>` : ""}
+      ${mediaGridHtml(r.media)}
+    </div>`;
+  }).join("");
+}
+
+async function loadCriterionPool(category){
+  const list = $("criterionList");
+  list.innerHTML = "";
+  if (!category) return;
+  const { data, error } = await sb
+    .from("swimmer_feedback")
+    .select("criterion")
+    .eq("category", category)
+    .not("criterion", "is", null);
+  if (error){ console.error(error); return; }
+  const uniq = [...new Set((data || []).map(r => r.criterion).filter(Boolean))];
+  criterionPool = uniq;
+  list.innerHTML = uniq.map(c => `<option value="${c.replace(/"/g,'&quot;')}">`).join("");
+}
+
+$("category").addEventListener("change", () => {
+  loadCriterionPool($("category").value);
+  checkForMatch();
+});
+
+$("typeStatusBtn").addEventListener("click", () => setType("status"));
+$("typeNoteBtn").addEventListener("click", () => setType("note"));
+function setType(t){
+  entryType = t;
+  $("typeStatusBtn").classList.toggle("active", t === "status");
+  $("typeNoteBtn").classList.toggle("active", t === "note");
+  $("statusBlock").style.display = t === "status" ? "block" : "none";
+  checkForMatch();
+}
+
+document.querySelectorAll(".status-grid .status-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".status-grid .status-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedStatus = btn.dataset.status;
+  });
+});
+
+let matchedEntry = null;
+function checkForMatch(){
+  const banner = $("matchBanner");
+  matchedEntry = null;
+  if (!selectedSwimmer || entryType !== "status"){ banner.style.display = "none"; return; }
+  const cat = $("category").value;
+  const crit = $("criterion").value.trim().toLowerCase();
+  if (!cat || !crit){ banner.style.display = "none"; return; }
+
+  const hit = swimmerHistory.find(r =>
+    r.category === cat && r.criterion && r.criterion.trim().toLowerCase() === crit
+  );
+  if (!hit){ banner.style.display = "none"; return; }
+
+  matchedEntry = hit;
+  $("matchTitle").textContent = `Last reviewed ${fmtDate(hit.session_date)}${hit.status ? " — " + hit.status : ""}`;
+  $("matchBody").textContent = (hit.observation || hit.note || "").slice(0, 160);
+  banner.style.display = "block";
+}
+$("criterion").addEventListener("input", checkForMatch);
+$("prefillBtn").addEventListener("click", () => {
+  if (!matchedEntry) return;
+  $("observation").value = matchedEntry.observation || matchedEntry.note || "";
+  $("remedialAction").value = matchedEntry.remedial_action || "";
+  if (matchedEntry.status){
+    document.querySelectorAll(".status-grid .status-btn").forEach(b => b.classList.toggle("active", b.dataset.status === matchedEntry.status));
+    selectedStatus = matchedEntry.status;
+  }
+});
+
+$("submitBtn").addEventListener("click", async () => {
+  const msg = $("msg");
+  msg.textContent = "";
+  msg.className = "msg";
+
+  if (!selectedSwimmer){ msg.textContent = "Pick a swimmer first."; msg.className = "msg err"; return; }
+  const category = $("category").value;
+  if (!category){ msg.textContent = "Choose a stroke or skill."; msg.className = "msg err"; return; }
+  const sessionDate = $("sessionDate").value;
+  if (!sessionDate){ msg.textContent = "Set a date."; msg.className = "msg err"; return; }
+  const observation = $("observation").value.trim();
+  if (!observation){ msg.textContent = "Enter an observation — what did you see?"; msg.className = "msg err"; return; }
+
+  let row = {
+    swimmer_id: selectedSwimmer.id,
+    entry_type: entryType,
+    category: category,
+    observation: observation,
+    remedial_action: $("remedialAction").value.trim() || null,
+    note: $("additionalNotes").value.trim() || null,
+    session_plan_id: $("fbPlanSelect").value || null,
+    session_date: sessionDate,
+    thread_id: activeThreadId || (crypto.randomUUID ? crypto.randomUUID() : genUuid())
+  };
+
+  if (entryType === "status"){
+    const criterion = $("criterion").value.trim();
+    if (!criterion){ msg.textContent = "Enter a criterion."; msg.className = "msg err"; return; }
+    if (!selectedStatus){ msg.textContent = "Pick a status."; msg.className = "msg err"; return; }
+    row.criterion = criterion;
+    row.status = selectedStatus;
+  }
+
+  $("submitBtn").disabled = true;
+
+  let mediaMeta = [];
+  try {
+    if (pendingFiles.length){
+      mediaMeta = await uploadPendingFiles(selectedSwimmer.id);
+    }
+  } catch (upErr){
+    $("submitBtn").disabled = false;
+    msg.textContent = upErr.message;
+    msg.className = "msg err";
+    console.error(upErr);
+    return;
+  }
+  row.media = mediaMeta;
+
+  const { error } = await sb.from("swimmer_feedback").insert(row);
+  $("submitBtn").disabled = false;
+
+  if (error){
+    msg.textContent = "Save failed — " + error.message;
+    msg.className = "msg err";
+    console.error(error);
+    return;
+  }
+
+  msg.textContent = activeThreadId
+    ? `Update added to the string — dated ${fmtDate(sessionDate)}.`
+    : `Saved — dated ${fmtDate(sessionDate)}.`;
+  msg.className = "msg ok";
+
+  $("criterion").value = "";
+  $("observation").value = "";
+  $("remedialAction").value = "";
+  $("additionalNotes").value = "";
+  $("category").value = "";
+  document.querySelectorAll(".status-grid .status-btn").forEach(b => b.classList.remove("active"));
+  selectedStatus = null;
+  $("matchBanner").style.display = "none";
+  pendingFiles = [];
+  renderMediaPreview();
+  clearThreadUpdate();
+
+  await loadHistoryForSwimmer(selectedSwimmer.id);
+  setFbTab("fbPanelHistory");   // show the freshly-saved entry in its string
+});
+
+// ===================================================================
+// ADMIN
+// ===================================================================
+
+// --- Shared: load squads into any <select> ---
+async function loadSquadsInto(selectEl, includeBlank){
+  const { data, error } = await sb.from("squads").select("id, name").order("name");
+  if (error){ console.error(error); return []; }
+  const opts = includeBlank ? ['<option value="">— choose a squad —</option>'] : [];
+  (data || []).forEach(q => opts.push(`<option value="${q.id}">${escapeHtml(q.name)}</option>`));
+  if (selectEl) selectEl.innerHTML = opts.join("");
+  return data || [];
+}
+
+// --- Manage squads ---
+async function loadSquadEditList(){
+  const el = $("squadEditList");
+  el.innerHTML = '<div class="empty">Loading…</div>';
+  const { data, error } = await sb
+    .from("squads")
+    .select("id, name, swimmers(count)")
+    .order("name");
+  if (error){ el.innerHTML = '<div class="empty">Could not load squads.</div>'; console.error(error); return; }
+  if (!data || !data.length){ el.innerHTML = '<div class="empty">No squads yet — add one above.</div>'; return; }
+  el.innerHTML = data.map(q => {
+    const n = (q.swimmers && q.swimmers[0]) ? q.swimmers[0].count : 0;
+    return `<div style="display:flex;gap:8px;align-items:center;margin-bottom:9px;">
+      <input type="text" class="squad-rename-input" data-id="${q.id}" data-orig="${escapeAttr(q.name)}" value="${escapeAttr(q.name)}" style="flex:1;">
+      <span class="plan-li-meta" style="white-space:nowrap;">${n} swimmer${n===1?"":"s"}</span>
+      <button class="squad-save-btn" data-id="${q.id}" style="flex:0 0 auto;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 12px;font-weight:700;font-size:.8rem;cursor:pointer;">Save</button>
+    </div>`;
+  }).join("");
+  el.querySelectorAll(".squad-save-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+      const input = el.querySelector(`.squad-rename-input[data-id="${id}"]`);
+      const newName = input.value.trim();
+      const orig = input.dataset.orig;
+      if (!newName){ input.value = orig; return; }
+      if (newName === orig) return;
+      btn.disabled = true; btn.textContent = "…";
+      const { error } = await sb.from("squads").update({ name: newName }).eq("id", id);
+      btn.disabled = false; btn.textContent = "Save";
+      if (error){ alert("Rename failed — " + error.message); input.value = orig; return; }
+      input.dataset.orig = newName;
+      btn.textContent = "Saved";
+      setTimeout(() => { btn.textContent = "Save"; }, 1200);
+    });
+  });
+}
+
+$("addSquadBtn").addEventListener("click", async () => {
+  const msg = $("addSquadMsg");
+  msg.textContent = ""; msg.className = "msg";
+  const name = $("newSquadName").value.trim();
+  if (!name){ msg.textContent = "Enter a squad name."; msg.className = "msg err"; return; }
+  $("addSquadBtn").disabled = true;
+  const { error } = await sb.from("squads").insert({ name });
+  $("addSquadBtn").disabled = false;
+  if (error){
+    msg.textContent = error.message.includes("duplicate") ? "That squad already exists." : "Add failed — " + error.message;
+    msg.className = "msg err"; return;
+  }
+  msg.textContent = "Squad added."; msg.className = "msg ok";
+  $("newSquadName").value = "";
+  loadSquadEditList();
+});
+
+// --- Add member ---
+function openAddMember(){
+  $("amFullName").value = "";
+  $("amDob").value = "";
+  $("amSeId").value = "";
+  $("amJoinDate").value = new Date().toISOString().slice(0,10);
+  $("amParentName").value = "";
+  $("amParentPhone").value = "";
+  $("amParentEmail").value = "";
+  $("addMemberMsg").textContent = "";
+  loadSquadsInto($("amSquad"), true);
+  showView("viewAdminAddMember");
+}
+
+function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+
+$("addMemberBtn").addEventListener("click", async () => {
+  const msg = $("addMemberMsg");
+  msg.textContent = ""; msg.className = "msg";
+
+  const full_name = $("amFullName").value.trim();
+  const dob = $("amDob").value;
+  const squad_id = $("amSquad").value;
+  const joined_club_on = $("amJoinDate").value;
+  const email = $("amParentEmail").value.trim();
+
+  if (!full_name){ msg.textContent = "Enter the swimmer's full name."; msg.className = "msg err"; return; }
+  if (!dob){ msg.textContent = "Enter the date of birth."; msg.className = "msg err"; return; }
+  if (!squad_id){ msg.textContent = "Choose a squad."; msg.className = "msg err"; return; }
+  if (!joined_club_on){ msg.textContent = "Set the date joined club."; msg.className = "msg err"; return; }
+  if (email && !validEmail(email)){ msg.textContent = "That email address doesn't look right."; msg.className = "msg err"; return; }
+
+  $("addMemberBtn").disabled = true;
+
+  // Insert swimmer (trigger fills squad text from squad_id)
+  const { data: inserted, error: insErr } = await sb.from("swimmers").insert({
+    full_name,
+    date_of_birth: dob,
+    squad_id,
+    club: selectedClub,
+    swim_england_id: $("amSeId").value.trim() || null,
+    joined_club_on,
+    parent_name: $("amParentName").value.trim() || null,
+    parent_phone: $("amParentPhone").value.trim() || null,
+    parent_email: email || null,
+    active: true
+  }).select("id").single();
+
+  if (insErr){
+    $("addMemberBtn").disabled = false;
+    msg.textContent = "Add failed — " + insErr.message; msg.className = "msg err";
+    console.error(insErr); return;
+  }
+
+  // Open a date-stamped squad membership from today
+  const { error: memErr } = await sb.from("squad_memberships").insert({
+    swimmer_id: inserted.id,
+    squad_id,
+    joined_squad_on: new Date().toISOString().slice(0,10)
+  });
+  $("addMemberBtn").disabled = false;
+  if (memErr){ console.error(memErr); }
+
+  msg.textContent = `${full_name} added.`; msg.className = "msg ok";
+  // refresh the feedback/attendance swimmer caches so the new member shows immediately
+  loadSwimmers();
+  setTimeout(() => { openAddMember(); }, 900);
+});
+
+// --- Move squad ---
+let moveSwimmers = [];
+let moveSelected = null;
+
+function openMoveSquad(){
+  moveSelected = null;
+  $("moveSelectedPill").style.display = "none";
+  $("moveDetails").style.display = "none";
+  $("moveSwimmerSearch").style.display = "block";
+  $("moveSwimmerSearch").value = "";
+  $("moveMsg").textContent = "";
+  $("moveDate").value = new Date().toISOString().slice(0,10);
+  loadSquadsInto($("moveNewSquad"), true);
+  loadMoveSwimmers();
+  showView("viewAdminMove");
+}
+
+// load all swimmers for the selected club for the move-squad search
+function loadMoveSwimmers(){
+  sb.from("swimmers").select("id, full_name, squad, squad_id").eq("active", true).eq("club", selectedClub).order("full_name")
+    .then(({ data }) => { moveSwimmers = data || []; });
+}
+
+const moveSearch = $("moveSwimmerSearch");
+const moveAc = $("moveAcResults");
+moveSearch.addEventListener("input", () => {
+  const q = moveSearch.value.trim().toLowerCase();
+  if (!q){ moveAc.style.display = "none"; return; }
+  const matches = moveSwimmers.filter(s => s.full_name.toLowerCase().includes(q)).slice(0, 25);
+  if (!matches.length){ moveAc.innerHTML = '<div style="color:var(--text-dim);cursor:default;">No matches</div>'; moveAc.style.display = "block"; return; }
+  moveAc.innerHTML = matches.map(s =>
+    `<div data-id="${s.id}">${s.full_name}${s.squad ? `<span class="squad-tag">${escapeHtml(s.squad)}</span>` : ""}</div>`
+  ).join("");
+  moveAc.style.display = "block";
+});
+moveAc.addEventListener("click", (e) => {
+  const row = e.target.closest("div[data-id]");
+  if (!row) return;
+  moveSelected = moveSwimmers.find(x => x.id === row.dataset.id);
+  $("moveSelectedName").textContent = moveSelected.full_name + (moveSelected.squad ? " · " + moveSelected.squad : " · no squad");
+  $("moveSelectedPill").style.display = "flex";
+  moveSearch.style.display = "none";
+  moveAc.style.display = "none";
+  $("moveDetails").style.display = "block";
+  showSwimmerDetail(moveSelected.id);
+});
+
+// Load a swimmer's full record and render it, with parent email as a mailto link
+async function showSwimmerDetail(swimmerId){
+  const info = $("moveCurrentInfo");
+  info.innerHTML = "Loading…";
+  const { data, error } = await sb
+    .from("swimmers")
+    .select("full_name, date_of_birth, swim_england_id, squad, joined_club_on, parent_name, parent_phone, parent_email")
+    .eq("id", swimmerId).single();
+  if (error){ info.textContent = moveSelected.squad ? `Currently in: ${moveSelected.squad}` : "Not currently assigned to a squad"; return; }
+
+  // Time in current squad (from the open membership)
+  const { data: mem } = await sb.from("squad_memberships")
+    .select("joined_squad_on").eq("swimmer_id", swimmerId).is("ended_on", null)
+    .order("joined_squad_on", { ascending: false }).limit(1);
+  let timeInSquad = "";
+  if (mem && mem.length){
+    const since = new Date(mem[0].joined_squad_on + "T00:00:00");
+    const days = Math.max(0, Math.floor((Date.now() - since.getTime()) / 86400000));
+    const months = Math.floor(days / 30.44);
+    timeInSquad = months >= 1 ? `${months} month${months===1?"":"s"}` : `${days} day${days===1?"":"s"}`;
+  }
+
+  const rows = [];
+  rows.push(`<strong>Currently in:</strong> ${data.squad ? escapeHtml(data.squad) : "no squad"}${timeInSquad ? ` (${timeInSquad})` : ""}`);
+  if (data.date_of_birth) rows.push(`<strong>DOB:</strong> ${fmtDate(data.date_of_birth)}`);
+  if (data.swim_england_id) rows.push(`<strong>Swim England ID:</strong> ${escapeHtml(data.swim_england_id)}`);
+  if (data.joined_club_on) rows.push(`<strong>Joined club:</strong> ${fmtDate(data.joined_club_on)}`);
+  if (data.parent_name) rows.push(`<strong>Parent:</strong> ${escapeHtml(data.parent_name)}`);
+  if (data.parent_phone) rows.push(`<strong>Tel:</strong> <a href="tel:${escapeAttr(data.parent_phone)}">${escapeHtml(data.parent_phone)}</a>`);
+  if (data.parent_email) rows.push(`<strong>Email:</strong> <a href="mailto:${escapeAttr(data.parent_email)}">${escapeHtml(data.parent_email)}</a>`);
+  info.innerHTML = rows.join("<br>");
+}
+$("moveClearSwimmer").addEventListener("click", () => {
+  moveSelected = null;
+  $("moveSelectedPill").style.display = "none";
+  $("moveDetails").style.display = "none";
+  moveSearch.style.display = "block";
+  moveSearch.value = "";
+  moveSearch.focus();
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#viewAdminMove .autocomplete-wrap")) moveAc.style.display = "none";
+});
+
+$("doMoveBtn").addEventListener("click", async () => {
+  const msg = $("moveMsg");
+  msg.textContent = ""; msg.className = "msg";
+  if (!moveSelected){ msg.textContent = "Pick a swimmer."; msg.className = "msg err"; return; }
+  const newSquadId = $("moveNewSquad").value;
+  const moveDate = $("moveDate").value;
+  if (!newSquadId){ msg.textContent = "Choose the squad to move to."; msg.className = "msg err"; return; }
+  if (!moveDate){ msg.textContent = "Set the date of the move."; msg.className = "msg err"; return; }
+  if (newSquadId === moveSelected.squad_id){ msg.textContent = "That's already their squad."; msg.className = "msg err"; return; }
+
+  $("doMoveBtn").disabled = true;
+
+  // 1. Close any open membership(s) for this swimmer
+  const { error: closeErr } = await sb.from("squad_memberships")
+    .update({ ended_on: moveDate })
+    .eq("swimmer_id", moveSelected.id)
+    .is("ended_on", null);
+  if (closeErr){ console.error(closeErr); }
+
+  // 2. Open a new membership
+  const { error: openErr } = await sb.from("squad_memberships").insert({
+    swimmer_id: moveSelected.id,
+    squad_id: newSquadId,
+    joined_squad_on: moveDate
+  });
+  if (openErr){
+    $("doMoveBtn").disabled = false;
+    msg.textContent = "Move failed — " + openErr.message; msg.className = "msg err"; return;
+  }
+
+  // 3. Update the swimmer's current squad_id (trigger syncs the text column)
+  const { error: swErr } = await sb.from("swimmers").update({ squad_id: newSquadId }).eq("id", moveSelected.id);
+  $("doMoveBtn").disabled = false;
+  if (swErr){ msg.textContent = "Move failed — " + swErr.message; msg.className = "msg err"; return; }
+
+  msg.textContent = `${moveSelected.full_name} moved.`; msg.className = "msg ok";
+  loadSwimmers();
+  setTimeout(() => { openMoveSquad(); }, 1000);
+});
+
+// ===================================================================
+// MANAGEMENT INFORMATION — Regression Analysis
+// (methodology mirrors the swimmer-regression-chart skill: OLS trend
+//  through actual swims, monthly projection to Dec 2031, stepped
+//  county-standard lines, and a forecast crossing year per standard)
+// ===================================================================
+
+// Sussex county qualifying standard tables (seconds).
+// WCQT: ages 10,11,12,13,14,15,16,17+ (8 cols). LCCQT / LCCQTLC: ages 10..16+ (7 cols).
+const CQT_WCQT = {
+  female: {
+    "50m Freestyle": [40,35,33,31,30,30,29,29],
+    "50m Backstroke": [45,41,38,36,35,34,34,34],
+    "50m Breaststroke": [52,47,43,41,40,39,38,38],
+    "50m Butterfly": [47,40,37,34,33,33,32,32],
+    "100m Freestyle": [88,80,72,67,65,64,63,63],
+    "100m Backstroke": [96,90,83,75,75,73,72,72],
+    "100m Breaststroke": [113,103,96,88,86,85,84,84],
+    "100m Butterfly": [105,96,86,78,75,74,73,73],
+    "100m Individual Medley": [97,89,84,77,75,74,72,72],
+    "200m Freestyle": [200,170,155,145,140,140,139,139],
+    "200m Backstroke": [205,188,175,165,160,158,155,155],
+    "200m Breaststroke": [235,225,209,188,187,180,180,180],
+    "200m Butterfly": [240,230,205,185,180,180,170,170],
+    "200m Individual Medley": [220,198,180,165,165,160,157,157],
+    "400m Individual Medley": [null,null,375,375,375,375,360,360],
+    "400m Freestyle": [330,330,330,330,310,310,300,300],
+    "800m Freestyle": [null,null,630,630,630,630,615,615],
+    "1500m Freestyle": [null,null,1260,1260,1260,1260,1230,1230]
+  },
+  male: {
+    "50m Freestyle": [39,35,32,30,28,27,26,26],
+    "50m Backstroke": [46,41,37,36,34,32,31,31],
+    "50m Breaststroke": [52,49,44,40,38,36,34,34],
+    "50m Butterfly": [48,41,37,35,31,30,29,29],
+    "100m Freestyle": [86,80,71,67,62,60,57,56],
+    "100m Backstroke": [99,92,82,77,72,70,66,66],
+    "100m Breaststroke": [113,106,96,92,82,79,74,74],
+    "100m Butterfly": [115,101,89,82,74,70,65,63],
+    "100m Individual Medley": [97,90,81,79,72,70,66,65],
+    "200m Freestyle": [186,172,151,145,137,136,129,125],
+    "200m Backstroke": [213,195,173,170,160,155,150,145],
+    "200m Breaststroke": [240,235,200,190,180,175,180,165],
+    "200m Butterfly": [238,223,208,190,175,168,160,153],
+    "200m Individual Medley": [205,195,177,168,155,152,146,146],
+    "400m Individual Medley": [null,null,360,360,360,360,330,330],
+    "400m Freestyle": [330,330,330,330,300,300,285,285],
+    "800m Freestyle": [null,null,615,615,615,615,600,600],
+    "1500m Freestyle": [null,null,1215,1215,1215,1215,1170,1170]
+  }
+};
+const CQT_LCCQT = {
+  female: {
+    "50m Freestyle": [41.5,38.5,34.4,32.4,30.3,30.3,29.3],
+    "50m Backstroke": [59.6,44.6,40.5,38.5,35.4,35.4,33.4],
+    "50m Breaststroke": [55.4,50.4,46.3,43.3,40.2,40.2,39.2],
+    "50m Butterfly": [50.6,47.6,40.5,36.5,33.4,33.4,32.4],
+    "100m Freestyle": [94.1,86.0,76.9,70.8,66.8,64.7,64.7],
+    "100m Backstroke": [107.3,97.2,88.1,82.0,77.0,75.9,73.9],
+    "100m Breaststroke": [121.0,114.9,102.8,94.7,88.6,86.6,83.5],
+    "100m Butterfly": [139.5,121.4,101.2,90.2,80.1,77.0,76.0],
+    "200m Freestyle": [211.4,185.1,162.9,151.7,144.6,142.6,140.6],
+    "200m Backstroke": [225.5,205.4,180.2,171.1,163.0,162.0,157.9],
+    "200m Breaststroke": [256.9,227.7,213.5,200.4,189.2,186.2,182.1],
+    "200m Butterfly": [251.7,246.7,208.5,201.4,190.3,181.3,181.3],
+    "200m Individual Medley": [238.3,218.2,185.9,174.8,165.6,160.6,160.6],
+    "400m Individual Medley": [null,null,395.6,378.4,355.1,344.9,344.9],
+    "400m Freestyle": [441.8,406.5,361.1,335.8,305.4,300.4,295.3],
+    "800m Freestyle": [null,null,742.2,691.7,671.4,641.0,620.8],
+    "1500m Freestyle": [null,null,1380.1,1314.4,1273.9,1243.5,1233.4]
+  },
+  male: {
+    "50m Freestyle": [42.5,37.4,35.4,31.3,30.3,28.3,26.2],
+    "50m Backstroke": [50.6,44.6,41.5,37.5,35.4,33.4,31.4],
+    "50m Breaststroke": [46.4,51.4,47.3,42.3,39.2,38.2,35.1],
+    "50m Butterfly": [50.6,46.6,39.5,36.5,34.5,31.4,30.4],
+    "100m Freestyle": [91.1,87.0,80.0,70.8,66.8,60.6,58.6],
+    "100m Backstroke": [106.2,100.2,90.1,79.0,75.9,72.9,67.8],
+    "100m Breaststroke": [119.9,116.9,105.8,92.6,87.6,83.5,78.4],
+    "100m Butterfly": [120.4,118.4,105.3,85.1,79.0,72.0,68.9],
+    "200m Freestyle": [201.3,186.1,160.9,151.7,143.6,138.5,132.4],
+    "200m Backstroke": [231.6,211.4,188.2,170.0,160.9,155.9,150.8],
+    "200m Breaststroke": [258.0,234.8,222.6,200.4,190.2,178.1,174.0],
+    "200m Butterfly": [251.7,245.7,221.6,201.4,180.3,166.1,160.0],
+    "200m Individual Medley": [231.3,202.1,184.9,170.7,165.6,150.4,148.4],
+    "400m Individual Medley": [null,null,400.6,375.0,360.1,339.9,329.7],
+    "400m Freestyle": [421.7,386.4,352.0,330.0,310.5,290.2,278.0],
+    "800m Freestyle": [null,null,752.3,630.0,661.3,630.9,600.4],
+    "1500m Freestyle": [null,null,1430.6,1263.8,1243.9,1183.5,1182.7]
+  }
+};
+const CQT_LCCQTLC = {
+  female: {
+    "50m Freestyle": [42.0,39.0,35.0,33.0,31.0,31.0,30.0],
+    "50m Backstroke": [50.0,45.0,41.0,39.0,36.0,36.0,34.0],
+    "50m Breaststroke": [56.0,51.0,47.0,44.0,41.0,41.0,40.0],
+    "50m Butterfly": [51.0,48.0,41.0,37.0,34.0,34.0,33.0],
+    "100m Freestyle": [95.0,87.0,78.0,72.0,68.0,66.0,66.0],
+    "100m Backstroke": [108.0,98.0,89.0,83.0,78.0,77.0,75.0],
+    "100m Breaststroke": [122.0,116.0,104.0,96.0,90.0,88.0,85.0],
+    "100m Butterfly": [140.0,122.0,102.0,91.0,81.0,78.0,77.0],
+    "200m Freestyle": [213.0,187.0,165.0,154.0,147.0,145.0,143.0],
+    "200m Backstroke": [227.0,207.0,182.0,173.0,165.0,165.0,160.0],
+    "200m Breaststroke": [259.0,230.0,216.0,203.0,192.0,189.0,185.0],
+    "200m Butterfly": [253.0,248.0,210.0,203.0,192.0,183.0,183.0],
+    "200m Individual Medley": [240.0,220.0,188.0,177.0,168.0,163.0,163.0],
+    "400m Individual Medley": [null,null,400.0,383.0,360.0,350.0,350.0],
+    "400m Freestyle": [445.0,410.0,365.0,340.0,310.0,305.0,300.0],
+    "800m Freestyle": [null,null,750.0,700.0,680.0,650.0,630.0],
+    "1500m Freestyle": [null,null,1395.0,1330.0,1290.0,1260.0,1250.0]
+  },
+  male: {
+    "50m Freestyle": [43.0,38.0,36.0,32.0,31.0,29.0,27.0],
+    "50m Backstroke": [51.0,45.0,42.0,38.0,36.0,34.0,32.0],
+    "50m Breaststroke": [57.0,52.0,48.0,43.0,40.0,39.0,36.0],
+    "50m Butterfly": [51.0,47.0,40.0,37.0,35.0,32.0,31.0],
+    "100m Freestyle": [92.0,88.0,81.0,72.0,68.0,62.0,60.0],
+    "100m Backstroke": [107.0,101.0,91.0,80.0,77.0,74.0,69.0],
+    "100m Breaststroke": [121.0,118.0,107.0,94.0,89.0,85.0,80.0],
+    "100m Butterfly": [121.0,119.0,106.0,86.0,80.0,73.0,70.0],
+    "200m Freestyle": [203.0,188.0,163.0,154.0,146.0,141.0,135.0],
+    "200m Backstroke": [233.0,213.0,190.0,172.0,163.0,158.0,153.0],
+    "200m Breaststroke": [260.0,237.0,225.0,203.0,193.0,181.0,177.0],
+    "200m Butterfly": [253.0,247.0,223.0,203.0,182.0,168.0,162.0],
+    "200m Individual Medley": [233.0,204.0,187.0,173.0,168.0,153.0,151.0],
+    "400m Individual Medley": [null,null,405.0,380.0,365.0,345.0,335.0],
+    "400m Freestyle": [425.0,390.0,356.0,331.0,315.0,295.0,283.0],
+    "800m Freestyle": [null,null,760.0,690.0,670.0,640.0,610.0],
+    "1500m Freestyle": [null,null,1445.0,1360.0,1280.0,1260.0,1200.0]
+  }
+};
+
+function clampAge(age, min, max){ return Math.max(min, Math.min(max, age)); }
+function cqtValue(table, sex, event, age, cols){
+  const arr = table[sex] && table[sex][event];
+  if (!arr) return null;
+  const maxAge = cols === 8 ? 17 : 16;
+  const v = arr[clampAge(age, 10, maxAge) - 10];
+  return (v === null || v === undefined) ? null : v;
+}
+function wcqtVal(sex, event, age){ return cqtValue(CQT_WCQT, sex, event, age, 8); }
+function lccqtVal(sex, event, age){ return cqtValue(CQT_LCCQT, sex, event, age, 7); }
+function lccqtlcVal(sex, event, age){ return cqtValue(CQT_LCCQTLC, sex, event, age, 7); }
+
+function parseTimeStr(s){
+  if (!s) return null;
+  const parts = String(s).trim().split(":").map(Number);
+  if (!parts.length || parts.some(isNaN)) return null;
+  let secs = 0;
+  for (const p of parts) secs = secs * 60 + p;
+  return secs > 0 ? secs : null;
+}
+function decYear(dateStr){
+  const d = new Date(dateStr + "T00:00:00");
+  const start = new Date(d.getFullYear(), 0, 1);
+  const end = new Date(d.getFullYear() + 1, 0, 1);
+  return d.getFullYear() + (d - start) / (end - start);
+}
+function secToTime(v){
+  if (v === null || v === undefined || v <= 0) return "";
+  const m = Math.floor(v / 60);
+  const s = (v % 60).toFixed(2).padStart(5, "0");
+  return m > 0 ? `${m}:${s}` : `${(+v).toFixed(2)}s`;
+}
+function linreg(points){
+  const n = points.length;
+  if (n < 2) return null;
+  let sx = 0, sy = 0, sxy = 0, sxx = 0;
+  points.forEach(p => { sx += p.x; sy += p.y; sxy += p.x * p.y; sxx += p.x * p.x; });
+  const denom = n * sxx - sx * sx;
+  if (denom === 0) return null;
+  const m = (n * sxy - sx * sy) / denom;
+  const b = (sy - m * sx) / n;
+  return { m, b };
+}
+function buildProjection(reg, fromX){
+  const pts = [];
+  let x = fromX;
+  while (x <= 2032){
+    const y = reg.m * x + reg.b;
+    if (y > 10) pts.push({ x, y });
+    x += 1 / 12;
+  }
+  return pts;
+}
+function buildCqtSteppedLine(fromYear, sex, event, birthYear, cqtFn){
+  const pts = [];
+  for (let y = fromYear; y <= 2031; y++){
+    const v = cqtFn(sex, event, y - birthYear);
+    if (v == null) continue;
+    pts.push({ x: y, y: v });
+    pts.push({ x: y + 0.999, y: v });
+  }
+  return pts;
+}
+function forecastCrossing(reg, fromX, sex, event, birthYear, cqtFn){
+  let x = fromX;
+  while (x <= 2032){
+    const target = cqtFn(sex, event, Math.floor(x) - birthYear);
+    if (target != null && (reg.m * x + reg.b) <= target) return Math.floor(x);
+    x += 1 / 12;
+  }
+  return null;
+}
+
+let miChart = null;
+let miSwimmer = null, miSex = null;
+let miAllSwimmers = [];
+let miEventRows = [];
+
+async function resetMIRegression(){
+  miSwimmer = null; miSex = null;
+  $("miSelectedPill").style.display = "none";
+  $("miSwimmerSearch").style.display = "block";
+  $("miSwimmerSearch").value = "";
+  $("miControls").style.display = "none";
+  $("miDobHint").textContent = "";
+  $("miResultArea").innerHTML = "";
+  document.querySelectorAll("#viewMIRegression .mi-sex-row .toggle-btn").forEach(b => b.classList.remove("active"));
+  if (miChart){ miChart.destroy(); miChart = null; }
+  if (!miAllSwimmers.length) await loadMISwimmers();
+}
+async function loadMISwimmers(){
+  const { data, error } = await sb.from("swimmers").select("id, full_name, squad, date_of_birth").eq("active", true).eq("club", selectedClub).order("full_name");
+  if (error){ console.error(error); return; }
+  miAllSwimmers = data || [];
+}
+
+const miSearchInput = $("miSwimmerSearch");
+const miAcResults = $("miAcResults");
+miSearchInput.addEventListener("input", () => {
+  const q = miSearchInput.value.trim().toLowerCase();
+  if (!q){ miAcResults.style.display = "none"; return; }
+  const matches = miAllSwimmers.filter(s => s.full_name.toLowerCase().includes(q)).slice(0, 25);
+  if (!matches.length){
+    miAcResults.innerHTML = '<div style="color:var(--text-dim);cursor:default;">No matches</div>';
+    miAcResults.style.display = "block";
+    return;
+  }
+  miAcResults.innerHTML = matches.map(s =>
+    `<div data-id="${s.id}">${s.full_name}${s.squad ? `<span class="squad-tag">${s.squad}</span>` : ""}</div>`
+  ).join("");
+  miAcResults.style.display = "block";
+});
+miAcResults.addEventListener("click", (e) => {
+  const row = e.target.closest("div[data-id]");
+  if (!row) return;
+  const s = miAllSwimmers.find(x => x.id === row.dataset.id);
+  miSelectSwimmer(s);
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#viewMIRegression .autocomplete-wrap")) miAcResults.style.display = "none";
+});
+$("miClearSwimmer").addEventListener("click", () => { resetMIRegression(); });
+
+async function miSelectSwimmer(s){
+  miSwimmer = s;
+  $("miSelectedName").textContent = s.full_name + (s.squad ? " · " + s.squad : "");
+  $("miSelectedPill").style.display = "flex";
+  miSearchInput.value = "";
+  miSearchInput.style.display = "none";
+  miAcResults.style.display = "none";
+  $("miDobHint").textContent = s.date_of_birth ? "" : "No date of birth on file for this swimmer — county-standard lines and forecasts need one (add it via Administrator).";
+  $("miControls").style.display = "block";
+  $("miResultArea").innerHTML = '<div class="mi-empty">Loading results…</div>';
+
+  // No implicit row cap here beyond this explicit .limit — high enough that a
+  // swimmer's full career archive across every event is always retrieved in one go
+  // (PostgREST's own default page size would otherwise silently truncate at 1000).
+  const { data, error } = await sb.from("swim_results")
+    .select("event, course, swim_time_display, meet_date, meet_name, age_at_swim, is_pb")
+    .eq("swimmer_id", s.id)
+    .order("meet_date", { ascending: true })
+    .limit(5000);
+  if (error){ console.error(error); $("miResultArea").innerHTML = '<div class="mi-empty">Could not load results.</div>'; return; }
+  miEventRows = data || [];
+
+  const events = [...new Set(miEventRows.map(r => r.event))].sort();
+  $("miEventSelect").innerHTML = '<option value="">— choose —</option>' + events.map(e => `<option value="${escapeAttr(e)}">${escapeHtml(e)}</option>`).join("");
+  $("miResultArea").innerHTML = events.length
+    ? '<div class="mi-empty">Choose an event and sex above to draw the chart.</div>'
+    : '<div class="mi-empty">No race results on record for this swimmer yet.</div>';
+}
+
+$("miEventSelect").addEventListener("change", renderMIChart);
+$("miSexFemaleBtn").addEventListener("click", () => setMISex("female"));
+$("miSexMaleBtn").addEventListener("click", () => setMISex("male"));
+function setMISex(sex){
+  miSex = sex;
+  $("miSexFemaleBtn").classList.toggle("active", sex === "female");
+  $("miSexMaleBtn").classList.toggle("active", sex === "male");
+  renderMIChart();
+}
+
+function renderMIChart(){
+  const el = $("miResultArea");
+  const event = $("miEventSelect").value;
+  if (!miSwimmer || !event || !miSex) return;
+
+  // miEventRows holds every swim_results row fetched for this swimmer (see the
+  // .limit(5000) above) — filtering here still leaves every attempt on record
+  // for this event, across both courses, so the chart and table below are
+  // always built from the full set, never a partial one.
+  const rows = miEventRows.filter(r => r.event === event);
+  const toPoints = list => list.map(r => {
+    const y = parseTimeStr(r.swim_time_display);
+    return y == null ? null : { x: decYear(r.meet_date), y, meet_date: r.meet_date, age: r.age_at_swim, is_pb: r.is_pb, meet_name: r.meet_name };
+  }).filter(Boolean).sort((a, b) => a.x - b.x);
+
+  const scPoints = toPoints(rows.filter(r => r.course === "SC"));
+  const lcPoints = toPoints(rows.filter(r => r.course === "LC"));
+
+  if (miChart){ miChart.destroy(); miChart = null; }
+
+  if (!scPoints.length && !lcPoints.length){
+    el.innerHTML = '<div class="mi-empty">No readable times on record for this event.</div>';
+    return;
+  }
+
+  const birthYear = miSwimmer.date_of_birth ? new Date(miSwimmer.date_of_birth + "T00:00:00").getFullYear() : null;
+  const scReg = scPoints.length >= 2 ? linreg(scPoints) : null;
+  const lcReg = lcPoints.length >= 2 ? linreg(lcPoints) : null;
+  const allPts = scPoints.concat(lcPoints);
+  const firstYear = Math.floor(Math.min(...allPts.map(p => p.x)));
+
+  const datasets = [];
+  if (scPoints.length) datasets.push({ label: "SC swims", data: scPoints, showLine: true, fill: false, tension: 0, borderColor: "#2a78d6", borderWidth: 2, backgroundColor: "#2a78d6", pointRadius: 5, pointStyle: "circle", pointBorderColor: "#fff", pointBorderWidth: 1.5 });
+  if (lcPoints.length) datasets.push({ label: "LC swims", data: lcPoints, showLine: true, fill: false, tension: 0, borderColor: "#0f7a3e", borderWidth: 2, backgroundColor: "#0f7a3e", pointRadius: 5, pointStyle: "triangle", pointBorderColor: "#fff", pointBorderWidth: 1.5 });
+
+  const flags = [];
+  if (scPoints.length === 1) flags.push("SC: 1 data point — no trend line possible. Race this event more to enable forecasting.");
+  if (scPoints.length === 2) flags.push("SC: 2 data points — trend is indicative only.");
+  if (scReg && scReg.m >= 0) flags.push("SC: no improvement trend detected.");
+  if (lcPoints.length === 1) flags.push("LC: 1 data point — no trend line possible. Race this event more to enable forecasting.");
+  if (lcPoints.length === 2) flags.push("LC: 2 data points — trend is indicative only.");
+  if (lcReg && lcReg.m >= 0) flags.push("LC: no improvement trend detected.");
+
+  if (scReg && scReg.m < 0){
+    const proj = buildProjection(scReg, scPoints[scPoints.length - 1].x);
+    if (proj.length) datasets.push({ label: "SC projection", data: proj, borderColor: "rgba(42,120,214,.4)", borderDash: [4, 2], borderWidth: 1.8, pointRadius: 0, fill: false });
+  }
+  if (lcReg && lcReg.m < 0){
+    const proj = buildProjection(lcReg, lcPoints[lcPoints.length - 1].x);
+    if (proj.length) datasets.push({ label: "LC projection", data: proj, borderColor: "rgba(15,122,62,.4)", borderDash: [4, 2], borderWidth: 1.8, pointRadius: 0, fill: false });
+  }
+
+  const forecasts = [];
+  if (birthYear){
+    if (scPoints.length){
+      const w = buildCqtSteppedLine(firstYear, miSex, event, birthYear, wcqtVal);
+      if (w.length) datasets.push({ label: "WCQT", data: w, borderColor: "#888780", borderDash: [5, 3], borderWidth: 1.5, pointRadius: 0, fill: false });
+      const l = buildCqtSteppedLine(firstYear, miSex, event, birthYear, lccqtVal);
+      if (l.length) datasets.push({ label: "LCCQT", data: l, borderColor: "#b07030", borderDash: [2, 3], borderWidth: 1.4, pointRadius: 0, fill: false });
+    }
+    if (lcPoints.length){
+      if (!scPoints.length){
+        const w = buildCqtSteppedLine(firstYear, miSex, event, birthYear, wcqtVal);
+        if (w.length) datasets.push({ label: "WCQT", data: w, borderColor: "#888780", borderDash: [5, 3], borderWidth: 1.5, pointRadius: 0, fill: false });
+      }
+      const ll = buildCqtSteppedLine(firstYear, miSex, event, birthYear, lccqtlcVal);
+      if (ll.length) datasets.push({ label: "LCCQTLC", data: ll, borderColor: "#1a8c64", borderDash: [3, 2], borderWidth: 1.4, pointRadius: 0, fill: false });
+    }
+    if (scReg && scReg.m < 0){
+      const yW = forecastCrossing(scReg, scPoints[scPoints.length - 1].x, miSex, event, birthYear, wcqtVal);
+      if (yW) forecasts.push(`WCQT (from SC trend): ~${yW}`);
+      const yL = forecastCrossing(scReg, scPoints[scPoints.length - 1].x, miSex, event, birthYear, lccqtVal);
+      if (yL) forecasts.push(`LCCQT (from SC trend): ~${yL}`);
+    }
+    if (lcReg && lcReg.m < 0){
+      const yW = forecastCrossing(lcReg, lcPoints[lcPoints.length - 1].x, miSex, event, birthYear, wcqtVal);
+      if (yW) forecasts.push(`WCQT (from LC trend): ~${yW}`);
+      const yLL = forecastCrossing(lcReg, lcPoints[lcPoints.length - 1].x, miSex, event, birthYear, lccqtlcVal);
+      if (yLL) forecasts.push(`LCCQTLC (from LC trend): ~${yLL}`);
+    }
+  }
+
+  // Every attempt on record for this swimmer + event (both courses), newest first.
+  const attempts = scPoints.map(p => ({ ...p, course: "SC" }))
+    .concat(lcPoints.map(p => ({ ...p, course: "LC" })))
+    .sort((a, b) => b.meet_date.localeCompare(a.meet_date) || b.x - a.x);
+
+  const attemptsTableHtml = `
+    <div class="mi-chart-card">
+      <div class="mi-chart-title">All attempts — ${escapeHtml(event)} <span class="mi-chart-sub" style="display:inline;margin:0;">(${attempts.length})</span></div>
+      <table class="mi-table">
+        <thead><tr><th>Date</th><th>Course</th><th>Time</th><th>Meet</th></tr></thead>
+        <tbody>
+          ${attempts.map(a => `<tr>
+            <td>${fmtDate(a.meet_date)}</td>
+            <td><span class="mi-course-badge ${a.course}">${a.course}</span></td>
+            <td>${secToTime(a.y)}${a.is_pb ? '<span class="mi-pb-tag">PB</span>' : ""}</td>
+            <td>${escapeHtml(a.meet_name || "")}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
+
+  el.innerHTML = `
+    <div class="mi-chart-card">
+      <div class="mi-chart-title">${escapeHtml(miSwimmer.full_name)} — ${escapeHtml(event)}
+        ${scPoints.length ? '<span class="mi-course-badge SC">SC</span>' : ""}
+        ${lcPoints.length ? '<span class="mi-course-badge LC">LC</span>' : ""}
+      </div>
+      <div class="mi-chart-sub">${scPoints.length + lcPoints.length} race${(scPoints.length + lcPoints.length) === 1 ? "" : "s"} on record${miSex ? " · " + (miSex === "female" ? "Female" : "Male") + " standards" : ""}</div>
+      ${forecasts.length ? `<div class="mi-forecast-badges">${forecasts.map(f => `<span class="mi-forecast-badge">${escapeHtml(f)}</span>`).join("")}</div>` : ""}
+      <div class="mi-canvas-wrap"><canvas id="miCanvas"></canvas></div>
+      ${(flags.length || !birthYear) ? `<div class="mi-flags">
+        ${!birthYear ? '<div class="mi-flag">⚠ No date of birth on file — county-standard lines and forecasts are unavailable for this swimmer.</div>' : ""}
+        ${flags.map(f => `<div class="mi-flag">⚠ ${escapeHtml(f)}</div>`).join("")}
+      </div>` : ""}
+    </div>
+    ${attemptsTableHtml}`;
+
+  const ctx = $("miCanvas").getContext("2d");
+  miChart = new Chart(ctx, {
+    type: "line",
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      parsing: false,
+      scales: {
+        x: { type: "linear", min: firstYear, max: 2031.5, ticks: { callback: v => (Math.round(v) === v ? String(Math.round(v)) : "") } },
+        y: { ticks: { callback: v => secToTime(v) } }
+      },
+      plugins: {
+        legend: { display: true, position: "bottom", labels: { boxWidth: 12, font: { size: 10 } } },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${secToTime(c.parsed.y)}` } }
+      }
+    }
+  });
+}
+
+// ===================================================================
+// Boot
+// ===================================================================
+initClubSelector().then(() => {
+  resetAttendanceSetup();
+  loadSwimmers();
+  loadRecent();
+  loadFbSquadOptions();
+});
+</script>
+
+</body>
+</html>
