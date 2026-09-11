@@ -17,6 +17,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
   :root{
     --navy:#0b2545;
@@ -470,6 +471,11 @@
     border-radius:20px;padding:2px 8px;
   }
   .plan-tag.dist{background:var(--accent);}
+  .plan-li-pdf-btn{
+    flex-shrink:0;background:none;border:1.5px solid var(--border);border-radius:8px;
+    padding:4px 10px;font-weight:700;font-size:.7rem;color:var(--navy);cursor:pointer;
+  }
+  .plan-li-pdf-btn:active{background:var(--grey-bg);}
 
   /* Editor blocks */
   .blk{
@@ -927,7 +933,10 @@
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
         <h2 id="pvTitle" style="text-transform:none;letter-spacing:0;font-size:1.1rem;color:var(--navy);margin:0;"></h2>
-        <button id="editPlanBtn" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;font-weight:700;font-size:.78rem;color:var(--navy);cursor:pointer;flex-shrink:0;">Edit</button>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button id="pdfPlanBtn" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;font-weight:700;font-size:.78rem;color:var(--navy);cursor:pointer;">PDF</button>
+          <button id="editPlanBtn" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;font-weight:700;font-size:.78rem;color:var(--navy);cursor:pointer;">Edit</button>
+        </div>
       </div>
       <div class="plan-li-meta" id="pvMeta" style="margin-bottom:10px;"></div>
       <div id="pvBody"></div>
@@ -1513,13 +1522,23 @@ function renderPlanList(plans){
     if (p.intended_date) meta.push("For " + fmtDate(p.intended_date));
     meta.push("Updated " + fmtDate(p.updated_at.slice(0,10)));
     return `<div class="plan-list-item" data-id="${p.id}">
-      <div class="plan-li-title">${escapeHtml(p.title)}</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div class="plan-li-title">${escapeHtml(p.title)}</div>
+        <button class="plan-li-pdf-btn" data-pdf-id="${p.id}" title="Download / share PDF">PDF</button>
+      </div>
       <div class="plan-li-meta">${meta.join(" · ")}</div>
       ${tags.length ? `<div class="plan-li-tags">${tags.join("")}</div>` : ""}
     </div>`;
   }).join("");
   el.querySelectorAll(".plan-list-item").forEach(item => {
     item.addEventListener("click", () => openPlanViewer(item.dataset.id));
+  });
+  el.querySelectorAll(".plan-li-pdf-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const plan = allPlans.find(p => p.id === btn.dataset.pdfId);
+      if (plan) sharePlanPdf(plan);
+    });
   });
 }
 $("planSearch").addEventListener("input", () => {
@@ -1576,6 +1595,149 @@ function renderPlanReadonly(content){
   }).join("");
 }
 $("editPlanBtn").addEventListener("click", () => { if (viewingPlan) openEditor(viewingPlan); });
+$("pdfPlanBtn").addEventListener("click", () => { if (viewingPlan) sharePlanPdf(viewingPlan); });
+
+// --- PDF export / share ---
+function planPdfFilename(plan){
+  const datePart = plan.intended_date || (plan.updated_at ? plan.updated_at.slice(0,10) : new Date().toISOString().slice(0,10));
+  const safeTitle = (plan.title || "session-plan").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return `${safeTitle || "session-plan"}-${datePart}.pdf`;
+}
+
+function buildPlanPdf(plan){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const marginL = 40, pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
+  const usableW = pageW - marginL - 40;
+  let y = 96;
+
+  function ensureSpace(h){
+    if (y + h > pageH - 40){ doc.addPage(); y = 50; }
+  }
+
+  // Header band
+  doc.setFillColor(11, 37, 69);
+  doc.rect(0, 0, pageW, 74, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text(doc.splitTextToSize(plan.title || "Session Plan", pageW - 80), marginL, 36);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  const metaBits = [];
+  if (plan.intended_date) metaBits.push("For " + fmtDate(plan.intended_date));
+  if (plan.squad_scope) metaBits.push(plan.squad_scope);
+  if (plan.pool_size) metaBits.push(plan.pool_size + " pool");
+  if (plan.total_distance_m) metaBits.push(plan.total_distance_m.toLocaleString() + "m total");
+  doc.text(metaBits.join("   ·   "), marginL, 58);
+
+  doc.setTextColor(26, 35, 50);
+
+  (plan.content || []).forEach(b => {
+    if (b.type === "heading"){
+      ensureSpace(22);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(11, 37, 69);
+      doc.text(b.text || "", marginL, y);
+      if (b.underline){
+        const w = doc.getTextWidth(b.text || "");
+        doc.setLineWidth(1);
+        doc.setDrawColor(11, 37, 69);
+        doc.line(marginL, y + 3, marginL + w, y + 3);
+      }
+      y += 22;
+      doc.setTextColor(26, 35, 50);
+    } else if (b.type === "set"){
+      const p = parseSetLine(b.text);
+      const distTxt = p ? `  (${p.distance_m}m)` : "";
+      const wrapped = doc.splitTextToSize((b.text || "") + distTxt, usableW - 12);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.5);
+      wrapped.forEach((ln, idx) => {
+        ensureSpace(15);
+        doc.text((idx === 0 ? "•  " : "    ") + ln, marginL, y);
+        y += 15;
+      });
+    } else if (b.type === "repeat_group"){
+      const inner = (b.children || []).reduce((s, ch) => s + blockDistance(ch), 0);
+      const total = (Number(b.reps) || 0) * inner;
+      ensureSpace(15);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.text(`${b.reps} x  (${total}m)`, marginL, y);
+      y += 15;
+      (b.children || []).forEach(ch => {
+        const p = parseSetLine(ch.text);
+        const distTxt = p ? `  (${p.distance_m}m)` : "";
+        const wrapped = doc.splitTextToSize((ch.text || "") + distTxt, usableW - 26);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        wrapped.forEach((ln, idx) => {
+          ensureSpace(14);
+          doc.text((idx === 0 ? "    –  " : "       ") + ln, marginL, y);
+          y += 14;
+        });
+      });
+      y += 4;
+    } else if (b.type === "note"){
+      const wrapped = doc.splitTextToSize(b.text || "", usableW - 12);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9.5);
+      doc.setTextColor(91, 107, 127);
+      wrapped.forEach(ln => {
+        ensureSpace(13);
+        doc.text(ln, marginL, y);
+        y += 13;
+      });
+      doc.setTextColor(26, 35, 50);
+      y += 4;
+    }
+  });
+
+  if (plan.notes){
+    y += 8;
+    ensureSpace(16);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Notes", marginL, y);
+    y += 14;
+    const wrapped = doc.splitTextToSize(plan.notes, usableW);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(91, 107, 127);
+    wrapped.forEach(ln => {
+      ensureSpace(13);
+      doc.text(ln, marginL, y);
+      y += 13;
+    });
+  }
+
+  return doc;
+}
+
+// Generates the PDF then tries the native share sheet (covers messenger apps
+// and, on iOS/Android, the Print option) before falling back to a plain download.
+async function sharePlanPdf(plan){
+  if (!plan) return;
+  if (!window.jspdf){ alert("PDF library failed to load — check your connection and try again."); return; }
+  const doc = buildPlanPdf(plan);
+  const filename = planPdfFilename(plan);
+  const blob = doc.output("blob");
+  const file = new File([blob], filename, { type: "application/pdf" });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })){
+    try {
+      await navigator.share({ files: [file], title: plan.title || "Session Plan" });
+      return;
+    } catch (e) {
+      if (e && e.name === "AbortError") return; // user cancelled the share sheet
+      console.error(e); // fall through to plain download below
+    }
+  }
+  doc.save(filename);
+}
 
 // --- small escapers ---
 function escapeHtml(s){ return (s==null?"":String(s)).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
