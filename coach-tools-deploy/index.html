@@ -48,6 +48,19 @@
   }
   header h1{margin:0;font-size:1.3rem;font-weight:700;letter-spacing:.2px;}
   header p{margin:4px 0 0;font-size:.85rem;color:#b9cbe0;}
+  .club-switcher{margin-top:14px;display:flex;align-items:center;gap:8px;}
+  .club-switcher label{font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;color:#b9cbe0;font-weight:700;}
+  .club-switcher select{
+    flex:1;
+    background:rgba(255,255,255,.12);
+    border:1.5px solid rgba(255,255,255,.35);
+    color:#fff;
+    border-radius:8px;
+    padding:8px 10px;
+    font-size:.85rem;
+    font-weight:700;
+  }
+  .club-switcher select option{color:var(--text);}
   main{
     max-width:560px;
     margin:-16px auto 0;
@@ -593,6 +606,10 @@
 <header>
   <h1>Coach Tools</h1>
   <p>Attendance · Feedback · Session planning</p>
+  <div class="club-switcher">
+    <label for="clubSelect">Club</label>
+    <select id="clubSelect"><option value="Crawley Swimming Club">Crawley Swimming Club</option></select>
+  </div>
 </header>
 
 <main>
@@ -648,10 +665,9 @@
     <a class="back-home" id="backHome1">Home</a>
     <div class="card">
       <h2>Squad</h2>
-      <div class="scope-row">
-        <button type="button" class="scope-btn active" id="attScopeCDJ">CDJ squad</button>
-        <button type="button" class="scope-btn" id="attScopeAll">Whole club</button>
-      </div>
+      <select id="attSquadSelect">
+        <option value="ALL">Whole club</option>
+      </select>
 
       <h2 style="margin-top:6px;">Session</h2>
       <label for="attDate">Date</label>
@@ -960,6 +976,7 @@
     <a class="back-home" id="backMI1">Management Information</a>
     <div class="card">
       <h2>Swimmer &amp; event</h2>
+      <p class="hint" style="margin-top:-6px;">Searches swimmers across every club on file — not just the one selected above — since this tool is for competitive benchmarking.</p>
       <div class="autocomplete-wrap">
         <input type="text" id="miSwimmerSearch" placeholder="Start typing a name…" autocomplete="off">
         <div class="ac-results" id="miAcResults"></div>
@@ -1143,6 +1160,34 @@ const SUPABASE_KEY = "sb_publishable_BYuKct-F0f4H04Gl_S58uQ_gKzuW_Ff";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const $ = id => document.getElementById(id);
+
+// ===================================================================
+// TOP-LEVEL CLUB FILTER
+// Every swimmer/squad/session-plan query in the app is scoped to
+// currentClub, except the Management Information regression tool,
+// which is deliberately cross-club (used for competitive benchmarking
+// against other clubs' swimmers).
+// ===================================================================
+let currentClub = localStorage.getItem("coachToolsClub") || "Crawley Swimming Club";
+
+async function loadClubOptions(){
+  const sel = $("clubSelect");
+  const { data, error } = await sb.from("swimmers").select("club");
+  if (error){ console.error(error); return; }
+  const clubs = [...new Set((data || []).map(r => r.club).filter(Boolean))].sort();
+  if (!clubs.length) clubs.push(currentClub);
+  if (!clubs.includes(currentClub)) currentClub = clubs[0];
+  sel.innerHTML = clubs.map(c =>
+    `<option value="${escapeAttr(c)}"${c === currentClub ? " selected" : ""}>${escapeHtml(c)}</option>`
+  ).join("");
+}
+$("clubSelect").addEventListener("change", () => {
+  currentClub = $("clubSelect").value;
+  localStorage.setItem("coachToolsClub", currentClub);
+  loadSwimmers();      // refresh the feedback swimmer cache for the new club
+  showView("viewHome"); // drop out of any in-progress flow scoped to the old club
+});
+loadClubOptions();
 
 function fmtDate(d){
   const dt = new Date(d + "T00:00:00");
@@ -1488,7 +1533,7 @@ $("savePlanBtn").addEventListener("click", async () => {
   if (editingPlanId){
     ({ error } = await sb.from("session_plans").update(payload).eq("id", editingPlanId));
   } else {
-    ({ error } = await sb.from("session_plans").insert(payload));
+    ({ error } = await sb.from("session_plans").insert({ ...payload, club: currentClub }));
   }
   $("savePlanBtn").disabled = false;
 
@@ -1505,6 +1550,7 @@ async function loadPlanList(){
   const { data, error } = await sb
     .from("session_plans")
     .select("id, title, total_distance_m, squad_scope, pool_size, intended_date, updated_at, content")
+    .eq("club", currentClub)
     .order("updated_at", { ascending: false });
   if (error){ el.innerHTML = '<div class="empty">Could not load plans.</div>'; console.error(error); return; }
   allPlans = data || [];
@@ -1751,6 +1797,7 @@ async function populateFbPlanSelect(preselectId){
   const { data, error } = await sb
     .from("session_plans")
     .select("id, title, intended_date, total_distance_m")
+    .eq("club", currentClub)
     .order("updated_at", { ascending: false })
     .limit(100);
   if (error){ console.error(error); return; }
@@ -1768,7 +1815,7 @@ async function populateFbPlanSelect(preselectId){
 // ===================================================================
 // ATTENDANCE
 // ===================================================================
-let attScope = "CDJ";
+let attScope = "ALL";
 let attSwimmers = [];      // [{id, full_name, present}]
 let attIndex = 0;
 let attMode = "swipe";
@@ -1781,6 +1828,7 @@ function resetAttendanceSetup(){
   $("attSetupMsg").textContent = "";
   $("attSetupMsg").className = "msg";
   populateAttPlanSelect();
+  loadAttSquadOptions();
 }
 
 async function populateAttPlanSelect(){
@@ -1788,6 +1836,7 @@ async function populateAttPlanSelect(){
   const { data, error } = await sb
     .from("session_plans")
     .select("id, title, intended_date, pool_size, total_distance_m")
+    .eq("club", currentClub)
     .order("updated_at", { ascending: false })
     .limit(100);
   if (error){ console.error(error); return; }
@@ -1801,12 +1850,19 @@ async function populateAttPlanSelect(){
   sel.innerHTML = opts.join("");
 }
 
-$("attScopeCDJ").addEventListener("click", () => setAttScope("CDJ"));
-$("attScopeAll").addEventListener("click", () => setAttScope("ALL"));
-function setAttScope(s){
-  attScope = s;
-  $("attScopeCDJ").classList.toggle("active", s === "CDJ");
-  $("attScopeAll").classList.toggle("active", s === "ALL");
+$("attSquadSelect").addEventListener("change", () => {
+  attScope = $("attSquadSelect").value;
+});
+// Populate the attendance squad dropdown from the squads table, scoped to currentClub.
+async function loadAttSquadOptions(){
+  const sel = $("attSquadSelect");
+  const { data, error } = await sb.from("squads").select("name").eq("club", currentClub).order("name");
+  if (error){ console.error(error); return; }
+  const opts = ['<option value="ALL">Whole club</option>'];
+  (data || []).forEach(q => opts.push(`<option value="${escapeAttr(q.name)}">${escapeHtml(q.name)}</option>`));
+  sel.innerHTML = opts.join("");
+  attScope = "ALL";
+  sel.value = "ALL";
 }
 
 document.querySelectorAll("#poolGrid .pool-btn").forEach(btn => {
@@ -1842,8 +1898,8 @@ $("startAttendanceBtn").addEventListener("click", async () => {
   msg.textContent = "Loading swimmers…"; msg.className = "msg";
 
   // Swimmers in scope
-  let sq = sb.from("swimmers").select("id, full_name, squad").eq("active", true).order("full_name");
-  if (attScope === "CDJ") sq = sq.eq("squad", "CDJ");
+  let sq = sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club", currentClub).order("full_name");
+  if (attScope !== "ALL") sq = sq.eq("squad", attScope);
   const { data: swimmers, error: sErr } = await sq;
   $("startAttendanceBtn").disabled = false;
   if (sErr){ msg.textContent = "Could not load swimmers — " + sErr.message; msg.className = "msg err"; return; }
@@ -1866,7 +1922,7 @@ $("startAttendanceBtn").addEventListener("click", async () => {
   }));
   attIndex = 0;
 
-  const sessionLabel = `${fmtDate(date)} · ${time} · ${attSession.pool} · ${attScope === "CDJ" ? "CDJ squad" : "Whole club"}`;
+  const sessionLabel = `${fmtDate(date)} · ${time} · ${attSession.pool} · ${attScope === "ALL" ? "Whole club" : attScope} · ${currentClub}`;
   $("sessionInfoLine").textContent = sessionLabel;
 
   if (attMode === "swipe"){
@@ -2105,22 +2161,23 @@ function mediaGridHtml(mediaArr){
 }
 
 async function loadSwimmers(){
-  let query = sb.from("swimmers").select("id, full_name, squad").eq("active", true).order("full_name");
+  let query = sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club", currentClub).order("full_name");
   if (scope && scope !== "ALL") query = query.eq("squad", scope);
   const { data, error } = await query;
   if (error){ console.error(error); return; }
   allSwimmers = data || [];
 }
 
-// Populate the feedback squad dropdown from the squads table.
+// Populate the feedback squad dropdown from the squads table, scoped to currentClub.
 async function loadFbSquadOptions(){
   const sel = $("fbSquadSelect");
-  const { data, error } = await sb.from("squads").select("name").order("name");
+  const { data, error } = await sb.from("squads").select("name").eq("club", currentClub).order("name");
   if (error){ console.error(error); return; }
   const opts = ['<option value="ALL">All squads (whole club)</option>'];
   (data || []).forEach(q => opts.push(`<option value="${escapeHtml(q.name)}">${escapeHtml(q.name)}</option>`));
   sel.innerHTML = opts.join("");
-  sel.value = scope;
+  scope = "ALL";
+  sel.value = "ALL";
 }
 
 $("fbSquadSelect").addEventListener("change", () => {
@@ -2573,7 +2630,7 @@ $("submitBtn").addEventListener("click", async () => {
 
 // --- Shared: load squads into any <select> ---
 async function loadSquadsInto(selectEl, includeBlank){
-  const { data, error } = await sb.from("squads").select("id, name").order("name");
+  const { data, error } = await sb.from("squads").select("id, name").eq("club", currentClub).order("name");
   if (error){ console.error(error); return []; }
   const opts = includeBlank ? ['<option value="">— choose a squad —</option>'] : [];
   (data || []).forEach(q => opts.push(`<option value="${q.id}">${escapeHtml(q.name)}</option>`));
@@ -2588,6 +2645,7 @@ async function loadSquadEditList(){
   const { data, error } = await sb
     .from("squads")
     .select("id, name, swimmers(count)")
+    .eq("club", currentClub)
     .order("name");
   if (error){ el.innerHTML = '<div class="empty">Could not load squads.</div>'; console.error(error); return; }
   if (!data || !data.length){ el.innerHTML = '<div class="empty">No squads yet — add one above.</div>'; return; }
@@ -2624,7 +2682,7 @@ $("addSquadBtn").addEventListener("click", async () => {
   const name = $("newSquadName").value.trim();
   if (!name){ msg.textContent = "Enter a squad name."; msg.className = "msg err"; return; }
   $("addSquadBtn").disabled = true;
-  const { error } = await sb.from("squads").insert({ name });
+  const { error } = await sb.from("squads").insert({ name, club: currentClub });
   $("addSquadBtn").disabled = false;
   if (error){
     msg.textContent = error.message.includes("duplicate") ? "That squad already exists." : "Add failed — " + error.message;
@@ -2674,6 +2732,7 @@ $("addMemberBtn").addEventListener("click", async () => {
     full_name,
     date_of_birth: dob,
     squad_id,
+    club: currentClub,
     swim_england_id: $("amSeId").value.trim() || null,
     joined_club_on,
     parent_name: $("amParentName").value.trim() || null,
@@ -2716,8 +2775,8 @@ function openMoveSquad(){
   $("moveMsg").textContent = "";
   $("moveDate").value = new Date().toISOString().slice(0,10);
   loadSquadsInto($("moveNewSquad"), true);
-  // load all swimmers (whole club) for search
-  sb.from("swimmers").select("id, full_name, squad, squad_id").eq("active", true).order("full_name")
+  // load all swimmers for the currently selected club, for search
+  sb.from("swimmers").select("id, full_name, squad, squad_id").eq("active", true).eq("club", currentClub).order("full_name")
     .then(({ data }) => { moveSwimmers = data || []; });
   showView("viewAdminMove");
 }
@@ -3279,10 +3338,10 @@ async function resetSwimmerProfile(){
   $("swpContent").style.display = "none";
   $("swpEventDetailCard").style.display = "none";
   if (swpChart){ swpChart.destroy(); swpChart = null; }
-  if (!swpAllSwimmers.length) await loadSwpSwimmers();
+  await loadSwpSwimmers();  // always fresh — the selected club may have changed
 }
 async function loadSwpSwimmers(){
-  const { data, error } = await sb.from("swimmers").select("id, full_name, squad").eq("active", true).order("full_name");
+  const { data, error } = await sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club", currentClub).order("full_name");
   if (error){ console.error(error); return; }
   swpAllSwimmers = data || [];
 }
