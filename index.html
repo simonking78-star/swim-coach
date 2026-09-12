@@ -644,6 +644,99 @@
   .mi-table tr:last-child td{border-bottom:none;}
   .mi-table td:last-child{white-space:normal;color:var(--text-dim);font-size:.8rem;}
   .mi-pb-tag{font-size:.6rem;font-weight:800;background:#e6f4e8;color:var(--green);border-radius:20px;padding:1px 7px;margin-left:6px;}
+
+  /* ===== Drills & Skills library ===== */
+  .drills-toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+  .drill-search{flex:1;min-width:140px;}
+  .drill-stroke-filter{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:10px;-webkit-overflow-scrolling:touch;}
+  .drill-stroke-chip{
+    flex-shrink:0;font-size:.72rem;font-weight:700;padding:5px 11px;border-radius:20px;
+    border:1.5px solid var(--border);color:var(--text-dim);cursor:pointer;white-space:nowrap;background:#fff;
+  }
+  .drill-stroke-chip.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .drill-tile-grid{display:flex;flex-direction:column;gap:10px;padding-bottom:70px;}
+  .drill-tile{
+    background:var(--card);border:1.5px solid var(--border);border-radius:12px;
+    padding:12px 40px 12px 40px;position:relative;box-shadow:0 3px 12px rgba(11,37,69,.06);cursor:pointer;
+  }
+  .drill-tile:active{background:#f7f9fb;}
+  .drill-tile.selected{border-color:var(--accent);background:#f2fbff;}
+  .drill-tile-check{position:absolute;left:11px;top:14px;width:19px;height:19px;accent-color:var(--accent);}
+  .drill-tile-actions{position:absolute;right:8px;top:8px;display:flex;gap:4px;}
+  .drill-tile-actions button{
+    background:none;border:1.5px solid var(--border);border-radius:8px;padding:3px 8px;
+    font-size:.72rem;font-weight:700;color:var(--navy);cursor:pointer;
+  }
+  .drill-tile-actions button:active{background:var(--grey-bg);}
+  .drill-tile-stroke{
+    display:inline-block;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+    color:#fff;background:var(--navy-light);border-radius:20px;padding:2px 8px;margin-bottom:5px;
+  }
+  .drill-tile-name{font-weight:700;color:var(--navy);font-size:.98rem;padding-right:60px;}
+  .drill-tile-purpose{font-size:.78rem;color:var(--text-dim);margin-top:3px;}
+  .drill-tile-pseudo{font-size:.68rem;color:var(--text-dim);margin-top:5px;font-style:italic;}
+  .drill-tile-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+  .drill-tile-tags span{font-size:.62rem;font-weight:700;background:#eef4fb;color:var(--navy);border-radius:20px;padding:2px 8px;}
+
+  .attach-bar{
+    position:fixed;left:0;right:0;bottom:0;background:var(--navy);color:#fff;padding:11px 16px;
+    display:none;align-items:center;justify-content:space-between;gap:10px;z-index:150;
+    box-shadow:0 -4px 16px rgba(0,0,0,.2);
+  }
+  .attach-bar.active{display:flex;}
+  .attach-bar-label{font-size:.85rem;font-weight:600;}
+  .attach-bar-actions{display:flex;gap:8px;}
+  .attach-bar button{border:none;font-weight:700;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:.82rem;}
+  .attach-bar-go{background:var(--accent);color:#fff;}
+  .attach-bar-clear{background:rgba(255,255,255,.15);color:#fff;}
+
+  /* Generic modal overlay, reused for drill info / edit / attach */
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(11,37,69,.55);z-index:300;
+    align-items:center;justify-content:center;padding:16px;
+  }
+  .modal-overlay.active{display:flex;}
+  .modal-card{
+    background:#fff;border-radius:14px;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;
+    padding:20px 18px 18px;position:relative;
+  }
+  .modal-close{
+    position:absolute;top:10px;right:10px;background:none;border:none;font-size:1.3rem;
+    line-height:1;cursor:pointer;color:var(--text-dim);padding:4px;
+  }
+  .modal-card h2{margin:0 0 14px;font-size:1.05rem;color:var(--navy);letter-spacing:0;text-transform:none;padding-right:24px;}
+  .di-row{margin-bottom:10px;}
+  .di-label{font-size:.66rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);font-weight:700;margin-bottom:2px;}
+  .di-value{font-size:.9rem;color:var(--text);}
+  .di-value.empty{color:#aab4c0;font-style:italic;}
+
+  .peri-grid{width:100%;border-collapse:collapse;margin-top:6px;font-size:.72rem;}
+  .peri-grid th{background:#f2f6fb;font-size:.62rem;text-transform:uppercase;color:var(--text-dim);padding:5px 4px;text-align:left;}
+  .peri-grid td{padding:3px 4px;border-bottom:1px solid #f0f2f5;vertical-align:top;}
+  .peri-grid input{width:100%;padding:5px 6px;font-size:.72rem;border:1px solid var(--border);border-radius:6px;}
+  .peri-grid input.peri-dist{width:52px;}
+
+  .drill-pick-list{max-height:260px;overflow-y:auto;margin-top:8px;}
+  .drill-pick-item{padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;font-size:.85rem;cursor:pointer;}
+  .drill-pick-item:active{background:var(--grey-bg);}
+  .drill-pick-item .dpi-stroke{font-size:.6rem;color:var(--text-dim);text-transform:uppercase;}
+
+  .drill-blk{background:#f5faff;border-color:#cfe4f5;}
+  .drill-blk-name{font-weight:700;color:var(--navy);font-size:.92rem;margin:4px 0 8px;}
+  .pv-drill{
+    font-size:.88rem;margin:4px 0;color:var(--accent);font-weight:700;cursor:pointer;
+    text-decoration:underline dotted;text-underline-offset:3px;
+  }
+
+  /* Set-line drill-name predictive matches */
+  .setline-ac{
+    display:none;position:fixed;z-index:400;background:#fff;border:1px solid var(--border);
+    border-radius:10px;box-shadow:0 8px 24px rgba(11,37,69,.18);max-height:220px;overflow-y:auto;min-width:180px;
+  }
+  .setline-ac div{padding:8px 12px;font-size:.82rem;cursor:pointer;border-bottom:1px solid #f0f2f5;}
+  .setline-ac div:last-child{border-bottom:none;}
+  .setline-ac div:hover,.setline-ac div.active{background:var(--grey-bg);}
+  .setline-ac .sla-stroke{font-size:.62rem;color:var(--text-dim);text-transform:uppercase;margin-left:6px;}
 </style>
 </head>
 <body>
@@ -676,6 +769,9 @@
   </div>
   <div class="nav-item" id="navSession" data-nav="session">
     <span class="nav-icon">🗓️</span> Session Plan
+  </div>
+  <div class="nav-item" id="navDrills" data-nav="drills">
+    <span class="nav-icon">🎯</span> Drills &amp; Skills
   </div>
   <div class="nav-item" id="navMI" data-nav="mi">
     <span class="nav-icon">📊</span> Statistics
@@ -719,6 +815,13 @@
         <div>
           <div class="ht-title">Session Plan</div>
           <div class="ht-sub">Write &amp; archive plans, link to sessions</div>
+        </div>
+      </div>
+      <div class="home-tile" id="tileDrills">
+        <div class="ht-icon">🎯</div>
+        <div>
+          <div class="ht-title">Drills &amp; Skills</div>
+          <div class="ht-sub">Library of drills — attach straight into a session plan</div>
         </div>
       </div>
       <div class="home-tile" id="tileMI">
@@ -986,8 +1089,9 @@
         <button class="add-block-btn" data-add="set">+ Set line</button>
         <button class="add-block-btn" data-add="repeat_group">+ Repeat</button>
       </div>
-      <div class="add-block-row" style="grid-template-columns:1fr;">
+      <div class="add-block-row" style="grid-template-columns:1fr 1fr;">
         <button class="add-block-btn" data-add="note">+ Note</button>
+        <button type="button" class="add-block-btn" id="addDrillBlockBtn">+ Drill</button>
       </div>
 
       <div id="blocksContainer"></div>
@@ -1034,6 +1138,124 @@
       </div>
       <div class="plan-li-meta" id="pvMeta" style="margin-bottom:10px;"></div>
       <div id="pvBody"></div>
+    </div>
+  </div>
+
+  <!-- ============ DRILLS & SKILLS LIBRARY ============ -->
+  <div class="view" id="viewDrillsLibrary">
+    <a class="back-home" id="backHomeDrills">Home</a>
+    <div class="drills-toolbar">
+      <input type="text" id="drillSearch" class="drill-search" placeholder="Search drills, pseudonyms…" autocomplete="off">
+      <button class="sp-primary-btn" id="newDrillBtn" style="flex:0 0 auto;padding:10px 14px;">+ New drill</button>
+    </div>
+    <div class="drill-stroke-filter" id="drillStrokeFilter"></div>
+    <div id="drillTileGrid" class="drill-tile-grid"><div class="empty">Loading drills…</div></div>
+  </div>
+
+  <div class="attach-bar" id="attachBar">
+    <div class="attach-bar-label" id="attachBarLabel">0 selected</div>
+    <div class="attach-bar-actions">
+      <button class="attach-bar-clear" id="attachClearBtn">Clear</button>
+      <button class="attach-bar-go" id="attachGoBtn">Attach to plan ▸</button>
+    </div>
+  </div>
+
+  <!-- Drill info pop-up (read-only) -->
+  <div class="modal-overlay" id="drillInfoModal">
+    <div class="modal-card">
+      <button class="modal-close" id="drillInfoClose">✕</button>
+      <div id="drillInfoBody"></div>
+    </div>
+  </div>
+
+  <!-- Drill create/edit modal -->
+  <div class="modal-overlay" id="drillEditModal">
+    <div class="modal-card">
+      <button class="modal-close" id="drillEditClose">✕</button>
+      <h2 id="drillEditTitle">New drill</h2>
+      <div class="di-row">
+        <label for="deStroke">Stroke / Skills</label>
+        <input type="text" id="deStroke" placeholder="e.g. Frontcrawl">
+      </div>
+      <div class="di-row">
+        <label for="deName">Drill name</label>
+        <input type="text" id="deName" placeholder="e.g. Zip">
+      </div>
+      <div class="di-row">
+        <label for="dePseudo">Pseudonyms <span class="opt">(comma separated)</span></label>
+        <input type="text" id="dePseudo" placeholder="Finger drag, Thumb drag">
+      </div>
+      <div class="di-row">
+        <label for="dePurpose">Primary purpose</label>
+        <textarea id="dePurpose" placeholder="What this drill develops"></textarea>
+      </div>
+      <div class="di-row">
+        <label for="deBlabt">BLABT / focus</label>
+        <input type="text" id="deBlabt" placeholder="e.g. Arms, Body">
+      </div>
+      <div class="di-row">
+        <label for="deBiomech">Biomechanical</label>
+        <textarea id="deBiomech" placeholder="Biomechanical notes"></textarea>
+      </div>
+      <div class="di-row">
+        <label for="deEquip">Equipment</label>
+        <textarea id="deEquip" placeholder="e.g. Fins (optional)"></textarea>
+      </div>
+      <div class="di-row">
+        <label for="deRegress">Regression</label>
+        <textarea id="deRegress" placeholder="Easier variant to step back to"></textarea>
+      </div>
+      <div class="di-row">
+        <label for="deProgress">Progression</label>
+        <textarea id="deProgress" placeholder="What this links into / builds towards"></textarea>
+      </div>
+
+      <details open style="margin-top:6px;">
+        <summary style="font-size:.8rem;font-weight:700;color:var(--text-dim);cursor:pointer;">Periodisation recommendations</summary>
+        <table class="peri-grid" id="periGrid">
+          <thead><tr><th>Phase</th><th>Meso 1</th><th>Meso 2</th><th>Meso 3</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="hint" style="margin-top:6px;">Placement (e.g. Warm-up, pre-set) + distance in metres, per meso cycle.</div>
+      </details>
+
+      <button class="submit-btn" id="saveDrillBtn" style="margin-top:14px;">Save drill</button>
+      <button type="button" id="deleteDrillBtn" style="width:100%;margin-top:8px;background:none;border:1.5px solid var(--red);color:var(--red);border-radius:10px;padding:10px;font-weight:700;cursor:pointer;display:none;">Delete drill</button>
+      <div class="msg" id="drillEditMsg"></div>
+    </div>
+  </div>
+
+  <!-- Drill picker (used from the session-plan editor's "+ Drill" button) -->
+  <div class="modal-overlay" id="drillPickModal">
+    <div class="modal-card">
+      <button class="modal-close" id="drillPickClose">✕</button>
+      <h2>Add a drill</h2>
+      <input type="text" id="drillPickSearch" placeholder="Search drills…" autocomplete="off">
+      <div class="drill-pick-list" id="drillPickList"></div>
+    </div>
+  </div>
+
+  <!-- Attach-to-session-plan modal -->
+  <div class="modal-overlay" id="attachModal">
+    <div class="modal-card">
+      <button class="modal-close" id="attachModalClose">✕</button>
+      <h2 id="attachModalTitle">Attach drills</h2>
+      <div class="add-block-row" style="grid-template-columns:1fr 1fr;margin-bottom:12px;">
+        <button type="button" class="add-block-btn attach-mode-btn active" data-mode="existing">Existing plan</button>
+        <button type="button" class="add-block-btn attach-mode-btn" data-mode="new">New plan</button>
+      </div>
+      <div id="attachExistingWrap">
+        <label for="attachPlanSelect">Session plan</label>
+        <select id="attachPlanSelect"><option value="">— choose a plan —</option></select>
+      </div>
+      <div id="attachNewWrap" style="display:none;">
+        <label for="attachNewTitle">Plan name</label>
+        <input type="text" id="attachNewTitle" placeholder="e.g. CDJ Mon AM — Technique">
+        <label for="attachNewDate">Date</label>
+        <input type="date" id="attachNewDate">
+      </div>
+      <button class="submit-btn" id="attachConfirmBtn" style="margin-top:14px;">Attach</button>
+      <div class="msg" id="attachMsg"></div>
     </div>
   </div>
 
@@ -1297,9 +1519,11 @@ $("clubSelect").addEventListener("change", () => {
   currentClub = $("clubSelect").value;
   localStorage.setItem("coachToolsClub", currentClub);
   loadSwimmers();      // refresh the feedback swimmer cache for the new club
+  loadDrills();         // refresh the drills library cache for the new club
   showView("viewHome"); // drop out of any in-progress flow scoped to the old club
 });
 loadClubOptions();
+loadDrills(); // pre-load the drills index so set-line prediction works even before the coach opens the library tab
 
 function fmtDate(d){
   const dt = new Date(d + "T00:00:00");
@@ -1442,6 +1666,7 @@ function blockDistance(block){
     const inner = (block.children || []).reduce((s, c) => s + blockDistance(c), 0);
     return reps * inner;
   }
+  if (block.type === "drill") return 0;
   return 0;
 }
 function planDistance(content){ return (content || []).reduce((s, b) => s + blockDistance(b), 0); }
@@ -1452,9 +1677,10 @@ let editingPlanId = null;   // null = new plan
 
 function blankBlock(type){
   if (type === "heading") return { type:"heading", text:"", bold:true, underline:true };
-  if (type === "set") return { type:"set", text:"" };
-  if (type === "repeat_group") return { type:"repeat_group", reps:1, children:[{ type:"set", text:"" }] };
+  if (type === "set") return { type:"set", text:"", drill_ids:[] };
+  if (type === "repeat_group") return { type:"repeat_group", reps:1, children:[{ type:"set", text:"", drill_ids:[] }] };
   if (type === "note") return { type:"note", text:"" };
+  if (type === "drill") return { type:"drill", drill_id:null, drill_name:"" };
 }
 
 function openEditor(plan){
@@ -1515,7 +1741,7 @@ function renderBlockEditor(b, i){
       : "";
     return `<div class="blk">
       <div class="blk-type-label">Set line ${controls}</div>
-      <input type="text" data-field="text" data-i="${i}" value="${escapeAttr(b.text)}" placeholder="10 x 100 @2:00 Free">
+      <input type="text" class="set-text-input" data-field="text" data-i="${i}" value="${escapeAttr(b.text)}" placeholder="10 x 100 @2:00 Free — start typing a drill name for suggestions">
       <div class="parsed-hint ${(b.text.trim() && !p) ? "warn":""}">${hint}</div>
     </div>`;
   }
@@ -1526,7 +1752,7 @@ function renderBlockEditor(b, i){
       const p = parseSetLine(ch.text);
       const dist = p ? p.distance_m + "m" : "—";
       return `<div class="repeat-child">
-        <input type="text" data-rfield="text" data-i="${i}" data-ci="${ci}" value="${escapeAttr(ch.text)}" placeholder="2 x 75 @1:45 IM as 25 sprint, 50 drill">
+        <input type="text" class="set-text-input" data-rfield="text" data-i="${i}" data-ci="${ci}" value="${escapeAttr(ch.text)}" placeholder="2 x 75 @1:45 IM as 25 sprint, 50 drill">
         <span class="rc-dist">${dist}</span>
         <button class="rc-remove" data-ract="delchild" data-i="${i}" data-ci="${ci}">✕</button>
       </div>`;
@@ -1545,6 +1771,13 @@ function renderBlockEditor(b, i){
     return `<div class="blk">
       <div class="blk-type-label">Note ${controls}</div>
       <textarea data-field="text" data-i="${i}" placeholder="Free text — coaching note, not counted in distance">${escapeHtml(b.text)}</textarea>
+    </div>`;
+  }
+  if (b.type === "drill"){
+    return `<div class="blk drill-blk">
+      <div class="blk-type-label">Drill ${controls}</div>
+      <div class="drill-blk-name">${b.drill_name ? escapeHtml(b.drill_name) : '<span class="warn">(no drill chosen)</span>'}</div>
+      <button type="button" class="add-child-btn" data-ract="pickdrill" data-i="${i}">${b.drill_name ? "Change drill" : "Choose drill"}</button>
     </div>`;
   }
   return "";
@@ -1589,8 +1822,9 @@ function wireBlockEditors(){
   c.querySelectorAll("[data-ract]").forEach(btn => {
     btn.addEventListener("click", () => {
       const i = Number(btn.dataset.i);
-      if (btn.dataset.ract === "addchild"){ editorBlocks[i].children.push({ type:"set", text:"" }); }
+      if (btn.dataset.ract === "addchild"){ editorBlocks[i].children.push({ type:"set", text:"", drill_ids:[] }); }
       if (btn.dataset.ract === "delchild"){ editorBlocks[i].children.splice(Number(btn.dataset.ci), 1); }
+      if (btn.dataset.ract === "pickdrill"){ openDrillPickModal(i); }
       renderBlocks();
     });
   });
@@ -1666,6 +1900,7 @@ $("savePlanBtn").addEventListener("click", async () => {
   // prune fully-empty blocks
   const content = editorBlocks.filter(b => {
     if (b.type === "repeat_group") return (b.children||[]).some(c => c.text.trim());
+    if (b.type === "drill") return !!b.drill_id;
     return (b.text || "").trim();
   });
 
@@ -1682,16 +1917,19 @@ $("savePlanBtn").addEventListener("click", async () => {
   };
 
   $("savePlanBtn").disabled = true;
-  let error;
+  let error, savedId = editingPlanId;
   if (editingPlanId){
     ({ error } = await sb.from("session_plans").update(payload).eq("id", editingPlanId));
   } else {
-    ({ error } = await sb.from("session_plans").insert({ ...payload, club: currentClub }));
+    const res = await sb.from("session_plans").insert({ ...payload, club: currentClub }).select("id").single();
+    error = res.error;
+    if (res.data) savedId = res.data.id;
   }
   $("savePlanBtn").disabled = false;
 
   if (error){ msg.textContent = "Save failed — " + error.message; msg.className = "msg err"; console.error(error); return; }
   msg.textContent = "Plan saved."; msg.className = "msg ok";
+  if (savedId) archiveSetLineDrafts(savedId, content).catch(err => console.error("archive drafts:", err));
   setTimeout(() => { showView("viewSession"); loadPlanList(); }, 500);
 });
 
@@ -1790,9 +2028,18 @@ function renderPlanReadonly(content){
       </div>`;
     }
     if (b.type === "note"){ return `<div class="pv-note">${escapeHtml(b.text)}</div>`; }
+    if (b.type === "drill"){
+      return `<div class="pv-drill" data-drill-id="${escapeAttr(b.drill_id||"")}">${escapeHtml(b.drill_name||"(drill)")}</div>`;
+    }
     return "";
   }).join("");
 }
+// Clicking a drill line in the read-only plan viewer opens the drill's info pop-up.
+$("pvBody").addEventListener("click", (e) => {
+  const el = e.target.closest(".pv-drill");
+  if (!el || !el.dataset.drillId) return;
+  openDrillInfoModal(el.dataset.drillId);
+});
 $("editPlanBtn").addEventListener("click", () => { if (viewingPlan) openEditor(viewingPlan); });
 $("pdfPlanBtn").addEventListener("click", () => { if (viewingPlan) sharePlanPdf(viewingPlan); });
 
@@ -1892,6 +2139,14 @@ function buildPlanPdf(plan){
       });
       doc.setTextColor(26, 35, 50);
       y += 4;
+    } else if (b.type === "drill"){
+      ensureSpace(15);
+      doc.setFont("helvetica", "bolditalic");
+      doc.setFontSize(10.5);
+      doc.text("•  Drill: " + (b.drill_name || ""), marginL, y);
+      y += 15;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(26, 35, 50);
     }
   });
 
@@ -3807,6 +4062,499 @@ async function swpLoadFeedback(swimmerId){
       ${mediaGridHtml(r.media)}
     </div>`;
   }).join("");
+}
+
+// ===================================================================
+// Drills & Skills library
+// ===================================================================
+let allDrills = [];
+let drillIndex = [];               // flattened name/pseudonym index used by set-line prediction
+let currentStrokeFilter = "ALL";
+let selectedDrillIds = new Set();
+let editingDrillId = null;
+let pendingDrillPickIndex = null;
+let attachMode = "existing";
+const MESOS = ["Meso 1", "Meso 2", "Meso 3"];
+const PHASES = ["Quality", "Endurance", "Sprint"];
+
+function goDrills(){ showView("viewDrillsLibrary"); loadDrills(); }
+navActions.drills = goDrills;
+$("tileDrills").addEventListener("click", goDrills);
+$("backHomeDrills").addEventListener("click", () => showView("viewHome"));
+
+// --- generic modal open/close (drill info, drill edit, drill pick, attach) ---
+function openModal(id){ $(id).classList.add("active"); }
+function closeModal(id){ $(id).classList.remove("active"); }
+document.querySelectorAll(".modal-overlay").forEach(ov => {
+  ov.addEventListener("click", (e) => { if (e.target === ov) closeModal(ov.id); });
+});
+document.querySelectorAll(".modal-close").forEach(btn => {
+  btn.addEventListener("click", () => closeModal(btn.closest(".modal-overlay").id));
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  document.querySelectorAll(".modal-overlay.active").forEach(ov => closeModal(ov.id));
+});
+
+// --- load + index ---
+async function loadDrills(){
+  const el = $("drillTileGrid");
+  if (el) el.innerHTML = '<div class="empty">Loading drills…</div>';
+  const { data, error } = await sb
+    .from("drills_library")
+    .select("*")
+    .eq("club", currentClub)
+    .order("stroke")
+    .order("drill_name");
+  if (error){ if (el) el.innerHTML = '<div class="empty">Could not load drills.</div>'; console.error(error); return; }
+  allDrills = data || [];
+  buildDrillIndex();
+  renderDrillStrokeFilter();
+  renderDrillTiles();
+  updateAttachBar();
+}
+function buildDrillIndex(){
+  drillIndex = allDrills.map(d => ({
+    id: d.id,
+    name: d.drill_name,
+    stroke: d.stroke,
+    terms: [d.drill_name, ...(d.pseudonyms || [])].filter(Boolean).map(s => s.toLowerCase())
+  }));
+}
+
+// --- tile grid ---
+function renderDrillStrokeFilter(){
+  const strokes = [...new Set(allDrills.map(d => d.stroke).filter(Boolean))].sort();
+  const el = $("drillStrokeFilter");
+  el.innerHTML = ["ALL", ...strokes].map(s =>
+    `<div class="drill-stroke-chip ${currentStrokeFilter === s ? "active" : ""}" data-stroke="${escapeAttr(s)}">${s === "ALL" ? "All" : escapeHtml(s)}</div>`
+  ).join("");
+}
+$("drillStrokeFilter").addEventListener("click", (e) => {
+  const chip = e.target.closest(".drill-stroke-chip");
+  if (!chip) return;
+  currentStrokeFilter = chip.dataset.stroke;
+  renderDrillStrokeFilter();
+  renderDrillTiles();
+});
+function renderDrillTiles(){
+  const q = $("drillSearch").value.trim().toLowerCase();
+  let list = allDrills;
+  if (currentStrokeFilter !== "ALL") list = list.filter(d => d.stroke === currentStrokeFilter);
+  if (q) list = list.filter(d =>
+    (d.drill_name || "").toLowerCase().includes(q) ||
+    (d.pseudonyms || []).some(p => p.toLowerCase().includes(q)) ||
+    (d.stroke || "").toLowerCase().includes(q)
+  );
+  const el = $("drillTileGrid");
+  if (!list.length){ el.innerHTML = '<div class="empty">No drills match.</div>'; return; }
+  el.innerHTML = list.map(d => {
+    const checked = selectedDrillIds.has(d.id) ? "checked" : "";
+    const sel = selectedDrillIds.has(d.id) ? "selected" : "";
+    const pseudo = (d.pseudonyms || []).length ? `<div class="drill-tile-pseudo">aka ${escapeHtml((d.pseudonyms || []).join(", "))}</div>` : "";
+    return `<div class="drill-tile ${sel}" data-id="${d.id}">
+      <input type="checkbox" class="drill-tile-check" data-check-id="${d.id}" ${checked}>
+      <div class="drill-tile-actions">
+        <button type="button" data-edit-id="${d.id}">Edit</button>
+        <button type="button" data-export-id="${d.id}">Export</button>
+      </div>
+      ${d.stroke ? `<div class="drill-tile-stroke">${escapeHtml(d.stroke)}</div>` : ""}
+      <div class="drill-tile-name">${escapeHtml(d.drill_name)}</div>
+      ${d.primary_purpose ? `<div class="drill-tile-purpose">${escapeHtml(d.primary_purpose)}</div>` : ""}
+      ${pseudo}
+    </div>`;
+  }).join("");
+}
+$("drillSearch").addEventListener("input", renderDrillTiles);
+$("drillTileGrid").addEventListener("click", (e) => {
+  const editBtn = e.target.closest("[data-edit-id]");
+  if (editBtn){ const d = allDrills.find(x => x.id === editBtn.dataset.editId); if (d) openDrillEditModal(d); return; }
+  const expBtn = e.target.closest("[data-export-id]");
+  if (expBtn){ const d = allDrills.find(x => x.id === expBtn.dataset.exportId); if (d) exportDrillPdf(d); return; }
+  const check = e.target.closest("[data-check-id]");
+  if (check){ toggleDrillSelection(check.dataset.checkId); return; }
+  const tile = e.target.closest(".drill-tile");
+  if (tile) openDrillInfoModal(tile.dataset.id);
+});
+
+// --- selection + attach bar ---
+function toggleDrillSelection(id){
+  if (selectedDrillIds.has(id)) selectedDrillIds.delete(id); else selectedDrillIds.add(id);
+  renderDrillTiles();
+  updateAttachBar();
+}
+function updateAttachBar(){
+  const n = selectedDrillIds.size;
+  $("attachBarLabel").textContent = n ? `${n} selected` : "0 selected";
+  $("attachBar").classList.toggle("active", n > 0);
+}
+$("attachClearBtn").addEventListener("click", () => { selectedDrillIds.clear(); renderDrillTiles(); updateAttachBar(); });
+
+// --- drill info pop-up (read-only) ---
+async function openDrillInfoModal(id){
+  let d = allDrills.find(x => x.id === id);
+  if (!d){
+    const { data, error } = await sb.from("drills_library").select("*").eq("id", id).single();
+    if (error){ console.error(error); return; }
+    d = data;
+  }
+  const { data: periRows } = await sb.from("drill_periodisation").select("*").eq("drill_id", id);
+  const row = (label, val) => `<div class="di-row"><div class="di-label">${label}</div><div class="di-value ${val ? "" : "empty"}">${val ? escapeHtml(val) : "—"}</div></div>`;
+  let html = `<h2>${escapeHtml(d.drill_name)}</h2>`;
+  if (d.stroke) html += `<div class="drill-tile-stroke" style="margin-bottom:10px;">${escapeHtml(d.stroke)}</div>`;
+  if (d.pseudonyms && d.pseudonyms.length) html += row("Also known as", d.pseudonyms.join(", "));
+  html += row("Primary purpose", d.primary_purpose);
+  html += row("BLABT / focus", d.blabt);
+  html += row("Biomechanical", d.biomechanical);
+  html += row("Equipment", d.equipment);
+  html += row("Regression", d.regression);
+  html += row("Progression", d.progression);
+  if (periRows && periRows.length){
+    html += `<div class="di-label" style="margin-top:10px;">Periodisation recommendations</div>`;
+    html += periRows.map(r =>
+      `<div class="di-value" style="margin-top:3px;">${escapeHtml(r.meso)} · ${escapeHtml(r.phase_type)}${r.session_plan_placement ? " — " + escapeHtml(r.session_plan_placement) : ""}${r.distance_m ? " (" + r.distance_m + "m)" : ""}</div>`
+    ).join("");
+  }
+  $("drillInfoBody").innerHTML = html;
+  openModal("drillInfoModal");
+}
+
+// --- drill create / edit ---
+function openDrillEditModal(drill){
+  editingDrillId = drill ? drill.id : null;
+  $("drillEditTitle").textContent = drill ? "Edit drill" : "New drill";
+  $("deStroke").value = drill?.stroke || "";
+  $("deName").value = drill?.drill_name || "";
+  $("dePseudo").value = (drill?.pseudonyms || []).join(", ");
+  $("dePurpose").value = drill?.primary_purpose || "";
+  $("deBlabt").value = drill?.blabt || "";
+  $("deBiomech").value = drill?.biomechanical || "";
+  $("deEquip").value = drill?.equipment || "";
+  $("deRegress").value = drill?.regression || "";
+  $("deProgress").value = drill?.progression || "";
+  $("deleteDrillBtn").style.display = drill ? "block" : "none";
+  $("drillEditMsg").textContent = ""; $("drillEditMsg").className = "msg";
+  renderPeriGrid(drill ? drill.id : null);
+  openModal("drillEditModal");
+}
+async function renderPeriGrid(drillId){
+  let rows = [];
+  if (drillId){
+    const { data, error } = await sb.from("drill_periodisation").select("*").eq("drill_id", drillId);
+    if (!error) rows = data || [];
+  }
+  const lookup = {};
+  rows.forEach(r => { lookup[r.meso + "|" + r.phase_type] = r; });
+  const tbody = document.querySelector("#periGrid tbody");
+  tbody.innerHTML = PHASES.map(phase => {
+    const cells = MESOS.map(meso => {
+      const r = lookup[meso + "|" + phase];
+      return `<td>
+        <input type="text" class="peri-placement" data-meso="${meso}" data-phase="${phase}" placeholder="Placement" value="${escapeAttr(r?.session_plan_placement || "")}">
+        <input type="number" class="peri-dist" data-meso="${meso}" data-phase="${phase}" placeholder="m" value="${r?.distance_m ?? ""}">
+      </td>`;
+    }).join("");
+    return `<tr><td style="font-weight:700;font-size:.68rem;color:var(--text-dim);">${phase}</td>${cells}</tr>`;
+  }).join("");
+}
+$("newDrillBtn").addEventListener("click", () => openDrillEditModal(null));
+$("saveDrillBtn").addEventListener("click", async () => {
+  const msg = $("drillEditMsg");
+  msg.textContent = ""; msg.className = "msg";
+  const name = $("deName").value.trim();
+  if (!name){ msg.textContent = "Give the drill a name."; msg.className = "msg err"; return; }
+  const pseudonyms = $("dePseudo").value.split(",").map(s => s.trim()).filter(Boolean);
+  const payload = {
+    stroke: $("deStroke").value.trim() || null,
+    drill_name: name,
+    pseudonyms: pseudonyms.length ? pseudonyms : null,
+    primary_purpose: $("dePurpose").value.trim() || null,
+    blabt: $("deBlabt").value.trim() || null,
+    biomechanical: $("deBiomech").value.trim() || null,
+    equipment: $("deEquip").value.trim() || null,
+    regression: $("deRegress").value.trim() || null,
+    progression: $("deProgress").value.trim() || null,
+    updated_at: new Date().toISOString()
+  };
+  $("saveDrillBtn").disabled = true;
+  let drillId = editingDrillId, error;
+  if (editingDrillId){
+    ({ error } = await sb.from("drills_library").update(payload).eq("id", editingDrillId));
+  } else {
+    const res = await sb.from("drills_library").insert({ ...payload, club: currentClub }).select("id").single();
+    error = res.error;
+    if (res.data) drillId = res.data.id;
+  }
+  if (error){ $("saveDrillBtn").disabled = false; msg.textContent = "Save failed — " + error.message; msg.className = "msg err"; console.error(error); return; }
+
+  const periRows = [];
+  document.querySelectorAll("#periGrid .peri-placement").forEach(input => {
+    const meso = input.dataset.meso, phase = input.dataset.phase;
+    const distInput = document.querySelector(`#periGrid .peri-dist[data-meso="${meso}"][data-phase="${phase}"]`);
+    const placement = input.value.trim();
+    const distVal = distInput ? distInput.value.trim() : "";
+    if (placement || distVal){
+      periRows.push({ drill_id: drillId, meso, phase_type: phase, session_plan_placement: placement || null, distance_m: distVal ? Number(distVal) : null });
+    }
+  });
+  await sb.from("drill_periodisation").delete().eq("drill_id", drillId);
+  if (periRows.length) await sb.from("drill_periodisation").insert(periRows);
+
+  $("saveDrillBtn").disabled = false;
+  msg.textContent = "Drill saved."; msg.className = "msg ok";
+  await loadDrills();
+  setTimeout(() => closeModal("drillEditModal"), 450);
+});
+$("deleteDrillBtn").addEventListener("click", async () => {
+  if (!editingDrillId) return;
+  if (!confirm("Delete this drill? This also removes its periodisation recommendations and archived set-line drafts.")) return;
+  const { error } = await sb.from("drills_library").delete().eq("id", editingDrillId);
+  if (error){ $("drillEditMsg").textContent = "Delete failed — " + error.message; $("drillEditMsg").className = "msg err"; console.error(error); return; }
+  await loadDrills();
+  closeModal("drillEditModal");
+});
+
+// --- export single drill as PDF ---
+function exportDrillPdf(d){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const marginL = 40, pageW = doc.internal.pageSize.getWidth();
+  let y = 92;
+  doc.setFillColor(11, 37, 69); doc.rect(0, 0, pageW, 70, "F");
+  doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+  doc.text(d.drill_name || "Drill", marginL, 36);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9.5);
+  doc.text(d.stroke || "", marginL, 54);
+  doc.setTextColor(26, 35, 50);
+  const fields = [
+    ["Also known as", (d.pseudonyms || []).join(", ")],
+    ["Primary purpose", d.primary_purpose],
+    ["BLABT / focus", d.blabt],
+    ["Biomechanical", d.biomechanical],
+    ["Equipment", d.equipment],
+    ["Regression", d.regression],
+    ["Progression", d.progression]
+  ];
+  fields.forEach(([label, val]) => {
+    if (!val) return;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(11, 37, 69);
+    doc.text(label, marginL, y); y += 14;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); doc.setTextColor(26, 35, 50);
+    const wrapped = doc.splitTextToSize(val, pageW - marginL - 40);
+    wrapped.forEach(ln => { doc.text(ln, marginL, y); y += 14; });
+    y += 8;
+  });
+  const safe = (d.drill_name || "drill").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  doc.save(`${safe || "drill"}.pdf`);
+}
+
+// --- drill picker, used from the session-plan editor's "+ Drill" / "Change drill" ---
+function openDrillPickModal(blockIndex){
+  pendingDrillPickIndex = blockIndex;
+  $("drillPickSearch").value = "";
+  renderDrillPickList("");
+  openModal("drillPickModal");
+}
+function renderDrillPickList(q){
+  q = q.toLowerCase();
+  const list = !q ? allDrills : allDrills.filter(d =>
+    (d.drill_name || "").toLowerCase().includes(q) || (d.pseudonyms || []).some(p => p.toLowerCase().includes(q))
+  );
+  $("drillPickList").innerHTML = list.slice(0, 100).map(d =>
+    `<div class="drill-pick-item" data-id="${d.id}"><div class="dpi-stroke">${escapeHtml(d.stroke || "")}</div>${escapeHtml(d.drill_name)}</div>`
+  ).join("") || '<div class="empty">No matches</div>';
+}
+$("drillPickSearch").addEventListener("input", () => renderDrillPickList($("drillPickSearch").value.trim()));
+$("drillPickList").addEventListener("click", (e) => {
+  const item = e.target.closest(".drill-pick-item");
+  if (!item || pendingDrillPickIndex === null) return;
+  const d = allDrills.find(x => x.id === item.dataset.id);
+  if (!d) return;
+  editorBlocks[pendingDrillPickIndex] = { type: "drill", drill_id: d.id, drill_name: d.drill_name };
+  renderBlocks();
+  closeModal("drillPickModal");
+});
+$("addDrillBlockBtn").addEventListener("click", () => {
+  editorBlocks.push(blankBlock("drill"));
+  renderBlocks();
+  openDrillPickModal(editorBlocks.length - 1);
+});
+
+// --- attach selected drills to a session plan (existing or new) ---
+document.querySelectorAll(".attach-mode-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    attachMode = btn.dataset.mode;
+    document.querySelectorAll(".attach-mode-btn").forEach(b => b.classList.toggle("active", b === btn));
+    $("attachExistingWrap").style.display = attachMode === "existing" ? "block" : "none";
+    $("attachNewWrap").style.display = attachMode === "new" ? "block" : "none";
+  });
+});
+async function openAttachModal(){
+  const n = selectedDrillIds.size;
+  if (!n) return;
+  $("attachModalTitle").textContent = `Attach ${n} drill${n > 1 ? "s" : ""}`;
+  $("attachMsg").textContent = ""; $("attachMsg").className = "msg";
+  $("attachNewTitle").value = ""; $("attachNewDate").value = "";
+  attachMode = "existing";
+  document.querySelectorAll(".attach-mode-btn").forEach(b => b.classList.toggle("active", b.dataset.mode === "existing"));
+  $("attachExistingWrap").style.display = "block";
+  $("attachNewWrap").style.display = "none";
+  const { data, error } = await sb.from("session_plans").select("id, title, intended_date").eq("club", currentClub).order("updated_at", { ascending: false });
+  const sel = $("attachPlanSelect");
+  if (error){ sel.innerHTML = '<option value="">— could not load plans —</option>'; }
+  else {
+    sel.innerHTML = '<option value="">— choose a plan —</option>' + (data || []).map(p =>
+      `<option value="${p.id}">${escapeHtml(p.title)}${p.intended_date ? " (" + fmtDate(p.intended_date) + ")" : ""}</option>`
+    ).join("");
+  }
+  openModal("attachModal");
+}
+$("attachGoBtn").addEventListener("click", openAttachModal);
+$("attachConfirmBtn").addEventListener("click", async () => {
+  const msg = $("attachMsg");
+  msg.textContent = ""; msg.className = "msg";
+  const ids = [...selectedDrillIds];
+  if (!ids.length){ msg.textContent = "Nothing selected."; msg.className = "msg err"; return; }
+  const drills = ids.map(id => allDrills.find(d => d.id === id)).filter(Boolean);
+  const blocks = drills.map(d => ({ type: "drill", drill_id: d.id, drill_name: d.drill_name }));
+
+  $("attachConfirmBtn").disabled = true;
+  let error, planId;
+  if (attachMode === "existing"){
+    planId = $("attachPlanSelect").value;
+    if (!planId){ $("attachConfirmBtn").disabled = false; msg.textContent = "Choose a plan."; msg.className = "msg err"; return; }
+    const fetchRes = await sb.from("session_plans").select("content").eq("id", planId).single();
+    if (fetchRes.error){ error = fetchRes.error; }
+    else {
+      const newContent = [...(fetchRes.data.content || []), ...blocks];
+      ({ error } = await sb.from("session_plans").update({ content: newContent, total_distance_m: planDistance(newContent), updated_at: new Date().toISOString() }).eq("id", planId));
+    }
+  } else {
+    const title = $("attachNewTitle").value.trim();
+    if (!title){ $("attachConfirmBtn").disabled = false; msg.textContent = "Give the new plan a name."; msg.className = "msg err"; return; }
+    const date = $("attachNewDate").value || null;
+    const res = await sb.from("session_plans").insert({ title, content: blocks, total_distance_m: 0, intended_date: date, club: currentClub }).select("id").single();
+    error = res.error;
+    planId = res.data ? res.data.id : null;
+  }
+  $("attachConfirmBtn").disabled = false;
+  if (error){ msg.textContent = "Attach failed — " + error.message; msg.className = "msg err"; console.error(error); return; }
+  msg.textContent = "Attached.";
+  msg.className = "msg ok";
+  selectedDrillIds.clear();
+  renderDrillTiles();
+  updateAttachBar();
+  setTimeout(() => closeModal("attachModal"), 600);
+});
+
+// ===================================================================
+// Predictive drill matching while typing a set line / repeat set line
+// ===================================================================
+const setLineAcBox = document.createElement("div");
+setLineAcBox.className = "setline-ac";
+setLineAcBox.id = "setLineAcBox";
+document.body.appendChild(setLineAcBox);
+
+function lastToken(val){
+  const m = (val || "").match(/([A-Za-z][A-Za-z' -]*)$/);
+  return m ? m[1].trim() : "";
+}
+function matchDrills(token){
+  const tl = token.toLowerCase();
+  if (tl.length < 2) return [];
+  return drillIndex.filter(d => d.terms.some(t => t.startsWith(tl) || t.includes(tl))).slice(0, 6);
+}
+function handleSetLineAutocomplete(el){
+  const token = lastToken(el.value);
+  if (token.length < 2){ hideSetLineAc(); return; }
+  const matches = matchDrills(token);
+  if (!matches.length){ hideSetLineAc(); return; }
+  showSetLineAc(el, matches, token);
+}
+function showSetLineAc(el, matches, token){
+  el.dataset.slaToken = token;
+  const rect = el.getBoundingClientRect();
+  setLineAcBox.style.left = Math.round(rect.left) + "px";
+  setLineAcBox.style.top = Math.round(rect.bottom + 4) + "px";
+  setLineAcBox.style.width = Math.max(rect.width, 180) + "px";
+  setLineAcBox.innerHTML = matches.map(d =>
+    `<div data-drill-id="${escapeAttr(d.id)}">${escapeHtml(d.name)}<span class="sla-stroke">${escapeHtml(d.stroke || "")}</span></div>`
+  ).join("");
+  setLineAcBox.style.display = "block";
+  setLineAcBox._activeEl = el;
+}
+function hideSetLineAc(){ setLineAcBox.style.display = "none"; setLineAcBox._activeEl = null; }
+function applySetLineMatch(el, drill){
+  const token = el.dataset.slaToken || "";
+  const val = el.value;
+  const cut = val.length - token.length;
+  el.value = val.slice(0, cut) + drill.name;
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+  const i = Number(el.dataset.i);
+  if (el.hasAttribute("data-rfield")){
+    const ci = Number(el.dataset.ci);
+    const ch = editorBlocks[i]?.children?.[ci];
+    if (ch){ ch.drill_ids = ch.drill_ids || []; if (!ch.drill_ids.includes(drill.id)) ch.drill_ids.push(drill.id); }
+  } else {
+    const b = editorBlocks[i];
+    if (b){ b.drill_ids = b.drill_ids || []; if (!b.drill_ids.includes(drill.id)) b.drill_ids.push(drill.id); }
+  }
+  hideSetLineAc();
+  el.focus();
+}
+document.addEventListener("input", (e) => {
+  const el = e.target;
+  if (!el.classList || !el.classList.contains("set-text-input")) return;
+  handleSetLineAutocomplete(el);
+});
+setLineAcBox.addEventListener("mousedown", (e) => {
+  const row = e.target.closest("div[data-drill-id]");
+  if (!row) return;
+  e.preventDefault();
+  const d = drillIndex.find(x => x.id === row.dataset.drillId);
+  const el = setLineAcBox._activeEl;
+  if (d && el) applySetLineMatch(el, d);
+});
+document.addEventListener("click", (e) => {
+  if (e.target.closest(".setline-ac")) return;
+  if (e.target.classList && e.target.classList.contains("set-text-input")) return;
+  hideSetLineAc();
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideSetLineAc(); });
+
+// ===================================================================
+// Archive drafted set lines (that reference a recognised drill) into
+// drill_set_line_archive whenever a session plan is saved. Re-synced
+// on every save so the archive always reflects the plan's current draft.
+// ===================================================================
+function collectDrillSetLines(content){
+  const out = [];
+  (content || []).forEach(b => {
+    if (b.type === "set" && (b.drill_ids || []).length && b.text && b.text.trim()){
+      b.drill_ids.forEach(did => out.push({ drill_id: did, set_line_text: b.text.trim() }));
+    }
+    if (b.type === "repeat_group"){
+      (b.children || []).forEach(ch => {
+        if ((ch.drill_ids || []).length && ch.text && ch.text.trim()){
+          ch.drill_ids.forEach(did => out.push({ drill_id: did, set_line_text: ch.text.trim() }));
+        }
+      });
+    }
+  });
+  return out;
+}
+async function archiveSetLineDrafts(sessionPlanId, content){
+  const rows = collectDrillSetLines(content);
+  await sb.from("drill_set_line_archive").delete().eq("session_plan_id", sessionPlanId);
+  if (!rows.length) return;
+  const payload = rows.map(r => ({
+    drill_id: r.drill_id,
+    set_line_text: r.set_line_text,
+    session_plan_id: sessionPlanId,
+    coach: "Simon"
+  }));
+  const { error } = await sb.from("drill_set_line_archive").insert(payload);
+  if (error) console.error("archive insert:", error);
 }
 
 // ===================================================================
