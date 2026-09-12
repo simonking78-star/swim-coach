@@ -44,10 +44,43 @@
   header{
     background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);
     color:#fff;
-    padding:22px 20px 26px;
+    padding:22px 20px 26px 62px;
+    position:relative;
   }
   header h1{margin:0;font-size:1.3rem;font-weight:700;letter-spacing:.2px;}
   header p{margin:4px 0 0;font-size:.85rem;color:#b9cbe0;}
+  .hamburger-btn{
+    position:absolute;left:18px;top:20px;
+    background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.3);
+    color:#fff;width:36px;height:36px;border-radius:9px;
+    font-size:1.15rem;line-height:1;cursor:pointer;
+  }
+  .nav-overlay{
+    display:none;position:fixed;inset:0;background:rgba(11,37,69,.45);z-index:90;
+  }
+  .nav-overlay.active{display:block;}
+  .nav-drawer{
+    position:fixed;top:0;left:0;bottom:0;width:78%;max-width:300px;
+    background:var(--card);z-index:91;box-shadow:4px 0 24px rgba(11,37,69,.25);
+    transform:translateX(-100%);transition:transform .22s ease;
+    display:flex;flex-direction:column;padding:6px 0 20px;overflow-y:auto;
+  }
+  .nav-drawer.active{transform:translateX(0);}
+  .nav-drawer-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 18px 14px;font-weight:800;color:var(--navy);
+    font-size:.95rem;border-bottom:1px solid var(--border);margin-bottom:6px;
+  }
+  .nav-close-btn{
+    background:none;border:none;font-size:1.1rem;color:var(--text-dim);cursor:pointer;padding:2px 6px;
+  }
+  .nav-item{
+    display:flex;align-items:center;gap:12px;padding:13px 18px;
+    font-weight:700;font-size:.92rem;color:var(--text);cursor:pointer;
+  }
+  .nav-item:active{background:var(--grey-bg);}
+  .nav-item .nav-icon{font-size:1.15rem;width:22px;text-align:center;flex-shrink:0;}
+  .nav-divider{height:1px;background:var(--border);margin:6px 0;}
   .club-switcher{margin-top:14px;display:flex;align-items:center;gap:8px;}
   .club-switcher label{font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;color:#b9cbe0;font-weight:700;}
   .club-switcher select{
@@ -369,6 +402,18 @@
   .home-tile .ht-title{font-weight:700;font-size:1rem;color:var(--navy);}
   .home-tile .ht-sub{font-size:.78rem;color:var(--text-dim);margin-top:2px;}
 
+  /* Home screen: two-column tile grid (overrides the single-column .home-tile
+     layout used elsewhere, e.g. the MI/Admin landing sub-menus) */
+  .home-tile-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;
+  }
+  .home-tile-grid .home-tile{
+    flex-direction:column;align-items:flex-start;justify-content:flex-start;
+    gap:8px;padding:16px 14px;margin-bottom:0;min-height:112px;
+  }
+  .home-tile-grid .home-tile .ht-icon{width:auto;font-size:1.7rem;}
+  .home-tile-grid .home-tile .ht-sub{font-size:.72rem;line-height:1.3;}
+
   /* Pool size buttons */
   .pool-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px;}
   .pool-btn{
@@ -604,6 +649,7 @@
 <body>
 
 <header>
+  <button type="button" class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">☰</button>
   <h1>Coach Tools</h1>
   <p>Attendance · Feedback · Session planning</p>
   <div class="club-switcher">
@@ -612,50 +658,82 @@
   </div>
 </header>
 
+<div class="nav-overlay" id="navOverlay"></div>
+<nav class="nav-drawer" id="navDrawer">
+  <div class="nav-drawer-header">
+    <span>Menu</span>
+    <button type="button" class="nav-close-btn" id="navCloseBtn" aria-label="Close menu">✕</button>
+  </div>
+  <div class="nav-item" id="navHome" data-nav="home">
+    <span class="nav-icon">🏠</span> Home
+  </div>
+  <div class="nav-divider"></div>
+  <div class="nav-item" id="navAttendance" data-nav="attendance">
+    <span class="nav-icon">✅</span> Attendance
+  </div>
+  <div class="nav-item" id="navFeedback" data-nav="feedback">
+    <span class="nav-icon">📝</span> Feedback
+  </div>
+  <div class="nav-item" id="navSession" data-nav="session">
+    <span class="nav-icon">🗓️</span> Session Plan
+  </div>
+  <div class="nav-item" id="navMI" data-nav="mi">
+    <span class="nav-icon">📊</span> Statistics
+  </div>
+  <div class="nav-item" id="navAdmin" data-nav="admin">
+    <span class="nav-icon">⚙️</span> Administrator
+  </div>
+  <div class="nav-item" id="navSwimmerProfile" data-nav="swimmer">
+    <span class="nav-icon">🏊</span> Swimmer
+  </div>
+</nav>
+
 <main>
 
   <!-- ============ HOME ============ -->
   <div class="view active" id="viewHome">
-    <div class="home-tile" id="tileAttendance">
-      <div class="ht-icon">✅</div>
-      <div>
-        <div class="ht-title">Mark Attendance</div>
-        <div class="ht-sub">Card swipe or tick list, date &amp; time stamped</div>
+    <div class="home-tile-grid">
+      <div class="home-tile" id="tileSwimmerProfile">
+        <div class="ht-icon">🏊</div>
+        <div>
+          <div class="ht-title">Swimmer</div>
+          <div class="ht-sub">Attendance, feedback &amp; results in one place</div>
+        </div>
       </div>
-    </div>
-    <div class="home-tile" id="tileFeedback">
-      <div class="ht-icon">📝</div>
-      <div>
-        <div class="ht-title">Feedback Update</div>
-        <div class="ht-sub">Log a status review or a freeform note</div>
+      <div class="home-tile" id="tileFeedback">
+        <div class="ht-icon">📝</div>
+        <div>
+          <div class="ht-title">Feedback</div>
+          <div class="ht-sub">Log a status review or a freeform note</div>
+        </div>
       </div>
-    </div>
-    <div class="home-tile" id="tileSession">
-      <div class="ht-icon">🗓️</div>
-      <div>
-        <div class="ht-title">Session Plan</div>
-        <div class="ht-sub">Write &amp; archive plans, link to sessions</div>
+      <div class="home-tile" id="tileAttendance">
+        <div class="ht-icon">✅</div>
+        <div>
+          <div class="ht-title">Attendance</div>
+          <div class="ht-sub">Card swipe or tick list, date &amp; time stamped</div>
+        </div>
       </div>
-    </div>
-    <div class="home-tile" id="tileMI">
-      <div class="ht-icon">📊</div>
-      <div>
-        <div class="ht-title">Management Information</div>
-        <div class="ht-sub">Regression analysis &amp; club-level reporting</div>
+      <div class="home-tile" id="tileSession">
+        <div class="ht-icon">🗓️</div>
+        <div>
+          <div class="ht-title">Session Plan</div>
+          <div class="ht-sub">Write &amp; archive plans, link to sessions</div>
+        </div>
       </div>
-    </div>
-    <div class="home-tile" id="tileAdmin">
-      <div class="ht-icon">⚙️</div>
-      <div>
-        <div class="ht-title">Administrator</div>
-        <div class="ht-sub">Squads &amp; new members</div>
+      <div class="home-tile" id="tileMI">
+        <div class="ht-icon">📊</div>
+        <div>
+          <div class="ht-title">Statistics</div>
+          <div class="ht-sub">Regression analysis &amp; club-level reporting</div>
+        </div>
       </div>
-    </div>
-    <div class="home-tile" id="tileSwimmerProfile">
-      <div class="ht-icon">🏊</div>
-      <div>
-        <div class="ht-title">Swimmer</div>
-        <div class="ht-sub">Attendance, feedback &amp; results in one place</div>
+      <div class="home-tile" id="tileAdmin">
+        <div class="ht-icon">⚙️</div>
+        <div>
+          <div class="ht-title">Administrator</div>
+          <div class="ht-sub">Squads &amp; new members</div>
+        </div>
       </div>
     </div>
   </div>
@@ -973,7 +1051,7 @@
 
   <!-- ============ MANAGEMENT INFORMATION: REGRESSION ANALYSIS ============ -->
   <div class="view" id="viewMIRegression">
-    <a class="back-home" id="backMI1">Management Information</a>
+    <a class="back-home" id="backMI1">Statistics</a>
     <div class="card">
       <h2>Swimmer &amp; event</h2>
       <div class="autocomplete-wrap">
@@ -1199,10 +1277,8 @@ const $ = id => document.getElementById(id);
 
 // ===================================================================
 // TOP-LEVEL CLUB FILTER
-// Every swimmer/squad/session-plan query in the app is scoped to
-// currentClub, except the Management Information regression tool,
-// which is deliberately cross-club (used for competitive benchmarking
-// against other clubs' swimmers).
+// Every swimmer/squad/session-plan query in the app — including the
+// Management Information regression tool — is scoped to currentClub.
 // ===================================================================
 let currentClub = localStorage.getItem("coachToolsClub") || "Crawley Swimming Club";
 
@@ -1238,9 +1314,19 @@ function showView(id){
   $(id).classList.add("active");
   window.scrollTo(0, 0);
 }
-$("tileAttendance").addEventListener("click", () => { resetAttendanceSetup(); showView("viewAttendanceSetup"); });
-$("tileFeedback").addEventListener("click", () => { showView("viewFeedback"); resetFbTabs(); populateFbPlanSelect(); loadFbSquadOptions(); });
-$("tileSession").addEventListener("click", () => { showView("viewSession"); loadPlanList(); });
+
+// Shared navigation actions — used by both the home tiles and the hamburger menu.
+function goHome(){ showView("viewHome"); }
+function goAttendance(){ resetAttendanceSetup(); showView("viewAttendanceSetup"); }
+function goFeedback(){ showView("viewFeedback"); resetFbTabs(); populateFbPlanSelect(); loadFbSquadOptions(); }
+function goSession(){ showView("viewSession"); loadPlanList(); }
+function goMI(){ showView("viewMI"); }
+function goAdmin(){ showView("viewAdmin"); }
+function goSwimmerProfile(){ resetSwimmerProfile(); showView("viewSwimmerProfile"); }
+
+$("tileAttendance").addEventListener("click", goAttendance);
+$("tileFeedback").addEventListener("click", goFeedback);
+$("tileSession").addEventListener("click", goSession);
 ["backHome1","backHome2","backHome3","backHome4","backHome5"].forEach(id => {
   $(id).addEventListener("click", () => showView("viewHome"));
 });
@@ -1253,6 +1339,35 @@ $("goFeedbackBtn").addEventListener("click", () => {
 $("goSessionBtn").addEventListener("click", () => { showView("viewSession"); loadPlanList(); });
 $("backSessionList1").addEventListener("click", () => { showView("viewSession"); loadPlanList(); });
 $("backSessionList2").addEventListener("click", () => { showView("viewSession"); loadPlanList(); });
+
+// --- Hamburger menu ---
+function openNavDrawer(){
+  $("navDrawer").classList.add("active");
+  $("navOverlay").classList.add("active");
+}
+function closeNavDrawer(){
+  $("navDrawer").classList.remove("active");
+  $("navOverlay").classList.remove("active");
+}
+$("hamburgerBtn").addEventListener("click", openNavDrawer);
+$("navCloseBtn").addEventListener("click", closeNavDrawer);
+$("navOverlay").addEventListener("click", closeNavDrawer);
+const navActions = {
+  home: goHome,
+  attendance: goAttendance,
+  feedback: goFeedback,
+  session: goSession,
+  mi: goMI,
+  admin: goAdmin,
+  swimmer: goSwimmerProfile
+};
+document.querySelectorAll("#navDrawer .nav-item").forEach(item => {
+  item.addEventListener("click", () => {
+    closeNavDrawer();
+    const action = navActions[item.dataset.nav];
+    if (action) action();
+  });
+});
 
 // --- Feedback tabs ---
 function setFbTab(panelId){
@@ -1277,17 +1392,17 @@ function resetFbTabs(){
 }
 
 // Management Information routing
-$("tileMI").addEventListener("click", () => { showView("viewMI"); });
+$("tileMI").addEventListener("click", goMI);
 $("backHomeMI").addEventListener("click", () => showView("viewHome"));
 $("miRegressionTile").addEventListener("click", () => { resetMIRegression(); showView("viewMIRegression"); });
 $("backMI1").addEventListener("click", () => showView("viewMI"));
 
 // Admin routing
-$("tileAdmin").addEventListener("click", () => showView("viewAdmin"));
+$("tileAdmin").addEventListener("click", goAdmin);
 $("backHomeAdmin").addEventListener("click", () => showView("viewHome"));
 
 // Swimmer profile routing
-$("tileSwimmerProfile").addEventListener("click", () => { resetSwimmerProfile(); showView("viewSwimmerProfile"); });
+$("tileSwimmerProfile").addEventListener("click", goSwimmerProfile);
 $("backHomeSwp").addEventListener("click", () => showView("viewHome"));
 $("adminSquadsTile").addEventListener("click", () => { showView("viewAdminSquads"); loadSquadEditList(); });
 $("adminAddMemberTile").addEventListener("click", () => { openAddMember(); });
