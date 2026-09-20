@@ -737,6 +737,106 @@
   .setline-ac div:last-child{border-bottom:none;}
   .setline-ac div:hover,.setline-ac div.active{background:var(--grey-bg);}
   .setline-ac .sla-stroke{font-size:.62rem;color:var(--text-dim);text-transform:uppercase;margin-left:6px;}
+
+  /* ===== Timetables ===== */
+  .tt-concertina{
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    box-shadow:0 4px 18px rgba(11,37,69,.08);margin-bottom:14px;overflow:hidden;
+  }
+  .tt-concertina-head{
+    width:100%;display:flex;align-items:center;justify-content:space-between;
+    background:none;border:none;padding:14px 16px;font-size:.9rem;font-weight:700;
+    color:var(--navy);cursor:pointer;font-family:inherit;text-align:left;
+  }
+  .tt-chevron{transition:transform .18s ease;font-size:.85rem;color:var(--text-dim);flex-shrink:0;}
+  .tt-concertina.open .tt-chevron{transform:rotate(180deg);}
+  .tt-concertina-body{display:none;padding:0 16px 16px;border-top:1px solid var(--border);}
+  .tt-concertina.open .tt-concertina-body{display:block;}
+  .tt-ctrl-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+  .tt-ctrl{
+    padding:11px 6px;border-radius:9px;border:1.5px solid var(--border);background:#fff;
+    font-size:.85rem;font-weight:700;color:var(--navy);cursor:pointer;font-family:inherit;
+  }
+  .tt-ctrl.add{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .tt-ctrl.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .tt-ctrl.del.active{background:var(--red);border-color:var(--red);}
+
+  .tt-item{
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    box-shadow:0 4px 18px rgba(11,37,69,.08);margin-bottom:12px;overflow:hidden;
+  }
+  .tt-item.past{opacity:.72;}
+  .tt-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:14px 14px 8px;}
+  .tt-squad{font-weight:800;color:var(--navy);font-size:1rem;}
+  .tt-season{font-size:.75rem;color:var(--text-dim);margin-top:2px;}
+  .tt-pill{
+    display:inline-block;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.4px;
+    border-radius:20px;padding:2px 8px;margin-left:6px;vertical-align:middle;
+  }
+  .tt-pill.current{background:#e6f4e8;color:var(--green);}
+  .tt-pill.upcoming{background:#e6f0ff;color:#0a5c8a;}
+  .tt-pill.past{background:#eceff2;color:var(--text-dim);}
+  .tt-act{
+    flex-shrink:0;padding:8px 14px;border-radius:8px;border:1.5px solid var(--navy-light);
+    background:#fff;color:var(--navy);font-weight:700;font-size:.8rem;cursor:pointer;font-family:inherit;
+  }
+  .tt-act.select{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .tt-act.del{border-color:var(--red);color:var(--red);}
+  .tt-act.confirm{background:var(--red);border-color:var(--red);color:#fff;}
+  .tt-sessions{padding:0 14px 10px;}
+  .tt-sess{
+    display:grid;grid-template-columns:54px 1fr auto;gap:8px;align-items:center;
+    padding:7px 0;border-top:1px solid #f0f2f5;font-size:.88rem;
+  }
+  .tt-sess-day{font-weight:800;color:var(--navy);}
+  .tt-sess-pool{font-size:.75rem;font-weight:700;color:var(--text-dim);background:var(--grey-bg);border-radius:20px;padding:2px 9px;}
+  .tt-more{
+    width:100%;display:flex;align-items:center;justify-content:space-between;
+    border:none;border-top:1px solid var(--border);background:#f8fafc;padding:10px 14px;
+    font-weight:700;font-size:.8rem;color:var(--navy-light);cursor:pointer;font-family:inherit;
+  }
+  .tt-item.open .tt-chevron{transform:rotate(180deg);}
+  .tt-more-body{display:none;padding:12px 14px 14px;border-top:1px solid var(--border);}
+  .tt-item.open .tt-more-body{display:block;}
+  .tt-sec-title{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin:0 0 6px;}
+  .tt-sec-title:not(:first-child){margin-top:14px;}
+  .tt-prog-title{font-weight:700;color:var(--navy);font-size:.95rem;}
+  .tt-prog-focus{font-size:.85rem;line-height:1.4;margin-top:4px;white-space:pre-wrap;}
+  .tt-muted{font-size:.8rem;color:var(--text-dim);}
+  .tt-meet{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid #f0f2f5;}
+  .tt-meet:first-of-type{border-top:none;}
+  .tt-meet-name{font-weight:700;font-size:.86rem;}
+  .tt-meet-date{font-size:.72rem;color:var(--text-dim);margin-top:1px;}
+  .tt-meet-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
+  .tt-status{font-size:.66rem;font-weight:800;border-radius:20px;padding:2px 9px;white-space:nowrap;}
+  .tt-status.open{background:#e6f4e8;color:var(--green);}
+  .tt-status.pending{background:#fff4e0;color:#8a5a00;}
+  .tt-status.closed{background:#eceff2;color:var(--text-dim);}
+  .tt-enter-btn{
+    background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;
+    font-weight:700;font-size:.78rem;cursor:pointer;font-family:inherit;
+  }
+  .tt-mode-banner{
+    background:#eaf6fc;border:1.5px solid var(--accent);border-radius:9px;padding:9px 12px;
+    font-size:.8rem;color:var(--navy);font-weight:600;margin-bottom:12px;display:none;
+  }
+  .tt-mode-banner.del{background:#fdeaea;border-color:var(--red);}
+  .tt-squad-row{display:flex;gap:8px;}
+  .tt-squad-row select{flex:1;}
+  .tt-sess-row{border:1.5px solid var(--border);border-radius:11px;padding:10px;margin-bottom:10px;background:#fbfcfd;}
+  .tt-sess-line1{display:flex;gap:8px;margin-bottom:8px;}
+  .tt-sess-line1 select{flex:1;}
+  .tt-time-line{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;}
+  .tt-rm{
+    flex:0 0 auto;width:40px;border-radius:9px;border:1.5px solid var(--border);background:#fff;
+    color:var(--red);font-weight:800;cursor:pointer;font-size:.95rem;
+  }
+  .tt-add-another{
+    width:100%;padding:11px;border-radius:9px;border:1.5px dashed var(--accent);background:#f3fbfe;
+    color:#0a5c8a;font-weight:700;font-size:.85rem;cursor:pointer;font-family:inherit;
+  }
+  .tt-dates{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .tt-dates .hint{display:block;margin:0 0 4px;font-weight:600;}
 </style>
 </head>
 <body>
@@ -769,6 +869,9 @@
   </div>
   <div class="nav-item" id="navSession" data-nav="session">
     <span class="nav-icon">🗓️</span> Session Plan
+  </div>
+  <div class="nav-item" id="navTimetables" data-nav="timetables">
+    <span class="nav-icon">📅</span> Timetables
   </div>
   <div class="nav-item" id="navDrills" data-nav="drills">
     <span class="nav-icon">🎯</span> Drills &amp; Skills
@@ -836,6 +939,13 @@
         <div>
           <div class="ht-title">Administrator</div>
           <div class="ht-sub">Squads &amp; new members</div>
+        </div>
+      </div>
+      <div class="home-tile" id="tileTimetables">
+        <div class="ht-icon">📅</div>
+        <div>
+          <div class="ht-title">Timetables</div>
+          <div class="ht-sub">Weekly sessions, season &amp; upcoming meets</div>
         </div>
       </div>
     </div>
@@ -1488,6 +1598,73 @@
     </div>
   </div>
 
+  <!-- ============ TIMETABLES: LIST ============ -->
+  <div class="view" id="viewTimetables">
+    <a class="back-home" id="backHomeTt">Home</a>
+
+    <div class="tt-concertina" id="ttControls">
+      <button type="button" class="tt-concertina-head" id="ttControlsHead" aria-expanded="false">
+        <span>⚙️ Coach &amp; Administrator controls</span>
+        <span class="tt-chevron">▼</span>
+      </button>
+      <div class="tt-concertina-body">
+        <div class="tt-ctrl-row">
+          <button type="button" class="tt-ctrl add" id="ttAddBtn">+ Add</button>
+          <button type="button" class="tt-ctrl" id="ttEditBtn">Edit</button>
+          <button type="button" class="tt-ctrl del" id="ttDeleteBtn">Delete</button>
+        </div>
+        <p class="hint" style="margin-top:10px;">Add a timetable, or choose Edit / Delete and then pick one from the list below. Deleting disables a timetable — it stays in the database but disappears from the app.</p>
+      </div>
+    </div>
+
+    <div class="tt-mode-banner" id="ttModeBanner"></div>
+    <div class="msg" id="ttListMsg" style="margin:0 0 10px;"></div>
+    <div id="ttList"><div class="empty">Loading timetables…</div></div>
+  </div>
+
+  <!-- ============ TIMETABLES: ADD / EDIT FORM ============ -->
+  <div class="view" id="viewTimetableForm">
+    <a class="back-home" id="backTtForm">Timetables</a>
+    <div class="card">
+      <h2 id="ttFormTitle">Add timetable</h2>
+
+      <label for="ttSquadSelect">Squad</label>
+      <div class="tt-squad-row" id="ttSquadRow">
+        <select id="ttSquadSelect"><option value="">Choose a squad…</option></select>
+        <button type="button" class="sp-primary-btn" style="flex:0 0 auto;padding:11px 18px;" id="ttSquadAddBtn">Add</button>
+      </div>
+      <div class="selected-pill" id="ttSquadPill">
+        <span id="ttSquadPillName"></span>
+        <button type="button" id="ttSquadChangeBtn">Change</button>
+      </div>
+      <p class="hint">One squad per timetable.</p>
+
+      <div id="ttSessionsWrap" style="display:none;">
+        <label>Sessions <span class="opt">(day, start time, pool)</span></label>
+        <div id="ttSessionRows"></div>
+        <button type="button" class="tt-add-another" id="ttAddAnotherBtn">+ Add another</button>
+
+        <label style="margin-top:18px;">Season <span class="opt">(beginning and end dates)</span></label>
+        <div class="tt-dates">
+          <div><span class="hint">Starts</span><input type="date" id="ttSeasonStart"></div>
+          <div><span class="hint">Ends</span><input type="date" id="ttSeasonEnd"></div>
+        </div>
+
+        <button class="submit-btn" id="ttSaveBtn">Save timetable</button>
+        <div class="msg" id="ttFormMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TIMETABLES: ENTER-A-COMPETITION (placeholder) ============ -->
+  <div class="view" id="viewTimetableEnter">
+    <a class="back-home" id="backTtEnter">Timetables</a>
+    <div class="card">
+      <h2>Enter a competition</h2>
+      <div id="ttEnterBody"></div>
+    </div>
+  </div>
+
 </main>
 
 <script>
@@ -1581,6 +1758,7 @@ const navActions = {
   attendance: goAttendance,
   feedback: goFeedback,
   session: goSession,
+  timetables: goTimetables,
   mi: goMI,
   admin: goAdmin,
   swimmer: goSwimmerProfile
@@ -4556,6 +4734,462 @@ async function archiveSetLineDrafts(sessionPlanId, content){
   const { error } = await sb.from("drill_set_line_archive").insert(payload);
   if (error) console.error("archive insert:", error);
 }
+
+// ===================================================================
+// TIMETABLES
+// Weekly timetable per squad (day / time / pool), with season dates.
+// Read-only overview page; add / edit / delete happen through the
+// "Coach & Administrator controls" concertina. "Delete" only DISABLES a
+// timetable (is_active=false) — nothing is ever erased from Supabase.
+// ===================================================================
+
+// Until user levels are defined, everyone is treated as the superuser
+// administrator. Replace this with a real role check when roles exist.
+function ttCanEdit(){ return true; }
+
+const TT_DAYS_SHORT = ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const TT_DAYS_LONG  = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const TT_POOLS = ["17m", "25m", "50m"];
+
+let ttItems = [];            // active timetables for currentClub
+let ttGalas = [];            // dated meets from the galas table
+let ttMode = null;           // null | "edit" | "delete"
+let ttConfirmId = null;      // timetable awaiting delete confirmation
+const ttExpanded = new Set();
+let ttForm = null;           // { id, squadId, squadName, rows[], removedIds[] }
+
+function ttToday(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function ttFmtTime(t){
+  const h = parseInt(t.slice(0, 2), 10), m = t.slice(3, 5);
+  return (h % 12 || 12) + ":" + m + " " + (h >= 12 ? "pm" : "am");
+}
+function ttSeasonState(t, today){
+  if (t.season_end < today) return "past";
+  if (t.season_start > today) return "upcoming";
+  return "current";
+}
+function ttRange(a, b){ return b && b !== a ? fmtDate(a) + " – " + fmtDate(b) : fmtDate(a); }
+
+// ---------- List page ----------
+function goTimetables(){
+  ttMode = null; ttConfirmId = null;
+  ttUpdateModeUi();
+  $("ttControls").style.display = ttCanEdit() ? "" : "none";
+  $("ttListMsg").textContent = "";
+  showView("viewTimetables");
+  loadTimetables();
+}
+
+async function loadTimetables(){
+  $("ttList").innerHTML = '<div class="empty">Loading timetables…</div>';
+  const [tt, gl] = await Promise.all([
+    sb.from("timetables")
+      .select("id, squad_id, season_start, season_end, season_title, weekly_focus, squads!inner(name, club), timetable_sessions(id, day_of_week, start_time, pool_size, is_active)")
+      .eq("is_active", true)
+      .eq("squads.club", currentClub)
+      .eq("timetable_sessions.is_active", true),
+    sb.from("galas")
+      .select("id, gala_code, name, date_start, date_end, entries_open, entries_close, status")
+      .not("date_start", "is", null)
+      .order("date_start", { ascending: true })
+  ]);
+  if (tt.error){
+    console.error(tt.error);
+    $("ttList").innerHTML = '<div class="empty">Could not load timetables.</div>';
+    return;
+  }
+  if (gl.error) console.error(gl.error);
+  ttItems = tt.data || [];
+  ttGalas = gl.data || [];
+  ttRenderList();
+}
+
+function ttMeetStatus(g, today){
+  if (g.entries_close && g.entries_close < today) return { key: "closed", label: "Entries closed" };
+  if (g.entries_open && g.entries_open <= today) return { key: "open", label: "Open to enter" };
+  return { key: "pending", label: g.entries_open ? "Pending · opens " + fmtDate(g.entries_open) : "Pending" };
+}
+function ttMeetsFor(t, today){
+  return ttGalas.filter(g => {
+    const end = g.date_end || g.date_start;
+    return end >= today && end >= t.season_start && g.date_start <= t.season_end;
+  });
+}
+
+function ttItemHtml(t, today){
+  const state = ttSeasonState(t, today);
+  const open = ttExpanded.has(t.id);
+  const sessions = (t.timetable_sessions || []).slice()
+    .sort((a, b) => a.day_of_week - b.day_of_week || a.start_time.localeCompare(b.start_time));
+  const sessHtml = sessions.length
+    ? sessions.map(s => `
+        <div class="tt-sess">
+          <span class="tt-sess-day">${TT_DAYS_SHORT[s.day_of_week]}</span>
+          <span>${ttFmtTime(s.start_time)}</span>
+          <span class="tt-sess-pool">${s.pool_size ? escapeHtml(s.pool_size) : "Pool TBC"}</span>
+        </div>`).join("")
+    : '<div class="tt-muted" style="padding:6px 0;">No sessions added yet.</div>';
+
+  let action = "";
+  if (ttCanEdit() && ttMode === "edit"){
+    action = `<button type="button" class="tt-act select" data-act="select" data-id="${t.id}">Select</button>`;
+  } else if (ttCanEdit() && ttMode === "delete"){
+    action = ttConfirmId === t.id
+      ? `<button type="button" class="tt-act confirm" data-act="confirm" data-id="${t.id}">Confirm</button>`
+      : `<button type="button" class="tt-act del" data-act="delete" data-id="${t.id}">Delete</button>`;
+  }
+
+  const pillLabel = { current: "Current", upcoming: "Upcoming", past: "Past" }[state];
+
+  // --- expanded section: season programme (read-only) + upcoming meets ---
+  const hasProgramme = !!(t.season_title || t.weekly_focus);
+  const progHtml = hasProgramme
+    ? (t.season_title ? `<div class="tt-prog-title">${escapeHtml(t.season_title)}</div>` : "") +
+      (t.weekly_focus ? `<div class="tt-prog-focus">${escapeHtml(t.weekly_focus)}</div>` : "")
+    : '<div class="tt-muted">The season title and weekly focus will appear here once the season programme is completed.</div>';
+
+  const meets = ttMeetsFor(t, today);
+  const meetsHtml = meets.length
+    ? meets.map(g => {
+        const st = ttMeetStatus(g, today);
+        return `
+        <div class="tt-meet">
+          <div>
+            <div class="tt-meet-name">${escapeHtml(g.name)}</div>
+            <div class="tt-meet-date">${ttRange(g.date_start, g.date_end)}</div>
+          </div>
+          <div class="tt-meet-side">
+            <span class="tt-status ${st.key}">${escapeHtml(st.label)}</span>
+            ${st.key === "open" ? `<button type="button" class="tt-enter-btn" data-act="enter" data-gala="${g.id}">Enter</button>` : ""}
+          </div>
+        </div>`;
+      }).join("")
+    : '<div class="tt-muted">No upcoming meets in this season.</div>';
+
+  return `
+    <div class="tt-item ${state === "past" ? "past" : ""} ${open ? "open" : ""}" data-tt="${t.id}">
+      <div class="tt-item-top">
+        <div>
+          <div class="tt-squad">${escapeHtml(t.squads.name)}<span class="tt-pill ${state}">${pillLabel}</span></div>
+          <div class="tt-season">${fmtDate(t.season_start)} – ${fmtDate(t.season_end)}</div>
+        </div>
+        ${action}
+      </div>
+      <div class="tt-sessions">${sessHtml}</div>
+      <button type="button" class="tt-more" data-act="toggle" data-id="${t.id}" aria-expanded="${open}">
+        <span>Season &amp; upcoming meets</span><span class="tt-chevron">▼</span>
+      </button>
+      <div class="tt-more-body">
+        <div class="tt-sec-title">Season programme</div>
+        ${progHtml}
+        <div class="tt-sec-title">Upcoming meets</div>
+        ${meetsHtml}
+      </div>
+    </div>`;
+}
+
+function ttRenderList(){
+  const box = $("ttList");
+  if (!ttItems.length){
+    box.innerHTML = '<div class="empty">No timetables yet for ' + escapeHtml(currentClub) + '.' +
+      (ttCanEdit() ? ' Open “Coach &amp; Administrator controls” and tap Add.' : '') + '</div>';
+    return;
+  }
+  const today = ttToday();
+  const rank = { current: 0, upcoming: 1, past: 2 };
+  const items = ttItems.slice().sort((a, b) =>
+    rank[ttSeasonState(a, today)] - rank[ttSeasonState(b, today)] ||
+    a.squads.name.localeCompare(b.squads.name) ||
+    a.season_start.localeCompare(b.season_start));
+  box.innerHTML = items.map(t => ttItemHtml(t, today)).join("");
+}
+
+function ttUpdateModeUi(){
+  $("ttEditBtn").classList.toggle("active", ttMode === "edit");
+  $("ttDeleteBtn").classList.toggle("active", ttMode === "delete");
+  const b = $("ttModeBanner");
+  b.classList.toggle("del", ttMode === "delete");
+  if (ttMode === "edit"){
+    b.style.display = "block";
+    b.textContent = "Edit mode — tap Select beside the timetable you want to change. Tap Edit again to cancel.";
+  } else if (ttMode === "delete"){
+    b.style.display = "block";
+    b.textContent = "Delete mode — tap Delete beside a timetable, then Confirm. It is disabled, not erased. Tap Delete again to cancel.";
+  } else {
+    b.style.display = "none";
+  }
+}
+
+$("ttControlsHead").addEventListener("click", () => {
+  const wrap = $("ttControls");
+  wrap.classList.toggle("open");
+  $("ttControlsHead").setAttribute("aria-expanded", wrap.classList.contains("open"));
+});
+$("ttAddBtn").addEventListener("click", () => { ttOpenForm(null); });
+$("ttEditBtn").addEventListener("click", () => {
+  ttMode = ttMode === "edit" ? null : "edit"; ttConfirmId = null;
+  $("ttListMsg").textContent = "";
+  ttUpdateModeUi(); ttRenderList();
+});
+$("ttDeleteBtn").addEventListener("click", () => {
+  ttMode = ttMode === "delete" ? null : "delete"; ttConfirmId = null;
+  $("ttListMsg").textContent = "";
+  ttUpdateModeUi(); ttRenderList();
+});
+
+$("ttList").addEventListener("click", e => {
+  const btn = e.target.closest("[data-act]");
+  if (!btn) return;
+  const act = btn.dataset.act, id = btn.dataset.id;
+  if (act === "toggle"){
+    const card = btn.closest(".tt-item");
+    const nowOpen = card.classList.toggle("open");
+    btn.setAttribute("aria-expanded", nowOpen);
+    if (nowOpen) ttExpanded.add(id); else ttExpanded.delete(id);
+  } else if (act === "select" && ttCanEdit()){
+    const t = ttItems.find(x => x.id === id);
+    if (t) ttOpenForm(t);
+  } else if (act === "delete" && ttCanEdit()){
+    ttConfirmId = id; ttRenderList();
+  } else if (act === "confirm" && ttCanEdit()){
+    ttDisable(id, btn);
+  } else if (act === "enter"){
+    ttGoEnter(btn.dataset.gala);
+  }
+});
+
+async function ttDisable(id, btn){
+  btn.disabled = true; btn.textContent = "Deleting…";
+  const { error } = await sb.from("timetables")
+    .update({ is_active: false, disabled_at: new Date().toISOString() })
+    .eq("id", id);
+  const msg = $("ttListMsg");
+  if (error){
+    console.error(error);
+    msg.className = "msg err"; msg.textContent = "Could not delete: " + error.message;
+    ttConfirmId = null; ttRenderList();
+    return;
+  }
+  ttItems = ttItems.filter(t => t.id !== id);
+  ttExpanded.delete(id);
+  ttMode = null; ttConfirmId = null;
+  ttUpdateModeUi(); ttRenderList();
+  msg.className = "msg ok"; msg.textContent = "Timetable deleted.";
+}
+
+// ---------- Enter-a-competition (placeholder until the entry page exists) ----------
+function ttGoEnter(galaId){
+  const g = ttGalas.find(x => x.id === galaId);
+  $("ttEnterBody").innerHTML =
+    `<div class="tt-prog-title">${escapeHtml(g ? g.name : "Competition")}</div>` +
+    (g ? `<div class="tt-meet-date">${ttRange(g.date_start, g.date_end)}</div>` : "") +
+    '<p class="hint" style="margin-top:14px;">The competition entry page has not been built yet. Parents will land on it from here once it is.</p>';
+  showView("viewTimetableEnter");
+}
+
+// ---------- Add / edit form ----------
+function ttBlankRow(){ return { id: null, day: "", hh: "", mm: "", ap: "", pool: "" }; }
+function ttTo24(r){
+  const h = (parseInt(r.hh, 10) % 12) + (r.ap === "pm" ? 12 : 0);
+  return String(h).padStart(2, "0") + ":" + r.mm + ":00";
+}
+function ttRowFromSession(s){
+  const h = parseInt(s.start_time.slice(0, 2), 10);
+  return {
+    id: s.id,
+    day: String(s.day_of_week),
+    hh: String(h % 12 || 12),
+    mm: s.start_time.slice(3, 5),
+    ap: h >= 12 ? "pm" : "am",
+    pool: s.pool_size || ""
+  };
+}
+
+async function ttLoadSquadOptions(){
+  const sel = $("ttSquadSelect");
+  sel.innerHTML = '<option value="">Loading…</option>';
+  const { data, error } = await sb.from("squads").select("id, name").eq("club", currentClub).order("name");
+  if (error){ console.error(error); sel.innerHTML = '<option value="">Could not load squads</option>'; return; }
+  sel.innerHTML = (data && data.length)
+    ? '<option value="">Choose a squad…</option>' + data.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("")
+    : '<option value="">No squads — add one under Administrator</option>';
+}
+
+function ttSetSquad(id, name){
+  ttForm.squadId = id; ttForm.squadName = name;
+  $("ttSquadPillName").textContent = name;
+  $("ttSquadPill").style.display = "flex";
+  $("ttSquadRow").style.display = "none";
+  $("ttSessionsWrap").style.display = "block";
+  if (!ttForm.rows.length) ttForm.rows.push(ttBlankRow());
+  ttRenderRows();
+}
+
+async function ttOpenForm(existing){
+  ttMode = null; ttConfirmId = null;
+  ttForm = { id: existing ? existing.id : null, squadId: null, squadName: "", rows: [], removedIds: [] };
+  $("ttFormTitle").textContent = existing ? "Edit timetable" : "Add timetable";
+  const msg = $("ttFormMsg"); msg.textContent = ""; msg.className = "msg";
+  $("ttSaveBtn").disabled = false; $("ttSaveBtn").textContent = "Save timetable";
+  $("ttSeasonStart").value = ""; $("ttSeasonEnd").value = "";
+  $("ttSquadPill").style.display = "none";
+  $("ttSquadRow").style.display = "flex";
+  $("ttSessionsWrap").style.display = "none";
+  showView("viewTimetableForm");
+  await ttLoadSquadOptions();
+  if (existing){
+    ttForm.rows = (existing.timetable_sessions || []).slice()
+      .sort((a, b) => a.day_of_week - b.day_of_week || a.start_time.localeCompare(b.start_time))
+      .map(ttRowFromSession);
+    $("ttSeasonStart").value = existing.season_start;
+    $("ttSeasonEnd").value = existing.season_end;
+    ttSetSquad(existing.squad_id, existing.squads.name);
+  }
+  ttRenderRows();
+}
+
+$("ttSquadAddBtn").addEventListener("click", () => {
+  const sel = $("ttSquadSelect");
+  if (!sel.value){
+    const msg = $("ttFormMsg"); msg.className = "msg err"; msg.textContent = "Choose a squad first.";
+    $("ttSessionsWrap").style.display = "none";
+    return;
+  }
+  $("ttFormMsg").textContent = "";
+  ttSetSquad(sel.value, sel.options[sel.selectedIndex].textContent);
+});
+$("ttSquadChangeBtn").addEventListener("click", () => {
+  const keep = ttForm.squadId;
+  ttForm.squadId = null;
+  $("ttSquadPill").style.display = "none";
+  $("ttSquadRow").style.display = "flex";
+  if (keep) $("ttSquadSelect").value = keep;
+});
+
+function ttRenderRows(){
+  const opt = (v, label, cur) => `<option value="${v}"${String(cur) === String(v) ? " selected" : ""}>${label}</option>`;
+  const baseMins = []; for (let m = 0; m < 60; m += 5) baseMins.push(String(m).padStart(2, "0"));
+  $("ttSessionRows").innerHTML = ttForm.rows.map((r, i) => {
+    const mins = baseMins.includes(r.mm) || r.mm === "" ? baseMins : baseMins.concat(r.mm).sort();
+    return `
+      <div class="tt-sess-row">
+        <div class="tt-sess-line1">
+          <select data-i="${i}" data-f="day" aria-label="Day">
+            <option value="">Day…</option>
+            ${TT_DAYS_LONG.slice(1).map((d, k) => opt(k + 1, d, r.day)).join("")}
+          </select>
+          <button type="button" class="tt-rm" data-rm="${i}" aria-label="Remove this session">✕</button>
+        </div>
+        <div class="tt-time-line">
+          <select data-i="${i}" data-f="hh" aria-label="Hour">
+            <option value="">Hour</option>
+            ${Array.from({ length: 12 }, (_, k) => opt(k + 1, k + 1, r.hh)).join("")}
+          </select>
+          <select data-i="${i}" data-f="mm" aria-label="Minutes">
+            <option value="">Min</option>
+            ${mins.map(m => opt(m, m, r.mm)).join("")}
+          </select>
+          <select data-i="${i}" data-f="ap" aria-label="am or pm">
+            <option value="">am/pm</option>${opt("am", "am", r.ap)}${opt("pm", "pm", r.ap)}
+          </select>
+        </div>
+        <select data-i="${i}" data-f="pool" aria-label="Pool">
+          <option value="">Pool (optional)</option>
+          ${TT_POOLS.map(p => opt(p, p, r.pool)).join("")}
+        </select>
+      </div>`;
+  }).join("");
+}
+
+$("ttSessionRows").addEventListener("change", e => {
+  const el = e.target;
+  if (!el.dataset || !el.dataset.f) return;
+  ttForm.rows[parseInt(el.dataset.i, 10)][el.dataset.f] = el.value;
+});
+$("ttSessionRows").addEventListener("click", e => {
+  const b = e.target.closest("[data-rm]");
+  if (!b) return;
+  const [removed] = ttForm.rows.splice(parseInt(b.dataset.rm, 10), 1);
+  if (removed && removed.id) ttForm.removedIds.push(removed.id);
+  if (!ttForm.rows.length) ttForm.rows.push(ttBlankRow());
+  ttRenderRows();
+});
+$("ttAddAnotherBtn").addEventListener("click", () => { ttForm.rows.push(ttBlankRow()); ttRenderRows(); });
+
+async function ttSave(){
+  const msg = $("ttFormMsg");
+  const fail = t => { msg.className = "msg err"; msg.textContent = t; };
+  msg.textContent = ""; msg.className = "msg";
+
+  if (!ttForm.squadId) return fail("Choose a squad and press Add.");
+  const rows = ttForm.rows;
+  for (let i = 0; i < rows.length; i++){
+    const r = rows[i];
+    if (!r.day || !r.hh || !r.mm || !r.ap) return fail("Session " + (i + 1) + ": choose a day and a full start time (hour, minutes, am/pm).");
+  }
+  const seen = new Set();
+  for (const r of rows){
+    const k = r.day + "|" + ttTo24(r);
+    if (seen.has(k)) return fail("Two sessions have the same day and time.");
+    seen.add(k);
+  }
+  const start = $("ttSeasonStart").value, end = $("ttSeasonEnd").value;
+  if (!start || !end) return fail("Set the season start and end dates.");
+  if (end < start) return fail("The season end date must be on or after the start date.");
+  const clash = ttItems.find(t => t.id !== ttForm.id && t.squad_id === ttForm.squadId && t.season_start <= end && t.season_end >= start);
+  if (clash) return fail(ttForm.squadName + " already has a timetable covering " + fmtDate(clash.season_start) + " – " + fmtDate(clash.season_end) + ". Edit that one, or change these dates.");
+
+  const btn = $("ttSaveBtn");
+  btn.disabled = true; btn.textContent = "Saving…";
+  try {
+    let id = ttForm.id;
+    if (id){
+      const { error } = await sb.from("timetables").update({ squad_id: ttForm.squadId, season_start: start, season_end: end }).eq("id", id);
+      if (error) throw error;
+    } else {
+      const { data, error } = await sb.from("timetables")
+        .insert({ squad_id: ttForm.squadId, season_start: start, season_end: end })
+        .select("id").single();
+      if (error) throw error;
+      id = data.id;
+      ttForm.id = id;   // a retry after a partial failure updates instead of duplicating
+    }
+    const payload = r => ({ day_of_week: parseInt(r.day, 10), start_time: ttTo24(r), pool_size: r.pool || null });
+
+    for (const r of rows.filter(r => r.id)){
+      const { error } = await sb.from("timetable_sessions").update(payload(r)).eq("id", r.id);
+      if (error) throw error;
+    }
+    const fresh = rows.filter(r => !r.id);
+    if (fresh.length){
+      const { data, error } = await sb.from("timetable_sessions")
+        .insert(fresh.map(r => ({ timetable_id: id, ...payload(r) }))).select("id");
+      if (error) throw error;
+      data.forEach((d, i) => { fresh[i].id = d.id; });
+    }
+    if (ttForm.removedIds.length){
+      const { error } = await sb.from("timetable_sessions").update({ is_active: false }).in("id", ttForm.removedIds);
+      if (error) throw error;
+      ttForm.removedIds = [];
+    }
+  } catch (err){
+    console.error(err);
+    btn.disabled = false; btn.textContent = "Save timetable";
+    return fail("Could not save: " + (err.message || err));
+  }
+  goTimetables();
+  const lm = $("ttListMsg"); lm.className = "msg ok"; lm.textContent = "Timetable saved.";
+}
+$("ttSaveBtn").addEventListener("click", ttSave);
+
+// ---------- Navigation ----------
+$("tileTimetables").addEventListener("click", goTimetables);
+$("backHomeTt").addEventListener("click", () => showView("viewHome"));
+$("backTtForm").addEventListener("click", () => { showView("viewTimetables"); ttRenderList(); });
+$("backTtEnter").addEventListener("click", () => { showView("viewTimetables"); ttRenderList(); });
 
 // ===================================================================
 // Boot
