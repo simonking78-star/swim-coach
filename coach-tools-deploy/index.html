@@ -295,6 +295,11 @@
 
   /* Stroke filter chips (feedback) */
   .stroke-filter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+  /* History card header + PDF button */
+  .fb-pdf-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+  .fb-pdf-bar h2{margin:0;}
+  .fb-pdf-btn{background:none;border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;font-weight:700;font-size:.78rem;color:var(--navy);cursor:pointer;flex:none;}
+  .fb-pdf-btn:disabled{opacity:.6;cursor:default;}
   .stroke-chip{
     padding:6px 12px;border-radius:20px;border:1.5px solid var(--border);
     background:#fff;font-size:.78rem;font-weight:700;color:var(--text-dim);cursor:pointer;
@@ -1078,7 +1083,11 @@
 
     <div class="fb-panel" id="fbPanelHistory">
     <div class="card" id="historyCard">
-      <h2>History for this swimmer <span class="count" id="historyCount"></span></h2>
+      <div class="fb-pdf-bar">
+        <h2>History for this swimmer <span class="count" id="historyCount"></span></h2>
+        <button type="button" class="fb-pdf-btn" id="fbPdfBtn">PDF</button>
+      </div>
+      <div class="msg" id="fbPdfMsg" style="margin:-4px 0 8px;min-height:0;"></div>
       <div class="stroke-filter" id="strokeFilter"></div>
       <div id="historyList"><div class="empty">Pick a swimmer first.</div></div>
     </div>
@@ -3209,6 +3218,182 @@ $("submitBtn").addEventListener("click", async () => {
   await loadHistoryForSwimmer(selectedSwimmer.id);
   setFbTab("fbPanelHistory");   // show the freshly-saved entry in its string
 });
+
+// ===================================================================
+// FEEDBACK -> PDF
+// "PDF" button on the History tab. Builds a PDF of ALL the selected
+// swimmer's feedback: one section per stroke/skill (order below), each
+// starting with a headline and separated from the next by a line, with
+// entries newest -> oldest. A stroke/skill with no feedback is left out
+// completely (no headline).
+// ===================================================================
+// Section order in the PDF. Edit this list to re-order. Any category not listed
+// (e.g. one added later) is placed at the end, A-Z, so nothing is dropped.
+const FB_PDF_ORDER = ["Free","Back","Breast","Fly","Dive","Transition","Touch turn","Tumble turn","Training mindset","Racing mindset"];
+// Headline shown for a section (falls back to the category name as saved).
+const FB_PDF_HEADLINES = { "Free":"Freestyle", "Back":"Backstroke", "Breast":"Breaststroke", "Fly":"Butterfly" };
+
+// jsPDF's built-in fonts only cover Latin-1: swap smart punctuation, drop anything else (emoji etc.)
+function fbPdfSafe(s){
+  return (s == null ? "" : String(s))
+    .replace(/[\u2018\u2019\u201B]/g, "'")
+    .replace(/[\u201C\u201D\u201F]/g, '"')
+    .replace(/[\u2013\u2014]/g, "-")
+    .replace(/\u2026/g, "...")
+    .replace(/[\u00A0\u2009\u202F]/g, " ")
+    .replace(/[^\n\x20-\x7E\u00A1-\u00FF]/g, "");
+}
+
+// Group by stroke (in FB_PDF_ORDER), newest -> oldest inside each. Strokes with no rows never appear.
+function fbPdfGroups(rows){
+  const byCat = {};
+  rows.forEach(r => {
+    const c = (r.category || "").trim() || "Other";
+    (byCat[c] = byCat[c] || []).push(r);
+  });
+  const known = FB_PDF_ORDER.filter(c => byCat[c]);
+  const extra = Object.keys(byCat).filter(c => !FB_PDF_ORDER.includes(c)).sort();
+  return [...known, ...extra].map(c => ({
+    category: c,
+    rows: byCat[c].slice().sort((a, b) =>
+      (b.session_date || "").localeCompare(a.session_date || "") ||
+      (b.created_at || "").localeCompare(a.created_at || ""))
+  }));
+}
+
+function buildFeedbackPdf(swimmer, rows){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
+  const marginL = 40, usableW = pageW - marginL * 2;
+  const topY = 50, bottomY = pageH - 48;
+  const NAVY = [11, 37, 69], DIM = [91, 107, 127], TEXT = [26, 35, 50], RULE = [150, 162, 178];
+  const lh = pt => pt * 1.35;                       // line height for a font size
+  const name = fbPdfSafe(swimmer.full_name || "Swimmer");
+  let y = 102;
+
+  // Header band (same look as the session-plan PDF)
+  doc.setFillColor(...NAVY);
+  doc.rect(0, 0, pageW, 74, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+  doc.text(name, marginL, 36);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9.5);
+  const today = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  const bits = ["Swimmer feedback"];
+  if (typeof swimmer.squad === "string" && swimmer.squad) bits.push(fbPdfSafe(swimmer.squad));
+  bits.push(today, `${rows.length} entr${rows.length === 1 ? "y" : "ies"}`);
+  doc.text(bits.join("   \u00B7   "), marginL, 58);
+
+  // wrap text to the page width into drawable line objects
+  function push(list, text, o){
+    const { size = 10.5, bold = false, color = TEXT, gap = 0 } = o || {};
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setFontSize(size);
+    let first = true;
+    fbPdfSafe(text).split("\n").forEach(p => {
+      (p.trim() ? doc.splitTextToSize(p, usableW) : [""]).forEach(t => {
+        list.push({ t, size, bold, color, gap: first ? gap : 0 });
+        first = false;
+      });
+    });
+  }
+  const blockH = L => L.reduce((s, o) => s + o.gap + lh(o.size), 0);
+  function draw(L){
+    L.forEach(o => {
+      const h = lh(o.size);
+      if (y + o.gap + h > bottomY){ doc.addPage(); y = topY; } else { y += o.gap; }
+      doc.setFont("helvetica", o.bold ? "bold" : "normal");
+      doc.setFontSize(o.size);
+      doc.setTextColor(...o.color);
+      doc.text(o.t, marginL, y + o.size);
+      y += h;
+    });
+  }
+
+  function entryLines(r){
+    const L = [];
+    const date = r.session_date ? fmtDate(r.session_date) : "No date";
+    push(L, r.status ? `${date}  -  ${r.status}` : date, { size: 11, bold: true, color: NAVY });
+    if (r.criterion) push(L, r.criterion, { bold: true, gap: 3 });
+    const obs = r.observation || r.note || "";
+    if (obs){ push(L, "Observation", { size: 8.5, color: DIM, gap: 6 }); push(L, obs); }
+    if (r.remedial_action){ push(L, "Remedial action", { size: 8.5, color: DIM, gap: 6 }); push(L, r.remedial_action); }
+    if (r.note && r.observation){ push(L, "Additional notes", { size: 8.5, color: DIM, gap: 6 }); push(L, r.note); }
+    return L;
+  }
+
+  // One section per stroke: separator line, headline, then entries newest -> oldest
+  fbPdfGroups(rows).forEach(g => {
+    const first = entryLines(g.rows[0]);
+    // keep the headline together with at least the start of its first entry
+    if (y + 16 + 26 + Math.min(blockH(first), 90) > bottomY){ doc.addPage(); y = topY; }
+
+    doc.setDrawColor(...RULE); doc.setLineWidth(0.8);
+    doc.line(marginL, y, pageW - marginL, y);
+    y += 16;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(14.5); doc.setTextColor(...NAVY);
+    doc.text(fbPdfSafe(FB_PDF_HEADLINES[g.category] || g.category), marginL, y + 12);
+    y += 26;
+
+    g.rows.forEach((r, i) => {
+      const L = i === 0 ? first : entryLines(r);
+      const h = blockH(L);
+      if (y + h > bottomY && h <= bottomY - topY){ doc.addPage(); y = topY; }  // keep an entry on one page where possible
+      draw(L);
+      y += 12;
+    });
+    y += 6;
+  });
+
+  // Footer on every page
+  const n = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= n; i++){
+    doc.setPage(i);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...DIM);
+    doc.text(`${name}  \u00B7  Swimmer feedback`, marginL, pageH - 24);
+    doc.text(`Page ${i} of ${n}`, pageW - marginL, pageH - 24, { align: "right" });
+  }
+  return doc;
+}
+
+// Builds the PDF, then tries the native share sheet before falling back to a plain download
+// (same approach as the session-plan PDF).
+async function shareFeedbackPdf(){
+  const btn = $("fbPdfBtn"), msg = $("fbPdfMsg");
+  const say = (t, cls) => {
+    msg.textContent = t; msg.className = "msg " + (cls || "");
+    if (t) setTimeout(() => { if (msg.textContent === t) msg.textContent = ""; }, 5000);
+  };
+  say("");
+  if (!selectedSwimmer){ say("Pick a swimmer first.", "err"); return; }
+  if (!swimmerHistory.length){ say("No feedback on record for this swimmer yet.", "err"); return; }
+  if (!window.jspdf){ say("PDF library failed to load \u2014 check your connection and try again.", "err"); return; }
+
+  btn.disabled = true;
+  try {
+    const doc = buildFeedbackPdf(selectedSwimmer, swimmerHistory);
+    const slug = fbPdfSafe(selectedSwimmer.full_name || "swimmer").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const filename = `feedback-${slug || "swimmer"}-${new Date().toISOString().slice(0,10)}.pdf`;
+    const file = new File([doc.output("blob")], filename, { type: "application/pdf" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })){
+      try {
+        await navigator.share({ files: [file], title: `${selectedSwimmer.full_name} - feedback` });
+        return;
+      } catch (e){
+        if (e && e.name === "AbortError") return;   // coach closed the share sheet
+        console.error(e);                            // fall through to plain download
+      }
+    }
+    doc.save(filename);
+  } catch (err){
+    console.error(err);
+    say("Could not create the PDF \u2014 " + (err.message || err), "err");
+  } finally {
+    btn.disabled = false;
+  }
+}
+$("fbPdfBtn").addEventListener("click", shareFeedbackPdf);
 
 // ===================================================================
 // ADMIN
