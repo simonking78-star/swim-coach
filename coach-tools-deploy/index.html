@@ -856,6 +856,68 @@
   table.roster-table td.empty,table.roster-table td.empty:hover{text-align:center;}
   table.roster-table tbody tr.roster-row{cursor:pointer;}
   table.roster-table tbody tr.roster-row:active,table.roster-table tbody tr.roster-row:hover{background:var(--grey-bg);}
+
+  /* ---------- Season / Planning / Competitions / Training ---------- */
+  .sn-season-head{margin:0 0 12px;}
+  .sn-season-title{font-weight:800;color:var(--navy);font-size:1.05rem;}
+  .sn-week-head{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px;}
+  .sn-tag{font-size:.68rem;font-weight:800;border-radius:20px;padding:3px 9px;background:#e6f0ff;color:#0a5c8a;}
+  .sn-tag.q{background:#f1e8ff;color:#5b2a9a;}
+  .sn-tag.e{background:#e6f4e8;color:var(--green);}
+  .sn-tag.s{background:#fff4e0;color:#8a5a00;}
+  .sn-sess{padding:9px 0;border-top:1px solid #f0f2f5;}
+  .sn-sess:first-of-type{border-top:none;}
+  .sn-sess-when{font-weight:800;color:var(--navy);font-size:.86rem;}
+  .sn-sess-stroke{font-size:.75rem;font-weight:700;color:#0a5c8a;margin-top:2px;}
+  .sn-sess-outline{font-size:.82rem;line-height:1.4;margin-top:3px;white-space:pre-wrap;}
+  .sn-cd{font-size:.68rem;color:var(--text-dim);font-style:italic;margin-top:8px;}
+  .sn-comp-link{background:none;border:none;padding:0;font:inherit;font-weight:700;font-size:.86rem;color:#0a5c8a;text-decoration:underline;cursor:pointer;text-align:left;}
+  .sn-skel{height:14px;border-radius:6px;background:linear-gradient(90deg,#eef1f5,#f7f9fb,#eef1f5);margin:10px 0;}
+  .pl-btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;}
+  .pl-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid #f0f2f5;}
+  .pl-row:first-child{border-top:none;}
+  .pl-row-name{font-weight:700;font-size:.88rem;}
+  .pl-row-sub{font-size:.72rem;color:var(--text-dim);margin-top:2px;}
+  .pl-row-acts{display:flex;gap:6px;flex-shrink:0;}
+  .pl-break{display:grid;grid-template-columns:1fr 1fr 40px;gap:8px;margin-bottom:8px;}
+  .cf-ev-table td{padding:6px 5px;}
+  .cf-ev-table input[type=text]{padding:7px 8px;font-size:.82rem;min-width:62px;}
+  .cf-ev-table input[type=checkbox]{width:20px;height:20px;}
+  .cf-ev-table td.off{color:var(--text-dim);font-size:.72rem;}
+  .cf-ev-table td.cur{font-weight:700;color:var(--navy);}
+  .mf-squads{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .mf-check{display:flex;align-items:center;gap:8px;border:1.5px solid var(--border);border-radius:9px;padding:9px 10px;font-size:.85rem;font-weight:600;cursor:pointer;background:#fff;}
+  .mf-check input{width:18px;height:18px;margin:0;}
+  .mf-comp{display:grid;grid-template-columns:1fr 132px;gap:8px;align-items:center;padding:8px 0;border-top:1px solid #f0f2f5;}
+  .mf-comp:first-child{border-top:none;}
+  .mi-week{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
+  .mi-week h3{margin:0 0 10px;font-size:.95rem;color:var(--navy);}
+  .mi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .mi-grid .full{grid-column:1 / -1;}
+  .mi-grid .hint{display:block;margin:0 0 4px;font-weight:600;}
+  .mi-comp-note{margin-top:10px;background:#fff4e0;border-radius:9px;padding:8px 10px;font-size:.78rem;color:#8a5a00;font-weight:600;}
+  .mi-sess{border:1.5px solid var(--border);border-radius:11px;padding:10px;margin-top:10px;background:#fbfcfd;}
+  .mi-sess-when{font-weight:800;font-size:.82rem;color:var(--navy);margin-bottom:6px;}
+  .mi-sess textarea{min-height:52px;margin-top:6px;}
+  .cp-files{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+  .cp-file{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:600;color:#0a5c8a;background:#eaf6fc;border-radius:8px;padding:5px 9px;text-decoration:none;}
+  .cp-acts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px;}
+  .cp-meta{font-size:.78rem;line-height:1.5;}
+  .cp-flash{box-shadow:0 0 0 3px var(--accent);}
+  .qt-overlay{position:fixed;inset:0;background:rgba(11,37,69,.45);display:none;z-index:60;align-items:flex-end;justify-content:center;}
+  .qt-overlay.active{display:flex;}
+  .qt-modal{background:#fff;width:100%;max-width:720px;max-height:88vh;border-radius:16px 16px 0 0;display:flex;flex-direction:column;}
+  @media (min-width:768px){ .qt-overlay{align-items:center;} .qt-modal{border-radius:16px;} }
+  .qt-modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);font-weight:800;color:var(--navy);}
+  .qt-modal-body{overflow:auto;padding:12px 16px 20px;}
+  .qt-modal-body table{border-collapse:collapse;font-size:.78rem;min-width:100%;}
+  .qt-modal-body th,.qt-modal-body td{padding:5px 7px;border-bottom:1px solid #f0f2f5;white-space:nowrap;text-align:left;}
+  .qt-modal-body th{font-size:.68rem;text-transform:uppercase;color:var(--text-dim);position:sticky;top:0;background:#fff;}
+  input[type=url],input[type=search],input[type=number]{
+    width:100%;padding:11px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:.95rem;
+    background:#fff;color:var(--text);font-family:inherit;
+  }
+  input[type=url]:focus,input[type=search]:focus,input[type=number]:focus{outline:none;border-color:var(--accent);}
 </style>
 </head>
 <body>
@@ -891,6 +953,12 @@
   </div>
   <div class="nav-item" id="navTimetables" data-nav="timetables">
     <span class="nav-icon">📅</span> Timetables
+  </div>
+  <div class="nav-item" id="navSeason" data-nav="season">
+    <span class="nav-icon">🧭</span> Season
+  </div>
+  <div class="nav-item" id="navCompetitions" data-nav="competitions">
+    <span class="nav-icon">🏆</span> Competitions
   </div>
   <div class="nav-item" id="navDrills" data-nav="drills">
     <span class="nav-icon">🎯</span> Drills &amp; Skills
@@ -965,6 +1033,20 @@
         <div>
           <div class="ht-title">Timetables</div>
           <div class="ht-sub">Weekly sessions, season &amp; upcoming meets</div>
+        </div>
+      </div>
+      <div class="home-tile" id="tileSeason">
+        <div class="ht-icon">🧭</div>
+        <div>
+          <div class="ht-title">Season</div>
+          <div class="ht-sub">This week's training by squad, plan macros &amp; micros</div>
+        </div>
+      </div>
+      <div class="home-tile" id="tileCompetitions">
+        <div class="ht-icon">🏆</div>
+        <div>
+          <div class="ht-title">Competitions</div>
+          <div class="ht-sub">Upcoming meets, files, QTs &amp; entry</div>
         </div>
       </div>
     </div>
@@ -1714,6 +1796,154 @@
     <div class="card">
       <h2>Enter a competition</h2>
       <div id="ttEnterBody"></div>
+    </div>
+  </div>
+
+  <!-- ============ SEASON: OVERVIEW (per-squad concertina) ============ -->
+  <div class="view" id="viewSeason">
+    <a class="back-home" id="backHomeSeason">Home</a>
+    <button type="button" class="submit-btn" id="snPlanBtn" style="margin:0 0 14px;">PLAN</button>
+    <div class="sn-season-head" id="snSeasonHead"></div>
+    <div id="snSquadList"><div class="empty">Loading season…</div></div>
+  </div>
+
+  <!-- ============ SEASON: PLANNING ============ -->
+  <div class="view" id="viewPlanning">
+    <a class="back-home" id="backPlanning">Season</a>
+    <div class="card">
+      <h2>Planning</h2>
+      <label for="plTitle">Season title</label>
+      <input type="text" id="plTitle" placeholder="e.g. 2026–27 Winter Season">
+      <div class="tt-dates" style="margin-top:12px;">
+        <div><span class="hint">Season start</span><input type="date" id="plStart"></div>
+        <div><span class="hint">Season finish</span><input type="date" id="plFinish"></div>
+      </div>
+      <label style="margin-top:16px;">Season breaks <span class="opt">(optional)</span></label>
+      <div id="plBreakRows"></div>
+      <button type="button" class="tt-add-another" id="plAddBreakBtn">+ Add break</button>
+
+      <div class="pl-btn-row">
+        <button type="button" class="tt-ctrl add" id="plAddEventBtn">+ Add event</button>
+        <button type="button" class="tt-ctrl add" id="plAddMacroBtn">+ Add macro</button>
+      </div>
+      <button class="submit-btn" id="plSaveBtn">Save</button>
+      <div class="msg" id="plMsg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Season competitions</h2>
+      <div id="plCompList"><div class="empty">No competitions yet — use Add event.</div></div>
+    </div>
+    <div class="card">
+      <h2>Macro-cycles</h2>
+      <div id="plMacroList"><div class="empty">No macro-cycles yet — use Add macro.</div></div>
+    </div>
+  </div>
+
+  <!-- ============ COMPETITIONS: LIST ============ -->
+  <div class="view" id="viewCompetitions">
+    <a class="back-home" id="backHomeComp">Home</a>
+    <div class="card" style="padding-bottom:12px;">
+      <input type="search" id="cpSearch" placeholder="Search meets by name or town">
+      <div class="roster-filters" style="margin-top:10px;">
+        <select id="cpCourse" aria-label="Course">
+          <option value="">All courses</option><option value="SC">Short course</option><option value="LC">Long course</option>
+        </select>
+        <select id="cpLevel" aria-label="Level">
+          <option value="">All levels</option><option value="1">Level 1</option><option value="2">Level 2</option><option value="3">Level 3</option><option value="4">Level 4</option>
+        </select>
+      </div>
+      <div class="hint" id="cpCount"></div>
+    </div>
+    <div class="msg" id="cpMsg" style="margin:0 0 10px;"></div>
+    <div id="cpList"><div class="empty">Loading competitions…</div></div>
+  </div>
+
+  <!-- ============ COMPETITIONS: ADD / EDIT (season event) ============ -->
+  <div class="view" id="viewCompForm">
+    <a class="back-home" id="backCompForm">Planning</a>
+    <div class="card">
+      <h2 id="cfTitle">Add competition</h2>
+      <label for="cfCompSelect">Competition</label>
+      <select id="cfCompSelect"><option value="">Loading…</option></select>
+      <p class="hint">Meets inside the season dates, from the scraped competitions list. Choose “Not listed” to type one in.</p>
+      <div id="cfManualWrap" style="display:none;">
+        <label for="cfName">Competition name</label>
+        <input type="text" id="cfName">
+      </div>
+      <div class="tt-dates" style="margin-top:12px;">
+        <div><span class="hint">Level</span>
+          <select id="cfLevel"><option value="">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
+        <div><span class="hint">Course</span>
+          <select id="cfCourse"><option value="">—</option><option value="SC">SC</option><option value="LC">LC</option></select></div>
+      </div>
+      <div class="tt-dates" style="margin-top:12px;">
+        <div><span class="hint">From</span><input type="date" id="cfFrom"></div>
+        <div><span class="hint">To</span><input type="date" id="cfTo"></div>
+      </div>
+      <div class="hint" id="cfDays"></div>
+      <label for="cfVenue">Venue name</label>
+      <input type="text" id="cfVenue">
+      <label for="cfUrl">Website link</label>
+      <input type="url" id="cfUrl" placeholder="https://">
+      <div class="pl-btn-row">
+        <button type="button" class="tt-ctrl" id="cfQtBtn">QTs</button>
+        <button type="button" class="tt-ctrl" id="cfEventsBtn">Sessions &amp; events</button>
+      </div>
+      <div id="cfEventsWrap" style="display:none;">
+        <label>Sessions &amp; events <span class="opt">(tick the events offered; session and event no. are optional)</span></label>
+        <div class="roster-table-wrap">
+          <table class="roster-table cf-ev-table">
+            <thead><tr><th></th><th>#</th><th>SC</th><th>LC</th><th>Session</th><th>Event no.</th></tr></thead>
+            <tbody id="cfEventRows"></tbody>
+          </table>
+        </div>
+      </div>
+      <button class="submit-btn" id="cfSaveBtn">Save</button>
+      <div class="msg" id="cfMsg"></div>
+    </div>
+  </div>
+
+  <!-- ============ TRAINING: ADD / EDIT MACRO ============ -->
+  <div class="view" id="viewMacroForm">
+    <a class="back-home" id="backMacroForm">Planning</a>
+    <div class="card">
+      <h2 id="mfTitle">Add macro</h2>
+      <label>Squads</label>
+      <div id="mfSquads" class="mf-squads"><div class="empty">Loading squads…</div></div>
+      <label for="mfName">Macro title</label>
+      <input type="text" id="mfName" placeholder="e.g. Autumn build to County SC">
+      <label>Season competitions</label>
+      <div id="mfComps"></div>
+      <label for="mfNote">Head Coach note</label>
+      <textarea id="mfNote" rows="4"></textarea>
+      <label for="mfCount">Micro-cycles <span class="opt">(number of weeks)</span></label>
+      <input type="number" id="mfCount" min="1" max="52" inputmode="numeric">
+      <button class="submit-btn" id="mfSaveBtn">Add micro-cycles</button>
+      <div class="msg" id="mfMsg"></div>
+    </div>
+  </div>
+
+  <!-- ============ TRAINING: MICRO-CYCLES ============ -->
+  <div class="view" id="viewMicroForm">
+    <a class="back-home" id="backMicroForm">Planning</a>
+    <div class="card" style="padding-bottom:10px;">
+      <h2 id="miTitle">Micro-cycles</h2>
+      <div class="hint" id="miSub"></div>
+    </div>
+    <div id="miWeeks"></div>
+    <button class="submit-btn" id="miSaveBtn">Save micro-cycles</button>
+    <div class="msg" id="miMsg"></div>
+  </div>
+
+  <!-- ============ QTs POP-UP ============ -->
+  <div class="qt-overlay" id="qtOverlay">
+    <div class="qt-modal" role="dialog" aria-modal="true" aria-labelledby="qtModalTitle">
+      <div class="qt-modal-head">
+        <div id="qtModalTitle">Qualifying times</div>
+        <button type="button" class="nav-close-btn" id="qtCloseBtn" aria-label="Close">✕</button>
+      </div>
+      <div class="qt-modal-body" id="qtModalBody"></div>
     </div>
   </div>
 
@@ -5301,6 +5531,7 @@ async function ttDisable(id, btn){
 
 // ---------- Enter-a-competition (placeholder until the entry page exists) ----------
 function ttGoEnter(galaId){
+  enterReturnView = "viewTimetables";
   const g = ttGalas.find(x => x.id === galaId);
   $("ttEnterBody").innerHTML =
     `<div class="tt-prog-title">${escapeHtml(g ? g.name : "Competition")}</div>` +
@@ -5508,7 +5739,890 @@ $("ttSaveBtn").addEventListener("click", ttSave);
 $("tileTimetables").addEventListener("click", goTimetables);
 $("backHomeTt").addEventListener("click", () => showView("viewHome"));
 $("backTtForm").addEventListener("click", () => { showView("viewTimetables"); ttRenderList(); });
-$("backTtEnter").addEventListener("click", () => { showView("viewTimetables"); ttRenderList(); });
+$("backTtEnter").addEventListener("click", () => { showView(enterReturnView); if (enterReturnView === "viewTimetables") ttRenderList(); });
+
+
+// ===================================================================
+// SEASON · PLANNING · COMPETITIONS · TRAINING (macro / micro)
+// Spec: Coach.docx. Tables: seasons, season_breaks, season_competitions,
+// competition_events, macros, macro_squads, macro_competitions, micros,
+// micro_sessions (new) + competitions, competition_files, galas,
+// qualifying_times, timetables, timetable_sessions (existing).
+// No user action issues a SQL DELETE — removal sets is_active=false.
+// ===================================================================
+
+// Until roles exist, everyone is the superuser administrator.
+function snCanPlan(){ return true; }
+
+const EVENTS_18 = [
+  [1,"50 Free","50 Free"],[2,"50 Back","50 Back"],[3,"50 Breast","50 Breast"],[4,"50 Fly","50 Fly"],
+  [5,"100 Free","100 Free"],[6,"100 Back","100 Back"],[7,"100 Breast","100 Breast"],[8,"100 Fly","100 Fly"],
+  [9,"200 Free","200 Free"],[10,"200 Back","200 Back"],[11,"200 Breast","200 Breast"],[12,"200 Fly","200 Fly"],
+  [13,"400 Free","400 Free"],[14,"800 Free","800 Free"],[15,"1500 Free","1500 Free"],
+  [16,"100 IM",null],[17,"200 IM","200 IM"],[18,"400 IM","400 IM"]
+];
+const TECH_FOCUS = ["", "Streamline", "Breathing", "Body Roll", "End of Stroke", "Power phase", "Initial Actions", "Recoveries", "Kicking"];
+const QES = { quality: "Quality", endurance: "Endurance", sprint: "Sprint" };
+const DESIGNATIONS = { target: "Target", qualifying: "Qualifying", train_through: "Train-through", team: "Team" };
+
+// ---------- date / time helpers ----------
+function isoAdd(iso, n){
+  const d = new Date(iso + "T00:00:00"); d.setDate(d.getDate() + n);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function isoDow(iso){ const g = new Date(iso + "T00:00:00").getDay(); return g === 0 ? 7 : g; } // Mon=1
+function isoMonday(iso){ return isoAdd(iso, 1 - isoDow(iso)); }
+function isoDiffDays(a, b){ return Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000); }
+function fmtDayShort(iso){ const d = new Date(iso + "T00:00:00"); return TT_DAYS_SHORT[isoDow(iso)] + " " + d.getDate() + "/" + (d.getMonth() + 1); }
+function fmtDdMm(iso){ const d = new Date(iso + "T00:00:00"); return String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0"); }
+function fmtClock(t){ // "18:30:00" -> "6.30pm", "20:00:00" -> "8pm"
+  if (!t) return "";
+  const h = parseInt(t.slice(0, 2), 10), m = t.slice(3, 5);
+  return (h % 12 || 12) + (m === "00" ? "" : "." + m) + (h >= 12 ? "pm" : "am");
+}
+function fmtWhen(iso, start, end){ // "Mon 21/9, 6.30pm to 8pm"
+  let s = fmtDayShort(iso);
+  if (start) s += ", " + fmtClock(start) + (end ? " to " + fmtClock(end) : "");
+  return s;
+}
+function snErr(box, text, retryFn){
+  box.innerHTML = `<div class="empty">${escapeHtml(text)} <button type="button" class="sn-comp-link" data-retry="1">Retry</button></div>`;
+  const b = box.querySelector("[data-retry]"); if (b && retryFn) b.addEventListener("click", retryFn);
+}
+function snMsg(el, cls, text){ el.className = "msg " + cls; el.textContent = text; }
+const isNarrow = () => window.matchMedia("(max-width: 767px)").matches;
+
+// ---------- shared loaders ----------
+let snSeason = null;   // active season row for currentClub
+let snSquads = [];     // squads for currentClub
+
+async function snLoadActiveSeason(){
+  const { data, error } = await sb.from("seasons").select("*")
+    .eq("club", currentClub).eq("is_active", true).order("start_date");
+  if (error) throw error;
+  const today = ttToday(), rows = data || [];
+  snSeason = rows.find(s => s.start_date <= today && s.finish_date >= today)
+          || rows.find(s => s.start_date > today)
+          || rows[rows.length - 1] || null;
+  return snSeason;
+}
+async function snLoadSquads(){
+  const { data, error } = await sb.from("squads").select("id, name").eq("club", currentClub).order("name");
+  if (error) throw error;
+  snSquads = data || [];
+  return snSquads;
+}
+
+// ===================================================================
+// SEASON (read-only overview, concertina per squad)
+// ===================================================================
+const snOpen = new Set(JSON.parse(sessionStorage.getItem("snOpen") || "[]"));
+function snPersistOpen(){ sessionStorage.setItem("snOpen", JSON.stringify([...snOpen])); }
+
+async function goSeason(){
+  $("snPlanBtn").style.display = snCanPlan() ? "" : "none";
+  showView("viewSeason");
+  const list = $("snSquadList");
+  list.innerHTML = '<div class="tt-item" style="padding:14px;"><div class="sn-skel" style="width:40%"></div><div class="sn-skel"></div><div class="sn-skel" style="width:70%"></div></div>'.repeat(3);
+  $("snSeasonHead").innerHTML = "";
+  try {
+    await Promise.all([snLoadActiveSeason(), snLoadSquads()]);
+    const today = ttToday();
+    const s = snSeason;
+    $("snSeasonHead").innerHTML = s
+      ? `<div class="sn-season-title">${escapeHtml(s.title)}</div><div class="tt-season">${fmtDate(s.start_date)} – ${fmtDate(s.finish_date)}</div>`
+      : '<div class="tt-muted">No season set up yet — tap PLAN to create one.</div>';
+    if (!snSquads.length){ list.innerHTML = '<div class="empty">No squads for this club yet — add one under Administrator.</div>'; return; }
+
+    let macros = [], comps = [], sessions = [];
+    if (s){
+      const [mq, cq] = await Promise.all([
+        sb.from("macros").select("id, title, macro_squads(squad_id, is_active), micros(id, week_no, week_commencing, meso, qes_focus, technical_focus, is_active)")
+          .eq("season_id", s.id).eq("is_active", true),
+        sb.from("season_competitions").select("id, competition_id, name, date_from, date_to, course, level")
+          .eq("season_id", s.id).eq("is_active", true).gte("date_to", today).order("date_from")
+      ]);
+      if (mq.error) throw mq.error; if (cq.error) throw cq.error;
+      macros = mq.data || []; comps = cq.data || [];
+    }
+    // For each squad, pick this week's micro (or the next one coming up).
+    const pick = {};
+    snSquads.forEach(sq => {
+      const micros = [];
+      macros.forEach(m => {
+        if (!(m.macro_squads || []).some(x => x.squad_id === sq.id && x.is_active)) return;
+        (m.micros || []).forEach(mi => { if (mi.is_active && mi.week_commencing) micros.push({ ...mi, macroTitle: m.title }); });
+      });
+      micros.sort((a, b) => a.week_commencing.localeCompare(b.week_commencing));
+      pick[sq.id] = micros.find(mi => mi.week_commencing <= today && isoAdd(mi.week_commencing, 6) >= today)
+                 || micros.find(mi => mi.week_commencing > today) || null;
+    });
+    const microIds = [...new Set(Object.values(pick).filter(Boolean).map(m => m.id))];
+    if (microIds.length){
+      const { data, error } = await sb.from("micro_sessions")
+        .select("micro_id, squad_id, session_date, start_time, end_time, stroke_focus, outline")
+        .in("micro_id", microIds).eq("is_active", true).order("session_date").order("start_time");
+      if (error) throw error;
+      sessions = data || [];
+    }
+    list.innerHTML = snSquads.map(sq => snPanelHtml(sq, pick[sq.id], sessions, comps)).join("");
+  } catch (err){
+    console.error(err);
+    snErr(list, "Could not load the season.", goSeason);
+  }
+}
+
+function snPanelHtml(sq, micro, sessions, comps){
+  const open = snOpen.has(sq.id);
+  let training;
+  if (!snSeason){
+    training = '<div class="tt-muted">No season yet — use PLAN to set one up.</div>';
+  } else if (!micro){
+    training = '<div class="tt-muted">No training week planned for this squad yet — use PLAN → Add macro.</div>';
+  } else {
+    const rows = sessions.filter(x => x.micro_id === micro.id && x.squad_id === sq.id);
+    const q = micro.qes_focus;
+    training = `
+      <div class="tt-muted" style="margin-bottom:4px;">${escapeHtml(micro.macroTitle)} · Week ${micro.week_no} · w/c ${fmtDdMm(micro.week_commencing)}</div>
+      <div class="sn-week-head">
+        ${micro.meso ? `<span class="sn-tag">Meso ${micro.meso}</span>` : ""}
+        ${q ? `<span class="sn-tag ${q[0]}">${QES[q]}</span>` : ""}
+        ${micro.technical_focus ? `<span class="sn-tag">${micro.technical_focus}. ${TECH_FOCUS[micro.technical_focus]}</span>` : ""}
+      </div>
+      ${rows.length ? rows.map(r => `
+        <div class="sn-sess">
+          <div class="sn-sess-when">${escapeHtml(fmtWhen(r.session_date, r.start_time, r.end_time))}</div>
+          ${r.stroke_focus ? `<div class="sn-sess-stroke">Stroke focus: ${escapeHtml(r.stroke_focus)}</div>` : ""}
+          ${r.outline ? `<div class="sn-sess-outline">${escapeHtml(r.outline)}</div>` : ""}
+        </div>`).join("") : '<div class="tt-muted">No sessions recorded for this week.</div>'}
+      <div class="sn-cd">CD may result in the sessions being altered</div>`;
+  }
+  const compsHtml = comps.length ? comps.map(c => `
+      <div class="tt-meet">
+        <div>
+          <button type="button" class="sn-comp-link" data-comp="${c.competition_id || ""}" data-name="${escapeAttr(c.name)}">${escapeHtml(c.name)}</button>
+          <div class="tt-meet-date">${ttRange(c.date_from, c.date_to)}${c.level ? " · L" + c.level : ""} · ${c.course}</div>
+        </div>
+      </div>`).join("")
+    : '<div class="tt-muted">No forthcoming competitions in this season.</div>';
+
+  return `
+    <div class="tt-item ${open ? "open" : ""}" data-sq="${sq.id}">
+      <button type="button" class="tt-more" style="border-top:none;" data-act="toggle" aria-expanded="${open}">
+        <span><span class="tt-squad">${escapeHtml(sq.name)}</span>${snSeason ? `<span class="tt-season" style="display:block;">${escapeHtml(snSeason.title)}</span>` : ""}</span>
+        <span class="tt-chevron">▼</span>
+      </button>
+      <div class="tt-more-body">
+        <div class="tt-sec-title">This week's training</div>
+        ${training}
+        <div class="tt-sec-title">Forthcoming competitions</div>
+        ${compsHtml}
+      </div>
+    </div>`;
+}
+
+$("snSquadList").addEventListener("click", e => {
+  const link = e.target.closest(".sn-comp-link[data-name]");
+  if (link){ goCompetitions({ focusId: link.dataset.comp || null, name: link.dataset.name }); return; }
+  const t = e.target.closest("[data-act=toggle]");
+  if (!t) return;
+  const card = t.closest(".tt-item"), id = card.dataset.sq;
+  const nowOpen = !card.classList.contains("open");
+  if (nowOpen && isNarrow()){
+    document.querySelectorAll("#snSquadList .tt-item.open").forEach(c => { c.classList.remove("open"); snOpen.delete(c.dataset.sq); });
+  }
+  card.classList.toggle("open", nowOpen);
+  t.setAttribute("aria-expanded", nowOpen);
+  if (nowOpen) snOpen.add(id); else snOpen.delete(id);
+  snPersistOpen();
+});
+
+// ===================================================================
+// PLANNING (season title, dates, breaks; entry point to events & macros)
+// ===================================================================
+let plState = { seasonId: null, breaks: [], removedBreakIds: [] };
+let plComps = [], plMacros = [], plConfirm = null;
+
+async function goPlanning(){
+  showView("viewPlanning");
+  snMsg($("plMsg"), "", "");
+  $("plSaveBtn").disabled = false; $("plSaveBtn").textContent = "Save";
+  try {
+    await snLoadActiveSeason();
+    const s = snSeason;
+    plState = { seasonId: s ? s.id : null, breaks: [], removedBreakIds: [] };
+    $("plTitle").value = s ? s.title : "";
+    $("plStart").value = s ? s.start_date : "";
+    $("plFinish").value = s ? s.finish_date : "";
+    if (s){
+      const { data, error } = await sb.from("season_breaks").select("id, break_start, break_end")
+        .eq("season_id", s.id).eq("is_active", true).order("break_start");
+      if (error) throw error;
+      plState.breaks = (data || []).map(b => ({ id: b.id, start: b.break_start, end: b.break_end }));
+    }
+    plRenderBreaks();
+    await plLoadLists();
+  } catch (err){
+    console.error(err); snMsg($("plMsg"), "err", "Could not load the season: " + (err.message || err));
+  }
+}
+
+function plRenderBreaks(){
+  $("plBreakRows").innerHTML = plState.breaks.map((b, i) => `
+    <div class="pl-break">
+      <input type="date" data-i="${i}" data-f="start" value="${b.start || ""}" aria-label="Break start">
+      <input type="date" data-i="${i}" data-f="end" value="${b.end || ""}" aria-label="Break finish">
+      <button type="button" class="tt-rm" data-rm="${i}" aria-label="Remove break">✕</button>
+    </div>`).join("");
+}
+$("plBreakRows").addEventListener("change", e => {
+  const el = e.target; if (!el.dataset.f) return;
+  plState.breaks[+el.dataset.i][el.dataset.f] = el.value;
+});
+$("plBreakRows").addEventListener("click", e => {
+  const b = e.target.closest("[data-rm]"); if (!b) return;
+  const [gone] = plState.breaks.splice(+b.dataset.rm, 1);
+  if (gone && gone.id) plState.removedBreakIds.push(gone.id);
+  plRenderBreaks();
+});
+$("plAddBreakBtn").addEventListener("click", () => { plState.breaks.push({ id: null, start: "", end: "" }); plRenderBreaks(); });
+
+function plValidate(){
+  const title = $("plTitle").value.trim(), start = $("plStart").value, finish = $("plFinish").value;
+  if (!title) return "Give the season a title.";
+  if (!start || !finish) return "Set the season start and finish dates.";
+  if (finish < start) return "The season finish date must be on or after the start date.";
+  for (let i = 0; i < plState.breaks.length; i++){
+    const b = plState.breaks[i];
+    if (!b.start || !b.end) return "Break " + (i + 1) + ": set both dates, or remove it.";
+    if (b.end < b.start) return "Break " + (i + 1) + ": finish must be on or after start.";
+    if (b.start < start || b.end > finish) return "Break " + (i + 1) + " must fall inside the season.";
+  }
+  return null;
+}
+
+async function plSave(){
+  const bad = plValidate();
+  if (bad){ snMsg($("plMsg"), "err", bad); return null; }
+  const row = { club: currentClub, title: $("plTitle").value.trim(), start_date: $("plStart").value, finish_date: $("plFinish").value, updated_at: new Date().toISOString() };
+  // One active season per club at a time: reject an overlap with a different active season.
+  const { data: others, error: oe } = await sb.from("seasons").select("id, title, start_date, finish_date")
+    .eq("club", currentClub).eq("is_active", true).lte("start_date", row.finish_date).gte("finish_date", row.start_date);
+  if (oe){ snMsg($("plMsg"), "err", "Could not check seasons: " + oe.message); return null; }
+  const clash = (others || []).find(o => o.id !== plState.seasonId);
+  if (clash){ snMsg($("plMsg"), "err", "These dates overlap “" + clash.title + "”. Change the dates."); return null; }
+
+  const btn = $("plSaveBtn"); btn.disabled = true; btn.textContent = "Saving…";
+  try {
+    if (plState.seasonId){
+      const { error } = await sb.from("seasons").update(row).eq("id", plState.seasonId);
+      if (error) throw error;
+    } else {
+      const { data, error } = await sb.from("seasons").insert(row).select("id").single();
+      if (error) throw error;
+      plState.seasonId = data.id;
+    }
+    for (const b of plState.breaks){
+      const p = { season_id: plState.seasonId, break_start: b.start, break_end: b.end, updated_at: new Date().toISOString() };
+      if (b.id){ const { error } = await sb.from("season_breaks").update(p).eq("id", b.id); if (error) throw error; }
+      else { const { data, error } = await sb.from("season_breaks").insert(p).select("id").single(); if (error) throw error; b.id = data.id; }
+    }
+    if (plState.removedBreakIds.length){
+      const { error } = await sb.from("season_breaks").update({ is_active: false }).in("id", plState.removedBreakIds);
+      if (error) throw error;
+      plState.removedBreakIds = [];
+    }
+    snSeason = { ...(snSeason && snSeason.id === plState.seasonId ? snSeason : {}), ...row, id: plState.seasonId, is_active: true };
+    snMsg($("plMsg"), "ok", "Season saved.");
+    return plState.seasonId;
+  } catch (err){
+    console.error(err); snMsg($("plMsg"), "err", "Could not save: " + (err.message || err));
+    return null;
+  } finally { btn.disabled = false; btn.textContent = "Save"; }
+}
+$("plSaveBtn").addEventListener("click", plSave);
+
+async function plEnsureSeason(){ return await plSave(); } // Add event / Add macro need a saved season id
+
+$("plAddEventBtn").addEventListener("click", async () => { if (await plEnsureSeason()) cfOpen(null); });
+$("plAddMacroBtn").addEventListener("click", async () => {
+  if (!(await plEnsureSeason())) return;
+  if (!plComps.length){ snMsg($("plMsg"), "err", "Add at least one competition to the season before building a macro."); return; }
+  mfOpen(null);
+});
+
+async function plLoadLists(){
+  if (!plState.seasonId){ plComps = []; plMacros = []; plRenderLists(); return; }
+  const [c, m] = await Promise.all([
+    sb.from("season_competitions").select("*, competition_events(id, is_active)").eq("season_id", plState.seasonId).eq("is_active", true).order("date_from"),
+    sb.from("macros").select("id, title, head_coach_note, micro_count, macro_squads(squad_id, is_active, squads(name)), macro_competitions(season_competition_id, designation, is_active)")
+      .eq("season_id", plState.seasonId).eq("is_active", true).order("created_at")
+  ]);
+  if (c.error) throw c.error; if (m.error) throw m.error;
+  plComps = c.data || []; plMacros = m.data || [];
+  plRenderLists();
+}
+
+function plRenderLists(){
+  const act = (kind, id) => plConfirm === kind + id
+    ? `<button type="button" class="tt-act confirm" data-act="confirm-${kind}" data-id="${id}">Confirm</button>`
+    : `<button type="button" class="tt-act del" data-act="remove-${kind}" data-id="${id}">Remove</button>`;
+  $("plCompList").innerHTML = plComps.length ? plComps.map(c => {
+    const n = (c.competition_events || []).filter(e => e.is_active).length;
+    return `<div class="pl-row">
+      <div><div class="pl-row-name">${escapeHtml(c.name)}</div>
+        <div class="pl-row-sub">${ttRange(c.date_from, c.date_to)} · ${c.total_days} day${c.total_days === 1 ? "" : "s"} · ${c.level ? "L" + c.level + " · " : ""}${c.course} · ${n} event${n === 1 ? "" : "s"}</div></div>
+      <div class="pl-row-acts"><button type="button" class="tt-act select" data-act="edit-comp" data-id="${c.id}">Edit</button>${act("comp", c.id)}</div>
+    </div>`; }).join("")
+    : '<div class="empty">No competitions yet — use Add event.</div>';
+  $("plMacroList").innerHTML = plMacros.length ? plMacros.map(m => {
+    const sq = (m.macro_squads || []).filter(x => x.is_active).map(x => x.squads ? x.squads.name : "").join(", ");
+    return `<div class="pl-row">
+      <div><div class="pl-row-name">${escapeHtml(m.title)}</div>
+        <div class="pl-row-sub">${escapeHtml(sq || "No squads")} · ${m.micro_count} week${m.micro_count === 1 ? "" : "s"}</div></div>
+      <div class="pl-row-acts">
+        <button type="button" class="tt-act" data-act="weeks" data-id="${m.id}">Weeks</button>
+        <button type="button" class="tt-act select" data-act="edit-macro" data-id="${m.id}">Edit</button>${act("macro", m.id)}</div>
+    </div>`; }).join("")
+    : '<div class="empty">No macro-cycles yet — use Add macro.</div>';
+}
+
+async function plOnListClick(e){
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const a = b.dataset.act, id = b.dataset.id;
+  if (a === "edit-comp") cfOpen(plComps.find(c => c.id === id));
+  else if (a === "edit-macro") mfOpen(plMacros.find(m => m.id === id));
+  else if (a === "weeks") miOpen(id);
+  else if (a.startsWith("remove-")){ plConfirm = a.slice(7) + id; plRenderLists(); }
+  else if (a.startsWith("confirm-")){
+    const table = a === "confirm-comp" ? "season_competitions" : "macros";
+    b.disabled = true; b.textContent = "Removing…";
+    const { error } = await sb.from(table).update({ is_active: false, disabled_at: new Date().toISOString() }).eq("id", id);
+    plConfirm = null;
+    if (error){ snMsg($("plMsg"), "err", "Could not remove: " + error.message); plRenderLists(); return; }
+    await plLoadLists();
+    snMsg($("plMsg"), "ok", "Removed. It is disabled, not erased.");
+  }
+}
+$("plCompList").addEventListener("click", plOnListClick);
+$("plMacroList").addEventListener("click", plOnListClick);
+
+// ===================================================================
+// ADD / EDIT COMPETITION (season event + sessions & events table)
+// ===================================================================
+let cfState = null;   // { id, competitionId, galaId, events: {no: {id, ticked, session, prog}} }
+let cfSource = [];    // scraped competitions inside the season dates
+
+async function cfOpen(existing){
+  cfState = { id: existing ? existing.id : null, competitionId: existing ? existing.competition_id : null, galaId: null, events: {} };
+  $("cfTitle").textContent = existing ? "Edit competition" : "Add competition";
+  snMsg($("cfMsg"), "", "");
+  $("cfSaveBtn").disabled = false; $("cfSaveBtn").textContent = "Save";
+  $("cfName").value = existing ? existing.name : "";
+  $("cfLevel").value = existing && existing.level ? String(existing.level) : "";
+  $("cfCourse").value = existing ? existing.course : "";
+  $("cfFrom").value = existing ? existing.date_from : "";
+  $("cfTo").value = existing ? existing.date_to : "";
+  $("cfVenue").value = existing ? existing.venue_name || "" : "";
+  $("cfUrl").value = existing ? existing.venue_url || "" : "";
+  $("cfEventsWrap").style.display = "none";
+  cfDays();
+  showView("viewCompForm");
+
+  const sel = $("cfCompSelect");
+  sel.innerHTML = '<option value="">Loading…</option>';
+  const s = snSeason;
+  const { data, error } = await sb.from("competitions")
+    .select("id, name, date_start, date_end, level, course, town_city, website_url, gala_id")
+    .gte("date_start", s.start_date).lte("date_start", s.finish_date).order("date_start");
+  if (error){ console.error(error); sel.innerHTML = '<option value="__manual">Could not load list — type it in</option>'; }
+  cfSource = data || [];
+  sel.innerHTML = '<option value="">Choose a competition…</option>' +
+    cfSource.map(c => `<option value="${c.id}">${escapeHtml(fmtDdMm(c.date_start) + " · " + c.name + (c.level ? " (L" + c.level + " " + (c.course || "") + ")" : ""))}</option>`).join("") +
+    '<option value="__manual">Not listed — type it in</option>';
+  if (existing){
+    sel.value = existing.competition_id && cfSource.some(c => c.id === existing.competition_id) ? existing.competition_id : "__manual";
+    const src = cfSource.find(c => c.id === existing.competition_id); cfState.galaId = src ? src.gala_id : null;
+    const { data: ev, error: ee } = await sb.from("competition_events").select("id, event_no, session, programme_event_no, is_active")
+      .eq("season_competition_id", existing.id);
+    if (ee) console.error(ee);
+    (ev || []).forEach(r => { cfState.events[r.event_no] = { id: r.id, ticked: r.is_active, session: r.session || "", prog: r.programme_event_no || "" }; });
+  }
+  $("cfManualWrap").style.display = sel.value === "__manual" ? "block" : "none";
+  cfRenderEvents();
+}
+
+$("cfCompSelect").addEventListener("change", () => {
+  const v = $("cfCompSelect").value;
+  $("cfManualWrap").style.display = v === "__manual" ? "block" : "none";
+  if (!v || v === "__manual"){ cfState.competitionId = null; cfState.galaId = null; return; }
+  const c = cfSource.find(x => x.id === v); if (!c) return;
+  cfState.competitionId = c.id; cfState.galaId = c.gala_id;
+  $("cfName").value = c.name;
+  $("cfLevel").value = c.level ? String(c.level) : "";
+  $("cfCourse").value = c.course || "";
+  $("cfFrom").value = c.date_start || "";
+  $("cfTo").value = c.date_end || c.date_start || "";
+  if (!$("cfVenue").value) $("cfVenue").value = c.town_city || "";
+  if (!$("cfUrl").value) $("cfUrl").value = c.website_url || "";
+  cfDays(); cfRenderEvents();
+});
+function cfDays(){
+  const a = $("cfFrom").value, b = $("cfTo").value;
+  $("cfDays").textContent = a && b ? (b < a ? "The To date is before the From date." : "Total days: " + (isoDiffDays(a, b) + 1)) : "";
+}
+$("cfFrom").addEventListener("change", () => { if (!$("cfTo").value) $("cfTo").value = $("cfFrom").value; cfDays(); });
+$("cfTo").addEventListener("change", cfDays);
+$("cfCourse").addEventListener("change", cfRenderEvents);
+$("cfEventsBtn").addEventListener("click", () => {
+  const w = $("cfEventsWrap"); w.style.display = w.style.display === "none" ? "block" : "none";
+});
+$("cfQtBtn").addEventListener("click", () => {
+  if (cfState.galaId) openQtModal(cfState.galaId, $("cfName").value);
+  else snMsg($("cfMsg"), "err", "No qualifying times on file for this meet. The Add qualifying times form (file upload + review) is the next piece to build.");
+});
+
+function cfRenderEvents(){
+  const course = $("cfCourse").value;
+  $("cfEventRows").innerHTML = EVENTS_18.map(([no, sc, lc]) => {
+    const st = cfState.events[no] || { ticked: false, session: "", prog: "" };
+    const offered = course === "LC" ? !!lc : true;
+    return `<tr>
+      <td><input type="checkbox" data-no="${no}" data-f="ticked" ${st.ticked && offered ? "checked" : ""} ${offered ? "" : "disabled"} aria-label="Event ${no}"></td>
+      <td>${no}</td>
+      <td class="${course === "SC" ? "cur" : ""}">${sc}</td>
+      <td class="${lc ? (course === "LC" ? "cur" : "") : "off"}">${lc || "NO EVENT"}</td>
+      <td><input type="text" data-no="${no}" data-f="session" value="${escapeAttr(st.session)}" ${offered ? "" : "disabled"}></td>
+      <td><input type="text" data-no="${no}" data-f="prog" value="${escapeAttr(st.prog)}" ${offered ? "" : "disabled"}></td>
+    </tr>`;
+  }).join("");
+}
+$("cfEventRows").addEventListener("input", e => {
+  const el = e.target, no = el.dataset.no; if (!no) return;
+  const st = cfState.events[no] = cfState.events[no] || { id: null, ticked: false, session: "", prog: "" };
+  if (el.dataset.f === "ticked") st.ticked = el.checked; else st[el.dataset.f] = el.value;
+  if (el.dataset.f !== "ticked" && el.value && !st.ticked){ st.ticked = true; el.closest("tr").querySelector("input[type=checkbox]").checked = true; }
+});
+
+async function cfSave(){
+  const fail = t => snMsg($("cfMsg"), "err", t);
+  const name = $("cfName").value.trim(), course = $("cfCourse").value, from = $("cfFrom").value, to = $("cfTo").value;
+  if (!name) return fail("A competition needs a name.");
+  if (!course) return fail("Choose SC or LC.");
+  if (!from || !to) return fail("Set the From and To dates.");
+  if (to < from) return fail("The To date must be on or after the From date.");
+  const url = $("cfUrl").value.trim();
+  if (url && !/^https?:\/\//i.test(url)) return fail("The website link must start with http:// or https://");
+  const row = {
+    season_id: snSeason.id, competition_id: cfState.competitionId, name, course,
+    level: $("cfLevel").value ? +$("cfLevel").value : null, date_from: from, date_to: to,
+    venue_name: $("cfVenue").value.trim() || null, venue_url: url || null, updated_at: new Date().toISOString()
+  };
+  const btn = $("cfSaveBtn"); btn.disabled = true; btn.textContent = "Saving…";
+  try {
+    if (cfState.id){ const { error } = await sb.from("season_competitions").update(row).eq("id", cfState.id); if (error) throw error; }
+    else { const { data, error } = await sb.from("season_competitions").insert(row).select("id").single(); if (error) throw error; cfState.id = data.id; }
+    for (const [no, sc, lc] of EVENTS_18){
+      const st = cfState.events[no]; if (!st) continue;
+      const offered = course === "LC" ? !!lc : true;
+      const on = st.ticked && offered;
+      const p = { season_competition_id: cfState.id, event_no: no, course, event_name: course === "LC" ? lc || sc : sc,
+                  session: st.session.trim() || null, programme_event_no: st.prog.trim() || null, is_active: on, updated_at: new Date().toISOString() };
+      if (st.id){ const { error } = await sb.from("competition_events").update(p).eq("id", st.id); if (error) throw error; }
+      else if (on){ const { data, error } = await sb.from("competition_events").insert(p).select("id").single(); if (error) throw error; st.id = data.id; }
+    }
+  } catch (err){
+    console.error(err); btn.disabled = false; btn.textContent = "Save";
+    return fail("Could not save: " + (err.message || err));
+  }
+  await goPlanning();
+  snMsg($("plMsg"), "ok", "Competition saved.");
+}
+$("cfSaveBtn").addEventListener("click", cfSave);
+
+// ===================================================================
+// ADD / EDIT MACRO
+// ===================================================================
+let mfState = null; // { id, squads:Set, comps:{scId: designation}, prevSquads:Set, prevComps:Set }
+
+async function mfOpen(existing){
+  const actSq = existing ? (existing.macro_squads || []).filter(x => x.is_active).map(x => x.squad_id) : [];
+  const actMc = existing ? (existing.macro_competitions || []).filter(x => x.is_active) : [];
+  mfState = { id: existing ? existing.id : null, squads: new Set(actSq), prevSquads: new Set(actSq),
+              comps: Object.fromEntries(actMc.map(x => [x.season_competition_id, x.designation])), prevComps: new Set(actMc.map(x => x.season_competition_id)) };
+  $("mfTitle").textContent = existing ? "Edit macro" : "Add macro";
+  $("mfName").value = existing ? existing.title : "";
+  $("mfNote").value = existing ? existing.head_coach_note || "" : "";
+  $("mfCount").value = existing ? existing.micro_count || "" : "";
+  $("mfSaveBtn").disabled = false; $("mfSaveBtn").textContent = existing ? "Save & open weeks" : "Add micro-cycles";
+  snMsg($("mfMsg"), "", "");
+  showView("viewMacroForm");
+  try { await snLoadSquads(); } catch (e){ console.error(e); }
+  $("mfSquads").innerHTML = snSquads.length ? snSquads.map(s => `
+    <label class="mf-check"><input type="checkbox" value="${s.id}" ${mfState.squads.has(s.id) ? "checked" : ""}> ${escapeHtml(s.name)}</label>`).join("")
+    : '<div class="empty">No squads — add one under Administrator.</div>';
+  $("mfComps").innerHTML = plComps.map(c => `
+    <div class="mf-comp">
+      <div><div class="pl-row-name">${escapeHtml(c.name)}</div><div class="pl-row-sub">${ttRange(c.date_from, c.date_to)}</div></div>
+      <select data-sc="${c.id}" aria-label="Designation for ${escapeAttr(c.name)}">
+        <option value="">— not in macro —</option>
+        ${Object.entries(DESIGNATIONS).map(([k, v]) => `<option value="${k}" ${mfState.comps[c.id] === k ? "selected" : ""}>${v}</option>`).join("")}
+      </select>
+    </div>`).join("");
+}
+$("mfSquads").addEventListener("change", e => {
+  const cb = e.target; if (cb.type !== "checkbox") return;
+  if (cb.checked) mfState.squads.add(cb.value); else mfState.squads.delete(cb.value);
+});
+$("mfComps").addEventListener("change", e => {
+  const s = e.target; if (!s.dataset.sc) return;
+  if (s.value) mfState.comps[s.dataset.sc] = s.value; else delete mfState.comps[s.dataset.sc];
+});
+
+async function mfSave(){
+  const fail = t => snMsg($("mfMsg"), "err", t);
+  const title = $("mfName").value.trim(), count = parseInt($("mfCount").value, 10);
+  if (!mfState.squads.size) return fail("Tick at least one squad.");
+  if (!title) return fail("Give the macro a title.");
+  if (!(count >= 1 && count <= 52)) return fail("Enter a number of micro-cycles between 1 and 52.");
+  const btn = $("mfSaveBtn"); btn.disabled = true; btn.textContent = "Saving…";
+  const now = new Date().toISOString();
+  try {
+    const row = { season_id: snSeason.id, title, head_coach_note: $("mfNote").value.trim() || null, micro_count: count, updated_at: now };
+    if (mfState.id){ const { error } = await sb.from("macros").update(row).eq("id", mfState.id); if (error) throw error; }
+    else { const { data, error } = await sb.from("macros").insert(row).select("id").single(); if (error) throw error; mfState.id = data.id; }
+    const sqRows = [...new Set([...mfState.squads, ...mfState.prevSquads])]
+      .map(id => ({ macro_id: mfState.id, squad_id: id, is_active: mfState.squads.has(id) }));
+    if (sqRows.length){ const { error } = await sb.from("macro_squads").upsert(sqRows, { onConflict: "macro_id,squad_id" }); if (error) throw error; }
+    const mcRows = [...new Set([...Object.keys(mfState.comps), ...mfState.prevComps])]
+      .map(id => mfState.comps[id]
+        ? { macro_id: mfState.id, season_competition_id: id, designation: mfState.comps[id], is_active: true, updated_at: now }
+        : null).filter(Boolean);
+    if (mcRows.length){ const { error } = await sb.from("macro_competitions").upsert(mcRows, { onConflict: "macro_id,season_competition_id" }); if (error) throw error; }
+    const dropped = [...mfState.prevComps].filter(id => !mfState.comps[id]);
+    if (dropped.length){
+      const { error } = await sb.from("macro_competitions").update({ is_active: false, updated_at: now }).eq("macro_id", mfState.id).in("season_competition_id", dropped);
+      if (error) throw error;
+    }
+  } catch (err){
+    console.error(err); btn.disabled = false; btn.textContent = "Add micro-cycles";
+    return fail("Could not save: " + (err.message || err));
+  }
+  miOpen(mfState.id);
+}
+$("mfSaveBtn").addEventListener("click", mfSave);
+
+// ===================================================================
+// MICRO-CYCLES (one card per week; sessions seeded from timetables)
+// ===================================================================
+let miState = null; // { macro, squads:[{id,name}], weeks:[], comps:[], timetables:[], breaks:[] }
+
+async function miOpen(macroId){
+  showView("viewMicroForm");
+  $("miWeeks").innerHTML = '<div class="empty">Loading weeks…</div>';
+  snMsg($("miMsg"), "", "");
+  $("miSaveBtn").disabled = false; $("miSaveBtn").textContent = "Save micro-cycles";
+  try {
+    const { data: macro, error } = await sb.from("macros")
+      .select("id, title, micro_count, season_id, macro_squads(squad_id, is_active, squads(name))").eq("id", macroId).single();
+    if (error) throw error;
+    const squads = (macro.macro_squads || []).filter(x => x.is_active).map(x => ({ id: x.squad_id, name: x.squads ? x.squads.name : "Squad" }));
+    const sqIds = squads.map(s => s.id);
+    const [mi, sc, tt, br] = await Promise.all([
+      sb.from("micros").select("id, week_no, week_commencing, meso, qes_focus, technical_focus, micro_sessions(id, squad_id, session_date, start_time, end_time, stroke_focus, outline, timetable_session_id, is_active)")
+        .eq("macro_id", macroId).eq("is_active", true).order("week_no"),
+      sb.from("season_competitions").select("id, name, date_from, date_to").eq("season_id", macro.season_id).eq("is_active", true),
+      sqIds.length ? sb.from("timetables").select("id, squad_id, season_start, season_end, timetable_sessions(id, day_of_week, start_time, end_time, is_active)")
+        .in("squad_id", sqIds).eq("is_active", true) : Promise.resolve({ data: [] }),
+      sb.from("season_breaks").select("break_start, break_end").eq("season_id", macro.season_id).eq("is_active", true)
+    ]);
+    for (const r of [mi, sc, tt, br]) if (r.error) throw r.error;
+    const existing = mi.data || [];
+    const weeks = [];
+    for (let n = 1; n <= macro.micro_count; n++){
+      const e = existing.find(x => x.week_no === n);
+      const prev = weeks[n - 2];
+      const wc = e && e.week_commencing ? e.week_commencing
+        : prev && prev.wc ? isoAdd(prev.wc, 7)
+        : n === 1 && snSeason ? isoMonday(snSeason.start_date > ttToday() ? snSeason.start_date : ttToday()) : "";
+      weeks.push({ id: e ? e.id : null, no: n, wc, meso: e && e.meso ? String(e.meso) : "", qes: e ? e.qes_focus || "" : "",
+                   tech: e && e.technical_focus ? String(e.technical_focus) : "",
+                   saved: e ? (e.micro_sessions || []).filter(s => s.is_active) : [], sessions: [] });
+    }
+    miState = { macro, squads, weeks, comps: sc.data || [], timetables: tt.data || [], breaks: br.data || [] };
+    weeks.forEach(miSeed);
+    $("miTitle").textContent = macro.title;
+    $("miSub").textContent = (squads.map(s => s.name).join(", ") || "No squads") + " · " + macro.micro_count + " week" + (macro.micro_count === 1 ? "" : "s");
+    miRender();
+  } catch (err){
+    console.error(err);
+    snErr($("miWeeks"), "Could not load the micro-cycles.", () => miOpen(macroId));
+  }
+}
+
+function miInBreak(iso){ return miState.breaks.some(b => iso >= b.break_start && iso <= b.break_end); }
+
+// Build the session rows for a week from each squad's timetable, keeping anything already typed or saved.
+function miSeed(w){
+  const keep = {};
+  [...w.saved, ...w.sessions].forEach(s => { keep[s.squad_id + "|" + s.session_date + "|" + (s.start_time || "")] = s; });
+  w.sessions = [];
+  if (!w.wc) return;
+  for (let d = 0; d < 7; d++){
+    const date = isoAdd(w.wc, d), dow = isoDow(date);
+    if (miInBreak(date)) continue;
+    miState.squads.forEach(sq => {
+      const t = miState.timetables.find(x => x.squad_id === sq.id && x.season_start <= date && x.season_end >= date);
+      if (!t) return;
+      (t.timetable_sessions || []).filter(s => s.is_active && s.day_of_week === dow)
+        .sort((a, b) => a.start_time.localeCompare(b.start_time))
+        .forEach(ts => {
+          const k = sq.id + "|" + date + "|" + ts.start_time;
+          const old = keep[k];
+          w.sessions.push({ id: old ? old.id : null, squad_id: sq.id, session_date: date, start_time: ts.start_time,
+                            end_time: ts.end_time || null, timetable_session_id: ts.id,
+                            stroke_focus: old ? old.stroke_focus || "" : "", outline: old ? old.outline || "" : "" });
+          if (old) delete keep[k];
+        });
+    });
+  }
+  // Saved sessions whose timetable slot has gone stay visible so nothing typed is lost.
+  Object.values(keep).forEach(s => { if (s.id && s.session_date >= w.wc && s.session_date <= isoAdd(w.wc, 6)) w.sessions.push({ ...s, stroke_focus: s.stroke_focus || "", outline: s.outline || "" }); });
+  w.sessions.sort((a, b) => a.session_date.localeCompare(b.session_date) || (a.start_time || "").localeCompare(b.start_time || ""));
+}
+
+function miCompNote(w){
+  if (!w.wc) return "";
+  const lo = isoAdd(w.wc, 5), hi = isoAdd(w.wc, 7);
+  const hits = miState.comps.filter(c => c.date_from >= lo && c.date_from <= hi);
+  return hits.map(c => `<div class="mi-comp-note">🏁 ${escapeHtml(c.name)} · ${ttRange(c.date_from, c.date_to)}</div>`).join("");
+}
+
+function miRender(){
+  const opt = (v, l, cur) => `<option value="${v}" ${String(cur) === String(v) ? "selected" : ""}>${l}</option>`;
+  const sqName = id => (miState.squads.find(s => s.id === id) || {}).name || "";
+  $("miWeeks").innerHTML = miState.weeks.map((w, i) => `
+    <div class="mi-week" data-w="${i}">
+      <h3>Week ${w.no}${w.wc ? " · w/c " + fmtDdMm(w.wc) : ""}</h3>
+      <div class="mi-grid">
+        <div class="full"><span class="hint">Week commencing</span><input type="date" data-f="wc" value="${w.wc}"></div>
+        <div><span class="hint">Meso</span><select data-f="meso"><option value="">—</option>${[1, 2, 3].map(n => opt(n, n, w.meso)).join("")}</select></div>
+        <div><span class="hint">QES focus</span><select data-f="qes"><option value="">—</option>${Object.entries(QES).map(([k, v]) => opt(k, v, w.qes)).join("")}</select></div>
+        <div class="full"><span class="hint">Technical focus</span><select data-f="tech"><option value="">—</option>${TECH_FOCUS.slice(1).map((t, k) => opt(k + 1, (k + 1) + ". " + t, w.tech)).join("")}</select></div>
+      </div>
+      ${w.sessions.length ? w.sessions.map((s, j) => `
+        <div class="mi-sess">
+          <div class="mi-sess-when">${escapeHtml(sqName(s.squad_id))} · ${escapeHtml(fmtWhen(s.session_date, s.start_time, s.end_time))}</div>
+          <input type="text" data-s="${j}" data-f="stroke_focus" placeholder="Stroke focus" value="${escapeAttr(s.stroke_focus)}">
+          <textarea data-s="${j}" data-f="outline" placeholder="Session outline">${escapeHtml(s.outline)}</textarea>
+        </div>`).join("")
+        : `<div class="tt-muted" style="margin-top:10px;">${w.wc ? "No timetabled sessions this week for these squads (check Timetables or season breaks)." : "Set the week commencing date to load this week's sessions."}</div>`}
+      ${miCompNote(w)}
+    </div>`).join("");
+}
+
+$("miWeeks").addEventListener("input", e => {
+  const el = e.target, card = el.closest(".mi-week"); if (!card || !el.dataset.f) return;
+  const w = miState.weeks[+card.dataset.w];
+  if (el.dataset.s !== undefined) w.sessions[+el.dataset.s][el.dataset.f] = el.value;
+  else if (el.dataset.f !== "wc") w[el.dataset.f] = el.value;
+});
+$("miWeeks").addEventListener("change", e => {
+  const el = e.target; if (el.dataset.f !== "wc") return;
+  const w = miState.weeks[+el.closest(".mi-week").dataset.w];
+  w.wc = el.value; miSeed(w); miRender();
+});
+
+async function miSave(){
+  const fail = t => snMsg($("miMsg"), "err", t);
+  const missing = miState.weeks.find(w => !w.wc);
+  if (missing) return fail("Week " + missing.no + ": set the week commencing date.");
+  const btn = $("miSaveBtn"); btn.disabled = true; btn.textContent = "Saving…";
+  const now = new Date().toISOString(), macroId = miState.macro.id;
+  try {
+    const { data: saved, error } = await sb.from("micros").upsert(miState.weeks.map(w => ({
+      macro_id: macroId, week_no: w.no, week_commencing: w.wc, meso: w.meso ? +w.meso : null,
+      qes_focus: w.qes || null, technical_focus: w.tech ? +w.tech : null, is_active: true, updated_at: now
+    })), { onConflict: "macro_id,week_no" }).select("id, week_no");
+    if (error) throw error;
+    saved.forEach(r => { const w = miState.weeks.find(x => x.no === r.week_no); if (w) w.id = r.id; });
+    // Weeks beyond the macro's count are disabled, not erased.
+    const { error: e2 } = await sb.from("micros").update({ is_active: false, updated_at: now }).eq("macro_id", macroId).gt("week_no", miState.macro.micro_count);
+    if (e2) throw e2;
+    for (const w of miState.weeks){
+      const keepIds = [];
+      for (const s of w.sessions){
+        const p = { micro_id: w.id, squad_id: s.squad_id, session_date: s.session_date, start_time: s.start_time, end_time: s.end_time,
+                    timetable_session_id: s.timetable_session_id || null, stroke_focus: s.stroke_focus.trim() || null,
+                    outline: s.outline.trim() || null, is_active: true, updated_at: now };
+        if (s.id){ const { error } = await sb.from("micro_sessions").update(p).eq("id", s.id); if (error) throw error; }
+        else { const { data, error } = await sb.from("micro_sessions").insert(p).select("id").single(); if (error) throw error; s.id = data.id; }
+        keepIds.push(s.id);
+      }
+      let q = sb.from("micro_sessions").update({ is_active: false, updated_at: now }).eq("micro_id", w.id).eq("is_active", true);
+      if (keepIds.length) q = q.not("id", "in", "(" + keepIds.join(",") + ")");
+      const { error: e3 } = await q; if (e3) throw e3;
+      w.saved = w.sessions.map(s => ({ ...s }));
+    }
+  } catch (err){
+    console.error(err); btn.disabled = false; btn.textContent = "Save micro-cycles";
+    return fail("Could not save: " + (err.message || err));
+  }
+  btn.disabled = false; btn.textContent = "Save micro-cycles";
+  snMsg($("miMsg"), "ok", "Micro-cycles saved.");
+}
+$("miSaveBtn").addEventListener("click", miSave);
+
+// ===================================================================
+// COMPETITIONS (read-only list from public.competitions)
+// ===================================================================
+let cpItems = [], cpFiles = {}, cpQtCount = {};
+const cpOpen = new Set();
+
+async function goCompetitions(focus){
+  showView("viewCompetitions");
+  snMsg($("cpMsg"), "", "");
+  if (focus && !focus.focusId && focus.name) $("cpSearch").value = focus.name;
+  const list = $("cpList");
+  list.innerHTML = '<div class="tt-item" style="padding:14px;"><div class="sn-skel" style="width:60%"></div><div class="sn-skel" style="width:35%"></div></div>'.repeat(4);
+  try {
+    const today = ttToday();
+    const { data, error } = await sb.from("competitions")
+      .select("id, name, license_number, date_start, date_end, level, course, pool_length_m, town_city, region, website_url, gala_id")
+      .or(`date_end.gte.${today},and(date_end.is.null,date_start.gte.${today})`)
+      .order("date_start").limit(1000);
+    if (error) throw error;
+    cpItems = data || [];
+    const [fq, ...qc] = await Promise.all([
+      sb.from("competition_files").select("competition_id, file_name, file_kind, file_ext, source_url, public_url, status").limit(2000),
+      ...[...new Set(cpItems.map(c => c.gala_id).filter(Boolean))].map(g =>
+        sb.from("qualifying_times").select("id", { count: "exact", head: true }).eq("gala_id", g).then(r => [g, r.count || 0]))
+    ]);
+    if (fq.error) console.error(fq.error);
+    cpFiles = {};
+    (fq.data || []).forEach(f => { (cpFiles[f.competition_id] = cpFiles[f.competition_id] || []).push(f); });
+    cpQtCount = Object.fromEntries(qc);
+    if (focus && focus.focusId){ cpOpen.clear(); cpOpen.add(focus.focusId); $("cpSearch").value = ""; }
+    cpRender();
+    if (focus && focus.focusId){
+      const el = document.querySelector(`#cpList [data-cp="${focus.focusId}"]`);
+      if (el){ el.scrollIntoView({ behavior: "smooth", block: "start" }); el.classList.add("cp-flash"); setTimeout(() => el.classList.remove("cp-flash"), 1600); }
+      else snMsg($("cpMsg"), "err", "That competition is no longer in the upcoming list.");
+    }
+  } catch (err){
+    console.error(err);
+    snErr(list, "Could not load competitions.", () => goCompetitions(focus));
+  }
+}
+
+function cpFileIcon(f){ return { conditions: "📄", timetable: "🗓️", results: "🏁", qts: "⏱️" }[f.file_kind] || "📎"; }
+
+function cpRender(){
+  const q = $("cpSearch").value.trim().toLowerCase(), course = $("cpCourse").value, level = $("cpLevel").value;
+  const rows = cpItems.filter(c =>
+    (!course || c.course === course) && (!level || String(c.level) === level) &&
+    (!q || (c.name || "").toLowerCase().includes(q) || (c.town_city || "").toLowerCase().includes(q)));
+  $("cpCount").textContent = rows.length + " upcoming meet" + (rows.length === 1 ? "" : "s");
+  if (!rows.length){ $("cpList").innerHTML = '<div class="empty">No upcoming meets match. Run the competition-scrape skill to refresh the list.</div>'; return; }
+  $("cpList").innerHTML = rows.map(c => {
+    const open = cpOpen.has(c.id), files = cpFiles[c.id] || [], nQt = c.gala_id ? cpQtCount[c.gala_id] || 0 : 0;
+    return `
+    <div class="tt-item ${open ? "open" : ""}" data-cp="${c.id}">
+      <button type="button" class="tt-more" style="border-top:none;" data-act="toggle" aria-expanded="${open}">
+        <span style="text-align:left;">
+          <span class="tt-squad" style="font-size:.92rem;">${escapeHtml(c.name)}</span>
+          <span class="tt-season" style="display:block;">${ttRange(c.date_start, c.date_end || c.date_start)}
+            ${c.level ? `<span class="tt-pill upcoming">L${c.level}</span>` : ""}${c.course ? `<span class="tt-pill current">${c.course}</span>` : ""}</span>
+        </span>
+        <span class="tt-chevron">▼</span>
+      </button>
+      <div class="tt-more-body">
+        <div class="cp-meta">
+          ${c.town_city ? `<div><strong>Venue:</strong> ${escapeHtml(c.town_city)}${c.pool_length_m ? " · " + c.pool_length_m + "m pool" : ""}</div>` : ""}
+          ${c.license_number ? `<div><strong>Licence:</strong> ${escapeHtml(c.license_number)}</div>` : ""}
+          ${c.website_url ? `<div><a href="${escapeAttr(c.website_url)}" target="_blank" rel="noopener">Meet website ↗</a></div>` : '<div class="tt-muted">No website found yet.</div>'}
+        </div>
+        ${files.length ? `<div class="tt-sec-title">Files</div><div class="cp-files">${files.map(f => {
+            const href = f.public_url || f.source_url;
+            return href ? `<a class="cp-file" href="${escapeAttr(href)}" target="_blank" rel="noopener">${cpFileIcon(f)} ${escapeHtml(f.file_name || f.file_kind || "File")}</a>` : "";
+          }).join("")}</div>` : ""}
+        <div class="cp-acts">
+          <button type="button" class="tt-ctrl" data-act="qts" ${nQt ? "" : "disabled"}>QTs${nQt ? "" : " —"}</button>
+          <button type="button" class="tt-ctrl" data-act="elig">Eligibility</button>
+          <button type="button" class="tt-ctrl add" data-act="entry">Entry</button>
+        </div>
+        <div class="msg" data-note></div>
+      </div>
+    </div>`; }).join("");
+}
+["cpSearch", "cpCourse", "cpLevel"].forEach(id => $(id).addEventListener("input", cpRender));
+
+$("cpList").addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const card = b.closest("[data-cp]"), id = card.dataset.cp, c = cpItems.find(x => x.id === id);
+  if (b.dataset.act === "toggle"){
+    const nowOpen = !card.classList.contains("open");
+    if (nowOpen && isNarrow()){ document.querySelectorAll("#cpList .tt-item.open").forEach(x => { x.classList.remove("open"); cpOpen.delete(x.dataset.cp); }); }
+    card.classList.toggle("open", nowOpen); b.setAttribute("aria-expanded", nowOpen);
+    if (nowOpen) cpOpen.add(id); else cpOpen.delete(id);
+  } else if (b.dataset.act === "qts" && c.gala_id){
+    openQtModal(c.gala_id, c.name);
+  } else if (b.dataset.act === "elig"){
+    snMsg(card.querySelector("[data-note]"), "err", "The eligibility report isn't built yet — its rule needs your sign-off first.");
+  } else if (b.dataset.act === "entry"){
+    enterReturnView = "viewCompetitions";
+    $("ttEnterBody").innerHTML = `<div class="tt-prog-title">${escapeHtml(c.name)}</div><div class="tt-meet-date">${ttRange(c.date_start, c.date_end || c.date_start)}</div>` +
+      '<p class="hint" style="margin-top:14px;">The competition entry page has not been built yet. Parents will land on it from here once it is.</p>';
+    showView("viewTimetableEnter");
+  }
+});
+
+// ---------- QTs pop-up: read-time crosstab of qualifying_times for a gala ----------
+function qtFmt(r){
+  if (r.swim_time_display) return r.swim_time_display;
+  if (!r.swim_time) return "—";
+  const m = /(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(r.swim_time); if (!m) return r.swim_time;
+  const mins = +m[1] * 60 + +m[2], secs = (+m[3]).toFixed(2).padStart(5, "0");
+  return mins ? mins + ":" + secs : secs;
+}
+async function openQtModal(galaId, name){
+  $("qtModalTitle").textContent = "Qualifying times · " + (name || "");
+  $("qtModalBody").innerHTML = '<div class="empty">Loading…</div>';
+  $("qtOverlay").classList.add("active");
+  const { data, error } = await sb.from("qualifying_times")
+    .select("event, gender, age_group, time_type, course, reference_age_type, swim_time, swim_time_display, has_standard")
+    .eq("gala_id", galaId).limit(2000);
+  if (error){ $("qtModalBody").innerHTML = '<div class="empty">Could not load qualifying times.</div>'; return; }
+  const rows = data || [];
+  if (!rows.length){ $("qtModalBody").innerHTML = '<div class="empty">No qualifying times on file.</div>'; return; }
+  const ages = [...new Set(rows.map(r => r.age_group))].sort((a, b) => (parseInt(a) || 99) - (parseInt(b) || 99) || String(a).localeCompare(b));
+  const groups = {};
+  rows.forEach(r => {
+    const k = [r.course, r.time_type, r.gender, r.event].join("|");
+    (groups[k] = groups[k] || { course: r.course, type: r.time_type, gender: r.gender, event: r.event, t: {} }).t[r.age_group] = r.has_standard === false ? "—" : qtFmt(r);
+  });
+  const basis = [...new Set(rows.map(r => r.reference_age_type).filter(Boolean))].join("; ");
+  $("qtModalBody").innerHTML = (basis ? `<p class="hint" style="margin:0 0 10px;">Age basis: ${escapeHtml(basis)}</p>` : "") +
+    `<table><thead><tr><th>Course</th><th>Type</th><th>Sex</th><th>Event</th>${ages.map(a => `<th>${escapeHtml(a)}</th>`).join("")}</tr></thead><tbody>` +
+    Object.values(groups).map(g => `<tr><td>${escapeHtml(g.course)}</td><td>${escapeHtml(g.type)}</td><td>${escapeHtml(g.gender)}</td><td>${escapeHtml(g.event)}</td>${ages.map(a => `<td>${escapeHtml(g.t[a] || "")}</td>`).join("")}</tr>`).join("") +
+    "</tbody></table>";
+}
+$("qtCloseBtn").addEventListener("click", () => $("qtOverlay").classList.remove("active"));
+$("qtOverlay").addEventListener("click", e => { if (e.target.id === "qtOverlay") $("qtOverlay").classList.remove("active"); });
+
+// ---------- Navigation ----------
+let enterReturnView = "viewTimetables";
+navActions.season = goSeason;
+navActions.competitions = () => goCompetitions(null);
+$("tileSeason").addEventListener("click", goSeason);
+$("tileCompetitions").addEventListener("click", () => goCompetitions(null));
+$("backHomeSeason").addEventListener("click", () => showView("viewHome"));
+$("snPlanBtn").addEventListener("click", goPlanning);
+$("backPlanning").addEventListener("click", goSeason);
+$("backHomeComp").addEventListener("click", () => showView("viewHome"));
+$("backCompForm").addEventListener("click", () => showView("viewPlanning"));
+$("backMacroForm").addEventListener("click", () => showView("viewPlanning"));
+$("backMicroForm").addEventListener("click", goPlanning);
 
 // ===================================================================
 // Boot
