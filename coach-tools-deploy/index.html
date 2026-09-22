@@ -841,6 +841,10 @@
     color:#0a5c8a;font-weight:700;font-size:.85rem;cursor:pointer;font-family:inherit;
   }
   .tt-dates{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .tt-time-lbl{font-size:.7rem;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;margin:0 0 4px;}
+  .tt-season-title{font-size:.8rem;font-weight:700;color:var(--navy-light);margin-top:2px;}
+  .tt-week-line{font-size:.78rem;color:var(--text-dim);margin:2px 0 6px;}
+  .tt-unlinked{font-size:.72rem;color:#8a5a00;background:#fff4e0;border-radius:6px;padding:2px 7px;display:inline-block;margin-top:4px;}
   .tt-dates .hint{display:block;margin:0 0 4px;font-weight:600;}
   .roster-filters{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .roster-filters label{margin:0 0 6px;}
@@ -1774,14 +1778,18 @@
       <p class="hint">One squad per timetable.</p>
 
       <div id="ttSessionsWrap" style="display:none;">
-        <label>Sessions <span class="opt">(day, start time, pool)</span></label>
+        <label>Sessions <span class="opt">(day, start and finish time, pool)</span></label>
         <div id="ttSessionRows"></div>
         <button type="button" class="tt-add-another" id="ttAddAnotherBtn">+ Add another</button>
 
-        <label style="margin-top:18px;">Season <span class="opt">(beginning and end dates)</span></label>
+        <label for="ttSeasonSelect" style="margin-top:18px;">Season</label>
+        <select id="ttSeasonSelect"><option value="">Loading seasons…</option></select>
+        <p class="hint" id="ttSeasonHint">Seasons are set up under Season → PLAN.</p>
+
+        <label style="margin-top:14px;">Band <span class="opt">(dates this timetable runs — must fall inside the season)</span></label>
         <div class="tt-dates">
-          <div><span class="hint">Starts</span><input type="date" id="ttSeasonStart"></div>
-          <div><span class="hint">Ends</span><input type="date" id="ttSeasonEnd"></div>
+          <div><span class="hint">Band start</span><input type="date" id="ttSeasonStart"></div>
+          <div><span class="hint">Band end</span><input type="date" id="ttSeasonEnd"></div>
         </div>
 
         <button class="submit-btn" id="ttSaveBtn">Save timetable</button>
@@ -5286,7 +5294,11 @@ async function archiveSetLineDrafts(sessionPlanId, content){
 
 // ===================================================================
 // TIMETABLES
-// Weekly timetable per squad (day / time / pool), with season dates.
+// Weekly timetable per squad (day / start–finish / pool), linked to a
+// Season (seasons.id) with a band start/end that must fall inside it.
+// timetables.season_start / season_end hold the BAND dates.
+// The expanded panel reads the season title, this week's micro-cycle
+// focus (macros → micros) and the season's competitions — read-only.
 // Read-only overview page; add / edit / delete happen through the
 // "Coach & Administrator controls" concertina. "Delete" only DISABLES a
 // timetable (is_active=false) — nothing is ever erased from Supabase.
@@ -5301,7 +5313,10 @@ const TT_DAYS_LONG  = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday
 const TT_POOLS = ["17m", "25m", "50m"];
 
 let ttItems = [];            // active timetables for currentClub
-let ttGalas = [];            // dated meets from the galas table
+let ttGalas = [];            // galas (entry open/close dates for status)
+let ttSeasons = [];          // active seasons for currentClub
+let ttSeasonComps = [];      // season_competitions for those seasons
+let ttMacros = [];           // macros (+ squads, micros) for those seasons
 let ttMode = null;           // null | "edit" | "delete"
 let ttConfirmId = null;      // timetable awaiting delete confirmation
 const ttExpanded = new Set();
@@ -5333,27 +5348,65 @@ function goTimetables(){
 }
 
 async function loadTimetables(){
-  $("ttList").innerHTML = '<div class="empty">Loading timetables…</div>';
-  const [tt, gl] = await Promise.all([
-    sb.from("timetables")
-      .select("id, squad_id, season_start, season_end, season_title, weekly_focus, squads!inner(name, club), timetable_sessions(id, day_of_week, start_time, pool_size, is_active)")
-      .eq("is_active", true)
-      .eq("squads.club", currentClub)
-      .eq("timetable_sessions.is_active", true),
-    sb.from("galas")
-      .select("id, gala_code, name, date_start, date_end, entries_open, entries_close, status")
-      .not("date_start", "is", null)
-      .order("date_start", { ascending: true })
-  ]);
-  if (tt.error){
-    console.error(tt.error);
-    $("ttList").innerHTML = '<div class="empty">Could not load timetables.</div>';
+  $("ttList").innerHTML = '<div class="tt-item" style="padding:14px;"><div class="sn-skel" style="width:40%"></div><div class="sn-skel"></div><div class="sn-skel" style="width:70%"></div></div>'.repeat(2);
+  try {
+    const [tt, gl, se] = await Promise.all([
+      sb.from("timetables")
+        .select("id, squad_id, season_id, season_start, season_end, season_title, weekly_focus, squads!inner(name, club), timetable_sessions(id, day_of_week, start_time, end_time, pool_size, is_active)")
+        .eq("is_active", true)
+        .eq("squads.club", currentClub)
+        .eq("timetable_sessions.is_active", true),
+      sb.from("galas").select("id, name, date_start, date_end, entries_open, entries_close"),
+      sb.from("seasons").select("id, title, start_date, finish_date")
+        .eq("club", currentClub).eq("is_active", true).order("start_date")
+    ]);
+    if (tt.error) throw tt.error;
+    if (se.error) throw se.error;
+    if (gl.error) console.error(gl.error);
+    ttItems = tt.data || [];
+    ttGalas = gl.data || [];
+    ttSeasons = se.data || [];
+    ttSeasonComps = []; ttMacros = [];
+    const seasonIds = ttSeasons.map(x => x.id);
+    if (seasonIds.length){
+      const [sc, mq] = await Promise.all([
+        sb.from("season_competitions")
+          .select("id, season_id, competition_id, name, date_from, date_to, course, level, competitions(gala_id)")
+          .in("season_id", seasonIds).eq("is_active", true).order("date_from"),
+        sb.from("macros")
+          .select("id, season_id, title, macro_squads(squad_id, is_active), micros(id, week_no, week_commencing, meso, qes_focus, technical_focus, is_active)")
+          .in("season_id", seasonIds).eq("is_active", true)
+      ]);
+      if (sc.error) throw sc.error;
+      if (mq.error) throw mq.error;
+      ttSeasonComps = sc.data || [];
+      ttMacros = mq.data || [];
+    }
+  } catch (err){
+    console.error(err);
+    snErr($("ttList"), "Could not load timetables.", loadTimetables);
     return;
   }
-  if (gl.error) console.error(gl.error);
-  ttItems = tt.data || [];
-  ttGalas = gl.data || [];
   ttRenderList();
+}
+
+// The season a timetable belongs to: its season_id, or (older rows) the season covering its band.
+function ttSeasonOf(t){
+  if (t.season_id) return ttSeasons.find(x => x.id === t.season_id) || null;
+  return ttSeasons.find(x => x.start_date <= t.season_start && x.finish_date >= t.season_end) || null;
+}
+// This week's micro-cycle for a squad in a season (or the next one coming up).
+function ttWeekFocus(squadId, seasonId, today){
+  const micros = [];
+  ttMacros.filter(m => m.season_id === seasonId).forEach(m => {
+    if (!(m.macro_squads || []).some(x => x.squad_id === squadId && x.is_active)) return;
+    (m.micros || []).forEach(mi => { if (mi.is_active && mi.week_commencing) micros.push({ ...mi, macroTitle: m.title }); });
+  });
+  micros.sort((a, b) => a.week_commencing.localeCompare(b.week_commencing));
+  const now = micros.find(mi => mi.week_commencing <= today && isoAdd(mi.week_commencing, 6) >= today);
+  if (now) return { micro: now, current: true };
+  const next = micros.find(mi => mi.week_commencing > today);
+  return next ? { micro: next, current: false } : null;
 }
 
 function ttMeetStatus(g, today){
@@ -5361,11 +5414,19 @@ function ttMeetStatus(g, today){
   if (g.entries_open && g.entries_open <= today) return { key: "open", label: "Open to enter" };
   return { key: "pending", label: g.entries_open ? "Pending · opens " + fmtDate(g.entries_open) : "Pending" };
 }
-function ttMeetsFor(t, today){
-  return ttGalas.filter(g => {
-    const end = g.date_end || g.date_start;
-    return end >= today && end >= t.season_start && g.date_start <= t.season_end;
-  });
+// Upcoming meets = the season's competitions (Season → PLAN → Add event) not yet finished.
+// Entry status comes from the linked gala's entry window when one exists.
+function ttMeetsFor(season, today){
+  if (!season) return [];
+  return ttSeasonComps
+    .filter(c => c.season_id === season.id && (c.date_to || c.date_from) >= today)
+    .map(c => {
+      const galaId = c.competitions && c.competitions.gala_id;
+      const g = galaId ? ttGalas.find(x => x.id === galaId) : null;
+      return { id: c.id, name: c.name, date_start: c.date_from, date_end: c.date_to,
+               course: c.course, level: c.level,
+               entries_open: g ? g.entries_open : null, entries_close: g ? g.entries_close : null };
+    });
 }
 
 function ttItemHtml(t, today){
@@ -5377,7 +5438,7 @@ function ttItemHtml(t, today){
     ? sessions.map(s => `
         <div class="tt-sess">
           <span class="tt-sess-day">${TT_DAYS_SHORT[s.day_of_week]}</span>
-          <span>${ttFmtTime(s.start_time)}</span>
+          <span>${ttFmtTime(s.start_time)}${s.end_time ? " – " + ttFmtTime(s.end_time) : ""}</span>
           <span class="tt-sess-pool">${s.pool_size ? escapeHtml(s.pool_size) : "Pool TBC"}</span>
         </div>`).join("")
     : '<div class="tt-muted" style="padding:6px 0;">No sessions added yet.</div>';
@@ -5394,13 +5455,35 @@ function ttItemHtml(t, today){
   const pillLabel = { current: "Current", upcoming: "Upcoming", past: "Past" }[state];
 
   // --- expanded section: season programme (read-only) + upcoming meets ---
-  const hasProgramme = !!(t.season_title || t.weekly_focus);
-  const progHtml = hasProgramme
-    ? (t.season_title ? `<div class="tt-prog-title">${escapeHtml(t.season_title)}</div>` : "") +
-      (t.weekly_focus ? `<div class="tt-prog-focus">${escapeHtml(t.weekly_focus)}</div>` : "")
-    : '<div class="tt-muted">The season title and weekly focus will appear here once the season programme is completed.</div>';
+  const season = ttSeasonOf(t);
+  let progHtml;
+  if (!season){
+    progHtml = '<div class="tt-muted">Not linked to a season yet. Edit this timetable and choose a season to show the season programme and its meets.</div>';
+  } else {
+    const wf = ttWeekFocus(t.squad_id, season.id, today);
+    let focusHtml;
+    if (wf){
+      const mi = wf.micro, q = mi.qes_focus;
+      focusHtml = `
+        <div class="tt-week-line">${wf.current ? "This week" : "Next planned week"} · Week ${mi.week_no} · w/c ${fmtDdMm(mi.week_commencing)}</div>
+        <div class="sn-week-head">
+          ${mi.meso ? `<span class="sn-tag">Meso ${mi.meso}</span>` : ""}
+          ${q ? `<span class="sn-tag ${q[0]}">${QES[q]}</span>` : ""}
+          ${mi.technical_focus ? `<span class="sn-tag">Technical: ${mi.technical_focus}. ${TECH_FOCUS[mi.technical_focus]}</span>` : ""}
+        </div>`;
+    } else if (t.weekly_focus){
+      focusHtml = `<div class="tt-prog-focus">${escapeHtml(t.weekly_focus)}</div>`;
+    } else {
+      focusHtml = '<div class="tt-muted">The focus for the week will appear here once the season programme is completed.</div>';
+    }
+    progHtml = `
+      <div class="tt-prog-title">${escapeHtml(season.title)}</div>
+      <div class="tt-meet-date">${fmtDate(season.start_date)} – ${fmtDate(season.finish_date)}</div>
+      <div class="tt-sec-title">Focus of the week</div>
+      ${focusHtml}`;
+  }
 
-  const meets = ttMeetsFor(t, today);
+  const meets = ttMeetsFor(season, today);
   const meetsHtml = meets.length
     ? meets.map(g => {
         const st = ttMeetStatus(g, today);
@@ -5408,7 +5491,7 @@ function ttItemHtml(t, today){
         <div class="tt-meet">
           <div>
             <div class="tt-meet-name">${escapeHtml(g.name)}</div>
-            <div class="tt-meet-date">${ttRange(g.date_start, g.date_end)}</div>
+            <div class="tt-meet-date">${ttRange(g.date_start, g.date_end)}${g.level ? " · L" + g.level : ""}${g.course ? " · " + escapeHtml(g.course) : ""}</div>
           </div>
           <div class="tt-meet-side">
             <span class="tt-status ${st.key}">${escapeHtml(st.label)}</span>
@@ -5416,20 +5499,21 @@ function ttItemHtml(t, today){
           </div>
         </div>`;
       }).join("")
-    : '<div class="tt-muted">No upcoming meets in this season.</div>';
+    : '<div class="tt-muted">' + (season ? "No upcoming meets in this season yet — add them under Season → PLAN → Add event." : "Meets appear once the timetable is linked to a season.") + '</div>';
 
   return `
     <div class="tt-item ${state === "past" ? "past" : ""} ${open ? "open" : ""}" data-tt="${t.id}">
       <div class="tt-item-top">
         <div>
           <div class="tt-squad">${escapeHtml(t.squads.name)}<span class="tt-pill ${state}">${pillLabel}</span></div>
-          <div class="tt-season">${fmtDate(t.season_start)} – ${fmtDate(t.season_end)}</div>
+          ${season ? `<div class="tt-season-title">${escapeHtml(season.title)}</div>` : '<div class="tt-unlinked">No season linked</div>'}
+          <div class="tt-season">Band ${fmtDate(t.season_start)} – ${fmtDate(t.season_end)}</div>
         </div>
         ${action}
       </div>
       <div class="tt-sessions">${sessHtml}</div>
       <button type="button" class="tt-more" data-act="toggle" data-id="${t.id}" aria-expanded="${open}">
-        <span>Season &amp; upcoming meets</span><span class="tt-chevron">▼</span>
+        <span>Season, weekly focus &amp; upcoming meets</span><span class="tt-chevron">▼</span>
       </button>
       <div class="tt-more-body">
         <div class="tt-sec-title">Season programme</div>
@@ -5532,7 +5616,7 @@ async function ttDisable(id, btn){
 // ---------- Enter-a-competition (placeholder until the entry page exists) ----------
 function ttGoEnter(galaId){
   enterReturnView = "viewTimetables";
-  const g = ttGalas.find(x => x.id === galaId);
+  const g = ttSeasonComps.map(c => ({ id: c.id, name: c.name, date_start: c.date_from, date_end: c.date_to })).find(x => x.id === galaId);
   $("ttEnterBody").innerHTML =
     `<div class="tt-prog-title">${escapeHtml(g ? g.name : "Competition")}</div>` +
     (g ? `<div class="tt-meet-date">${ttRange(g.date_start, g.date_end)}</div>` : "") +
@@ -5541,19 +5625,25 @@ function ttGoEnter(galaId){
 }
 
 // ---------- Add / edit form ----------
-function ttBlankRow(){ return { id: null, day: "", hh: "", mm: "", ap: "", pool: "" }; }
-function ttTo24(r){
-  const h = (parseInt(r.hh, 10) % 12) + (r.ap === "pm" ? 12 : 0);
-  return String(h).padStart(2, "0") + ":" + r.mm + ":00";
+function ttBlankRow(){ return { id: null, day: "", hh: "", mm: "", ap: "", eh: "", em: "", eap: "", pool: "" }; }
+function ttTo24(r, end){
+  const hh = end ? r.eh : r.hh, mm = end ? r.em : r.mm, ap = end ? r.eap : r.ap;
+  const h = (parseInt(hh, 10) % 12) + (ap === "pm" ? 12 : 0);
+  return String(h).padStart(2, "0") + ":" + mm + ":00";
 }
+function ttHasEnd(r){ return !!(r.eh || r.em || r.eap); }
 function ttRowFromSession(s){
   const h = parseInt(s.start_time.slice(0, 2), 10);
+  const eh = s.end_time ? parseInt(s.end_time.slice(0, 2), 10) : null;
   return {
     id: s.id,
     day: String(s.day_of_week),
     hh: String(h % 12 || 12),
     mm: s.start_time.slice(3, 5),
     ap: h >= 12 ? "pm" : "am",
+    eh: eh === null ? "" : String(eh % 12 || 12),
+    em: s.end_time ? s.end_time.slice(3, 5) : "",
+    eap: eh === null ? "" : (eh >= 12 ? "pm" : "am"),
     pool: s.pool_size || ""
   };
 }
@@ -5567,6 +5657,33 @@ async function ttLoadSquadOptions(){
     ? '<option value="">Choose a squad…</option>' + data.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("")
     : '<option value="">No squads — add one under Administrator</option>';
 }
+
+function ttRenderSeasonOptions(selectedId){
+  const sel = $("ttSeasonSelect");
+  if (!ttSeasons.length){
+    sel.innerHTML = '<option value="">No seasons yet — create one under Season → PLAN</option>';
+    ttApplySeasonBounds();
+    return;
+  }
+  sel.innerHTML = '<option value="">Choose a season…</option>' + ttSeasons.map(x =>
+    `<option value="${x.id}"${x.id === selectedId ? " selected" : ""}>${escapeHtml(x.title)} (${fmtDate(x.start_date)} – ${fmtDate(x.finish_date)})</option>`).join("");
+  ttApplySeasonBounds();
+}
+// Band date pickers are bounded by the chosen season; empty bands default to the whole season.
+function ttApplySeasonBounds(fill){
+  const x = ttSeasons.find(v => v.id === $("ttSeasonSelect").value);
+  const a = $("ttSeasonStart"), b = $("ttSeasonEnd");
+  a.min = b.min = x ? x.start_date : "";
+  a.max = b.max = x ? x.finish_date : "";
+  $("ttSeasonHint").textContent = x
+    ? "Season runs " + fmtDate(x.start_date) + " – " + fmtDate(x.finish_date) + ". The band must fall inside it."
+    : "Seasons are set up under Season → PLAN.";
+  if (x && fill){
+    if (!a.value) a.value = x.start_date;
+    if (!b.value) b.value = x.finish_date;
+  }
+}
+$("ttSeasonSelect").addEventListener("change", () => ttApplySeasonBounds(true));
 
 function ttSetSquad(id, name){
   ttForm.squadId = id; ttForm.squadName = name;
@@ -5589,6 +5706,16 @@ async function ttOpenForm(existing){
   $("ttSquadRow").style.display = "flex";
   $("ttSessionsWrap").style.display = "none";
   showView("viewTimetableForm");
+  if (!ttSeasons.length){
+    const { data, error } = await sb.from("seasons").select("id, title, start_date, finish_date")
+      .eq("club", currentClub).eq("is_active", true).order("start_date");
+    if (!error) ttSeasons = data || [];
+  }
+  const today = ttToday();
+  const preSeason = existing
+    ? (ttSeasonOf(existing) || {}).id
+    : (ttSeasons.find(x => x.start_date <= today && x.finish_date >= today) || ttSeasons.find(x => x.start_date > today) || {}).id;
+  ttRenderSeasonOptions(preSeason || "");
   await ttLoadSquadOptions();
   if (existing){
     ttForm.rows = (existing.timetable_sessions || []).slice()
@@ -5598,6 +5725,7 @@ async function ttOpenForm(existing){
     $("ttSeasonEnd").value = existing.season_end;
     ttSetSquad(existing.squad_id, existing.squads.name);
   }
+  ttApplySeasonBounds(!existing);
   ttRenderRows();
 }
 
@@ -5623,7 +5751,6 @@ function ttRenderRows(){
   const opt = (v, label, cur) => `<option value="${v}"${String(cur) === String(v) ? " selected" : ""}>${label}</option>`;
   const baseMins = []; for (let m = 0; m < 60; m += 5) baseMins.push(String(m).padStart(2, "0"));
   $("ttSessionRows").innerHTML = ttForm.rows.map((r, i) => {
-    const mins = baseMins.includes(r.mm) || r.mm === "" ? baseMins : baseMins.concat(r.mm).sort();
     return `
       <div class="tt-sess-row">
         <div class="tt-sess-line1">
@@ -5633,17 +5760,32 @@ function ttRenderRows(){
           </select>
           <button type="button" class="tt-rm" data-rm="${i}" aria-label="Remove this session">✕</button>
         </div>
+        <div class="tt-time-lbl">Start</div>
         <div class="tt-time-line">
-          <select data-i="${i}" data-f="hh" aria-label="Hour">
+          <select data-i="${i}" data-f="hh" aria-label="Start hour">
             <option value="">Hour</option>
             ${Array.from({ length: 12 }, (_, k) => opt(k + 1, k + 1, r.hh)).join("")}
           </select>
-          <select data-i="${i}" data-f="mm" aria-label="Minutes">
+          <select data-i="${i}" data-f="mm" aria-label="Start minutes">
             <option value="">Min</option>
-            ${mins.map(m => opt(m, m, r.mm)).join("")}
+            ${(baseMins.includes(r.mm) || r.mm === "" ? baseMins : baseMins.concat(r.mm).sort()).map(m => opt(m, m, r.mm)).join("")}
           </select>
-          <select data-i="${i}" data-f="ap" aria-label="am or pm">
+          <select data-i="${i}" data-f="ap" aria-label="Start am or pm">
             <option value="">am/pm</option>${opt("am", "am", r.ap)}${opt("pm", "pm", r.ap)}
+          </select>
+        </div>
+        <div class="tt-time-lbl">Finish (optional)</div>
+        <div class="tt-time-line">
+          <select data-i="${i}" data-f="eh" aria-label="Finish (optional) hour">
+            <option value="">Hour</option>
+            ${Array.from({ length: 12 }, (_, k) => opt(k + 1, k + 1, r.eh)).join("")}
+          </select>
+          <select data-i="${i}" data-f="em" aria-label="Finish (optional) minutes">
+            <option value="">Min</option>
+            ${(baseMins.includes(r.em) || r.em === "" ? baseMins : baseMins.concat(r.em).sort()).map(m => opt(m, m, r.em)).join("")}
+          </select>
+          <select data-i="${i}" data-f="eap" aria-label="Finish (optional) am or pm">
+            <option value="">am/pm</option>${opt("am", "am", r.eap)}${opt("pm", "pm", r.eap)}
           </select>
         </div>
         <select data-i="${i}" data-f="pool" aria-label="Pool">
@@ -5679,6 +5821,10 @@ async function ttSave(){
   for (let i = 0; i < rows.length; i++){
     const r = rows[i];
     if (!r.day || !r.hh || !r.mm || !r.ap) return fail("Session " + (i + 1) + ": choose a day and a full start time (hour, minutes, am/pm).");
+    if (ttHasEnd(r)){
+      if (!r.eh || !r.em || !r.eap) return fail("Session " + (i + 1) + ": complete the finish time (hour, minutes, am/pm) or clear it.");
+      if (ttTo24(r, true) <= ttTo24(r)) return fail("Session " + (i + 1) + ": the finish time must be after the start time.");
+    }
   }
   const seen = new Set();
   for (const r of rows){
@@ -5686,9 +5832,14 @@ async function ttSave(){
     if (seen.has(k)) return fail("Two sessions have the same day and time.");
     seen.add(k);
   }
+  const seasonId = $("ttSeasonSelect").value;
+  const season = ttSeasons.find(x => x.id === seasonId);
+  if (!season) return fail("Choose the season this timetable belongs to.");
   const start = $("ttSeasonStart").value, end = $("ttSeasonEnd").value;
-  if (!start || !end) return fail("Set the season start and end dates.");
-  if (end < start) return fail("The season end date must be on or after the start date.");
+  if (!start || !end) return fail("Set the band start and end dates.");
+  if (end < start) return fail("The band end date must be on or after the band start date.");
+  if (start < season.start_date || end > season.finish_date)
+    return fail("The band must fall inside " + season.title + " (" + fmtDate(season.start_date) + " – " + fmtDate(season.finish_date) + ").");
   const clash = ttItems.find(t => t.id !== ttForm.id && t.squad_id === ttForm.squadId && t.season_start <= end && t.season_end >= start);
   if (clash) return fail(ttForm.squadName + " already has a timetable covering " + fmtDate(clash.season_start) + " – " + fmtDate(clash.season_end) + ". Edit that one, or change these dates.");
 
@@ -5697,17 +5848,17 @@ async function ttSave(){
   try {
     let id = ttForm.id;
     if (id){
-      const { error } = await sb.from("timetables").update({ squad_id: ttForm.squadId, season_start: start, season_end: end }).eq("id", id);
+      const { error } = await sb.from("timetables").update({ squad_id: ttForm.squadId, season_id: seasonId, season_start: start, season_end: end, updated_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     } else {
       const { data, error } = await sb.from("timetables")
-        .insert({ squad_id: ttForm.squadId, season_start: start, season_end: end })
+        .insert({ squad_id: ttForm.squadId, season_id: seasonId, season_start: start, season_end: end })
         .select("id").single();
       if (error) throw error;
       id = data.id;
       ttForm.id = id;   // a retry after a partial failure updates instead of duplicating
     }
-    const payload = r => ({ day_of_week: parseInt(r.day, 10), start_time: ttTo24(r), pool_size: r.pool || null });
+    const payload = r => ({ day_of_week: parseInt(r.day, 10), start_time: ttTo24(r), end_time: ttHasEnd(r) ? ttTo24(r, true) : null, pool_size: r.pool || null });
 
     for (const r of rows.filter(r => r.id)){
       const { error } = await sb.from("timetable_sessions").update(payload(r)).eq("id", r.id);
@@ -5895,7 +6046,7 @@ function snPanelHtml(sq, micro, sessions, comps){
           ${r.stroke_focus ? `<div class="sn-sess-stroke">Stroke focus: ${escapeHtml(r.stroke_focus)}</div>` : ""}
           ${r.outline ? `<div class="sn-sess-outline">${escapeHtml(r.outline)}</div>` : ""}
         </div>`).join("") : '<div class="tt-muted">No sessions recorded for this week.</div>'}
-      <div class="sn-cd">CD may result in the sessions being altered</div>`;
+      <div class="sn-cd">Coach's discretion may result in the sessions being altered</div>`;
   }
   const compsHtml = comps.length ? comps.map(c => `
       <div class="tt-meet">
