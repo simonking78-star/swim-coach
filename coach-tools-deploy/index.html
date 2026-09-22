@@ -842,6 +842,20 @@
   }
   .tt-dates{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .tt-dates .hint{display:block;margin:0 0 4px;font-weight:600;}
+  .roster-filters{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .roster-filters label{margin:0 0 6px;}
+  .roster-table-wrap{overflow-x:auto;margin:0 -4px;}
+  table.roster-table{width:100%;border-collapse:collapse;font-size:.87rem;min-width:340px;}
+  table.roster-table th{
+    text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.4px;
+    color:var(--text-dim);font-weight:700;padding:6px 8px;border-bottom:1.5px solid var(--border);
+    white-space:nowrap;
+  }
+  table.roster-table td{padding:9px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  table.roster-table tbody tr:last-child td{border-bottom:none;}
+  table.roster-table td.empty,table.roster-table td.empty:hover{text-align:center;}
+  table.roster-table tbody tr.roster-row{cursor:pointer;}
+  table.roster-table tbody tr.roster-row:active,table.roster-table tbody tr.roster-row:hover{background:var(--grey-bg);}
 </style>
 </head>
 <body>
@@ -888,7 +902,7 @@
     <span class="nav-icon">⚙️</span> Administrator
   </div>
   <div class="nav-item" id="navSwimmerProfile" data-nav="swimmer">
-    <span class="nav-icon">🏊</span> Swimmer
+    <span class="nav-icon">🏊</span> Swimmers
   </div>
 </nav>
 
@@ -900,8 +914,8 @@
       <div class="home-tile" id="tileSwimmerProfile">
         <div class="ht-icon">🏊</div>
         <div>
-          <div class="ht-title">Swimmer</div>
-          <div class="ht-sub">Attendance, feedback &amp; results in one place</div>
+          <div class="ht-title">Swimmers</div>
+          <div class="ht-sub">Filter by squad &amp; age — tap a name for attendance, feedback &amp; results</div>
         </div>
       </div>
       <div class="home-tile" id="tileFeedback">
@@ -1428,7 +1442,7 @@
   <!-- ============ ADMIN: LANDING ============ -->
   <!-- ============ SWIMMER PROFILE ============ -->
   <div class="view" id="viewSwimmerProfile">
-    <a class="back-home" id="backHomeSwp">Home</a>
+    <a class="back-home" id="backHomeSwp">Swimmers</a>
 
     <div class="card">
       <h2>Swimmer</h2>
@@ -1498,6 +1512,35 @@
       <div>
         <div class="ht-title">Move a swimmer's club</div>
         <div class="ht-sub">Transfer to a different club &amp; squad</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SWIMMERS: ROSTER (top-level; tap a row to open attendance/feedback/results) ============ -->
+  <div class="view" id="viewSwimmers">
+    <a class="back-home" id="backHomeRoster">Home</a>
+    <div class="card">
+      <h2>Filters</h2>
+      <div class="roster-filters">
+        <div>
+          <label for="rosterSquadFilter">Squad</label>
+          <select id="rosterSquadFilter"><option value="">All squads</option></select>
+        </div>
+        <div>
+          <label for="rosterAgeFilter">Age</label>
+          <select id="rosterAgeFilter"><option value="">All ages</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Swimmers <span class="count" id="rosterCount"></span></h2>
+      <div class="roster-table-wrap">
+        <table class="roster-table" id="rosterTable">
+          <thead>
+            <tr><th>Name</th><th>Squad</th><th>Age</th></tr>
+          </thead>
+          <tbody id="rosterTbody"><tr><td colspan="3" class="empty">Loading…</td></tr></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -1732,7 +1775,6 @@ function goFeedback(){ showView("viewFeedback"); resetFbTabs(); populateFbPlanSe
 function goSession(){ showView("viewSession"); loadPlanList(); }
 function goMI(){ showView("viewMI"); }
 function goAdmin(){ showView("viewAdmin"); }
-function goSwimmerProfile(){ resetSwimmerProfile(); showView("viewSwimmerProfile"); }
 
 $("tileAttendance").addEventListener("click", goAttendance);
 $("tileFeedback").addEventListener("click", goFeedback);
@@ -1770,7 +1812,7 @@ const navActions = {
   timetables: goTimetables,
   mi: goMI,
   admin: goAdmin,
-  swimmer: goSwimmerProfile
+  swimmer: goSwimmers
 };
 document.querySelectorAll("#navDrawer .nav-item").forEach(item => {
   item.addEventListener("click", () => {
@@ -1812,9 +1854,8 @@ $("backMI1").addEventListener("click", () => showView("viewMI"));
 $("tileAdmin").addEventListener("click", goAdmin);
 $("backHomeAdmin").addEventListener("click", () => showView("viewHome"));
 
-// Swimmer profile routing
-$("tileSwimmerProfile").addEventListener("click", goSwimmerProfile);
-$("backHomeSwp").addEventListener("click", () => showView("viewHome"));
+// Swimmer profile routing (entry point is the Swimmers list; see goSwimmers below)
+$("backHomeSwp").addEventListener("click", () => showView("viewSwimmers"));
 $("adminSquadsTile").addEventListener("click", () => { showView("viewAdminSquads"); loadSquadEditList(); });
 $("adminAddMemberTile").addEventListener("click", () => { openAddMember(); });
 $("adminMoveTile").addEventListener("click", () => { openMoveSquad(); });
@@ -2761,6 +2802,99 @@ async function loadSwimmers(){
   const { data, error } = await query;
   if (error){ console.error(error); return; }
   allSwimmers = data || [];
+}
+
+// ===================================================================
+// SWIMMERS (top-level) — squad & age filters, live count, table.
+// Tapping a row drills into that swimmer's attendance/feedback/results
+// (viewSwimmerProfile), nested inside this section.
+// ===================================================================
+let rosterSwimmers = [];
+
+function calcAge(dobStr){
+  if (!dobStr) return null;
+  const dob = new Date(dobStr + "T00:00:00");
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+  return age;
+}
+
+async function goSwimmers(){
+  showView("viewSwimmers");
+  $("rosterCount").textContent = "";
+  $("rosterTbody").innerHTML = '<tr><td colspan="3" class="empty">Loading…</td></tr>';
+  await Promise.all([loadRosterSquadOptions(), loadRosterSwimmers()]);
+}
+
+async function loadRosterSquadOptions(){
+  const sel = $("rosterSquadFilter");
+  const cur = sel.value;
+  const { data, error } = await sb.from("squads").select("name").eq("club", currentClub).order("name");
+  if (error){ console.error(error); return; }
+  sel.innerHTML = '<option value="">All squads</option>' +
+    (data || []).map(s => `<option value="${escapeAttr(s.name)}">${escapeHtml(s.name)}</option>`).join("");
+  sel.value = cur;
+}
+
+async function loadRosterSwimmers(){
+  const { data, error } = await sb.from("swimmers")
+    .select("id, full_name, squad, date_of_birth")
+    .eq("club", currentClub)
+    .eq("active", true)
+    .order("full_name");
+  if (error){
+    console.error(error);
+    rosterSwimmers = [];
+    $("rosterCount").textContent = "";
+    $("rosterTbody").innerHTML = '<tr><td colspan="3" class="empty">Could not load swimmers.</td></tr>';
+    return;
+  }
+  rosterSwimmers = (data || []).map(s => ({ ...s, age: calcAge(s.date_of_birth) }));
+  renderRosterAgeOptions();
+  renderRosterTable();
+}
+
+function renderRosterAgeOptions(){
+  const sel = $("rosterAgeFilter");
+  const cur = sel.value;
+  const ages = [...new Set(rosterSwimmers.map(s => s.age).filter(a => a != null))].sort((a, b) => a - b);
+  sel.innerHTML = '<option value="">All ages</option>' + ages.map(a => `<option value="${a}">${a}</option>`).join("");
+  sel.value = cur;
+}
+
+function renderRosterTable(){
+  const squadVal = $("rosterSquadFilter").value;
+  const ageVal = $("rosterAgeFilter").value;
+  const filtered = rosterSwimmers.filter(s =>
+    (!squadVal || s.squad === squadVal) &&
+    (!ageVal || String(s.age) === ageVal)
+  );
+  $("rosterCount").textContent = "(" + filtered.length + ")";
+  $("rosterTbody").innerHTML = filtered.length
+    ? filtered.map(s => `<tr class="roster-row" data-id="${s.id}"><td>${escapeHtml(s.full_name)}</td><td>${escapeHtml(s.squad || "—")}</td><td>${s.age != null ? s.age : "—"}</td></tr>`).join("")
+    : '<tr><td colspan="3" class="empty">No swimmers match these filters.</td></tr>';
+}
+
+$("rosterSquadFilter").addEventListener("change", renderRosterTable);
+$("rosterAgeFilter").addEventListener("change", renderRosterTable);
+$("tileSwimmerProfile").addEventListener("click", goSwimmers);
+$("backHomeRoster").addEventListener("click", () => showView("viewHome"));
+
+// Tap a roster row -> open that swimmer's attendance/feedback/results,
+// nested inside the Swimmers section (back link returns to this list).
+$("rosterTbody").addEventListener("click", async (e) => {
+  const tr = e.target.closest("tr.roster-row[data-id]");
+  if (!tr) return;
+  const s = rosterSwimmers.find(x => x.id === tr.dataset.id);
+  if (s) await openSwimmerProfile(s);
+});
+
+async function openSwimmerProfile(s){
+  showView("viewSwimmerProfile");
+  if (!swpAllSwimmers.length) await loadSwpSwimmers();
+  await swpSelectSwimmer(s);
 }
 
 // Populate the feedback squad dropdown from the squads table, scoped to currentClub.
