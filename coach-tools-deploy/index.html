@@ -943,7 +943,7 @@
   .tt-noplan{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px;border:1.5px dashed #e0b44c;background:#fffaf0;border-radius:9px;padding:6px 9px;font-size:.78rem;font-weight:700;color:#8a5a00;}
   .tt-noplan-btn{border:none;background:#8a5a00;color:#fff;border-radius:7px;padding:5px 10px;font-weight:700;font-size:.74rem;cursor:pointer;flex-shrink:0;}
   .sp-break-warn{margin-top:6px;font-size:.78rem;font-weight:700;color:#8a5a00;background:#fff4d6;border-radius:7px;padding:5px 8px;}
-  .sp-skill-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+  .sp-skill-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
   .sp-skill{display:block;margin:0;cursor:pointer;}
   .sp-skill input{position:absolute;opacity:0;pointer-events:none;}
   .sp-skill span{display:block;text-align:center;border:1.5px solid var(--border);border-radius:9px;padding:9px 2px;font-weight:700;font-size:.8rem;color:var(--navy);background:#fff;}
@@ -2270,11 +2270,13 @@ function blockDistance(block){
 function planDistance(content){ return (content || []).reduce((s, b) => s + blockDistance(b), 0); }
 
 // --- Session focus: Stroke & Skills ticks + Training zone ---
-const SP_SKILLS = ["Fr", "Bk", "Brs", "Fly", "Turns", "Transitions", "Start", "Finish"];
+const SP_SKILLS = ["FR", "BK", "Brs", "Fly", "IM", "Turns", "Trans.", "DLK", "Start", "Finish"];
+// Older saved values → current labels
+const SP_SKILL_ALIASES = { Fr: "FR", Bk: "BK", Transitions: "Trans." };
 const SP_ZONES  = ["A1-3", "Threshold", "V02m", "LT/LP", "Sprint"];
 let spFocusTouched = false;   // coach has changed the ticks/zone by hand → stop auto-filling
 function spRenderFocus(skills, zone){
-  const on = new Set(skills || []);
+  const on = new Set((skills || []).map(k => SP_SKILL_ALIASES[k] || k));
   $("planSkills").innerHTML = SP_SKILLS.map(k =>
     `<label class="sp-skill"><input type="checkbox" value="${k}" ${on.has(k) ? "checked" : ""}><span>${k}</span></label>`).join("");
   $("planZone").innerHTML = '<option value="">— choose a zone —</option>' +
@@ -2287,13 +2289,14 @@ function spSuggestFocus(ctx){
   const skills = new Set(); let zone = "";
   if (!ctx) return { skills: [], zone };
   const t = ((ctx.session && ctx.session.stroke_focus) || "").toLowerCase();
-  if (/\b(im|medley)\b/.test(t)) ["Fr", "Bk", "Brs", "Fly"].forEach(k => skills.add(k));
-  if (/\b(fr|free|freestyle|front ?crawl|crawl)\b/.test(t)) skills.add("Fr");
-  if (/\b(bk|back|backstroke)\b/.test(t)) skills.add("Bk");
+  if (/\b(im|medley)\b/.test(t)) skills.add("IM");
+  if (/\b(fr|free|freestyle|front ?crawl|crawl)\b/.test(t)) skills.add("FR");
+  if (/\b(bk|back|backstroke)\b/.test(t)) skills.add("BK");
+  if (/\bdlk\b|dolphin ?kick|underwater/.test(t)) skills.add("DLK");
   if (/\b(br|brs|breast|breaststroke)\b/.test(t)) skills.add("Brs");
   if (/\b(fly|butterfly)\b/.test(t)) skills.add("Fly");
   if (/turn/.test(t)) skills.add("Turns");
-  if (/transition|changeover/.test(t)) skills.add("Transitions");
+  if (/transition|changeover/.test(t)) skills.add("Trans.");
   if (/\b(start|starts|dive|dives)\b/.test(t)) skills.add("Start");
   if (/finish/.test(t)) skills.add("Finish");
   if (Number(ctx.micro.technical_focus) === 6) skills.add("Start");   // Initial Actions
@@ -2304,7 +2307,7 @@ function spSuggestFocus(ctx){
 }
 function spFocusTagsHtml(skills, zone){
   return (zone ? `<span class="plan-tag zone">${escapeHtml(zone)}</span>` : "") +
-         (skills || []).map(k => `<span class="plan-tag skill">${escapeHtml(k)}</span>`).join("");
+         (skills || []).map(k => `<span class="plan-tag skill">${escapeHtml(SP_SKILL_ALIASES[k] || k)}</span>`).join("");
 }
 $("planSkills").addEventListener("change", () => { spFocusTouched = true; $("planFocusHint").textContent = ""; });
 $("planZone").addEventListener("change", () => { spFocusTouched = true; $("planFocusHint").textContent = ""; });
@@ -2938,7 +2941,7 @@ function buildPlanPdf(plan){
   if (plan.pool_size) metaBits.push(plan.pool_size + " pool");
   if (plan.total_distance_m) metaBits.push(plan.total_distance_m.toLocaleString() + "m total");
   if (plan.training_zone) metaBits.push("Zone: " + plan.training_zone);
-  if ((plan.stroke_skills || []).length) metaBits.push(plan.stroke_skills.join(", "));
+  if ((plan.stroke_skills || []).length) metaBits.push(plan.stroke_skills.map(k => SP_SKILL_ALIASES[k] || k).join(", "));
   doc.text(metaBits.join("   ·   "), marginL, 58);
 
   doc.setTextColor(26, 35, 50);
