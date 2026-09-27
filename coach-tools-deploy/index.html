@@ -44,16 +44,17 @@
   header{
     background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);
     color:#fff;
-    padding:22px 20px 26px 62px;
+    padding:calc(18px + env(safe-area-inset-top, 0px)) calc(20px + env(safe-area-inset-right, 0px)) 22px calc(20px + env(safe-area-inset-left, 0px));
     position:relative;
   }
   header h1{margin:0;font-size:1.3rem;font-weight:700;letter-spacing:.2px;}
   header p{margin:4px 0 0;font-size:.85rem;color:#b9cbe0;}
   .hamburger-btn{
-    position:absolute;left:18px;top:20px;
-    background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.3);
-    color:#fff;width:36px;height:36px;border-radius:9px;
-    font-size:1.15rem;line-height:1;cursor:pointer;
+    flex:0 0 auto;
+    background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.35);
+    color:#fff;width:44px;height:40px;border-radius:9px;
+    font-size:1.25rem;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
   }
   .nav-overlay{
     display:none;position:fixed;inset:0;background:rgba(11,37,69,.45);z-index:90;
@@ -81,7 +82,7 @@
   .nav-item:active{background:var(--grey-bg);}
   .nav-item .nav-icon{font-size:1.15rem;width:22px;text-align:center;flex-shrink:0;}
   .nav-divider{height:1px;background:var(--border);margin:6px 0;}
-  .club-switcher{margin-top:14px;display:flex;align-items:center;gap:8px;}
+  .club-switcher{margin-top:14px;display:flex;align-items:center;gap:10px;}
   .club-switcher label{font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;color:#b9cbe0;font-weight:700;}
   .club-switcher select{
     flex:1;
@@ -848,6 +849,19 @@
   .tt-dates .hint{display:block;margin:0 0 4px;font-weight:600;}
   .roster-filters{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .roster-filters label{margin:0 0 6px;}
+  .roster-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+  .roster-cols-btn{border:1.5px solid var(--navy-light);background:#fff;color:var(--navy);border-radius:8px;padding:7px 12px;font-weight:700;font-size:.8rem;cursor:pointer;font-family:inherit;}
+  .roster-cols-btn[aria-expanded="true"]{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .roster-cols{display:none;flex-wrap:wrap;gap:6px;margin:0 0 12px;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:#f8fafc;}
+  .roster-cols.open{display:flex;}
+  .roster-col-chip{margin:0 !important;display:flex;align-items:center;gap:6px;border:1.5px solid var(--border);background:#fff;border-radius:20px;padding:5px 11px;font-size:.78rem;font-weight:700;color:var(--navy);cursor:pointer;user-select:none;}
+  .roster-col-chip input{margin:0;width:auto;}
+  .roster-col-chip.on{border-color:var(--accent);background:#eaf6fc;}
+  .roster-col-chip.fixed{opacity:.6;cursor:default;}
+  table.roster-table td.nowrap{white-space:nowrap;}
+  .swp-pdf-row{display:flex;gap:10px;align-items:center;margin-top:12px;}
+  .swp-pdf-btn{flex:1;background:var(--navy);color:#fff;border:none;border-radius:10px;padding:12px;font-weight:700;font-size:.9rem;cursor:pointer;font-family:inherit;}
+  .swp-pdf-btn:disabled{opacity:.6;}
   .roster-table-wrap{overflow-x:auto;margin:0 -4px;}
   table.roster-table{width:100%;border-collapse:collapse;font-size:.87rem;min-width:340px;}
   table.roster-table th{
@@ -943,10 +957,10 @@
 <body>
 
 <header>
-  <button type="button" class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">☰</button>
   <h1>Coach Tools</h1>
   <p>Attendance · Feedback · Session planning</p>
   <div class="club-switcher">
+    <button type="button" class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">☰</button>
     <label for="clubSelect">Club</label>
     <select id="clubSelect"><option value="Crawley Swimming Club">Crawley Swimming Club</option></select>
   </div>
@@ -1572,6 +1586,10 @@
         <span id="swpSelectedName"></span>
         <button type="button" id="swpClearSwimmer">change</button>
       </div>
+      <div class="swp-pdf-row" id="swpPdfRow" style="display:none;">
+        <button type="button" class="swp-pdf-btn" id="swpPdfBtn">PDF — attendance, PBs &amp; feedback</button>
+      </div>
+      <div class="msg" id="swpPdfMsg"></div>
     </div>
 
     <div id="swpContent" style="display:none;">
@@ -1639,6 +1657,8 @@
     <a class="back-home" id="backHomeRoster">Home</a>
     <div class="card">
       <h2>Filters</h2>
+      <label for="rosterSearch" style="margin-top:0;">Search by name</label>
+      <input type="search" id="rosterSearch" placeholder="Type a name…" autocomplete="off" style="margin-bottom:12px;">
       <div class="roster-filters">
         <div>
           <label for="rosterSquadFilter">Squad</label>
@@ -1651,10 +1671,14 @@
       </div>
     </div>
     <div class="card">
-      <h2>Swimmers <span class="count" id="rosterCount"></span></h2>
+      <div class="roster-head">
+        <h2 style="margin:0;">Swimmers <span class="count" id="rosterCount"></span></h2>
+        <button type="button" class="roster-cols-btn" id="rosterColsBtn" aria-expanded="false">Columns ▾</button>
+      </div>
+      <div class="roster-cols" id="rosterCols"></div>
       <div class="roster-table-wrap">
         <table class="roster-table" id="rosterTable">
-          <thead>
+          <thead id="rosterThead">
             <tr><th>Name</th><th>Squad</th><th>Age</th></tr>
           </thead>
           <tbody id="rosterTbody"><tr><td colspan="3" class="empty">Loading…</td></tr></tbody>
@@ -3277,7 +3301,7 @@ function calcAge(dobStr){
 async function goSwimmers(){
   showView("viewSwimmers");
   $("rosterCount").textContent = "";
-  $("rosterTbody").innerHTML = '<tr><td colspan="3" class="empty">Loading…</td></tr>';
+  $("rosterTbody").innerHTML = `<tr><td colspan="${rosterCols.length}" class="empty">Loading…</td></tr>`;
   await Promise.all([loadRosterSquadOptions(), loadRosterSwimmers()]);
 }
 
@@ -3293,7 +3317,7 @@ async function loadRosterSquadOptions(){
 
 async function loadRosterSwimmers(){
   const { data, error } = await sb.from("swimmers")
-    .select("id, full_name, squad, date_of_birth")
+    .select("id, full_name, squad, date_of_birth, gender, swim_england_id, joined_club_on, parent_name, parent_phone, parent_email")
     .eq("club", currentClub)
     .eq("active", true)
     .order("full_name");
@@ -3301,12 +3325,13 @@ async function loadRosterSwimmers(){
     console.error(error);
     rosterSwimmers = [];
     $("rosterCount").textContent = "";
-    $("rosterTbody").innerHTML = '<tr><td colspan="3" class="empty">Could not load swimmers.</td></tr>';
+    $("rosterTbody").innerHTML = `<tr><td colspan="${rosterCols.length}" class="empty">Could not load swimmers.</td></tr>`;
     return;
   }
   rosterSwimmers = (data || []).map(s => ({ ...s, age: calcAge(s.date_of_birth) }));
   renderRosterAgeOptions();
   renderRosterTable();
+  rosterEnsureExtras();
 }
 
 function renderRosterAgeOptions(){
@@ -3317,18 +3342,104 @@ function renderRosterAgeOptions(){
   sel.value = cur;
 }
 
+// ---- Roster columns: the coach can add or remove columns; the choice is remembered on this device ----
+const ROSTER_COLS = [
+  { key: "name",     label: "Name",           fixed: true, get: s => s.full_name },
+  { key: "squad",    label: "Squad",          get: s => s.squad || "—" },
+  { key: "age",      label: "Age",            get: s => s.age != null ? s.age : "—" },
+  { key: "yob",      label: "Year of birth",  get: s => s.date_of_birth ? s.date_of_birth.slice(0, 4) : "—" },
+  { key: "gender",   label: "Gender",         get: s => s.gender || "—" },
+  { key: "seid",     label: "Swim England ID", get: s => s.swim_england_id || "—" },
+  { key: "joined",   label: "Joined club",    get: s => s.joined_club_on ? fmtDate(s.joined_club_on) : "—", nowrap: true },
+  { key: "att30",    label: "Sessions (30 days)", lazy: "att", get: s => rosterExtra.att ? (rosterExtra.att[s.id] || 0) : "…" },
+  { key: "lastfb",   label: "Last feedback",  lazy: "fb",  get: s => rosterExtra.fb ? (rosterExtra.fb[s.id] ? fmtDate(rosterExtra.fb[s.id]) : "—") : "…", nowrap: true },
+  { key: "parent",   label: "Parent",         get: s => s.parent_name || "—" },
+  { key: "phone",    label: "Parent phone",   get: s => s.parent_phone || "—", nowrap: true },
+  { key: "email",    label: "Parent email",   get: s => s.parent_email || "—" }
+];
+const ROSTER_DEFAULT_COLS = ["name", "squad", "age"];
+let rosterExtra = { club: null, att: null, fb: null };
+function rosterLoadCols(){
+  try {
+    const v = JSON.parse(localStorage.getItem("rosterCols") || "null");
+    if (Array.isArray(v) && v.length) return ["name", ...v.filter(k => k !== "name" && ROSTER_COLS.some(c => c.key === k))];
+  } catch (e) {}
+  return ROSTER_DEFAULT_COLS.slice();
+}
+let rosterCols = rosterLoadCols();
+function rosterSaveCols(){ try { localStorage.setItem("rosterCols", JSON.stringify(rosterCols)); } catch (e) {} }
+
+function renderRosterColChooser(){
+  $("rosterCols").innerHTML = ROSTER_COLS.map(c => {
+    const on = rosterCols.includes(c.key);
+    return `<label class="roster-col-chip ${on ? "on" : ""} ${c.fixed ? "fixed" : ""}">
+      <input type="checkbox" data-col="${c.key}" ${on ? "checked" : ""} ${c.fixed ? "disabled" : ""}>${escapeHtml(c.label)}</label>`;
+  }).join("");
+}
+$("rosterColsBtn").addEventListener("click", () => {
+  const box = $("rosterCols"), open = !box.classList.contains("open");
+  box.classList.toggle("open", open);
+  $("rosterColsBtn").setAttribute("aria-expanded", open);
+  if (open) renderRosterColChooser();
+});
+$("rosterCols").addEventListener("change", e => {
+  const k = e.target.dataset && e.target.dataset.col;
+  if (!k) return;
+  // keep the columns in the catalogue order
+  const set = new Set(rosterCols);
+  if (e.target.checked) set.add(k); else set.delete(k);
+  rosterCols = ROSTER_COLS.map(c => c.key).filter(x => set.has(x));
+  rosterSaveCols();
+  renderRosterColChooser();
+  renderRosterTable();
+  rosterEnsureExtras();
+});
+
+// Attendance / last-feedback columns are only fetched when switched on.
+async function rosterEnsureExtras(){
+  if (rosterExtra.club !== currentClub) rosterExtra = { club: currentClub, att: null, fb: null };
+  const need = new Set(ROSTER_COLS.filter(c => c.lazy && rosterCols.includes(c.key)).map(c => c.lazy));
+  const ids = new Set(rosterSwimmers.map(x => x.id));
+  const jobs = [];
+  if (need.has("att") && !rosterExtra.att){
+    const since = isoAdd(ttToday(), -30);
+    jobs.push(sb.from("attendance_records").select("swimmer_id, session_date, present")
+      .gte("session_date", since).eq("present", true).limit(20000).then(({ data, error }) => {
+        if (error){ console.error(error); return; }
+        const m = {};
+        (data || []).forEach(r => { if (ids.has(r.swimmer_id)) m[r.swimmer_id] = (m[r.swimmer_id] || 0) + 1; });
+        rosterExtra.att = m;
+      }));
+  }
+  if (need.has("fb") && !rosterExtra.fb){
+    jobs.push(sb.from("swimmer_feedback").select("swimmer_id, session_date").limit(20000).then(({ data, error }) => {
+      if (error){ console.error(error); return; }
+      const m = {};
+      (data || []).forEach(r => { if (ids.has(r.swimmer_id) && r.session_date && (!m[r.swimmer_id] || r.session_date > m[r.swimmer_id])) m[r.swimmer_id] = r.session_date; });
+      rosterExtra.fb = m;
+    }));
+  }
+  if (jobs.length){ await Promise.all(jobs); renderRosterTable(); }
+}
+
 function renderRosterTable(){
   const squadVal = $("rosterSquadFilter").value;
   const ageVal = $("rosterAgeFilter").value;
+  const q = ($("rosterSearch").value || "").trim().toLowerCase();
   const filtered = rosterSwimmers.filter(s =>
     (!squadVal || s.squad === squadVal) &&
-    (!ageVal || String(s.age) === ageVal)
+    (!ageVal || String(s.age) === ageVal) &&
+    (!q || (s.full_name || "").toLowerCase().includes(q))
   );
+  const cols = ROSTER_COLS.filter(c => rosterCols.includes(c.key));
+  $("rosterThead").innerHTML = "<tr>" + cols.map(c => `<th>${escapeHtml(c.label)}</th>`).join("") + "</tr>";
   $("rosterCount").textContent = "(" + filtered.length + ")";
   $("rosterTbody").innerHTML = filtered.length
-    ? filtered.map(s => `<tr class="roster-row" data-id="${s.id}"><td>${escapeHtml(s.full_name)}</td><td>${escapeHtml(s.squad || "—")}</td><td>${s.age != null ? s.age : "—"}</td></tr>`).join("")
-    : '<tr><td colspan="3" class="empty">No swimmers match these filters.</td></tr>';
+    ? filtered.map(s => `<tr class="roster-row" data-id="${s.id}">` +
+        cols.map(c => `<td${c.nowrap ? ' class="nowrap"' : ""}>${escapeHtml(String(c.get(s)))}</td>`).join("") + "</tr>").join("")
+    : `<tr><td colspan="${cols.length}" class="empty">No swimmers match${q ? " “" + escapeHtml(q) + "”" : " these filters"}.</td></tr>`;
 }
+$("rosterSearch").addEventListener("input", renderRosterTable);
 
 $("rosterSquadFilter").addEventListener("change", renderRosterTable);
 $("rosterAgeFilter").addEventListener("change", renderRosterTable);
@@ -4819,6 +4930,8 @@ async function resetSwimmerProfile(){
   $("swpSwimmerSearch").style.display = "block";
   $("swpSwimmerSearch").value = "";
   $("swpContent").style.display = "none";
+  $("swpPdfRow").style.display = "none";
+  $("swpPdfMsg").textContent = "";
   $("swpEventDetailCard").style.display = "none";
   if (swpChart){ swpChart.destroy(); swpChart = null; }
   await loadSwpSwimmers();  // always fresh — the selected club may have changed
@@ -4859,6 +4972,8 @@ async function swpSelectSwimmer(s){
   swpSearchInput.style.display = "none";
   swpAcResults.style.display = "none";
   $("swpContent").style.display = "block";
+  $("swpPdfRow").style.display = "flex";
+  $("swpPdfMsg").textContent = "";
   $("swpEventDetailCard").style.display = "none";
   if (swpChart){ swpChart.destroy(); swpChart = null; }
 
@@ -5013,6 +5128,205 @@ async function swpLoadFeedback(swimmerId){
     </div>`;
   }).join("");
 }
+
+// ===================================================================
+// SWIMMER -> FULL PDF (Swimmers → tap a swimmer → PDF)
+// Three sections: 1. Attendance  2. Personal best times  3. Feedback
+// (feedback grouped by subject, newest first within each subject).
+// ===================================================================
+const SWP_PB_EVENTS = [
+  ["50 Free", "50m Freestyle"], ["50 Back", "50m Backstroke"], ["50 Breast", "50m Breaststroke"], ["50 Fly", "50m Butterfly"],
+  ["100 Free", "100m Freestyle"], ["100 Back", "100m Backstroke"], ["100 Breast", "100m Breaststroke"], ["100 Fly", "100m Butterfly"],
+  ["100 IM", "100m Individual Medley"],
+  ["200 Free", "200m Freestyle"], ["200 Back", "200m Backstroke"], ["200 Breast", "200m Breaststroke"], ["200 Fly", "200m Butterfly"],
+  ["200 IM", "200m Individual Medley"],
+  ["400 Free", "400m Freestyle"], ["800 Free", "800m Freestyle"], ["1500 Free", "1500m Freestyle"]
+];
+// Fastest swim on record per event and course (not just the is_pb flag), with its date.
+function swpBestTimes(results){
+  const best = {};
+  (results || []).forEach(r => {
+    const secs = parseTimeStr(r.swim_time_display);
+    if (secs == null) return;
+    const k = r.event + "|" + r.course;
+    if (!best[k] || secs < best[k].secs || (secs === best[k].secs && r.meet_date < best[k].date))
+      best[k] = { secs, time: r.swim_time_display, date: r.meet_date };
+  });
+  return best;
+}
+
+function buildSwimmerPdf(sw, att, results, feedback){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
+  const mL = 40, W = pageW - mL * 2, topY = 50, bottomY = pageH - 48;
+  const NAVY = [11, 37, 69], DIM = [91, 107, 127], TEXT = [26, 35, 50], RULE = [150, 162, 178], SHADE = [238, 243, 248];
+  const lh = pt => pt * 1.35;
+  const name = fbPdfSafe(sw.full_name || "Swimmer");
+  const today = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  let y = 100;
+  const need = h => { if (y + h > bottomY){ doc.addPage(); y = topY; } };
+  const font = (size, bold, color) => { doc.setFont("helvetica", bold ? "bold" : "normal"); doc.setFontSize(size); doc.setTextColor(...(color || TEXT)); };
+
+  // Header band
+  doc.setFillColor(...NAVY); doc.rect(0, 0, pageW, 74, "F");
+  font(16, true, [255, 255, 255]); doc.text(name, mL, 36);
+  const bits = ["Swimmer report"];
+  if (sw.squad) bits.push(fbPdfSafe(sw.squad));
+  if (sw.date_of_birth) bits.push("Born " + sw.date_of_birth.slice(0, 4));
+  bits.push(fbPdfSafe(currentClub), today);
+  font(9.5, false, [255, 255, 255]); doc.text(bits.join("   ·   "), mL, 58);
+
+  function sectionHead(title, keep){
+    need(keep || 60);
+    doc.setDrawColor(...RULE); doc.setLineWidth(0.8); doc.line(mL, y, pageW - mL, y);
+    y += 16; font(14.5, true, NAVY); doc.text(title, mL, y + 12); y += 28;
+  }
+  // Simple table: cols = [{h, w, align}], rows = [[...]]
+  function table(cols, rows){
+    const rowH = 18, x0 = mL;
+    const head = () => {
+      need(rowH * 2);
+      doc.setFillColor(...NAVY); doc.rect(x0, y, W, rowH, "F");
+      font(9, true, [255, 255, 255]);
+      let x = x0; cols.forEach(c => { doc.text(c.h, c.align === "right" ? x + c.w - 6 : x + 6, y + 12.5, { align: c.align === "right" ? "right" : "left" }); x += c.w; });
+      y += rowH;
+    };
+    head();
+    rows.forEach((r, i) => {
+      if (y + rowH > bottomY){ doc.addPage(); y = topY; head(); }
+      if (i % 2){ doc.setFillColor(...SHADE); doc.rect(x0, y, W, rowH, "F"); }
+      let x = x0;
+      r.forEach((v, j) => {
+        const c = cols[j];
+        font(9.5, j === 0, j === 0 ? NAVY : TEXT);
+        doc.text(fbPdfSafe(v == null ? "" : String(v)), c.align === "right" ? x + c.w - 6 : x + 6, y + 12.5, { align: c.align === "right" ? "right" : "left" });
+        x += c.w;
+      });
+      y += rowH;
+    });
+    doc.setDrawColor(...RULE); doc.setLineWidth(0.5); doc.rect(x0, y - rowH * (rows.length + 1), W, rowH * (rows.length + 1));
+    y += 10;
+  }
+  function para(text, o){
+    const { size = 10, bold = false, color = TEXT, gap = 0 } = o || {};
+    y += gap; font(size, bold, color);
+    fbPdfSafe(text).split("\n").forEach(p => (p.trim() ? doc.splitTextToSize(p, W) : [""]).forEach(t => {
+      need(lh(size)); font(size, bold, color); doc.text(t, mL, y + size); y += lh(size);
+    }));
+  }
+
+  // ---- 1. Attendance ----
+  sectionHead("1. Attendance");
+  const iso = d => d.toISOString().slice(0, 10);
+  const since30 = iso(new Date(Date.now() - 30 * 86400000)), since90 = iso(new Date(Date.now() - 90 * 86400000));
+  const present = att.filter(r => r.present);
+  const pct = rows => rows.length ? Math.round(100 * rows.filter(r => r.present).length / rows.length) + "%" : "-";
+  const in30 = att.filter(r => r.session_date >= since30), in90 = att.filter(r => r.session_date >= since90);
+  table(
+    [{ h: "Period", w: W * 0.4 }, { h: "Sessions attended", w: W * 0.2, align: "right" }, { h: "Sessions marked", w: W * 0.2, align: "right" }, { h: "Attendance", w: W * 0.2, align: "right" }],
+    [["Last 30 days", in30.filter(r => r.present).length, in30.length, pct(in30)],
+     ["Last 90 days", in90.filter(r => r.present).length, in90.length, pct(in90)],
+     ["All records", present.length, att.length, pct(att)]]
+  );
+  if (att.length){
+    const byMonth = {};
+    att.forEach(r => { const m = r.session_date.slice(0, 7); (byMonth[m] = byMonth[m] || []).push(r); });
+    const months = Object.keys(byMonth).sort().reverse().slice(0, 12);
+    para("By month (most recent first)", { size: 9, color: DIM, gap: 2 });
+    y += 4;
+    table(
+      [{ h: "Month", w: W * 0.4 }, { h: "Attended", w: W * 0.2, align: "right" }, { h: "Missed", w: W * 0.2, align: "right" }, { h: "Attendance", w: W * 0.2, align: "right" }],
+      months.map(m => {
+        const rows = byMonth[m], a = rows.filter(r => r.present).length;
+        const label = new Date(m + "-01T00:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+        return [label, a, rows.length - a, pct(rows)];
+      })
+    );
+  } else {
+    para("No attendance has been recorded for this swimmer yet.", { color: DIM });
+  }
+  y += 8;
+
+  // ---- 2. Personal best times ----
+  sectionHead("2. Personal best times", 150);
+  const best = swpBestTimes(results);
+  const cell = (ev, c, f) => { const b = best[ev + "|" + c]; return b ? (f === "t" ? b.time : fmtDate(b.date)) : "-"; };
+  table(
+    [{ h: "Events", w: W * 0.24 }, { h: "SC", w: W * 0.17 }, { h: "SC date", w: W * 0.21 }, { h: "LC", w: W * 0.17 }, { h: "LC date", w: W * 0.21 }],
+    SWP_PB_EVENTS.map(([label, ev]) => [label,
+      cell(ev, "SC", "t"), cell(ev, "SC", "d"),
+      label === "100 IM" && !best[ev + "|LC"] ? "No event" : cell(ev, "LC", "t"),
+      label === "100 IM" && !best[ev + "|LC"] ? "" : cell(ev, "LC", "d")])
+  );
+  para("Fastest swim on record in each event and course.", { size: 8.5, color: DIM });
+  y += 10;
+
+  // ---- 3. Feedback ----
+  sectionHead("3. Feedback", 150);
+  if (!feedback.length){
+    para("No feedback on record.", { color: DIM });
+  } else {
+    fbPdfGroups(feedback).forEach(g => {
+      need(70);
+      font(12, true, NAVY); doc.text(fbPdfSafe(FB_PDF_HEADLINES[g.category] || g.category), mL, y + 12); y += 22;
+      g.rows.forEach(r => {
+        need(40);
+        const date = r.session_date ? fmtDate(r.session_date) : "No date";
+        para(r.status ? `${date}  -  ${r.status}` : date, { size: 10.5, bold: true, color: NAVY });
+        if (r.criterion) para(r.criterion, { bold: true, gap: 2 });
+        const obs = r.observation || r.note || "";
+        if (obs){ para("Observation", { size: 8.5, color: DIM, gap: 4 }); para(obs); }
+        if (r.remedial_action){ para("Remedial action", { size: 8.5, color: DIM, gap: 4 }); para(r.remedial_action); }
+        if (r.note && r.observation){ para("Additional notes", { size: 8.5, color: DIM, gap: 4 }); para(r.note); }
+        y += 10;
+      });
+      y += 4;
+    });
+  }
+
+  const n = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= n; i++){
+    doc.setPage(i); font(8, false, DIM);
+    doc.text(`${name}  ·  Swimmer report`, mL, pageH - 24);
+    doc.text(`Page ${i} of ${n}`, pageW - mL, pageH - 24, { align: "right" });
+  }
+  return doc;
+}
+
+async function shareSwimmerPdf(){
+  const btn = $("swpPdfBtn"), msg = $("swpPdfMsg");
+  msg.textContent = ""; msg.className = "msg";
+  if (!swpSelected) return;
+  if (!window.jspdf){ msg.className = "msg err"; msg.textContent = "PDF library failed to load — check your connection and try again."; return; }
+  const sw = swpSelected;
+  btn.disabled = true; btn.textContent = "Building PDF…";
+  try {
+    const [at, rs, fb, pr] = await Promise.all([
+      sb.from("attendance_records").select("session_date, present").eq("swimmer_id", sw.id).limit(10000),
+      sb.from("swim_results").select("event, course, swim_time_display, meet_date").eq("swimmer_id", sw.id).limit(10000),
+      sb.from("swimmer_feedback").select("category, criterion, status, observation, remedial_action, note, session_date, created_at").eq("swimmer_id", sw.id),
+      sw.date_of_birth === undefined ? sb.from("swimmers").select("date_of_birth").eq("id", sw.id).single() : Promise.resolve({ data: null })
+    ]);
+    for (const r of [at, rs, fb]) if (r.error) throw r.error;
+    const full = { ...sw, date_of_birth: sw.date_of_birth !== undefined ? sw.date_of_birth : (pr.data && pr.data.date_of_birth) };
+    const doc = buildSwimmerPdf(full, at.data || [], rs.data || [], fb.data || []);
+    const slug = fbPdfSafe(sw.full_name || "swimmer").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const filename = `swimmer-report-${slug || "swimmer"}-${new Date().toISOString().slice(0, 10)}.pdf`;
+    const file = new File([doc.output("blob")], filename, { type: "application/pdf" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })){
+      try { await navigator.share({ files: [file], title: `${sw.full_name} - swimmer report` }); return; }
+      catch (e){ if (e && e.name === "AbortError") return; console.error(e); }
+    }
+    doc.save(filename);
+  } catch (err){
+    console.error(err);
+    msg.className = "msg err"; msg.textContent = "Could not create the PDF — " + (err.message || err);
+  } finally {
+    btn.disabled = false; btn.innerHTML = "PDF — attendance, PBs &amp; feedback";
+  }
+}
+$("swpPdfBtn").addEventListener("click", shareSwimmerPdf);
 
 // ===================================================================
 // Drills & Skills library
