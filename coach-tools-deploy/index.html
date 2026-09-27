@@ -890,9 +890,15 @@
   .sn-sess-outline{font-size:.82rem;line-height:1.4;margin-top:3px;white-space:pre-wrap;}
   .sn-cd{font-size:.68rem;color:var(--text-dim);font-style:italic;margin-top:8px;}
   .sn-comp-link{background:none;border:none;padding:0;font:inherit;font-weight:700;font-size:.86rem;color:#0a5c8a;text-decoration:underline;cursor:pointer;text-align:left;}
-  .sn-top-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px;}
+  .sn-top-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:0 0 14px;}
+  .sn-top-btns .submit-btn{padding-left:6px;padding-right:6px;font-size:.88rem;}
   .sn-top-btns .submit-btn{margin:0;}
   .sn-sp-btn{background:#fff;color:var(--navy);border:1.5px solid var(--navy);}
+  .mi-break-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:4px;}
+  .mi-break-chip{border:1.5px solid var(--border);background:#fff;border-radius:8px;padding:6px 0;font-weight:700;font-size:.74rem;color:var(--navy);cursor:pointer;display:flex;flex-direction:column;align-items:center;line-height:1.2;}
+  .mi-break-chip small{font-weight:500;font-size:.64rem;color:var(--text-dim);}
+  .mi-break-chip.on{background:#e9edf2;color:#8a96a6;border-style:dashed;text-decoration:line-through;}
+  .mi-break-chip:disabled{cursor:not-allowed;opacity:.8;}
   .nav-item.nav-sub{padding-left:38px;font-size:.92em;}
   .sp-filters{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
   .sp-filters label{margin:0 0 6px;}
@@ -900,6 +906,51 @@
   .sp-group-head:first-child{margin-top:4px;}
   .sp-micro{margin:10px 0 4px;}
   .sp-micro-card{border:1.5px solid var(--border);border-radius:11px;background:#f8fafc;padding:10px 12px;}
+  .tt-tabs{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:0 0 12px;border:1.5px solid var(--navy);border-radius:10px;overflow:hidden;}
+  .tt-tab{background:#fff;color:var(--navy);border:none;padding:10px 6px;font-weight:700;font-size:.88rem;cursor:pointer;}
+  .tt-tab.active{background:var(--navy);color:#fff;}
+  .tt-wknav{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .tt-wkbtn{flex:0 0 44px;height:44px;border-radius:10px;border:1.5px solid var(--border);background:#fff;font-size:1.4rem;font-weight:700;color:var(--navy);cursor:pointer;}
+  .tt-wklabel{flex:1;text-align:center;}
+  .tt-wklabel #ttWkLabel{font-weight:800;color:var(--navy);}
+  .tt-wksub{font-size:.75rem;color:var(--text-dim);}
+  .tt-wktools{display:flex;gap:8px;margin-bottom:12px;}
+  .tt-wktools select{flex:1;margin:0;}
+  .tt-wktools .tt-ctrl{flex:0 0 auto;}
+  .tt-wk-card{padding:12px 12px 6px;}
+  .tt-wk-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+  .tt-wk-count{font-size:.72rem;font-weight:700;border-radius:20px;padding:3px 9px;}
+  .tt-wk-count.ok{background:#e1f4e6;color:#1d6b33;}
+  .tt-wk-count.warn{background:#fff4d6;color:#8a5a00;}
+  .tt-wdays{margin-top:10px;border-top:1px solid var(--border);}
+  .tt-wd{display:grid;grid-template-columns:62px 1fr;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);}
+  .tt-wd:last-child{border-bottom:none;}
+  .tt-wd-date{font-size:.78rem;color:var(--text-dim);line-height:1.3;}
+  .tt-wd-date strong{display:block;color:var(--navy);font-size:.86rem;}
+  .tt-wd.today .tt-wd-date strong{color:#0a7d4f;}
+  .tt-wd.today .tt-wd-date strong::after{content:" • today";font-size:.66rem;font-weight:600;}
+  .tt-wd.rest{opacity:.6;padding:5px 0;}
+  .tt-wd.brk{opacity:.45;background:repeating-linear-gradient(135deg,transparent 0 8px,rgba(120,130,145,.08) 8px 16px);}
+  .tt-wd.brk .tt-ws-when{text-decoration:line-through;}
+  .tt-brk-pill{display:inline-block;margin-top:3px;font-size:.62rem;font-weight:700;background:#e9edf2;color:#5d6878;border-radius:10px;padding:1px 6px;}
+  .tt-ws{padding:2px 0 6px;}
+  .tt-ws + .tt-ws{border-top:1px dashed var(--border);padding-top:6px;}
+  .tt-ws-when{font-weight:700;font-size:.84rem;color:var(--navy);display:flex;gap:8px;align-items:center;}
+  .tt-plan-link{display:block;width:100%;text-align:left;margin-top:6px;border:1.5px solid #b9d3ea;background:#f3f8fd;border-radius:9px;padding:7px 9px;cursor:pointer;}
+  .tt-plan-title{display:block;font-weight:700;font-size:.82rem;color:var(--navy);}
+  .tt-plan-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+  .tt-plan-tags .plan-tag{margin:0;}
+  .tt-noplan{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px;border:1.5px dashed #e0b44c;background:#fffaf0;border-radius:9px;padding:6px 9px;font-size:.78rem;font-weight:700;color:#8a5a00;}
+  .tt-noplan-btn{border:none;background:#8a5a00;color:#fff;border-radius:7px;padding:5px 10px;font-weight:700;font-size:.74rem;cursor:pointer;flex-shrink:0;}
+  .sp-break-warn{margin-top:6px;font-size:.78rem;font-weight:700;color:#8a5a00;background:#fff4d6;border-radius:7px;padding:5px 8px;}
+  .sp-skill-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+  .sp-skill{display:block;margin:0;cursor:pointer;}
+  .sp-skill input{position:absolute;opacity:0;pointer-events:none;}
+  .sp-skill span{display:block;text-align:center;border:1.5px solid var(--border);border-radius:9px;padding:9px 2px;font-weight:700;font-size:.8rem;color:var(--navy);background:#fff;}
+  .sp-skill input:checked + span{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .sp-skill input:focus-visible + span{outline:2px solid var(--navy);outline-offset:2px;}
+  .plan-tag.zone{background:#fde8d7;color:#8a3d00;}
+  .plan-tag.skill{background:#e3f0fb;color:#0b4a80;}
   .sp-micro-card .sn-week-head{margin:6px 0 0;}
   .sp-micro-line{font-size:.78rem;color:var(--text-dim);}
   .sp-micro-sess{font-size:.82rem;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
@@ -982,11 +1033,11 @@
   <div class="nav-item" id="navFeedback" data-nav="feedback">
     <span class="nav-icon">📝</span> Feedback
   </div>
-  <div class="nav-item" id="navTimetables" data-nav="timetables">
-    <span class="nav-icon">📅</span> Timetables
-  </div>
   <div class="nav-item" id="navSeason" data-nav="season">
     <span class="nav-icon">🧭</span> Season
+  </div>
+  <div class="nav-item nav-sub" id="navTimetables" data-nav="timetables">
+    <span class="nav-icon">📅</span> Timetables
   </div>
   <div class="nav-item nav-sub" id="navSession" data-nav="session">
     <span class="nav-icon">🗓️</span> Session plans
@@ -1055,18 +1106,11 @@
           <div class="ht-sub">Squads &amp; new members</div>
         </div>
       </div>
-      <div class="home-tile" id="tileTimetables">
-        <div class="ht-icon">📅</div>
-        <div>
-          <div class="ht-title">Timetables</div>
-          <div class="ht-sub">Weekly sessions, season &amp; upcoming meets</div>
-        </div>
-      </div>
       <div class="home-tile" id="tileSeason">
         <div class="ht-icon">🧭</div>
         <div>
           <div class="ht-title">Season</div>
-          <div class="ht-sub">This week's training by squad, macros, micros &amp; session plans</div>
+          <div class="ht-sub">Training by squad, timetables, macros, micros &amp; session plans</div>
         </div>
       </div>
       <div class="home-tile" id="tileCompetitions">
@@ -1350,6 +1394,14 @@
 
       <label for="planTitle">Plan title</label>
       <input type="text" id="planTitle" placeholder="e.g. Platinum Mon — Aerobic threshold">
+
+      <div class="sp-focus">
+        <label style="margin-top:12px;">Stroke and Skills</label>
+        <div class="sp-skill-grid" id="planSkills"></div>
+        <label for="planZone">Training zone focus</label>
+        <select id="planZone"></select>
+        <div class="hint" id="planFocusHint"></div>
+      </div>
 
       <div class="add-block-row" style="grid-template-columns:1fr 1fr 1fr;">
         <button class="add-block-btn" data-add="heading">+ Heading</button>
@@ -1794,8 +1846,27 @@
 
   <!-- ============ TIMETABLES: LIST ============ -->
   <div class="view" id="viewTimetables">
-    <a class="back-home" id="backHomeTt">Home</a>
+    <a class="back-home" id="backHomeTt">Season</a>
 
+    <div class="tt-tabs" role="tablist">
+      <button type="button" class="tt-tab active" data-tttab="week" role="tab">Week plan</button>
+      <button type="button" class="tt-tab" data-tttab="list" role="tab">Timetables</button>
+    </div>
+
+    <div id="ttWeekPanel">
+      <div class="tt-wknav">
+        <button type="button" class="tt-wkbtn" id="ttPrevWk" aria-label="Previous week">‹</button>
+        <div class="tt-wklabel"><div id="ttWkLabel"></div><div class="tt-wksub" id="ttWkSub"></div></div>
+        <button type="button" class="tt-wkbtn" id="ttNextWk" aria-label="Next week">›</button>
+      </div>
+      <div class="tt-wktools">
+        <select id="ttWkSquad" aria-label="Squad"><option value="">All squads</option></select>
+        <button type="button" class="tt-ctrl" id="ttWkToday">This week</button>
+      </div>
+      <div id="ttWeek"><div class="empty">Loading the week…</div></div>
+    </div>
+
+    <div id="ttListPanel" style="display:none;">
     <div class="tt-concertina" id="ttControls">
       <button type="button" class="tt-concertina-head" id="ttControlsHead" aria-expanded="false">
         <span>⚙️ Coach &amp; Administrator controls</span>
@@ -1814,6 +1885,7 @@
     <div class="tt-mode-banner" id="ttModeBanner"></div>
     <div class="msg" id="ttListMsg" style="margin:0 0 10px;"></div>
     <div id="ttList"><div class="empty">Loading timetables…</div></div>
+    </div>
   </div>
 
   <!-- ============ TIMETABLES: ADD / EDIT FORM ============ -->
@@ -1868,6 +1940,7 @@
     <a class="back-home" id="backHomeSeason">Home</a>
     <div class="sn-top-btns">
       <button type="button" class="submit-btn" id="snPlanBtn">PLAN</button>
+      <button type="button" class="submit-btn sn-sp-btn" id="snTimetablesBtn">Timetables</button>
       <button type="button" class="submit-btn sn-sp-btn" id="snSessionsBtn">Session plans</button>
     </div>
     <div class="sn-season-head" id="snSeasonHead"></div>
@@ -2069,7 +2142,7 @@ function showView(id){
 function goHome(){ showView("viewHome"); }
 function goAttendance(){ resetAttendanceSetup(); showView("viewAttendanceSetup"); }
 function goFeedback(){ showView("viewFeedback"); resetFbTabs(); populateFbPlanSelect(); loadFbSquadOptions(); }
-function goSession(){ showView("viewSession"); loadPlanList(); }  // Season → Session plans
+function goSession(){ if (typeof spSetReturn === "function") spSetReturn(null); showView("viewSession"); loadPlanList(); }  // Season → Session plans
 function goMI(){ showView("viewMI"); }
 function goAdmin(){ showView("viewAdmin"); }
 
@@ -2086,8 +2159,8 @@ $("goFeedbackBtn").addEventListener("click", () => {
 });
 $("goSessionBtn").addEventListener("click", goSession);
 $("backHome5").addEventListener("click", () => goSeason());
-$("backSessionList1").addEventListener("click", () => { spReturnToSeason = false; goSession(); });
-$("backSessionList2").addEventListener("click", () => { spReturnToSeason = false; goSession(); });
+$("backSessionList1").addEventListener("click", () => spGoBack());
+$("backSessionList2").addEventListener("click", () => spGoBack());
 
 // --- Hamburger menu ---
 function openNavDrawer(){
@@ -2196,6 +2269,46 @@ function blockDistance(block){
 }
 function planDistance(content){ return (content || []).reduce((s, b) => s + blockDistance(b), 0); }
 
+// --- Session focus: Stroke & Skills ticks + Training zone ---
+const SP_SKILLS = ["Fr", "Bk", "Brs", "Fly", "Turns", "Transitions", "Start", "Finish"];
+const SP_ZONES  = ["A1-3", "Threshold", "V02m", "LT/LP", "Sprint"];
+let spFocusTouched = false;   // coach has changed the ticks/zone by hand → stop auto-filling
+function spRenderFocus(skills, zone){
+  const on = new Set(skills || []);
+  $("planSkills").innerHTML = SP_SKILLS.map(k =>
+    `<label class="sp-skill"><input type="checkbox" value="${k}" ${on.has(k) ? "checked" : ""}><span>${k}</span></label>`).join("");
+  $("planZone").innerHTML = '<option value="">— choose a zone —</option>' +
+    SP_ZONES.map(z => `<option value="${z}" ${z === zone ? "selected" : ""}>${z}</option>`).join("");
+}
+function spReadSkills(){ return [...document.querySelectorAll("#planSkills input:checked")].map(x => x.value); }
+// Suggest ticks and a zone from the micro-cycle: the session's stroke focus text,
+// the week's technical focus and the week's QES focus.
+function spSuggestFocus(ctx){
+  const skills = new Set(); let zone = "";
+  if (!ctx) return { skills: [], zone };
+  const t = ((ctx.session && ctx.session.stroke_focus) || "").toLowerCase();
+  if (/\b(im|medley)\b/.test(t)) ["Fr", "Bk", "Brs", "Fly"].forEach(k => skills.add(k));
+  if (/\b(fr|free|freestyle|front ?crawl|crawl)\b/.test(t)) skills.add("Fr");
+  if (/\b(bk|back|backstroke)\b/.test(t)) skills.add("Bk");
+  if (/\b(br|brs|breast|breaststroke)\b/.test(t)) skills.add("Brs");
+  if (/\b(fly|butterfly)\b/.test(t)) skills.add("Fly");
+  if (/turn/.test(t)) skills.add("Turns");
+  if (/transition|changeover/.test(t)) skills.add("Transitions");
+  if (/\b(start|starts|dive|dives)\b/.test(t)) skills.add("Start");
+  if (/finish/.test(t)) skills.add("Finish");
+  if (Number(ctx.micro.technical_focus) === 6) skills.add("Start");   // Initial Actions
+  const q = ctx.micro.qes_focus;
+  if (q === "sprint") zone = "Sprint";
+  else if (q === "endurance") zone = "A1-3";
+  return { skills: SP_SKILLS.filter(k => skills.has(k)), zone };
+}
+function spFocusTagsHtml(skills, zone){
+  return (zone ? `<span class="plan-tag zone">${escapeHtml(zone)}</span>` : "") +
+         (skills || []).map(k => `<span class="plan-tag skill">${escapeHtml(k)}</span>`).join("");
+}
+$("planSkills").addEventListener("change", () => { spFocusTouched = true; $("planFocusHint").textContent = ""; });
+$("planZone").addEventListener("change", () => { spFocusTouched = true; $("planFocusHint").textContent = ""; });
+
 // --- Editor state ---
 let editorBlocks = [];      // working array of blocks
 let editingPlanId = null;   // null = new plan
@@ -2210,6 +2323,10 @@ function blankBlock(type){
 
 function openEditor(plan, preset){
   spMicroCtx = null;
+  spPresetSessionId = plan ? (plan.micro_session_id || null) : ((preset && preset.sessionId) || null);
+  spFocusTouched = !!(plan && ((plan.stroke_skills || []).length || plan.training_zone));
+  spRenderFocus(plan ? plan.stroke_skills : [], plan ? plan.training_zone : "");
+  $("planFocusHint").textContent = "";
   if (plan){
     editingPlanId = plan.id;
     $("planTitle").value = plan.title || "";
@@ -2429,7 +2546,7 @@ $("savePlanBtn").addEventListener("click", async () => {
   if (!squadId){ msg.textContent = "Choose the squad this plan is for."; msg.className = "msg err"; return; }
   if (!planDate){ msg.textContent = "Set the session date."; msg.className = "msg err"; return; }
   if (!title){ msg.textContent = "Give the plan a title."; msg.className = "msg err"; return; }
-  const ctx = await spMicroFor(squadId, planDate);
+  const ctx = await spMicroFor(squadId, planDate, spPresetSessionId);
 
   // prune fully-empty blocks
   const content = editorBlocks.filter(b => {
@@ -2447,6 +2564,10 @@ $("savePlanBtn").addEventListener("click", async () => {
     squad_id: squadId,
     micro_id: ctx && ctx.micro ? ctx.micro.id : null,
     micro_session_id: ctx && ctx.session ? ctx.session.id : null,
+    macro: ctx && ctx.micro ? ctx.micro.macroTitle || null : null,
+    meso: ctx && ctx.micro && ctx.micro.meso ? String(ctx.micro.meso) : null,
+    stroke_skills: spReadSkills(),
+    training_zone: $("planZone").value || null,
     pool_size: poolBtn ? poolBtn.dataset.pool : null,
     intended_date: planDate,
     notes: $("planNotes").value.trim() || null,
@@ -2467,7 +2588,7 @@ $("savePlanBtn").addEventListener("click", async () => {
   if (error){ msg.textContent = "Save failed — " + error.message; msg.className = "msg err"; console.error(error); return; }
   msg.textContent = "Plan saved."; msg.className = "msg ok";
   if (savedId) archiveSetLineDrafts(savedId, content).catch(err => console.error("archive drafts:", err));
-  setTimeout(() => { if (spReturnToSeason){ spReturnToSeason = false; goSeason(); } else goSession(); }, 500);
+  setTimeout(() => spGoBack(), 500);
 });
 
 // --- Session plan list (Season → Session plans) ---
@@ -2475,10 +2596,23 @@ $("savePlanBtn").addEventListener("click", async () => {
 // each showing the micro-cycle week that covers it for that squad.
 let allPlans = [];
 let spSquadCache = { club: null, rows: [] };
-let spMacroCache = { club: null, macros: [], sessions: [], comps: [] };
+let spMacroCache = { club: null, macros: [], sessions: [], comps: [], breaks: [], seasons: [] };
 let spMicroCtx = null;       // micro context for the editor's current squad + date
+let spPresetSessionId = null; // micro_session the editor was opened for (timetable / season link)
 let spSquadPending = "";
-let spReturnToSeason = false;
+let spReturnTo = null;       // null (Session plans list) | "season" | "timetables"
+const SP_BACK_LABELS = { season: "Season", timetables: "Timetables" };
+function spSetReturn(where){
+  spReturnTo = where || null;
+  const label = SP_BACK_LABELS[spReturnTo] || "Session plans";
+  $("backSessionList1").textContent = label; $("backSessionList2").textContent = label;
+}
+function spGoBack(){
+  const r = spReturnTo; spSetReturn(null);
+  if (r === "season") goSeason();
+  else if (r === "timetables") goTimetables("week");
+  else goSession();
+}
 
 async function spLoadSquads(){
   if (spSquadCache.club === currentClub) return spSquadCache.rows;
@@ -2499,18 +2633,19 @@ function spSquadName(id){ const q = spSquadCache.rows.find(x => x.id === id); re
 // All macros/micros for the club's active seasons, plus planned micro_sessions and season competitions.
 async function spLoadMacros(force){
   if (!force && spMacroCache.club === currentClub) return spMacroCache;
-  const { data: seasons, error: se } = await sb.from("seasons").select("id").eq("club", currentClub).eq("is_active", true);
+  const { data: seasons, error: se } = await sb.from("seasons").select("id, title, start_date, finish_date").eq("club", currentClub).eq("is_active", true);
   if (se) throw se;
   const ids = (seasons || []).map(x => x.id);
-  let macros = [], sessions = [], comps = [];
+  let macros = [], sessions = [], comps = [], breaks = [];
   if (ids.length){
-    const [mq, cq] = await Promise.all([
-      sb.from("macros").select("id, title, season_id, macro_squads(squad_id, is_active), micros(id, week_no, week_commencing, meso, qes_focus, technical_focus, is_active)")
+    const [mq, cq, bq] = await Promise.all([
+      sb.from("macros").select("id, title, season_id, macro_squads(squad_id, is_active), micros(id, week_no, week_commencing, meso, qes_focus, technical_focus, break_days, is_active)")
         .in("season_id", ids).eq("is_active", true),
-      sb.from("season_competitions").select("id, name, date_from, date_to").in("season_id", ids).eq("is_active", true)
+      sb.from("season_competitions").select("id, name, date_from, date_to").in("season_id", ids).eq("is_active", true),
+      sb.from("season_breaks").select("season_id, break_start, break_end").in("season_id", ids).eq("is_active", true)
     ]);
-    if (mq.error) throw mq.error; if (cq.error) throw cq.error;
-    macros = mq.data || []; comps = cq.data || [];
+    if (mq.error) throw mq.error; if (cq.error) throw cq.error; if (bq.error) throw bq.error;
+    macros = mq.data || []; comps = cq.data || []; breaks = bq.data || [];
     const microIds = macros.flatMap(m => (m.micros || []).filter(x => x.is_active).map(x => x.id));
     if (microIds.length){
       const { data, error } = await sb.from("micro_sessions")
@@ -2520,31 +2655,35 @@ async function spLoadMacros(force){
       sessions = data || [];
     }
   }
-  spMacroCache = { club: currentClub, macros, sessions, comps };
+  spMacroCache = { club: currentClub, macros, sessions, comps, breaks, seasons: seasons || [] };
   return spMacroCache;
 }
 // The micro-cycle week covering `date` for `squadId`, the planned micro_session that day,
 // and any season competition that week (same +5 to +7 rule as the Add Micro form).
-function spMicroSync(squadId, date){
+function spMicroSync(squadId, date, sessionId){
   if (!squadId || !date) return null;
   let micro = null;
   spMacroCache.macros.forEach(m => {
     if (micro || !(m.macro_squads || []).some(x => x.squad_id === squadId && x.is_active)) return;
     const hit = (m.micros || []).find(mi => mi.is_active && mi.week_commencing &&
       mi.week_commencing <= date && isoAdd(mi.week_commencing, 6) >= date);
-    if (hit) micro = { ...hit, macroTitle: m.title };
+    if (hit) micro = { ...hit, macroTitle: m.title, seasonId: m.season_id };
   });
   if (!micro) return null;
-  const session = spMacroCache.sessions
+  const daySessions = spMacroCache.sessions
     .filter(x => x.micro_id === micro.id && x.squad_id === squadId && x.session_date === date)
-    .sort((a, b) => (a.start_time || "").localeCompare(b.start_time || ""))[0] || null;
+    .sort((a, b) => (a.start_time || "").localeCompare(b.start_time || ""));
+  const session = (sessionId && daySessions.find(x => x.id === sessionId)) || daySessions[0] || null;
   const wc = micro.week_commencing;
   const comp = spMacroCache.comps.find(c => c.date_from >= isoAdd(wc, 5) && c.date_from <= isoAdd(wc, 7)) || null;
-  return { micro, session, comp };
+  const season = (spMacroCache.seasons || []).find(x => x.id === micro.seasonId) || null;
+  const isBreak = (micro.break_days || []).map(Number).includes(isoDow(date)) ||
+    (spMacroCache.breaks || []).some(b => b.season_id === micro.seasonId && date >= b.break_start && date <= b.break_end);
+  return { micro, session, comp, season, isBreak, daySessions };
 }
-async function spMicroFor(squadId, date){
+async function spMicroFor(squadId, date, sessionId){
   try { await spLoadMacros(); } catch (err){ console.error(err); return null; }
-  return spMicroSync(squadId, date);
+  return spMicroSync(squadId, date, sessionId);
 }
 function spMicroTagsHtml(mi){
   const q = mi.qes_focus;
@@ -2560,7 +2699,7 @@ async function loadPlanList(){
     await spFillSquadSelect($("planSquadFilter"), $("planSquadFilter").value, "All squads");
     const [res] = await Promise.all([
       sb.from("session_plans")
-        .select("id, title, total_distance_m, squad_scope, squad_id, micro_id, pool_size, intended_date, updated_at, content")
+        .select("id, title, total_distance_m, squad_scope, squad_id, micro_id, micro_session_id, pool_size, intended_date, updated_at, content, stroke_skills, training_zone")
         .eq("club", currentClub)
         .order("intended_date", { ascending: true, nullsFirst: false }),
       spLoadMacros(true)
@@ -2617,7 +2756,8 @@ function renderPlanList(plans){
     if (p.squad_scope) tags.push(`<span class="plan-tag">${escapeHtml(p.squad_scope)}</span>`);
     if (p.pool_size) tags.push(`<span class="plan-tag">${p.pool_size}</span>`);
     if (p.total_distance_m) tags.push(`<span class="plan-tag dist">${p.total_distance_m.toLocaleString()}m</span>`);
-    const ctx = spMicroSync(p.squad_id, p.intended_date);
+    tags.push(spFocusTagsHtml(p.stroke_skills, p.training_zone));
+    const ctx = spMicroSync(p.squad_id, p.intended_date, p.micro_session_id);
     const microHtml = ctx
       ? `<div class="sp-micro-line" style="margin-top:6px;">Week ${ctx.micro.week_no} · w/c ${fmtDdMm(ctx.micro.week_commencing)}${ctx.session && ctx.session.stroke_focus ? " · Stroke: " + escapeHtml(ctx.session.stroke_focus) : ""}</div>
          <div class="sn-week-head" style="margin:4px 0 0;">${spMicroTagsHtml(ctx.micro)}</div>`
@@ -2656,7 +2796,7 @@ async function spRefreshMicro(){
     spMicroCtx = null; return;
   }
   box.innerHTML = '<div class="sn-skel" style="width:60%"></div>';
-  const ctx = await spMicroFor(squadId, date);
+  const ctx = await spMicroFor(squadId, date, spPresetSessionId);
   if ($("planSquadSelect").value !== squadId || $("planIntendedDate").value !== date) return; // changed meanwhile
   spMicroCtx = ctx;
   if (!ctx){
@@ -2665,9 +2805,15 @@ async function spRefreshMicro(){
     return;
   }
   const mi = ctx.micro, se = ctx.session;
+  const pickHtml = ctx.daySessions.length > 1
+    ? `<select id="planSessPick" style="margin-top:8px;">${ctx.daySessions.map(x =>
+        `<option value="${x.id}" ${se && se.id === x.id ? "selected" : ""}>${escapeHtml(fmtWhen(x.session_date, x.start_time, x.end_time))}</option>`).join("")}</select>` : "";
   box.innerHTML = `
     <div class="sp-micro-card">
-      <div class="sp-micro-line"><strong>${escapeHtml(mi.macroTitle)}</strong> · Week ${mi.week_no} · w/c ${fmtDdMm(mi.week_commencing)}</div>
+      ${ctx.season ? `<div class="sp-micro-line">Season: <strong>${escapeHtml(ctx.season.title)}</strong></div>` : ""}
+      <div class="sp-micro-line">Macro: <strong>${escapeHtml(mi.macroTitle)}</strong> · Week ${mi.week_no} · w/c ${fmtDdMm(mi.week_commencing)}</div>
+      ${ctx.isBreak ? '<div class="sp-break-warn">This day is marked as a break day in the season plan.</div>' : ""}
+      ${pickHtml}
       <div class="sn-week-head">${spMicroTagsHtml(mi)}</div>
       ${se ? `<div class="sp-micro-sess">
           <div class="sn-sess-when">${escapeHtml(fmtWhen(se.session_date, se.start_time, se.end_time))}</div>
@@ -2676,6 +2822,14 @@ async function spRefreshMicro(){
         </div>` : '<div class="sp-micro-sess tt-muted">No session outlined for this date in the micro-cycle.</div>'}
       ${ctx.comp ? `<div class="sp-micro-comp">Competition this week: ${escapeHtml(ctx.comp.name)} (${escapeHtml(fmtDayShort(ctx.comp.date_from))})</div>` : ""}
     </div>`;
+  const pick = $("planSessPick");
+  if (pick) pick.addEventListener("change", () => { spPresetSessionId = pick.value; spRefreshMicro(); });
+  // Pre-fill Stroke and Skills + Training zone from the micro-cycle until the coach changes them.
+  if (!spFocusTouched){
+    const sug = spSuggestFocus(ctx);
+    spRenderFocus(sug.skills, sug.zone);
+    $("planFocusHint").textContent = (sug.skills.length || sug.zone) ? "Pre-filled from the micro-cycle — change as needed." : "";
+  }
   // A new plan with no title yet gets a sensible default from the squad, day and focus.
   if (!editingPlanId && !$("planTitle").value.trim()){
     const bits = [spSquadName(squadId), fmtDayShort(date)];
@@ -2684,8 +2838,8 @@ async function spRefreshMicro(){
     $("planTitle").value = bits.filter(Boolean).join(" — ");
   }
 }
-$("planSquadSelect").addEventListener("change", spRefreshMicro);
-$("planIntendedDate").addEventListener("change", spRefreshMicro);
+$("planSquadSelect").addEventListener("change", () => { spPresetSessionId = null; spRefreshMicro(); });
+$("planIntendedDate").addEventListener("change", () => { spPresetSessionId = null; spRefreshMicro(); });
 
 // --- Viewer ---
 let viewingPlan = null;
@@ -2702,8 +2856,10 @@ async function openPlanViewer(id){
   if (data.pool_size) meta.push(data.pool_size);
   if (data.total_distance_m) meta.push(data.total_distance_m.toLocaleString() + "m");
   $("pvMeta").textContent = meta.join(" · ");
-  const vctx = await spMicroFor(data.squad_id, data.intended_date);
-  $("pvBody").innerHTML = (vctx ? `<div class="sp-micro-card" style="margin-bottom:12px;">
+  const vctx = await spMicroFor(data.squad_id, data.intended_date, data.micro_session_id);
+  const focusTags = spFocusTagsHtml(data.stroke_skills, data.training_zone);
+  $("pvBody").innerHTML = (focusTags ? `<div class="plan-li-tags" style="margin-bottom:10px;">${focusTags}</div>` : "") +
+    (vctx ? `<div class="sp-micro-card" style="margin-bottom:12px;">
       <div class="sp-micro-line">Week ${vctx.micro.week_no} · w/c ${fmtDdMm(vctx.micro.week_commencing)}${vctx.session && vctx.session.stroke_focus ? " · Stroke focus: " + escapeHtml(vctx.session.stroke_focus) : ""}</div>
       <div class="sn-week-head">${spMicroTagsHtml(vctx.micro)}</div></div>` : "") +
     renderPlanReadonly(data.content || []) +
@@ -2781,6 +2937,8 @@ function buildPlanPdf(plan){
   if (plan.squad_scope) metaBits.push(plan.squad_scope);
   if (plan.pool_size) metaBits.push(plan.pool_size + " pool");
   if (plan.total_distance_m) metaBits.push(plan.total_distance_m.toLocaleString() + "m total");
+  if (plan.training_zone) metaBits.push("Zone: " + plan.training_zone);
+  if ((plan.stroke_skills || []).length) metaBits.push(plan.stroke_skills.join(", "));
   doc.text(metaBits.join("   ·   "), marginL, 58);
 
   doc.setTextColor(26, 35, 50);
@@ -5867,14 +6025,26 @@ function ttSeasonState(t, today){
 function ttRange(a, b){ return b && b !== a ? fmtDate(a) + " – " + fmtDate(b) : fmtDate(a); }
 
 // ---------- List page ----------
-function goTimetables(){
+let ttTab = "week";
+let ttWeekStart = null;      // Monday of the week shown in the Week plan tab
+let ttWeekPlans = [];        // session_plans in that week
+function goTimetables(tab){
   ttMode = null; ttConfirmId = null;
   ttUpdateModeUi();
   $("ttControls").style.display = ttCanEdit() ? "" : "none";
   $("ttListMsg").textContent = "";
+  if (!ttWeekStart) ttWeekStart = isoMonday(ttToday());
+  ttSetTab(tab === "list" ? "list" : (tab === "week" ? "week" : ttTab));
   showView("viewTimetables");
   loadTimetables();
 }
+function ttSetTab(tab){
+  ttTab = tab;
+  document.querySelectorAll(".tt-tab").forEach(b => { b.classList.toggle("active", b.dataset.tttab === tab); b.setAttribute("aria-selected", b.dataset.tttab === tab); });
+  $("ttWeekPanel").style.display = tab === "week" ? "" : "none";
+  $("ttListPanel").style.display = tab === "list" ? "" : "none";
+}
+document.querySelectorAll(".tt-tab").forEach(b => b.addEventListener("click", () => { ttSetTab(b.dataset.tttab); if (ttTab === "week") ttLoadWeek(); }));
 
 async function loadTimetables(){
   $("ttList").innerHTML = '<div class="tt-item" style="padding:14px;"><div class="sn-skel" style="width:40%"></div><div class="sn-skel"></div><div class="sn-skel" style="width:70%"></div></div>'.repeat(2);
@@ -5914,10 +6084,196 @@ async function loadTimetables(){
   } catch (err){
     console.error(err);
     snErr($("ttList"), "Could not load timetables.", loadTimetables);
+    snErr($("ttWeek"), "Could not load timetables.", loadTimetables);
     return;
   }
   ttRenderList();
+  ttFillWeekSquads();
+  ttLoadWeek(true);
 }
+
+// ===================================================================
+// TIMETABLES · WEEK PLAN
+// One card per squad for the chosen week: the micro-cycle headline, then
+// Mon–Sun with each timetabled session, its micro-cycle outline and a link
+// to the session plan written for it. Sessions with no plan are flagged.
+// Break days (season breaks, or days ticked as breaks in the micro-cycle)
+// are dimmed. ‹ › / swipe moves week to week.
+// ===================================================================
+function ttFillWeekSquads(){
+  const sel = $("ttWkSquad"), cur = sel.value;
+  const seen = new Map();
+  ttItems.forEach(t => seen.set(t.squad_id, t.squads.name));
+  const rows = [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  sel.innerHTML = '<option value="">All squads</option>' +
+    rows.map(([id, name]) => `<option value="${id}" ${id === cur ? "selected" : ""}>${escapeHtml(name)}</option>`).join("");
+}
+
+let ttWeekReq = 0;
+async function ttLoadWeek(forceMacros){
+  if (ttTab !== "week") return;
+  const wk = ttWeekStart, req = ++ttWeekReq;
+  const end = isoAdd(wk, 6);
+  $("ttWkLabel").textContent = "w/c " + fmtDate(wk);
+  const today = ttToday();
+  $("ttWkSub").textContent = wk === isoMonday(today) ? "This week"
+    : wk === isoAdd(isoMonday(today), 7) ? "Next week"
+    : wk === isoAdd(isoMonday(today), -7) ? "Last week" : fmtDdMm(wk) + " – " + fmtDdMm(end);
+  $("ttWeek").innerHTML = '<div class="tt-item" style="padding:14px;"><div class="sn-skel" style="width:40%"></div><div class="sn-skel"></div><div class="sn-skel" style="width:70%"></div></div>';
+  try {
+    const [, pq] = await Promise.all([
+      spLoadMacros(!!forceMacros),
+      sb.from("session_plans").select("id, title, squad_id, intended_date, micro_session_id, total_distance_m, stroke_skills, training_zone")
+        .eq("club", currentClub).gte("intended_date", wk).lte("intended_date", end)
+    ]);
+    if (pq.error) throw pq.error;
+    if (req !== ttWeekReq) return;       // a newer week was asked for meanwhile
+    ttWeekPlans = pq.data || [];
+    try { await spLoadSquads(); } catch (e) {}
+  } catch (err){
+    console.error(err);
+    if (req === ttWeekReq) snErr($("ttWeek"), "Could not load this week.", () => ttLoadWeek(true));
+    return;
+  }
+  ttRenderWeek();
+}
+
+// Is this date a break for this squad? Season breaks, or a day ticked as a break in its micro-cycle.
+function ttIsBreak(date, micro){
+  if (micro && (micro.break_days || []).map(Number).includes(isoDow(date))) return "Break day";
+  const b = (spMacroCache.breaks || []).find(x => date >= x.break_start && date <= x.break_end &&
+    (!micro || x.season_id === micro.seasonId));
+  return b ? "Season break" : "";
+}
+
+function ttRenderWeek(){
+  const wk = ttWeekStart, end = isoAdd(wk, 6), today = ttToday();
+  const only = $("ttWkSquad").value;
+  const squads = new Map();
+  ttItems.filter(t => t.season_start <= end && t.season_end >= wk && (!only || t.squad_id === only))
+    .forEach(t => { (squads.get(t.squad_id) || squads.set(t.squad_id, { id: t.squad_id, name: t.squads.name, tts: [] }).get(t.squad_id)).tts.push(t); });
+  const list = [...squads.values()].sort((a, b) => a.name.localeCompare(b.name));
+  if (!list.length){
+    $("ttWeek").innerHTML = '<div class="empty">No timetable runs in this week' + (only ? " for this squad" : "") + '. Use ‹ › to move week, or add one on the Timetables tab.</div>';
+    return;
+  }
+  $("ttWeek").innerHTML = list.map(sq => ttWeekCardHtml(sq, wk, today)).join("");
+}
+
+function ttWeekCardHtml(sq, wk, today){
+  // micro covering this week for this squad (any day will do — micros are Mon-based weeks)
+  let ctx = null;
+  for (let d = 0; d < 7 && !ctx; d++) ctx = spMicroSync(sq.id, isoAdd(wk, d));
+  const micro = ctx ? ctx.micro : null;
+  let total = 0, written = 0, missing = 0;
+  const days = [];
+  for (let d = 0; d < 7; d++){
+    const date = isoAdd(wk, d), dow = d + 1;
+    const t = sq.tts.find(x => x.season_start <= date && x.season_end >= date);
+    const slots = t ? (t.timetable_sessions || []).filter(x => x.is_active !== false && x.day_of_week === dow)
+      .sort((a, b) => a.start_time.localeCompare(b.start_time)) : [];
+    const brk = ttIsBreak(date, micro);
+    // micro_sessions + plans for this squad/day
+    const ms = micro ? spMacroCache.sessions.filter(x => x.micro_id === micro.id && x.squad_id === sq.id && x.session_date === date) : [];
+    const plans = ttWeekPlans.filter(p => p.squad_id === sq.id && p.intended_date === date);
+    const rows = slots.map(ts => {
+      const m = ms.find(x => x.start_time === ts.start_time) || null;
+      return { ts, m, plan: m ? plans.find(p => p.micro_session_id === m.id) || null : null };
+    });
+    // Plans not tied to a specific session fill the remaining sessions in time order.
+    const used = new Set(rows.filter(r => r.plan).map(r => r.plan.id));
+    const spare = plans.filter(p => !used.has(p.id));
+    rows.forEach(r => { if (!r.plan && spare.length) r.plan = spare.shift(); });
+    rows.forEach(r => { if (!brk){ total++; if (r.plan) written++; else missing++; } });
+    days.push({ date, dow, rows, brk, spare });
+  }
+
+  const q = micro && micro.qes_focus;
+  const head = micro ? `
+      <div class="tt-muted" style="margin-bottom:4px;">${ctx.season ? escapeHtml(ctx.season.title) + " · " : ""}${escapeHtml(micro.macroTitle)} · Week ${micro.week_no}</div>
+      <div class="sn-week-head">
+        ${micro.meso ? `<span class="sn-tag">Meso ${micro.meso}</span>` : ""}
+        ${q ? `<span class="sn-tag ${q[0]}">${QES[q]}</span>` : ""}
+        ${micro.technical_focus ? `<span class="sn-tag">Technical: ${micro.technical_focus}. ${TECH_FOCUS[micro.technical_focus]}</span>` : ""}
+      </div>
+      ${ctx.comp ? `<div class="sp-micro-comp">🏁 ${escapeHtml(ctx.comp.name)} · ${escapeHtml(fmtDayShort(ctx.comp.date_from))}</div>` : ""}`
+    : '<div class="tt-muted">No micro-cycle planned for this week — add one under Season → PLAN → Add macro.</div>';
+
+  const sum = total
+    ? `<span class="tt-wk-count ${missing ? "warn" : "ok"}">${written}/${total} plans written${missing ? " · " + missing + " missing" : ""}</span>` : "";
+
+  const dayHtml = days.map(d => {
+    const isToday = d.date === today;
+    if (!d.rows.length && !d.brk) return `
+      <div class="tt-wd rest ${isToday ? "today" : ""}">
+        <div class="tt-wd-date"><strong>${TT_DAYS_SHORT[d.dow]}</strong> ${fmtDdMm(d.date)}</div>
+        <div class="tt-wd-body tt-muted">No sessions</div>
+      </div>`;
+    const sessHtml = d.rows.length ? d.rows.map(r => {
+      const when = ttFmtTime(r.ts.start_time) + (r.ts.end_time ? " – " + ttFmtTime(r.ts.end_time) : "");
+      const outline = r.m && r.m.outline ? (r.m.outline.length > 110 ? r.m.outline.slice(0, 107) + "…" : r.m.outline) : "";
+      let planHtml;
+      if (r.plan){
+        planHtml = `<button type="button" class="tt-plan-link" data-plan="${r.plan.id}">
+            <span class="tt-plan-title">📄 ${escapeHtml(r.plan.title || "Session plan")}</span>
+            <span class="tt-plan-tags">${r.plan.total_distance_m ? `<span class="plan-tag dist">${r.plan.total_distance_m.toLocaleString()}m</span>` : ""}${spFocusTagsHtml(r.plan.stroke_skills, r.plan.training_zone)}</span>
+          </button>`;
+      } else if (d.brk){
+        planHtml = "";
+      } else {
+        planHtml = `<div class="tt-noplan">
+            <span>⚠ No session plan written</span>
+            ${snCanPlan() ? `<button type="button" class="tt-noplan-btn" data-newplan="${sq.id}" data-date="${d.date}" data-sess="${r.m ? r.m.id : ""}">+ Write</button>` : ""}
+          </div>`;
+      }
+      return `<div class="tt-ws">
+          <div class="tt-ws-when">${when}${r.ts.pool_size ? `<span class="tt-sess-pool">${escapeHtml(r.ts.pool_size)}</span>` : ""}</div>
+          ${r.m && r.m.stroke_focus ? `<div class="sn-sess-stroke">Stroke focus: ${escapeHtml(r.m.stroke_focus)}</div>` : ""}
+          ${outline ? `<div class="sn-sess-outline">${escapeHtml(outline)}</div>` : ""}
+          ${planHtml}
+        </div>`;
+    }).join("") : "";
+    return `
+      <div class="tt-wd ${d.brk ? "brk" : ""} ${isToday ? "today" : ""}">
+        <div class="tt-wd-date"><strong>${TT_DAYS_SHORT[d.dow]}</strong> ${fmtDdMm(d.date)}${d.brk ? `<span class="tt-brk-pill">${escapeHtml(d.brk)}</span>` : ""}</div>
+        <div class="tt-wd-body">${sessHtml || '<span class="tt-muted">Rest</span>'}</div>
+      </div>`;
+  }).join("");
+
+  return `
+    <div class="tt-item tt-wk-card">
+      <div class="tt-wk-head">
+        <div class="tt-squad">${escapeHtml(sq.name)}</div>
+        ${sum}
+      </div>
+      ${head}
+      <div class="tt-wdays">${dayHtml}</div>
+    </div>`;
+}
+
+function ttShiftWeek(n){ ttWeekStart = isoAdd(ttWeekStart, 7 * n); ttLoadWeek(); }
+$("ttPrevWk").addEventListener("click", () => ttShiftWeek(-1));
+$("ttNextWk").addEventListener("click", () => ttShiftWeek(1));
+$("ttWkToday").addEventListener("click", () => { ttWeekStart = isoMonday(ttToday()); ttLoadWeek(); });
+$("ttWkSquad").addEventListener("change", ttRenderWeek);
+$("ttWeek").addEventListener("click", e => {
+  const pl = e.target.closest("[data-plan]");
+  if (pl){ spSetReturn("timetables"); openPlanViewer(pl.dataset.plan); return; }
+  const np = e.target.closest("[data-newplan]");
+  if (np){ spSetReturn("timetables"); openEditor(null, { squadId: np.dataset.newplan, date: np.dataset.date, sessionId: np.dataset.sess || null }); }
+});
+// Swipe left / right on the week to move to the next / previous week.
+(() => {
+  let x0 = null, y0 = null;
+  const el = $("ttWeekPanel");
+  el.addEventListener("touchstart", e => { if (e.touches.length === 1){ x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; } }, { passive: true });
+  el.addEventListener("touchend", e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) ttShiftWeek(dx < 0 ? 1 : -1);
+  }, { passive: true });
+})();
 
 // The season a timetable belongs to: its season_id, or (older rows) the season covering its band.
 function ttSeasonOf(t){
@@ -6410,15 +6766,14 @@ async function ttSave(){
     btn.disabled = false; btn.textContent = "Save timetable";
     return fail("Could not save: " + (err.message || err));
   }
-  goTimetables();
+  goTimetables("list");
   const lm = $("ttListMsg"); lm.className = "msg ok"; lm.textContent = "Timetable saved.";
 }
 $("ttSaveBtn").addEventListener("click", ttSave);
 
 // ---------- Navigation ----------
-$("tileTimetables").addEventListener("click", goTimetables);
-$("backHomeTt").addEventListener("click", () => showView("viewHome"));
-$("backTtForm").addEventListener("click", () => { showView("viewTimetables"); ttRenderList(); });
+$("backHomeTt").addEventListener("click", () => goSeason());
+$("backTtForm").addEventListener("click", () => { ttSetTab("list"); showView("viewTimetables"); ttRenderList(); });
 $("backTtEnter").addEventListener("click", () => { showView(enterReturnView); if (enterReturnView === "viewTimetables") ttRenderList(); });
 
 
@@ -6619,9 +6974,9 @@ function snPanelHtml(sq, micro, sessions, comps){
 
 $("snSquadList").addEventListener("click", e => {
   const pl = e.target.closest("[data-plan]");
-  if (pl){ openPlanViewer(pl.dataset.plan); return; }
+  if (pl){ spSetReturn("season"); openPlanViewer(pl.dataset.plan); return; }
   const np = e.target.closest("[data-newplan]");
-  if (np){ spReturnToSeason = true; openEditor(null, { squadId: np.dataset.newplan, date: np.dataset.date }); return; }
+  if (np){ spSetReturn("season"); openEditor(null, { squadId: np.dataset.newplan, date: np.dataset.date }); return; }
   const link = e.target.closest(".sn-comp-link[data-name]");
   if (link){ goCompetitions({ focusId: link.dataset.comp || null, name: link.dataset.name }); return; }
   const t = e.target.closest("[data-act=toggle]");
@@ -7029,7 +7384,7 @@ async function miOpen(macroId){
     const squads = (macro.macro_squads || []).filter(x => x.is_active).map(x => ({ id: x.squad_id, name: x.squads ? x.squads.name : "Squad" }));
     const sqIds = squads.map(s => s.id);
     const [mi, sc, tt, br] = await Promise.all([
-      sb.from("micros").select("id, week_no, week_commencing, meso, qes_focus, technical_focus, micro_sessions(id, squad_id, session_date, start_time, end_time, stroke_focus, outline, timetable_session_id, is_active)")
+      sb.from("micros").select("id, week_no, week_commencing, meso, qes_focus, technical_focus, break_days, micro_sessions(id, squad_id, session_date, start_time, end_time, stroke_focus, outline, timetable_session_id, is_active)")
         .eq("macro_id", macroId).eq("is_active", true).order("week_no"),
       sb.from("season_competitions").select("id, name, date_from, date_to").eq("season_id", macro.season_id).eq("is_active", true),
       sqIds.length ? sb.from("timetables").select("id, squad_id, season_start, season_end, timetable_sessions(id, day_of_week, start_time, end_time, is_active)")
@@ -7047,6 +7402,7 @@ async function miOpen(macroId){
         : n === 1 && snSeason ? isoMonday(snSeason.start_date > ttToday() ? snSeason.start_date : ttToday()) : "";
       weeks.push({ id: e ? e.id : null, no: n, wc, meso: e && e.meso ? String(e.meso) : "", qes: e ? e.qes_focus || "" : "",
                    tech: e && e.technical_focus ? String(e.technical_focus) : "",
+                   breakDays: new Set(e && e.break_days ? e.break_days.map(Number) : []),
                    saved: e ? (e.micro_sessions || []).filter(s => s.is_active) : [], sessions: [] });
     }
     miState = { macro, squads, weeks, comps: sc.data || [], timetables: tt.data || [], breaks: br.data || [] };
@@ -7070,7 +7426,7 @@ function miSeed(w){
   if (!w.wc) return;
   for (let d = 0; d < 7; d++){
     const date = isoAdd(w.wc, d), dow = isoDow(date);
-    if (miInBreak(date)) continue;
+    if (miInBreak(date) || w.breakDays.has(dow)) continue;
     miState.squads.forEach(sq => {
       const t = miState.timetables.find(x => x.squad_id === sq.id && x.season_start <= date && x.season_end >= date);
       if (!t) return;
@@ -7087,7 +7443,7 @@ function miSeed(w){
     });
   }
   // Saved sessions whose timetable slot has gone stay visible so nothing typed is lost.
-  Object.values(keep).forEach(s => { if (s.id && s.session_date >= w.wc && s.session_date <= isoAdd(w.wc, 6)) w.sessions.push({ ...s, stroke_focus: s.stroke_focus || "", outline: s.outline || "" }); });
+  Object.values(keep).forEach(s => { if (s.id && !w.breakDays.has(isoDow(s.session_date)) && s.session_date >= w.wc && s.session_date <= isoAdd(w.wc, 6)) w.sessions.push({ ...s, stroke_focus: s.stroke_focus || "", outline: s.outline || "" }); });
   w.sessions.sort((a, b) => a.session_date.localeCompare(b.session_date) || (a.start_time || "").localeCompare(b.start_time || ""));
 }
 
@@ -7109,6 +7465,13 @@ function miRender(){
         <div><span class="hint">Meso</span><select data-f="meso"><option value="">—</option>${[1, 2, 3].map(n => opt(n, n, w.meso)).join("")}</select></div>
         <div><span class="hint">QES focus</span><select data-f="qes"><option value="">—</option>${Object.entries(QES).map(([k, v]) => opt(k, v, w.qes)).join("")}</select></div>
         <div class="full"><span class="hint">Technical focus</span><select data-f="tech"><option value="">—</option>${TECH_FOCUS.slice(1).map((t, k) => opt(k + 1, (k + 1) + ". " + t, w.tech)).join("")}</select></div>
+        <div class="full"><span class="hint">Break days <span class="opt">(tap to rest a day — its sessions drop out and it is dimmed in Timetables)</span></span>
+          <div class="mi-break-days">${TT_DAYS_SHORT.slice(1).map((d, k) => {
+            const dow = k + 1, date = w.wc ? isoAdd(w.wc, k) : "";
+            const seasonBreak = date && miInBreak(date);
+            return `<button type="button" class="mi-break-chip ${w.breakDays.has(dow) || seasonBreak ? "on" : ""}" data-break="${dow}" ${seasonBreak ? 'disabled title="Season break"' : ""}>${d}${date ? `<small>${fmtDdMm(date)}</small>` : ""}</button>`;
+          }).join("")}</div>
+        </div>
       </div>
       ${w.sessions.length ? w.sessions.map((s, j) => `
         <div class="mi-sess">
@@ -7127,6 +7490,12 @@ $("miWeeks").addEventListener("input", e => {
   if (el.dataset.s !== undefined) w.sessions[+el.dataset.s][el.dataset.f] = el.value;
   else if (el.dataset.f !== "wc") w[el.dataset.f] = el.value;
 });
+$("miWeeks").addEventListener("click", e => {
+  const chip = e.target.closest("[data-break]"); if (!chip || chip.disabled) return;
+  const w = miState.weeks[+chip.closest(".mi-week").dataset.w], dow = +chip.dataset.break;
+  if (w.breakDays.has(dow)) w.breakDays.delete(dow); else w.breakDays.add(dow);
+  miSeed(w); miRender();
+});
 $("miWeeks").addEventListener("change", e => {
   const el = e.target; if (el.dataset.f !== "wc") return;
   const w = miState.weeks[+el.closest(".mi-week").dataset.w];
@@ -7142,7 +7511,8 @@ async function miSave(){
   try {
     const { data: saved, error } = await sb.from("micros").upsert(miState.weeks.map(w => ({
       macro_id: macroId, week_no: w.no, week_commencing: w.wc, meso: w.meso ? +w.meso : null,
-      qes_focus: w.qes || null, technical_focus: w.tech ? +w.tech : null, is_active: true, updated_at: now
+      qes_focus: w.qes || null, technical_focus: w.tech ? +w.tech : null,
+      break_days: [...w.breakDays].sort((a, b) => a - b), is_active: true, updated_at: now
     })), { onConflict: "macro_id,week_no" }).select("id, week_no");
     if (error) throw error;
     saved.forEach(r => { const w = miState.weeks.find(x => x.no === r.week_no); if (w) w.id = r.id; });
@@ -7313,7 +7683,8 @@ $("qtOverlay").addEventListener("click", e => { if (e.target.id === "qtOverlay")
 // ---------- Navigation ----------
 let enterReturnView = "viewTimetables";
 navActions.season = goSeason;
-$("snSessionsBtn").addEventListener("click", () => { spReturnToSeason = false; goSession(); });
+$("snSessionsBtn").addEventListener("click", () => { spSetReturn(null); goSession(); });
+$("snTimetablesBtn").addEventListener("click", () => goTimetables());
 navActions.competitions = () => goCompetitions(null);
 $("tileSeason").addEventListener("click", goSeason);
 $("tileCompetitions").addEventListener("click", () => goCompetitions(null));
