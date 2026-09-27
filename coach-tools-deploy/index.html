@@ -876,6 +876,22 @@
   .sn-sess-outline{font-size:.82rem;line-height:1.4;margin-top:3px;white-space:pre-wrap;}
   .sn-cd{font-size:.68rem;color:var(--text-dim);font-style:italic;margin-top:8px;}
   .sn-comp-link{background:none;border:none;padding:0;font:inherit;font-weight:700;font-size:.86rem;color:#0a5c8a;text-decoration:underline;cursor:pointer;text-align:left;}
+  .sn-top-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px;}
+  .sn-top-btns .submit-btn{margin:0;}
+  .sn-sp-btn{background:#fff;color:var(--navy);border:1.5px solid var(--navy);}
+  .nav-item.nav-sub{padding-left:38px;font-size:.92em;}
+  .sp-filters{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .sp-filters label{margin:0 0 6px;}
+  .sp-group-head{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin:16px 2px 6px;}
+  .sp-group-head:first-child{margin-top:4px;}
+  .sp-micro{margin:10px 0 4px;}
+  .sp-micro-card{border:1.5px solid var(--border);border-radius:11px;background:#f8fafc;padding:10px 12px;}
+  .sp-micro-card .sn-week-head{margin:6px 0 0;}
+  .sp-micro-line{font-size:.78rem;color:var(--text-dim);}
+  .sp-micro-sess{font-size:.82rem;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
+  .sp-micro-comp{font-size:.78rem;font-weight:700;color:#8a5a00;margin-top:6px;}
+  .sp-plan-link{background:none;border:1.5px solid var(--accent);border-radius:8px;padding:5px 11px;font-weight:700;font-size:.74rem;color:#0a5c8a;cursor:pointer;font-family:inherit;margin-top:6px;}
+  .sp-plan-link.has{background:var(--accent);color:#fff;}
   .sn-skel{height:14px;border-radius:6px;background:linear-gradient(90deg,#eef1f5,#f7f9fb,#eef1f5);margin:10px 0;}
   .pl-btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;}
   .pl-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid #f0f2f5;}
@@ -952,14 +968,14 @@
   <div class="nav-item" id="navFeedback" data-nav="feedback">
     <span class="nav-icon">📝</span> Feedback
   </div>
-  <div class="nav-item" id="navSession" data-nav="session">
-    <span class="nav-icon">🗓️</span> Session Plan
-  </div>
   <div class="nav-item" id="navTimetables" data-nav="timetables">
     <span class="nav-icon">📅</span> Timetables
   </div>
   <div class="nav-item" id="navSeason" data-nav="season">
     <span class="nav-icon">🧭</span> Season
+  </div>
+  <div class="nav-item nav-sub" id="navSession" data-nav="session">
+    <span class="nav-icon">🗓️</span> Session plans
   </div>
   <div class="nav-item" id="navCompetitions" data-nav="competitions">
     <span class="nav-icon">🏆</span> Competitions
@@ -1004,13 +1020,6 @@
           <div class="ht-sub">Card swipe or tick list, date &amp; time stamped</div>
         </div>
       </div>
-      <div class="home-tile" id="tileSession">
-        <div class="ht-icon">🗓️</div>
-        <div>
-          <div class="ht-title">Session Plan</div>
-          <div class="ht-sub">Write &amp; archive plans, link to sessions</div>
-        </div>
-      </div>
       <div class="home-tile" id="tileDrills">
         <div class="ht-icon">🎯</div>
         <div>
@@ -1043,7 +1052,7 @@
         <div class="ht-icon">🧭</div>
         <div>
           <div class="ht-title">Season</div>
-          <div class="ht-sub">This week's training by squad, plan macros &amp; micros</div>
+          <div class="ht-sub">This week's training by squad, macros, micros &amp; session plans</div>
         </div>
       </div>
       <div class="home-tile" id="tileCompetitions">
@@ -1288,9 +1297,22 @@
 
   <!-- ============ SESSION PLANS: ARCHIVE LIST ============ -->
   <div class="view" id="viewSession">
-    <a class="back-home" id="backHome5">Home</a>
+    <a class="back-home" id="backHome5">Season</a>
     <div class="sp-toolbar">
       <button class="sp-primary-btn" id="newPlanBtn">+ New plan</button>
+    </div>
+    <div class="sp-filters">
+      <div>
+        <label for="planSquadFilter">Squad</label>
+        <select id="planSquadFilter"><option value="">All squads</option></select>
+      </div>
+      <div>
+        <label for="planWhenFilter">Dates</label>
+        <select id="planWhenFilter">
+          <option value="upcoming">This week onwards</option>
+          <option value="all">All dates</option>
+        </select>
+      </div>
     </div>
     <input type="text" id="planSearch" class="sp-search" placeholder="Search plans by title or tag…" autocomplete="off">
     <div id="planList"><div class="empty">Loading plans…</div></div>
@@ -1298,10 +1320,22 @@
 
   <!-- ============ SESSION PLANS: EDITOR ============ -->
   <div class="view" id="viewPlanEditor">
-    <a class="back-home" id="backSessionList1">Plans</a>
+    <a class="back-home" id="backSessionList1">Session plans</a>
     <div class="card">
+      <div class="tt-dates" style="margin-bottom:4px;">
+        <div>
+          <label for="planSquadSelect" style="margin-top:0;">Squad</label>
+          <select id="planSquadSelect"><option value="">Choose a squad…</option></select>
+        </div>
+        <div>
+          <label for="planIntendedDate" style="margin-top:0;">Session date</label>
+          <input type="date" id="planIntendedDate">
+        </div>
+      </div>
+      <div id="planMicroPanel" class="sp-micro"></div>
+
       <label for="planTitle">Plan title</label>
-      <input type="text" id="planTitle" placeholder="e.g. CDJ Mon AM — Aerobic threshold">
+      <input type="text" id="planTitle" placeholder="e.g. Platinum Mon — Aerobic threshold">
 
       <div class="add-block-row" style="grid-template-columns:1fr 1fr 1fr;">
         <button class="add-block-btn" data-add="heading">+ Heading</button>
@@ -1317,16 +1351,14 @@
 
       <details style="margin-top:14px;">
         <summary style="font-size:.8rem;font-weight:700;color:var(--text-dim);cursor:pointer;">Optional planning details</summary>
-        <label for="planSquad" style="margin-top:10px;">Squad scope</label>
-        <input type="text" id="planSquad" placeholder="e.g. CDJ, CDJ1–2, Whole club">
+        <label for="planSquad" style="margin-top:10px;">Extra squad scope <span class="opt">(optional, e.g. "with Platinum Plus")</span></label>
+        <input type="text" id="planSquad" placeholder="e.g. Joint session with Gold">
         <label>Pool</label>
         <div class="pool-grid" id="planPoolGrid">
           <div class="pool-btn" data-pool="17m">17m</div>
           <div class="pool-btn" data-pool="25m">25m</div>
           <div class="pool-btn" data-pool="50m">50m</div>
         </div>
-        <label for="planIntendedDate">Intended date <span class="opt">(optional)</span></label>
-        <input type="date" id="planIntendedDate">
         <label for="planNotes">Notes <span class="opt">(optional)</span></label>
         <textarea id="planNotes" placeholder="Anything else about this plan…"></textarea>
       </details>
@@ -1346,7 +1378,7 @@
 
   <!-- ============ SESSION PLANS: VIEWER ============ -->
   <div class="view" id="viewPlanView">
-    <a class="back-home" id="backSessionList2">Plans</a>
+    <a class="back-home" id="backSessionList2">Session plans</a>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
         <h2 id="pvTitle" style="text-transform:none;letter-spacing:0;font-size:1.1rem;color:var(--navy);margin:0;"></h2>
@@ -1810,7 +1842,10 @@
   <!-- ============ SEASON: OVERVIEW (per-squad concertina) ============ -->
   <div class="view" id="viewSeason">
     <a class="back-home" id="backHomeSeason">Home</a>
-    <button type="button" class="submit-btn" id="snPlanBtn" style="margin:0 0 14px;">PLAN</button>
+    <div class="sn-top-btns">
+      <button type="button" class="submit-btn" id="snPlanBtn">PLAN</button>
+      <button type="button" class="submit-btn sn-sp-btn" id="snSessionsBtn">Session plans</button>
+    </div>
     <div class="sn-season-head" id="snSeasonHead"></div>
     <div id="snSquadList"><div class="empty">Loading season…</div></div>
   </div>
@@ -2010,14 +2045,13 @@ function showView(id){
 function goHome(){ showView("viewHome"); }
 function goAttendance(){ resetAttendanceSetup(); showView("viewAttendanceSetup"); }
 function goFeedback(){ showView("viewFeedback"); resetFbTabs(); populateFbPlanSelect(); loadFbSquadOptions(); }
-function goSession(){ showView("viewSession"); loadPlanList(); }
+function goSession(){ showView("viewSession"); loadPlanList(); }  // Season → Session plans
 function goMI(){ showView("viewMI"); }
 function goAdmin(){ showView("viewAdmin"); }
 
 $("tileAttendance").addEventListener("click", goAttendance);
 $("tileFeedback").addEventListener("click", goFeedback);
-$("tileSession").addEventListener("click", goSession);
-["backHome1","backHome2","backHome3","backHome4","backHome5"].forEach(id => {
+["backHome1","backHome2","backHome3","backHome4"].forEach(id => {
   $(id).addEventListener("click", () => showView("viewHome"));
 });
 $("goFeedbackBtn").addEventListener("click", () => {
@@ -2026,9 +2060,10 @@ $("goFeedbackBtn").addEventListener("click", () => {
   populateFbPlanSelect(attSession.plan_id);  // carry the attended session's plan across
   loadFbSquadOptions();
 });
-$("goSessionBtn").addEventListener("click", () => { showView("viewSession"); loadPlanList(); });
-$("backSessionList1").addEventListener("click", () => { showView("viewSession"); loadPlanList(); });
-$("backSessionList2").addEventListener("click", () => { showView("viewSession"); loadPlanList(); });
+$("goSessionBtn").addEventListener("click", goSession);
+$("backHome5").addEventListener("click", () => goSeason());
+$("backSessionList1").addEventListener("click", () => { spReturnToSeason = false; goSession(); });
+$("backSessionList2").addEventListener("click", () => { spReturnToSeason = false; goSession(); });
 
 // --- Hamburger menu ---
 function openNavDrawer(){
@@ -2149,7 +2184,8 @@ function blankBlock(type){
   if (type === "drill") return { type:"drill", drill_id:null, drill_name:"" };
 }
 
-function openEditor(plan){
+function openEditor(plan, preset){
+  spMicroCtx = null;
   if (plan){
     editingPlanId = plan.id;
     $("planTitle").value = plan.title || "";
@@ -2159,19 +2195,22 @@ function openEditor(plan){
     $("planNotes").value = plan.notes || "";
     document.querySelectorAll("#planPoolGrid .pool-btn").forEach(b =>
       b.classList.toggle("active", b.dataset.pool === plan.pool_size));
+    spSquadPending = plan.squad_id || "";
   } else {
     editingPlanId = null;
     $("planTitle").value = "";
     editorBlocks = [ blankBlock("heading") ];
     editorBlocks[0].text = "Warm up";
     $("planSquad").value = "";
-    $("planIntendedDate").value = "";
+    $("planIntendedDate").value = (preset && preset.date) || "";
     $("planNotes").value = "";
     document.querySelectorAll("#planPoolGrid .pool-btn").forEach(b => b.classList.remove("active"));
+    spSquadPending = (preset && preset.squadId) || $("planSquadFilter").value || "";
   }
   $("planMsg").textContent = "";
   renderBlocks();
   showView("viewPlanEditor");
+  spFillSquadSelect($("planSquadSelect"), spSquadPending, "Choose a squad…").then(spRefreshMicro);
 }
 
 function renderBlocks(){
@@ -2361,7 +2400,12 @@ $("savePlanBtn").addEventListener("click", async () => {
   const msg = $("planMsg");
   msg.textContent = ""; msg.className = "msg";
   const title = $("planTitle").value.trim();
+  const squadId = $("planSquadSelect").value;
+  const planDate = $("planIntendedDate").value;
+  if (!squadId){ msg.textContent = "Choose the squad this plan is for."; msg.className = "msg err"; return; }
+  if (!planDate){ msg.textContent = "Set the session date."; msg.className = "msg err"; return; }
   if (!title){ msg.textContent = "Give the plan a title."; msg.className = "msg err"; return; }
+  const ctx = await spMicroFor(squadId, planDate);
 
   // prune fully-empty blocks
   const content = editorBlocks.filter(b => {
@@ -2376,8 +2420,11 @@ $("savePlanBtn").addEventListener("click", async () => {
     content,
     total_distance_m: planDistance(content),
     squad_scope: $("planSquad").value.trim() || null,
+    squad_id: squadId,
+    micro_id: ctx && ctx.micro ? ctx.micro.id : null,
+    micro_session_id: ctx && ctx.session ? ctx.session.id : null,
     pool_size: poolBtn ? poolBtn.dataset.pool : null,
-    intended_date: $("planIntendedDate").value || null,
+    intended_date: planDate,
     notes: $("planNotes").value.trim() || null,
     updated_at: new Date().toISOString()
   };
@@ -2396,43 +2443,171 @@ $("savePlanBtn").addEventListener("click", async () => {
   if (error){ msg.textContent = "Save failed — " + error.message; msg.className = "msg err"; console.error(error); return; }
   msg.textContent = "Plan saved."; msg.className = "msg ok";
   if (savedId) archiveSetLineDrafts(savedId, content).catch(err => console.error("archive drafts:", err));
-  setTimeout(() => { showView("viewSession"); loadPlanList(); }, 500);
+  setTimeout(() => { if (spReturnToSeason){ spReturnToSeason = false; goSeason(); } else goSession(); }, 500);
 });
 
-// --- Archive list ---
+// --- Session plan list (Season → Session plans) ---
+// Plans belong to a squad and a date. Listed in date order, grouped by date,
+// each showing the micro-cycle week that covers it for that squad.
 let allPlans = [];
+let spSquadCache = { club: null, rows: [] };
+let spMacroCache = { club: null, macros: [], sessions: [], comps: [] };
+let spMicroCtx = null;       // micro context for the editor's current squad + date
+let spSquadPending = "";
+let spReturnToSeason = false;
+
+async function spLoadSquads(){
+  if (spSquadCache.club === currentClub) return spSquadCache.rows;
+  const { data, error } = await sb.from("squads").select("id, name").eq("club", currentClub).order("name");
+  if (error) throw error;
+  spSquadCache = { club: currentClub, rows: data || [] };
+  return spSquadCache.rows;
+}
+async function spFillSquadSelect(sel, selected, blankLabel){
+  try {
+    const rows = await spLoadSquads();
+    sel.innerHTML = `<option value="">${blankLabel}</option>` +
+      rows.map(q => `<option value="${q.id}"${q.id === selected ? " selected" : ""}>${escapeHtml(q.name)}</option>`).join("");
+  } catch (err){ console.error(err); sel.innerHTML = '<option value="">Could not load squads</option>'; }
+}
+function spSquadName(id){ const q = spSquadCache.rows.find(x => x.id === id); return q ? q.name : ""; }
+
+// All macros/micros for the club's active seasons, plus planned micro_sessions and season competitions.
+async function spLoadMacros(force){
+  if (!force && spMacroCache.club === currentClub) return spMacroCache;
+  const { data: seasons, error: se } = await sb.from("seasons").select("id").eq("club", currentClub).eq("is_active", true);
+  if (se) throw se;
+  const ids = (seasons || []).map(x => x.id);
+  let macros = [], sessions = [], comps = [];
+  if (ids.length){
+    const [mq, cq] = await Promise.all([
+      sb.from("macros").select("id, title, season_id, macro_squads(squad_id, is_active), micros(id, week_no, week_commencing, meso, qes_focus, technical_focus, is_active)")
+        .in("season_id", ids).eq("is_active", true),
+      sb.from("season_competitions").select("id, name, date_from, date_to").in("season_id", ids).eq("is_active", true)
+    ]);
+    if (mq.error) throw mq.error; if (cq.error) throw cq.error;
+    macros = mq.data || []; comps = cq.data || [];
+    const microIds = macros.flatMap(m => (m.micros || []).filter(x => x.is_active).map(x => x.id));
+    if (microIds.length){
+      const { data, error } = await sb.from("micro_sessions")
+        .select("id, micro_id, squad_id, session_date, start_time, end_time, stroke_focus, outline")
+        .in("micro_id", microIds).eq("is_active", true);
+      if (error) throw error;
+      sessions = data || [];
+    }
+  }
+  spMacroCache = { club: currentClub, macros, sessions, comps };
+  return spMacroCache;
+}
+// The micro-cycle week covering `date` for `squadId`, the planned micro_session that day,
+// and any season competition that week (same +5 to +7 rule as the Add Micro form).
+function spMicroSync(squadId, date){
+  if (!squadId || !date) return null;
+  let micro = null;
+  spMacroCache.macros.forEach(m => {
+    if (micro || !(m.macro_squads || []).some(x => x.squad_id === squadId && x.is_active)) return;
+    const hit = (m.micros || []).find(mi => mi.is_active && mi.week_commencing &&
+      mi.week_commencing <= date && isoAdd(mi.week_commencing, 6) >= date);
+    if (hit) micro = { ...hit, macroTitle: m.title };
+  });
+  if (!micro) return null;
+  const session = spMacroCache.sessions
+    .filter(x => x.micro_id === micro.id && x.squad_id === squadId && x.session_date === date)
+    .sort((a, b) => (a.start_time || "").localeCompare(b.start_time || ""))[0] || null;
+  const wc = micro.week_commencing;
+  const comp = spMacroCache.comps.find(c => c.date_from >= isoAdd(wc, 5) && c.date_from <= isoAdd(wc, 7)) || null;
+  return { micro, session, comp };
+}
+async function spMicroFor(squadId, date){
+  try { await spLoadMacros(); } catch (err){ console.error(err); return null; }
+  return spMicroSync(squadId, date);
+}
+function spMicroTagsHtml(mi){
+  const q = mi.qes_focus;
+  return `${mi.meso ? `<span class="sn-tag">Meso ${mi.meso}</span>` : ""}` +
+         `${q ? `<span class="sn-tag ${q[0]}">${QES[q]}</span>` : ""}` +
+         `${mi.technical_focus ? `<span class="sn-tag">Technical: ${mi.technical_focus}. ${TECH_FOCUS[mi.technical_focus]}</span>` : ""}`;
+}
+
 async function loadPlanList(){
   const el = $("planList");
   el.innerHTML = '<div class="empty">Loading plans…</div>';
-  const { data, error } = await sb
-    .from("session_plans")
-    .select("id, title, total_distance_m, squad_scope, pool_size, intended_date, updated_at, content")
-    .eq("club", currentClub)
-    .order("updated_at", { ascending: false });
-  if (error){ el.innerHTML = '<div class="empty">Could not load plans.</div>'; console.error(error); return; }
-  allPlans = data || [];
-  renderPlanList(allPlans);
+  try {
+    await spFillSquadSelect($("planSquadFilter"), $("planSquadFilter").value, "All squads");
+    const [res] = await Promise.all([
+      sb.from("session_plans")
+        .select("id, title, total_distance_m, squad_scope, squad_id, micro_id, pool_size, intended_date, updated_at, content")
+        .eq("club", currentClub)
+        .order("intended_date", { ascending: true, nullsFirst: false }),
+      spLoadMacros(true)
+    ]);
+    if (res.error) throw res.error;
+    allPlans = res.data || [];
+  } catch (err){
+    console.error(err);
+    snErr(el, "Could not load plans.", loadPlanList);
+    return;
+  }
+  spApplyFilters();
+}
+function spApplyFilters(){
+  const squad = $("planSquadFilter").value;
+  const when = $("planWhenFilter").value;
+  const q = $("planSearch").value.trim().toLowerCase();
+  const weekStart = isoMonday(ttToday());
+  const list = allPlans.filter(p => {
+    if (squad && p.squad_id !== squad) return false;
+    if (when === "upcoming" && p.intended_date && p.intended_date < weekStart) return false;
+    if (q && !((p.title || "").toLowerCase().includes(q) ||
+               (p.squad_scope || "").toLowerCase().includes(q) ||
+               spSquadName(p.squad_id).toLowerCase().includes(q) ||
+               (p.pool_size || "").toLowerCase().includes(q))) return false;
+    return true;
+  });
+  renderPlanList(list);
 }
 function renderPlanList(plans){
   const el = $("planList");
-  if (!plans.length){ el.innerHTML = '<div class="empty">No plans yet. Tap “+ New plan” to write one.</div>'; return; }
-  el.innerHTML = plans.map(p => {
+  if (!plans.length){
+    const filtered = $("planSquadFilter").value || $("planWhenFilter").value === "upcoming" || $("planSearch").value.trim();
+    el.innerHTML = '<div class="empty">' + (filtered
+      ? 'No plans match. Try “All dates” or another squad, or tap “+ New plan”.'
+      : 'No plans yet. Tap “+ New plan” to write one.') + '</div>';
+    return;
+  }
+  // Date order (earliest first), plans with no date at the end; within a date, by squad name.
+  const sorted = plans.slice().sort((a, b) =>
+    (a.intended_date || "9999").localeCompare(b.intended_date || "9999") ||
+    spSquadName(a.squad_id).localeCompare(spSquadName(b.squad_id)) ||
+    (a.title || "").localeCompare(b.title || ""));
+  let html = "", lastKey = null;
+  sorted.forEach(p => {
+    const key = p.intended_date || "none";
+    if (key !== lastKey){
+      html += `<div class="sp-group-head">${p.intended_date ? escapeHtml(TT_DAYS_LONG[isoDow(p.intended_date)] + " " + fmtDate(p.intended_date)) : "No date set"}</div>`;
+      lastKey = key;
+    }
     const tags = [];
-    if (p.pool_size) tags.push(`<span class="plan-tag">${p.pool_size}</span>`);
+    const sqName = spSquadName(p.squad_id);
+    tags.push(sqName ? `<span class="plan-tag">${escapeHtml(sqName)}</span>` : '<span class="tt-unlinked" style="margin:0;">No squad linked</span>');
     if (p.squad_scope) tags.push(`<span class="plan-tag">${escapeHtml(p.squad_scope)}</span>`);
+    if (p.pool_size) tags.push(`<span class="plan-tag">${p.pool_size}</span>`);
     if (p.total_distance_m) tags.push(`<span class="plan-tag dist">${p.total_distance_m.toLocaleString()}m</span>`);
-    const meta = [];
-    if (p.intended_date) meta.push("For " + fmtDate(p.intended_date));
-    meta.push("Updated " + fmtDate(p.updated_at.slice(0,10)));
-    return `<div class="plan-list-item" data-id="${p.id}">
+    const ctx = spMicroSync(p.squad_id, p.intended_date);
+    const microHtml = ctx
+      ? `<div class="sp-micro-line" style="margin-top:6px;">Week ${ctx.micro.week_no} · w/c ${fmtDdMm(ctx.micro.week_commencing)}${ctx.session && ctx.session.stroke_focus ? " · Stroke: " + escapeHtml(ctx.session.stroke_focus) : ""}</div>
+         <div class="sn-week-head" style="margin:4px 0 0;">${spMicroTagsHtml(ctx.micro)}</div>`
+      : "";
+    html += `<div class="plan-list-item" data-id="${p.id}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
         <div class="plan-li-title">${escapeHtml(p.title)}</div>
         <button class="plan-li-pdf-btn" data-pdf-id="${p.id}" title="Download / share PDF">PDF</button>
       </div>
-      <div class="plan-li-meta">${meta.join(" · ")}</div>
-      ${tags.length ? `<div class="plan-li-tags">${tags.join("")}</div>` : ""}
+      <div class="plan-li-tags">${tags.join("")}</div>
+      ${microHtml}
     </div>`;
-  }).join("");
+  });
+  el.innerHTML = html;
   el.querySelectorAll(".plan-list-item").forEach(item => {
     item.addEventListener("click", () => openPlanViewer(item.dataset.id));
   });
@@ -2444,15 +2619,49 @@ function renderPlanList(plans){
     });
   });
 }
-$("planSearch").addEventListener("input", () => {
-  const q = $("planSearch").value.trim().toLowerCase();
-  if (!q){ renderPlanList(allPlans); return; }
-  renderPlanList(allPlans.filter(p =>
-    (p.title||"").toLowerCase().includes(q) ||
-    (p.squad_scope||"").toLowerCase().includes(q) ||
-    (p.pool_size||"").toLowerCase().includes(q)
-  ));
-});
+$("planSearch").addEventListener("input", spApplyFilters);
+$("planSquadFilter").addEventListener("change", spApplyFilters);
+$("planWhenFilter").addEventListener("change", spApplyFilters);
+
+// --- Editor: micro-cycle panel fed by squad + date ---
+async function spRefreshMicro(){
+  const box = $("planMicroPanel");
+  const squadId = $("planSquadSelect").value, date = $("planIntendedDate").value;
+  if (!squadId || !date){
+    box.innerHTML = '<div class="tt-muted">Choose the squad and session date to pull through that week\'s micro-cycle.</div>';
+    spMicroCtx = null; return;
+  }
+  box.innerHTML = '<div class="sn-skel" style="width:60%"></div>';
+  const ctx = await spMicroFor(squadId, date);
+  if ($("planSquadSelect").value !== squadId || $("planIntendedDate").value !== date) return; // changed meanwhile
+  spMicroCtx = ctx;
+  if (!ctx){
+    box.innerHTML = '<div class="sp-micro-card"><div class="tt-muted">No micro-cycle covers ' + escapeHtml(fmtDayShort(date)) +
+      ' for ' + escapeHtml(spSquadName(squadId) || "this squad") + '. Add one under Season → PLAN → Add macro.</div></div>';
+    return;
+  }
+  const mi = ctx.micro, se = ctx.session;
+  box.innerHTML = `
+    <div class="sp-micro-card">
+      <div class="sp-micro-line"><strong>${escapeHtml(mi.macroTitle)}</strong> · Week ${mi.week_no} · w/c ${fmtDdMm(mi.week_commencing)}</div>
+      <div class="sn-week-head">${spMicroTagsHtml(mi)}</div>
+      ${se ? `<div class="sp-micro-sess">
+          <div class="sn-sess-when">${escapeHtml(fmtWhen(se.session_date, se.start_time, se.end_time))}</div>
+          ${se.stroke_focus ? `<div class="sn-sess-stroke">Stroke focus: ${escapeHtml(se.stroke_focus)}</div>` : ""}
+          ${se.outline ? `<div class="sn-sess-outline">${escapeHtml(se.outline)}</div>` : ""}
+        </div>` : '<div class="sp-micro-sess tt-muted">No session outlined for this date in the micro-cycle.</div>'}
+      ${ctx.comp ? `<div class="sp-micro-comp">Competition this week: ${escapeHtml(ctx.comp.name)} (${escapeHtml(fmtDayShort(ctx.comp.date_from))})</div>` : ""}
+    </div>`;
+  // A new plan with no title yet gets a sensible default from the squad, day and focus.
+  if (!editingPlanId && !$("planTitle").value.trim()){
+    const bits = [spSquadName(squadId), fmtDayShort(date)];
+    if (se && se.stroke_focus) bits.push(se.stroke_focus);
+    else if (mi.qes_focus) bits.push(QES[mi.qes_focus]);
+    $("planTitle").value = bits.filter(Boolean).join(" — ");
+  }
+}
+$("planSquadSelect").addEventListener("change", spRefreshMicro);
+$("planIntendedDate").addEventListener("change", spRefreshMicro);
 
 // --- Viewer ---
 let viewingPlan = null;
@@ -2462,12 +2671,18 @@ async function openPlanViewer(id){
   viewingPlan = data;
   $("pvTitle").textContent = data.title;
   const meta = [];
-  if (data.intended_date) meta.push("For " + fmtDate(data.intended_date));
+  try { await spLoadSquads(); } catch (e) {}
+  if (data.intended_date) meta.push(TT_DAYS_SHORT[isoDow(data.intended_date)] + " " + fmtDate(data.intended_date));
+  if (data.squad_id) meta.push(spSquadName(data.squad_id));
   if (data.squad_scope) meta.push(data.squad_scope);
   if (data.pool_size) meta.push(data.pool_size);
   if (data.total_distance_m) meta.push(data.total_distance_m.toLocaleString() + "m");
   $("pvMeta").textContent = meta.join(" · ");
-  $("pvBody").innerHTML = renderPlanReadonly(data.content || []) +
+  const vctx = await spMicroFor(data.squad_id, data.intended_date);
+  $("pvBody").innerHTML = (vctx ? `<div class="sp-micro-card" style="margin-bottom:12px;">
+      <div class="sp-micro-line">Week ${vctx.micro.week_no} · w/c ${fmtDdMm(vctx.micro.week_commencing)}${vctx.session && vctx.session.stroke_focus ? " · Stroke focus: " + escapeHtml(vctx.session.stroke_focus) : ""}</div>
+      <div class="sn-week-head">${spMicroTagsHtml(vctx.micro)}</div></div>` : "") +
+    renderPlanReadonly(data.content || []) +
     (data.notes ? `<div class="pv-note" style="margin-top:12px;">${escapeHtml(data.notes)}</div>` : "");
   showView("viewPlanView");
 }
@@ -6016,6 +6231,15 @@ async function goSeason(){
       if (error) throw error;
       sessions = data || [];
     }
+    snPlans = [];
+    const pickedWeeks = Object.values(pick).filter(Boolean);
+    if (pickedWeeks.length){
+      const from = pickedWeeks.map(m => m.week_commencing).sort()[0];
+      const to = isoAdd(pickedWeeks.map(m => m.week_commencing).sort().slice(-1)[0], 6);
+      const { data, error } = await sb.from("session_plans").select("id, squad_id, intended_date")
+        .eq("club", currentClub).gte("intended_date", from).lte("intended_date", to).not("squad_id", "is", null);
+      if (error) console.error(error); else snPlans = data || [];
+    }
     list.innerHTML = snSquads.map(sq => snPanelHtml(sq, pick[sq.id], sessions, comps)).join("");
   } catch (err){
     console.error(err);
@@ -6023,6 +6247,7 @@ async function goSeason(){
   }
 }
 
+let snPlans = [];
 function snPanelHtml(sq, micro, sessions, comps){
   const open = snOpen.has(sq.id);
   let training;
@@ -6045,6 +6270,12 @@ function snPanelHtml(sq, micro, sessions, comps){
           <div class="sn-sess-when">${escapeHtml(fmtWhen(r.session_date, r.start_time, r.end_time))}</div>
           ${r.stroke_focus ? `<div class="sn-sess-stroke">Stroke focus: ${escapeHtml(r.stroke_focus)}</div>` : ""}
           ${r.outline ? `<div class="sn-sess-outline">${escapeHtml(r.outline)}</div>` : ""}
+          ${snCanPlan() ? (() => {
+            const pl = snPlans.find(x => x.squad_id === sq.id && x.intended_date === r.session_date);
+            return pl
+              ? `<button type="button" class="sp-plan-link has" data-plan="${pl.id}">View session plan</button>`
+              : `<button type="button" class="sp-plan-link" data-newplan="${sq.id}" data-date="${r.session_date}">+ Write session plan</button>`;
+          })() : ""}
         </div>`).join("") : '<div class="tt-muted">No sessions recorded for this week.</div>'}
       <div class="sn-cd">Coach's discretion may result in the sessions being altered</div>`;
   }
@@ -6073,6 +6304,10 @@ function snPanelHtml(sq, micro, sessions, comps){
 }
 
 $("snSquadList").addEventListener("click", e => {
+  const pl = e.target.closest("[data-plan]");
+  if (pl){ openPlanViewer(pl.dataset.plan); return; }
+  const np = e.target.closest("[data-newplan]");
+  if (np){ spReturnToSeason = true; openEditor(null, { squadId: np.dataset.newplan, date: np.dataset.date }); return; }
   const link = e.target.closest(".sn-comp-link[data-name]");
   if (link){ goCompetitions({ focusId: link.dataset.comp || null, name: link.dataset.name }); return; }
   const t = e.target.closest("[data-act=toggle]");
@@ -6764,6 +6999,7 @@ $("qtOverlay").addEventListener("click", e => { if (e.target.id === "qtOverlay")
 // ---------- Navigation ----------
 let enterReturnView = "viewTimetables";
 navActions.season = goSeason;
+$("snSessionsBtn").addEventListener("click", () => { spReturnToSeason = false; goSession(); });
 navActions.competitions = () => goCompetitions(null);
 $("tileSeason").addEventListener("click", goSeason);
 $("tileCompetitions").addEventListener("click", () => goCompetitions(null));
