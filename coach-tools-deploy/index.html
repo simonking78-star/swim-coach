@@ -1647,6 +1647,8 @@
 
     <div class="card">
       <h2>Swimmer</h2>
+      <label for="cmpClubA">Club</label>
+      <select id="cmpClubA" style="margin-bottom:8px;"></select>
       <div class="autocomplete-wrap">
         <input type="text" id="cmpSwimmerSearch" placeholder="Start typing a name…" autocomplete="off">
         <div class="ac-results" id="cmpAcResults"></div>
@@ -1664,6 +1666,8 @@
       </div>
 
       <div id="cmpModeSwimmer" style="margin-top:10px;">
+        <label for="cmpClubB">Second swimmer's club</label>
+        <select id="cmpClubB" style="margin-bottom:8px;"></select>
         <div class="autocomplete-wrap">
           <input type="text" id="cmpSwimmer2Search" placeholder="Second swimmer…" autocomplete="off">
           <div class="ac-results" id="cmpAc2Results"></div>
@@ -1677,13 +1681,15 @@
       <div id="cmpModeYob" style="margin-top:10px;display:none;">
         <label>Birth-year group drawn from</label>
         <div class="mi-sex-row">
-          <div class="toggle-btn active" data-scope="club" style="flex:1;">This club</div>
+          <div class="toggle-btn active" data-scope="club" style="flex:1;">Swimmer's club</div>
           <div class="toggle-btn" data-scope="all" style="flex:1;">All clubs in the archive</div>
         </div>
         <p class="hint" id="cmpYobHint"></p>
       </div>
 
       <div id="cmpModeSquad" style="margin-top:10px;display:none;">
+        <label for="cmpSquadClub">Club</label>
+        <select id="cmpSquadClub" style="margin-bottom:8px;"></select>
         <label for="cmpSquad">Squad</label>
         <select id="cmpSquad"><option value="">— choose —</option></select>
         <p class="hint">Squad is each swimmer's current squad.</p>
@@ -5247,6 +5253,9 @@ let cmpMode = "swimmer", cmpScope = "club", cmpView = "imp", cmpCourse = "SC";
 let cmpChart = null;
 let cmpInitDone = false;
 let cmpLoadSeq = 0;
+const CMP_ALL = "__all__";
+const cmpClubPref = { A: null, B: null, squad: null };
+const cmpClubMatch = (s, club) => club === CMP_ALL || s.club === club;
 
 const cmpMs = d => Date.parse(d + "T00:00:00Z");
 const cmpFmtMonth = v => new Date(v).toLocaleDateString("en-GB", { month: "short", year: "2-digit", timeZone: "UTC" });
@@ -5281,9 +5290,10 @@ async function cmpOpen(){
     $("cmpEnd").value = end.toISOString().slice(0, 10);
     $("cmpStart").value = start.toISOString().slice(0, 10);
   }
-  // A swimmer from a previously selected club must not stay selected.
-  if (cmpA && cmpA.club !== currentClub) cmpClear("A");
-  if (cmpB && cmpB.club !== currentClub) cmpClear("B");
+  // Club pickers start on the club chosen at the top of the app; after that the
+  // coach can pick any club in the archive for either swimmer.
+  if (!cmpA) cmpClubPref.A = currentClub;
+  if (!cmpB) cmpClubPref.B = currentClub;
   $("cmpResultArea").innerHTML = '<div class="mi-empty">Loading swimmers…</div>';
   try {
     const sw = await cmpFetchAll(() => sb.from("swimmers").select("id, full_name, club, squad, date_of_birth, active").order("id"));
@@ -5321,6 +5331,7 @@ async function cmpLoadRows(){
     cmpRowsBySwimmer.get(r.swimmer_id).push(r);
   });
   cmpYobCache = new Map();
+  cmpFillClubOptions();
   cmpFillYobOptions();
   cmpFillSquadOptions();
   cmpRefreshPickers();
@@ -5349,12 +5360,37 @@ function cmpYob(id){
 }
 const cmpYobLabel = y => y ? `${y.year}${y.est ? " (est.)" : ""}` : "unknown";
 
+// Club lists: every club with a swim in this event + course, plus the app's
+// current club; the squad list only offers clubs that have squads recorded.
+function cmpFillClubOptions(){
+  const clubs = new Set([currentClub]);
+  cmpRowsBySwimmer.forEach((_, id) => { const s = cmpSwimmersById.get(id); if (s && s.club) clubs.add(s.club); });
+  const list = [...clubs].sort((a, b) => a.localeCompare(b));
+  const fill = (selId, key) => {
+    const sel = $(selId);
+    const want = cmpClubPref[key] || sel.value || currentClub;
+    sel.innerHTML = `<option value="${CMP_ALL}">All clubs</option>` + list.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join("");
+    sel.value = (want === CMP_ALL || list.includes(want)) ? want : currentClub;
+    cmpClubPref[key] = sel.value;
+  };
+  fill("cmpClubA", "A");
+  fill("cmpClubB", "B");
+  const sq = $("cmpSquadClub");
+  const squadClubs = [...new Set([...cmpSwimmersById.values()].filter(s => s.squad && s.club).map(s => s.club))].sort((a, b) => a.localeCompare(b));
+  const wantSq = cmpClubPref.squad || sq.value || (cmpA && cmpA.club) || currentClub;
+  sq.innerHTML = squadClubs.length
+    ? squadClubs.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join("")
+    : '<option value="">No clubs have squads recorded</option>';
+  sq.value = squadClubs.includes(wantSq) ? wantSq : (squadClubs.includes(currentClub) ? currentClub : (squadClubs[0] || ""));
+  cmpClubPref.squad = sq.value;
+}
+
 function cmpFillYobOptions(){
   const sel = $("cmpYob"), prev = sel.value;
   const years = new Set();
   cmpRowsBySwimmer.forEach((_, id) => {
     const s = cmpSwimmersById.get(id);
-    if (!s || s.club !== currentClub) return;
+    if (!s || !cmpClubMatch(s, $("cmpClubA").value)) return;
     const y = cmpYob(id);
     if (y) years.add(y.year);
   });
@@ -5366,7 +5402,8 @@ function cmpFillYobOptions(){
 function cmpFillSquadOptions(){
   const sel = $("cmpSquad"), prev = sel.value;
   const squads = new Set();
-  cmpSwimmersById.forEach(s => { if (s.club === currentClub && s.squad) squads.add(s.squad); });
+  const club = $("cmpSquadClub").value;
+  cmpSwimmersById.forEach(s => { if (s.club === club && s.squad) squads.add(s.squad); });
   const list = [...squads].sort();
   sel.innerHTML = '<option value="">— choose —</option>' + list.map(q => `<option value="${escapeAttr(q)}">${escapeHtml(q)}</option>`).join("");
   sel.value = list.includes(prev) ? prev : "";
@@ -5386,14 +5423,15 @@ function cmpSwims(id){
     .sort((a, b) => a.meet_date.localeCompare(b.meet_date) || a.t - b.t);
 }
 
-// Candidate swimmers for the pickers: this club, active, with a swim in this
-// event + course inside the window, narrowed by the year-of-birth filter.
-function cmpCandidates(){
+// Candidate swimmers for a picker: the club chosen in that picker (or all
+// clubs), active, with a swim in this event + course inside the window,
+// narrowed by the year-of-birth filter.
+function cmpCandidates(club){
   const yobFilter = $("cmpYob").value;
   const out = [];
   cmpRowsBySwimmer.forEach((_, id) => {
     const s = cmpSwimmersById.get(id);
-    if (!s || s.club !== currentClub || s.active === false) return;
+    if (!s || !cmpClubMatch(s, club) || s.active === false) return;
     const n = cmpSwims(id).length;
     if (!n) return;
     if (yobFilter){
@@ -5406,24 +5444,26 @@ function cmpCandidates(){
 }
 
 function cmpRefreshPickers(){
-  const c = cmpCandidates();
+  const clubA = $("cmpClubA").value;
+  const c = cmpCandidates(clubA);
   const w = cmpWindow();
   const from = w.start === "1900-01-01" ? "the start of the records" : cmpFmtDay(cmpMs(w.start));
   const to = w.end === "2999-12-31" ? "today" : cmpFmtDay(cmpMs(w.end));
-  $("cmpDataHint").textContent = `${c.length} swimmer${c.length === 1 ? "" : "s"} at ${currentClub} with a ${cmpEvent()} ${cmpCourse} swim between ${from} and ${to}.`;
+  $("cmpDataHint").textContent = `${c.length} swimmer${c.length === 1 ? "" : "s"} ${clubA === CMP_ALL ? "across all clubs" : "at " + clubA} with a ${cmpEvent()} ${cmpCourse} swim between ${from} and ${to}.`;
 }
 
-function cmpSetupAc(inputId, resultsId, getExcludeId, onPick){
+function cmpSetupAc(inputId, resultsId, clubSelId, getExcludeId, onPick){
   const input = $(inputId), box = $(resultsId);
   input.addEventListener("input", () => {
     const q = input.value.trim().toLowerCase();
     if (!q){ box.style.display = "none"; return; }
     const ex = getExcludeId();
-    const matches = cmpCandidates().filter(s => s.id !== ex && s.full_name.toLowerCase().includes(q)).slice(0, 25);
+    const club = $(clubSelId).value;
+    const matches = cmpCandidates(club).filter(s => s.id !== ex && s.full_name.toLowerCase().includes(q)).slice(0, 25);
     box.innerHTML = matches.length
       ? matches.map(s => {
           const y = cmpYob(s.id);
-          return `<div data-id="${s.id}">${escapeHtml(s.full_name)}${s.squad ? `<span class="squad-tag">${escapeHtml(s.squad)}</span>` : ""}<span class="squad-tag">${y ? escapeHtml(cmpYobLabel(y)) : "YoB ?"}</span><span class="squad-tag">${s.swimsInWindow} swim${s.swimsInWindow === 1 ? "" : "s"}</span></div>`;
+          return `<div data-id="${s.id}">${escapeHtml(s.full_name)}${club === CMP_ALL || s.club !== currentClub ? `<span class="squad-tag">${escapeHtml(s.club || "")}</span>` : ""}${s.squad ? `<span class="squad-tag">${escapeHtml(s.squad)}</span>` : ""}<span class="squad-tag">${y ? escapeHtml(cmpYobLabel(y)) : "YoB ?"}</span><span class="squad-tag">${s.swimsInWindow} swim${s.swimsInWindow === 1 ? "" : "s"}</span></div>`;
         }).join("")
       : '<div style="color:var(--text-dim);cursor:default;">No swimmers with this event in the window</div>';
     box.style.display = "block";
@@ -5438,12 +5478,15 @@ function cmpSetupAc(inputId, resultsId, getExcludeId, onPick){
 function cmpPick(which, s){
   const sfx = which === "A" ? "" : "2";
   if (which === "A") cmpA = s; else cmpB = s;
-  $(`cmpSelected${sfx}Name`).textContent = s.full_name + (s.squad ? " · " + s.squad : "");
+  $(`cmpSelected${sfx}Name`).textContent = s.full_name + " · " + (s.club || "club unknown") + (s.squad ? " · " + s.squad : "");
   $(`cmpSelected${sfx}Pill`).style.display = "flex";
   $(`cmpSwimmer${sfx}Search`).value = "";
   $(`cmpSwimmer${sfx}Search`).style.display = "none";
   $(which === "A" ? "cmpAcResults" : "cmpAc2Results").style.display = "none";
-  // Default the squad comparison to the swimmer's own squad.
+  // Default the squad comparison to the swimmer's own club and squad.
+  if (which === "A" && [...$("cmpSquadClub").options].some(o => o.value === s.club) && $("cmpSquadClub").value !== s.club){
+    $("cmpSquadClub").value = s.club; cmpClubPref.squad = s.club; $("cmpSquad").value = ""; cmpFillSquadOptions();
+  }
   if (which === "A" && s.squad && !$("cmpSquad").value && [...$("cmpSquad").options].some(o => o.value === s.squad)) $("cmpSquad").value = s.squad;
   cmpRender();
 }
@@ -5454,8 +5497,8 @@ function cmpClear(which){
   $(`cmpSwimmer${sfx}Search`).style.display = "block";
   $(`cmpSwimmer${sfx}Search`).value = "";
 }
-cmpSetupAc("cmpSwimmerSearch", "cmpAcResults", () => cmpB && cmpB.id, s => cmpPick("A", s));
-cmpSetupAc("cmpSwimmer2Search", "cmpAc2Results", () => cmpA && cmpA.id, s => cmpPick("B", s));
+cmpSetupAc("cmpSwimmerSearch", "cmpAcResults", "cmpClubA", () => cmpB && cmpB.id, s => cmpPick("A", s));
+cmpSetupAc("cmpSwimmer2Search", "cmpAc2Results", "cmpClubB", () => cmpA && cmpA.id, s => cmpPick("B", s));
 $("cmpClearSwimmer").addEventListener("click", () => { cmpClear("A"); cmpRender(); });
 $("cmpClearSwimmer2").addEventListener("click", () => { cmpClear("B"); cmpRender(); });
 document.addEventListener("click", e => {
@@ -5490,6 +5533,9 @@ document.querySelectorAll("#viewMICompare [data-scope]").forEach(b => b.addEvent
   cmpRender();
 }));
 $("cmpSquad").addEventListener("change", cmpRender);
+$("cmpClubA").addEventListener("change", () => { cmpClubPref.A = $("cmpClubA").value; cmpFillYobOptions(); cmpRefreshPickers(); cmpRender(); });
+$("cmpClubB").addEventListener("change", () => { cmpClubPref.B = $("cmpClubB").value; });
+$("cmpSquadClub").addEventListener("change", () => { cmpClubPref.squad = $("cmpSquadClub").value; $("cmpSquad").value = ""; cmpFillSquadOptions(); cmpRender(); });
 function cmpSetView(v, silent){
   // Group averages are only meaningful as % improvement — raw times from
   // swimmers of different speeds can't be averaged into a fair line.
@@ -5561,22 +5607,22 @@ function cmpGroup(){
       if (id === cmpA.id) return;
       const s = cmpSwimmersById.get(id);
       if (!s) return;
-      if (cmpScope === "club" && s.club !== currentClub) return;
+      if (cmpScope === "club" && s.club !== cmpA.club) return;
       const y = cmpYob(id);
       if (y && y.year === year) pool.push(id);
     });
-    label = `Born ${year} · ${cmpScope === "club" ? currentClub : "all clubs"}`;
+    label = `Born ${year} · ${cmpScope === "club" ? (cmpA.club || "club unknown") : "all clubs"}`;
   } else {
-    const squad = $("cmpSquad").value;
+    const squad = $("cmpSquad").value, squadClub = $("cmpSquadClub").value;
     if (!squad) return { error: "Choose a squad to compare against." };
     cmpRowsBySwimmer.forEach((_, id) => {
       if (id === cmpA.id) return;
       const s = cmpSwimmersById.get(id);
-      if (!s || s.club !== currentClub || s.squad !== squad) return;
+      if (!s || s.club !== squadClub || s.squad !== squad) return;
       if (yobFilter){ const y = cmpYob(id); if (!y || String(y.year) !== yobFilter) return; }
       pool.push(id);
     });
-    label = `${squad} squad${yobFilter ? ` · born ${yobFilter}` : ""}`;
+    label = `${squadClub} ${squad} squad${yobFilter ? ` · born ${yobFilter}` : ""}`;
   }
   const withSwims = pool.map(id => ({ id, st: cmpStats(cmpSwims(id)) })).filter(m => m.st);
   const members = withSwims.filter(m => m.st.n >= 2);
@@ -5614,7 +5660,7 @@ function cmpRender(){
       datasets.push({ label: `${s.full_name} — each swim`, data: st.pts.map(p => ({ x: p.x, y: p.raw, meet: p.meet, t: p.t })), showLine: false, borderColor: col, backgroundColor: col + "55", pointRadius: 3.5, pointStyle: "rectRot" });
     }
     const y = cmpYob(s.id);
-    tableRows.push(`<tr><td><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${col};margin-right:6px;"></span>${escapeHtml(s.full_name)}<div style="font-size:.7rem;color:var(--text-dim);">${escapeHtml(s.squad || "")}${s.squad ? " · " : ""}YoB ${escapeHtml(cmpYobLabel(y))}</div></td>
+    tableRows.push(`<tr><td><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${col};margin-right:6px;"></span>${escapeHtml(s.full_name)}<div style="font-size:.7rem;color:var(--text-dim);">${escapeHtml(s.club || "")}${s.squad ? " · " + escapeHtml(s.squad) : ""} · YoB ${escapeHtml(cmpYobLabel(y))}</div></td>
       <td>${st.n}</td><td>${secToTime(st.first)} → ${secToTime(st.best)}<div style="font-size:.7rem;color:var(--text-dim);">${st.impSec > 0 ? "−" + st.impSec.toFixed(2) + "s" : "no gain"}</div></td>
       <td><b>${fmtPct(st.impPct)}</b><div style="font-size:.7rem;color:var(--text-dim);">${fmtRate(st.ratePct)}</div></td></tr>`);
   };
