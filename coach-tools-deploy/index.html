@@ -2117,11 +2117,13 @@ async function loadClubOptions(){
 $("clubSelect").addEventListener("change", () => {
   currentClub = $("clubSelect").value;
   localStorage.setItem("coachToolsClub", currentClub);
+  if (selectedSwimmer) clearFbSwimmer();  // a swimmer from the old club must not stay selected
   loadSwimmers();      // refresh the feedback swimmer cache for the new club
+  loadRecent();         // recent feedback entries, scoped to the new club
   loadDrills();         // refresh the drills library cache for the new club
   showView("viewHome"); // drop out of any in-progress flow scoped to the old club
 });
-loadClubOptions();
+loadClubOptions().then(() => { loadSwimmers(); loadRecent(); });
 loadDrills(); // pre-load the drills index so set-line prediction works even before the coach opens the library tab
 
 function fmtDate(d){
@@ -2141,7 +2143,7 @@ function showView(id){
 // Shared navigation actions — used by both the home tiles and the hamburger menu.
 function goHome(){ showView("viewHome"); }
 function goAttendance(){ resetAttendanceSetup(); showView("viewAttendanceSetup"); }
-function goFeedback(){ showView("viewFeedback"); resetFbTabs(); populateFbPlanSelect(); loadFbSquadOptions(); }
+function goFeedback(){ showView("viewFeedback"); resetFbTabs(); populateFbPlanSelect(); loadFbSquadOptions().then(loadSwimmers); loadRecent(); }
 function goSession(){ if (typeof spSetReturn === "function") spSetReturn(null); showView("viewSession"); loadPlanList(); }  // Season → Session plans
 function goMI(){ showView("viewMI"); }
 function goAdmin(){ showView("viewAdmin"); }
@@ -2155,7 +2157,8 @@ $("goFeedbackBtn").addEventListener("click", () => {
   showView("viewFeedback");
   resetFbTabs();
   populateFbPlanSelect(attSession.plan_id);  // carry the attended session's plan across
-  loadFbSquadOptions();
+  loadFbSquadOptions().then(loadSwimmers);
+  loadRecent();
 });
 $("goSessionBtn").addEventListener("click", goSession);
 $("backHome5").addEventListener("click", () => goSeason());
@@ -3697,6 +3700,25 @@ async function selectSwimmer(s){
   setFbTab("fbPanelHistory");
 }
 
+// Drop any selected feedback swimmer and return the Feedback page to its pick-a-swimmer state.
+function clearFbSwimmer(){
+  selectedSwimmer = null;
+  swimmerHistory = [];
+  pendingFiles = [];
+  clearThreadUpdate();
+  strokeFilter = "ALL";
+  expandedThreads = {};
+  renderMediaPreview();
+  $("selectedPill").style.display = "none";
+  $("globalRecentCard").style.display = "block";
+  $("historyList").innerHTML = '<div class="empty">Pick a swimmer first.</div>';
+  searchInput.style.display = "block";
+  searchInput.value = "";
+  acResults.style.display = "none";
+  setFbTabsEnabled(false);
+  setFbTab("fbPanelSwimmer");
+}
+
 $("clearSwimmer").addEventListener("click", () => {
   selectedSwimmer = null;
   swimmerHistory = [];
@@ -3903,7 +3925,8 @@ $("cancelUpdateBtn").addEventListener("click", () => {
 async function loadRecent(){
   const { data, error } = await sb
     .from("swimmer_feedback")
-    .select("id, entry_type, category, criterion, status, observation, remedial_action, note, media, session_date, swimmers(full_name)")
+    .select("id, entry_type, category, criterion, status, observation, remedial_action, note, media, session_date, swimmers!inner(full_name, club)")
+    .eq("swimmers.club", currentClub)   // only swimmers registered with the selected club
     .order("created_at", { ascending: false })
     .limit(15);
   const el = $("recentList");
@@ -7703,8 +7726,7 @@ $("backMicroForm").addEventListener("click", goPlanning);
 // Boot
 // ===================================================================
 resetAttendanceSetup();
-loadSwimmers();
-loadRecent();
+// loadSwimmers() and loadRecent() run after loadClubOptions() resolves (see TOP-LEVEL CLUB FILTER).
 loadFbSquadOptions();
 </script>
 
