@@ -1005,6 +1005,31 @@
     background:#fff;color:var(--text);font-family:inherit;
   }
   input[type=url]:focus,input[type=search]:focus,input[type=number]:focus{outline:none;border-color:var(--accent);}
+
+  /* ============ STOPWATCH ============ */
+  .sw-face{font-variant-numeric:tabular-nums;font-size:3.1rem;font-weight:800;text-align:center;color:var(--navy);letter-spacing:1px;margin:6px 0 2px;}
+  .sw-sub{text-align:center;font-size:.85rem;color:var(--text-dim);font-variant-numeric:tabular-nums;min-height:1.2em;}
+  .sw-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+  .sw-btn{padding:18px 8px;border-radius:14px;border:none;font-size:1.15rem;font-weight:800;cursor:pointer;color:#fff;touch-action:manipulation;-webkit-user-select:none;user-select:none;}
+  .sw-btn.start{background:var(--green);}
+  .sw-btn.stop{background:var(--red);}
+  .sw-btn.rep{background:var(--navy);}
+  .sw-btn:disabled{background:#b8c2cd;cursor:default;}
+  .sw-reset{display:block;margin:10px auto 0;background:none;border:none;color:var(--text-dim);text-decoration:underline;font-size:.82rem;cursor:pointer;}
+  .sw-row{display:grid;grid-template-columns:22px 52px 1fr auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #f0f2f5;font-size:.9rem;}
+  .sw-row:last-child{border-bottom:none;}
+  .sw-row input[type=checkbox]{width:20px;height:20px;margin:0;}
+  .sw-row .sw-lbl{font-weight:700;color:var(--text-dim);font-size:.78rem;}
+  .sw-row .sw-t{font-variant-numeric:tabular-nums;font-weight:700;}
+  .sw-row .sw-t small{font-weight:400;color:var(--text-dim);margin-left:6px;}
+  .sw-row select{padding:6px 8px;font-size:.8rem;max-width:150px;}
+  .sw-row.total{background:#f7fafc;}
+  .sw-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .swt-item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #f0f2f5;font-size:.88rem;}
+  .swt-item:last-child{border-bottom:none;}
+  .swt-item .swt-time{font-variant-numeric:tabular-nums;font-weight:800;}
+  .swt-item .swt-meta{font-size:.75rem;color:var(--text-dim);}
+  .swt-del{background:none;border:none;color:var(--red);font-size:.78rem;cursor:pointer;text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -1058,6 +1083,9 @@
   </div>
   <div class="nav-item" id="navSwimmerProfile" data-nav="swimmer">
     <span class="nav-icon">🏊</span> Swimmers
+  </div>
+  <div class="nav-item" id="navStopwatch" data-nav="stopwatch">
+    <span class="nav-icon">⏱️</span> Stopwatch
   </div>
 </nav>
 
@@ -1120,6 +1148,13 @@
         <div>
           <div class="ht-title">Competitions</div>
           <div class="ht-sub">Upcoming meets, files, QTs &amp; entry</div>
+        </div>
+      </div>
+      <div class="home-tile" id="tileStopwatch">
+        <div class="ht-icon">⏱️</div>
+        <div>
+          <div class="ht-title">Stopwatch</div>
+          <div class="ht-sub">Time reps &amp; post them to a swimmer's profile</div>
         </div>
       </div>
     </div>
@@ -1783,9 +1818,91 @@
       </div>
 
       <div class="card">
+        <h2>Stopwatch times <span class="opt">(training)</span></h2>
+        <div id="swpStopwatchList"></div>
+      </div>
+
+      <div class="card">
         <h2>Feedback archive</h2>
         <div id="swpFeedbackList"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ============ STOPWATCH ============ -->
+  <div class="view" id="viewStopwatch">
+    <a class="back-home" id="backHomeSw">Home</a>
+
+    <div class="card">
+      <h2>Who's swimming</h2>
+      <div class="sw-grid2">
+        <div>
+          <label for="swSquad">Squad</label>
+          <select id="swSquad"></select>
+        </div>
+        <div>
+          <label for="swSwimmer">Swimmer</label>
+          <select id="swSwimmer"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sw-face" id="swFace">00:00.00</div>
+      <div class="sw-sub" id="swSub">&nbsp;</div>
+      <div class="sw-btns">
+        <button type="button" class="sw-btn start" id="swStartStop">Start</button>
+        <button type="button" class="sw-btn rep" id="swRep" disabled>Rep</button>
+      </div>
+      <button type="button" class="sw-reset" id="swReset" style="display:none;">Reset &amp; clear times</button>
+    </div>
+
+    <div class="card" id="swResultsCard" style="display:none;">
+      <h2>Recorded times <span class="count" id="swCount"></span></h2>
+      <div class="toggle-row" id="swModeRow">
+        <div class="toggle-btn active" data-mode="lap">Rep (lap) times</div>
+        <div class="toggle-btn" data-mode="elapsed">Elapsed times</div>
+      </div>
+      <div class="hint">Lap = time for each rep. Elapsed = running clock at each tap (e.g. several swimmers finishing one race). Each row can go to a different swimmer.</div>
+      <div id="swRows" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="card" id="swPostCard" style="display:none;">
+      <h2>Post to profile</h2>
+      <div class="sw-grid2">
+        <div>
+          <label for="swStroke">Stroke</label>
+          <select id="swStroke">
+            <option value="Freestyle">Freestyle</option>
+            <option value="Backstroke">Backstroke</option>
+            <option value="Breaststroke">Breaststroke</option>
+            <option value="Butterfly">Butterfly</option>
+            <option value="Individual Medley">IM</option>
+            <option value="Kick">Kick</option>
+            <option value="Drill">Drill</option>
+            <option value="Pull">Pull</option>
+          </select>
+        </div>
+        <div>
+          <label for="swDistance">Distance measured</label>
+          <select id="swDistance">
+            <option value="15">15m</option><option value="25">25m</option><option value="50" selected>50m</option>
+            <option value="75">75m</option><option value="100">100m</option><option value="150">150m</option>
+            <option value="200">200m</option><option value="400">400m</option><option value="800">800m</option>
+            <option value="1500">1500m</option><option value="other">Other…</option>
+          </select>
+          <input type="text" id="swDistanceOther" inputmode="numeric" placeholder="metres" style="display:none;margin-top:6px;">
+        </div>
+      </div>
+      <label>Pool</label>
+      <div class="toggle-row" id="swCourseRow">
+        <div class="toggle-btn active" data-course="SC">25m (SC)</div>
+        <div class="toggle-btn" data-course="LC">50m (LC)</div>
+      </div>
+      <label for="swNote">Note <span class="opt">(optional)</span></label>
+      <input type="text" id="swNote" placeholder="e.g. 4 × 50 on 1:00, push start">
+      <button type="button" class="submit-btn" id="swPostBtn">Post ticked times</button>
+      <div class="msg" id="swMsg"></div>
     </div>
   </div>
 
@@ -2302,7 +2419,8 @@ const navActions = {
   timetables: goTimetables,
   mi: goMI,
   admin: goAdmin,
-  swimmer: goSwimmers
+  swimmer: goSwimmers,
+  stopwatch: goStopwatch
 };
 document.querySelectorAll("#navDrawer .nav-item").forEach(item => {
   item.addEventListener("click", () => {
@@ -5847,7 +5965,7 @@ async function swpSelectSwimmer(s){
   $("swpPbList").innerHTML = '<div class="empty">Loading…</div>';
   $("swpFeedbackList").innerHTML = '<div class="empty">Loading…</div>';
 
-  await Promise.all([swpLoadAttendance(s.id), swpLoadResults(s.id), swpLoadFeedback(s.id)]);
+  await Promise.all([swpLoadAttendance(s.id), swpLoadResults(s.id), swpLoadFeedback(s.id), swpLoadStopwatch(s.id)]);
 }
 
 // --- Attendance: counts of PRESENT sessions in the trailing 30 / 90 days ---
@@ -8409,6 +8527,296 @@ $("backMicroForm").addEventListener("click", goPlanning);
 resetAttendanceSetup();
 // loadSwimmers() and loadRecent() run after loadClubOptions() resolves (see TOP-LEVEL CLUB FILTER).
 loadFbSquadOptions();
+
+// ===================================================================
+// STOPWATCH (Home → Stopwatch)
+// Start/Stop + Rep. Clock is Date.now()-based, so it keeps true time when
+// the phone locks or the tab is backgrounded, and the running state is kept
+// in localStorage so a reload mid-set doesn't lose it.
+// Posted times go to stopwatch_times (training), never swim_results, so
+// meet PBs and QT analysis are unaffected.
+// ===================================================================
+const SW_KEY = "coachToolsStopwatch";
+let sw = swLoadState();
+let swSwimmers = [];          // active swimmers for currentClub (all squads)
+let swMode = "lap";           // "lap" | "elapsed"
+let swCourse = "SC";
+let swTick = null;
+let swWakeLock = null;
+
+function swBlank(){ return { acc: 0, runStart: null, taps: [], stopAt: null, rowSwimmer: {}, posted: {}, ticked: {} }; }
+function swLoadState(){
+  try { const v = JSON.parse(localStorage.getItem(SW_KEY)); if (v && Array.isArray(v.taps)) return Object.assign(swBlank(), v); } catch(e){}
+  return swBlank();
+}
+function swSave(){ try { localStorage.setItem(SW_KEY, JSON.stringify(sw)); } catch(e){} }
+function swElapsed(){ return sw.acc + (sw.runStart != null ? Date.now() - sw.runStart : 0); }
+function swRunning(){ return sw.runStart != null; }
+
+// Stopwatch-style truncation to hundredths. Face: 00:00.00; stored: 32.15 / 1:05.32
+function swFmtFace(ms){
+  const cs = Math.floor(ms / 10), h = Math.floor(cs / 360000), m = Math.floor(cs / 6000) % 60, sec = Math.floor(cs / 100) % 60, c = cs % 100;
+  const p = n => String(n).padStart(2, "0");
+  return (h ? h + ":" : "") + p(m) + ":" + p(sec) + "." + p(c);
+}
+function swFmtSwim(ms){
+  const cs = Math.floor(ms / 10), m = Math.floor(cs / 6000), sec = Math.floor(cs / 100) % 60, c = cs % 100;
+  const p = n => String(n).padStart(2, "0");
+  return m ? `${m}:${p(sec)}.${p(c)}` : `${sec}.${p(c)}`;
+}
+function swTruncMs(ms){ return Math.floor(ms / 10) * 10; }
+
+// Recorded entries: every Rep tap plus the Stop point (if stopped).
+function swEntries(){
+  const pts = sw.taps.slice();
+  if (!swRunning() && sw.stopAt != null && (!pts.length || pts[pts.length - 1] !== sw.stopAt)) pts.push(sw.stopAt);
+  return pts.map((elapsed, i) => ({
+    key: String(i), n: i + 1, elapsed,
+    lap: elapsed - (i ? pts[i - 1] : 0)
+  }));
+}
+
+async function goStopwatch(){
+  showView("viewStopwatch");
+  await swLoadSquads();
+  await swLoadSwimmers();
+  swRender();
+}
+
+async function swLoadSquads(){
+  const sel = $("swSquad"), cur = sel.value;
+  const { data, error } = await sb.from("squads").select("name").eq("club", currentClub).order("name");
+  if (error){ console.error(error); return; }
+  sel.innerHTML = '<option value="">All squads</option>' +
+    (data || []).map(q => `<option value="${escapeAttr(q.name)}">${escapeHtml(q.name)}</option>`).join("");
+  sel.value = (data || []).some(q => q.name === cur) ? cur : "";
+}
+async function swLoadSwimmers(){
+  const { data, error } = await sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club", currentClub).order("full_name");
+  if (error){ console.error(error); swSwimmers = []; }
+  else swSwimmers = data || [];
+  swFillSwimmerSelect();
+}
+function swFilteredSwimmers(){
+  const sq = $("swSquad").value;
+  return sq ? swSwimmers.filter(s => s.squad === sq) : swSwimmers;
+}
+function swSwimmerOptions(selectedId){
+  return '<option value="">— choose swimmer —</option>' + swFilteredSwimmers().map(s =>
+    `<option value="${s.id}"${s.id === selectedId ? " selected" : ""}>${escapeHtml(s.full_name)}${$("swSquad").value ? "" : (s.squad ? " · " + escapeHtml(s.squad) : "")}</option>`
+  ).join("");
+}
+function swFillSwimmerSelect(){
+  const sel = $("swSwimmer"), cur = sel.value;
+  sel.innerHTML = swSwimmerOptions(cur);
+  if (!swFilteredSwimmers().some(s => s.id === cur)) sel.value = "";
+}
+$("swSquad").addEventListener("change", () => { swFillSwimmerSelect(); swRenderRows(); });
+$("swSwimmer").addEventListener("change", () => {
+  // The main pick fills every row that hasn't been posted yet.
+  swEntries().forEach(e => { if (!sw.posted[e.key]) sw.rowSwimmer[e.key] = $("swSwimmer").value; });
+  sw.rowSwimmer.total = $("swSwimmer").value;
+  swSave(); swRenderRows();
+});
+
+// --- Controls ---
+$("swStartStop").addEventListener("click", () => {
+  if (swRunning()){
+    const now = Date.now();
+    sw.acc += now - sw.runStart; sw.runStart = null; sw.stopAt = sw.acc;
+    swReleaseWake();
+  } else {
+    // Resuming: the pause point becomes a rep boundary so row keys stay stable.
+    if (sw.stopAt != null && sw.stopAt > 0 && sw.taps[sw.taps.length - 1] !== sw.stopAt){
+      sw.taps.push(sw.stopAt);
+      const k = String(sw.taps.length - 1);
+      if (sw.rowSwimmer[k] == null) sw.rowSwimmer[k] = $("swSwimmer").value;
+    }
+    sw.runStart = Date.now(); sw.stopAt = null;
+    swRequestWake();
+  }
+  swSave(); swRender();
+});
+$("swRep").addEventListener("click", () => {
+  if (!swRunning()) return;
+  const t = swElapsed();
+  sw.taps.push(t);
+  const key = String(sw.taps.length - 1);
+  sw.rowSwimmer[key] = $("swSwimmer").value;
+  if (navigator.vibrate) navigator.vibrate(30);
+  swSave(); swRender();
+});
+$("swReset").addEventListener("click", () => {
+  const unposted = swEntries().filter(e => !sw.posted[e.key]).length;
+  if (unposted && !confirm(`Clear ${unposted} unposted time${unposted === 1 ? "" : "s"}?`)) return;
+  sw = swBlank(); swSave(); swReleaseWake();
+  $("swMsg").textContent = "";
+  swRender();
+});
+
+async function swRequestWake(){
+  try { if ("wakeLock" in navigator) swWakeLock = await navigator.wakeLock.request("screen"); } catch(e){}
+}
+function swReleaseWake(){ try { if (swWakeLock) swWakeLock.release(); } catch(e){} swWakeLock = null; }
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && swRunning()) swRequestWake();
+});
+
+function swRender(){
+  const running = swRunning();
+  const btn = $("swStartStop");
+  btn.textContent = running ? "Stop" : (sw.acc > 0 ? "Resume" : "Start");
+  btn.className = "sw-btn " + (running ? "stop" : "start");
+  $("swRep").disabled = !running;
+  $("swReset").style.display = (sw.acc > 0 || running) ? "block" : "none";
+  swUpdateFace();
+  if (running && !swTick) swTick = setInterval(swUpdateFace, 31);
+  if (!running && swTick){ clearInterval(swTick); swTick = null; }
+  swRenderRows();
+}
+function swUpdateFace(){
+  const t = swElapsed();
+  $("swFace").textContent = swFmtFace(t);
+  const last = sw.taps.length ? sw.taps[sw.taps.length - 1] : 0;
+  $("swSub").textContent = sw.taps.length ? `Rep ${sw.taps.length}: ${swFmtSwim(last - (sw.taps.length > 1 ? sw.taps[sw.taps.length - 2] : 0))} · current rep ${swFmtSwim(t - last)}` : " ";
+}
+
+function swRenderRows(){
+  const entries = swEntries();
+  const stopped = !swRunning() && sw.stopAt != null;
+  $("swResultsCard").style.display = entries.length ? "block" : "none";
+  $("swPostCard").style.display = entries.length ? "block" : "none";
+  $("swCount").textContent = entries.length ? `(${entries.length})` : "";
+  const rows = entries.map((e, i) => {
+    const isStop = stopped && i === entries.length - 1 && sw.taps[sw.taps.length - 1] !== e.elapsed;
+    const val = swMode === "lap" ? e.lap : e.elapsed;
+    const other = swMode === "lap" ? e.elapsed : e.lap;
+    const posted = sw.posted[e.key];
+    const ticked = posted ? false : (sw.ticked[e.key] !== false);
+    return `<div class="sw-row">
+      <input type="checkbox" data-key="${e.key}" ${ticked ? "checked" : ""} ${posted ? "disabled" : ""}>
+      <span class="sw-lbl">${isStop ? "Stop" : "Rep " + e.n}</span>
+      <span class="sw-t">${swFmtSwim(val)}<small>${swMode === "lap" ? "@ " : "lap "}${swFmtSwim(other)}</small>${posted ? ' <small style="color:var(--green);">✓ posted</small>' : ""}</span>
+      <select data-key="${e.key}" ${posted ? "disabled" : ""}>${swSwimmerOptions(sw.rowSwimmer[e.key] ?? $("swSwimmer").value)}</select>
+    </div>`;
+  });
+  if (swMode === "lap" && stopped && entries.length > 1){
+    const posted = sw.posted.total;
+    const ticked = !posted && sw.ticked.total === true;   // total is opt-in
+    rows.push(`<div class="sw-row total">
+      <input type="checkbox" data-key="total" ${ticked ? "checked" : ""} ${posted ? "disabled" : ""}>
+      <span class="sw-lbl">Total</span>
+      <span class="sw-t">${swFmtSwim(sw.stopAt)}<small>${entries.length} reps</small>${posted ? ' <small style="color:var(--green);">✓ posted</small>' : ""}</span>
+      <select data-key="total" ${posted ? "disabled" : ""}>${swSwimmerOptions(sw.rowSwimmer.total ?? $("swSwimmer").value)}</select>
+    </div>`);
+  }
+  $("swRows").innerHTML = rows.join("") || '<div class="empty">Tap Rep while the clock runs, or Stop to record a time.</div>';
+}
+$("swRows").addEventListener("change", (ev) => {
+  const key = ev.target.dataset.key; if (key == null) return;
+  if (ev.target.type === "checkbox") sw.ticked[key] = ev.target.checked;
+  else sw.rowSwimmer[key] = ev.target.value;
+  swSave();
+});
+$("swModeRow").addEventListener("click", (ev) => {
+  const b = ev.target.closest(".toggle-btn"); if (!b) return;
+  swMode = b.dataset.mode;
+  $("swModeRow").querySelectorAll(".toggle-btn").forEach(x => x.classList.toggle("active", x === b));
+  swRenderRows();
+});
+$("swCourseRow").addEventListener("click", (ev) => {
+  const b = ev.target.closest(".toggle-btn"); if (!b) return;
+  swCourse = b.dataset.course;
+  $("swCourseRow").querySelectorAll(".toggle-btn").forEach(x => x.classList.toggle("active", x === b));
+});
+$("swDistance").addEventListener("change", () => {
+  $("swDistanceOther").style.display = $("swDistance").value === "other" ? "block" : "none";
+});
+
+$("swPostBtn").addEventListener("click", async () => {
+  const msg = $("swMsg"); msg.className = "msg"; msg.textContent = "";
+  const distRaw = $("swDistance").value === "other" ? $("swDistanceOther").value.trim() : $("swDistance").value;
+  const dist = parseInt(distRaw, 10);
+  if (!dist || dist <= 0){ msg.textContent = "Enter the distance measured."; msg.className = "msg err"; return; }
+  const stroke = $("swStroke").value;
+  const entries = swEntries();
+  const today = new Date(); const sessionDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+  const note = $("swNote").value.trim() || null;
+  const byId = new Map(swSwimmers.map(s => [s.id, s]));
+  const picks = [];
+  $("swRows").querySelectorAll('input[type=checkbox]:checked:not(:disabled)').forEach(cb => picks.push(cb.dataset.key));
+  if (!picks.length){ msg.textContent = "Tick at least one time to post."; msg.className = "msg err"; return; }
+
+  const rows = [];
+  for (const key of picks){
+    const swimmerId = sw.rowSwimmer[key] ?? $("swSwimmer").value;
+    const s = byId.get(swimmerId);
+    if (!s){ msg.textContent = "Choose a swimmer for every ticked time."; msg.className = "msg err"; return; }
+    if (key === "total"){
+      const ms = swTruncMs(sw.stopAt);
+      rows.push({ key, swimmer_id: s.id, club: currentClub, squad: s.squad, stroke, distance_m: dist * entries.length, course: swCourse,
+        time_ms: ms, time_display: swFmtSwim(ms), time_type: "total", rep_number: null, rep_count: entries.length, note, session_date: sessionDate });
+    } else {
+      const e = entries.find(x => x.key === key); if (!e) continue;
+      const ms = swTruncMs(swMode === "lap" ? e.lap : e.elapsed);
+      if (ms <= 0) continue;
+      rows.push({ key, swimmer_id: s.id, club: currentClub, squad: s.squad, stroke, distance_m: dist, course: swCourse,
+        time_ms: ms, time_display: swFmtSwim(ms), time_type: swMode, rep_number: e.n, rep_count: entries.length, note, session_date: sessionDate });
+    }
+  }
+  const btn = $("swPostBtn"); btn.disabled = true; btn.textContent = "Posting…";
+  const { error } = await sb.from("stopwatch_times").insert(rows.map(({ key, ...r }) => r));
+  btn.disabled = false; btn.textContent = "Post ticked times";
+  if (error){ console.error(error); msg.textContent = "Could not post: " + error.message; msg.className = "msg err"; return; }
+  rows.forEach(r => { sw.posted[r.key] = true; });
+  swSave(); swRenderRows();
+  const names = [...new Set(rows.map(r => byId.get(r.swimmer_id).full_name))];
+  msg.textContent = `Posted ${rows.length} time${rows.length === 1 ? "" : "s"} (${dist}m ${stroke}) to ${names.join(", ")}.`;
+  msg.className = "msg ok";
+});
+
+$("backHomeSw").addEventListener("click", goHome);
+$("tileStopwatch").addEventListener("click", goStopwatch);
+// If the watch was left running (reload / app reopened), keep the clock ticking.
+if (swRunning()) swRender();
+
+// --- Swimmer profile: Stopwatch times card ---
+async function swpLoadStopwatch(swimmerId){
+  const list = $("swpStopwatchList");
+  list.innerHTML = '<div class="empty">Loading…</div>';
+  const { data, error } = await sb.from("stopwatch_times")
+    .select("id, stroke, distance_m, course, time_display, time_type, rep_number, rep_count, note, session_date")
+    .eq("swimmer_id", swimmerId)
+    .order("session_date", { ascending: false })
+    .order("recorded_at", { ascending: false })
+    .order("rep_number", { ascending: true })
+    .limit(300);
+  if (error){ console.error(error); list.innerHTML = '<div class="empty">Could not load stopwatch times.</div>'; return; }
+  const rows = data || [];
+  if (!rows.length){ list.innerHTML = '<div class="empty">No stopwatch times yet.</div>'; return; }
+  list.innerHTML = rows.map(r => {
+    const what = r.time_type === "total" ? `Total of ${r.rep_count} reps`
+      : r.rep_count > 1 ? `Rep ${r.rep_number}/${r.rep_count}${r.time_type === "elapsed" ? " (elapsed)" : ""}` : "";
+    const meta = [fmtDate(r.session_date), r.course, what].filter(Boolean).join(" · ");
+    return `<div class="swt-item">
+      <div>
+        <div><strong>${r.distance_m}m ${escapeHtml(r.stroke)}</strong></div>
+        <div class="swt-meta">${escapeHtml(meta)}${r.note ? " — " + escapeHtml(r.note) : ""}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="swt-time">${escapeHtml(r.time_display)}</div>
+        <button type="button" class="swt-del" data-id="${r.id}">delete</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+$("swpStopwatchList").addEventListener("click", async (ev) => {
+  const b = ev.target.closest(".swt-del"); if (!b) return;
+  if (!confirm("Delete this stopwatch time?")) return;
+  const { error } = await sb.from("stopwatch_times").delete().eq("id", b.dataset.id);
+  if (error){ alert("Could not delete: " + error.message); return; }
+  if (swpSelected) swpLoadStopwatch(swpSelected.id);
+});
 </script>
 
 </body>
