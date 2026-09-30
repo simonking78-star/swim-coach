@@ -1050,6 +1050,13 @@
   .ua-role .ua-detail{font-size:.74rem;color:var(--text-dim);}
   .ua-role button,.ua-relink{background:none;border:none;color:var(--red);text-decoration:underline;font-size:.78rem;cursor:pointer;padding:0;white-space:nowrap;}
   .ua-relink{color:var(--navy);margin-top:6px;}
+  .ua-chosen{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px;}
+  .ua-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;background:#e6f0ff;color:#0a5c8a;font-size:.8rem;font-weight:600;}
+  .ua-chip button{background:none;border:none;color:inherit;font-size:.95rem;line-height:1;cursor:pointer;padding:0;}
+  .ua-kids{margin-top:4px;display:flex;flex-direction:column;gap:3px;}
+  .ua-kid{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.78rem;color:var(--text-dim);}
+  .ua-kid button{color:var(--red);}
+  .ua-addkid{background:none;border:none;color:var(--navy);text-decoration:underline;font-size:.78rem;cursor:pointer;padding:0;margin-top:4px;}
 
   /* ============ APP DEV (superadmin only) ============ */
   .ad-ms-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;}
@@ -2475,9 +2482,11 @@
         <div id="uaClubWrap"><label for="uaClub">Club</label><select id="uaClub"></select></div>
         <div id="uaSquadWrap" style="display:none;"><label>Their squads</label><div id="uaSquads"></div></div>
         <div id="uaSwimmerWrap" style="display:none;">
-          <label for="uaSwimmerQ" id="uaSwimmerLabel">Their child</label>
-          <input type="search" id="uaSwimmerQ" placeholder="Type at least 2 letters of the swimmer's name">
+          <label for="uaSwimmerQ" id="uaSwimmerLabel">Their children</label>
+          <div id="uaChosen" class="ua-chosen"></div>
+          <input type="search" id="uaSwimmerQ" placeholder="Type at least 2 letters of a swimmer's name">
           <div id="uaSwimmerResults"></div>
+          <div class="hint" id="uaSwimmerHint">Tick every child this parent should see. Search again to add another.</div>
         </div>
         <button type="button" class="submit-btn" id="uaInviteBtn">Create account &amp; sign-in link</button>
         <div class="msg" id="uaMsg"></div>
@@ -9769,20 +9778,21 @@ async function rtSearchSwimmer(){
   if (club) query = query.eq("club", club);
   const { data } = await query;
   out.innerHTML = (data || []).map(s =>
-    `<label class="ad-check"><input type="radio" name="rtSw" value="${escapeAttr(s.id)}"> ${escapeHtml(s.full_name)}${s.squad ? " · " + escapeHtml(s.squad) : ""}</label>`).join("")
+    `<label class="ad-check"><input type="${$("rtRole").value === "parent" ? "checkbox" : "radio"}" name="rtSw" value="${escapeAttr(s.id)}"> ${escapeHtml(s.full_name)}${s.squad ? " · " + escapeHtml(s.squad) : ""}</label>`).join("")
     || '<div class="hint">No match.</div>';
 }
 async function startRoleTest(){
   const role = $("rtRole").value;
   const club = role === "superadmin" ? null : ($("rtClub").value || null);
   const squads = [...document.querySelectorAll('#rtSquads input:checked')].map(i => i.value);
-  const sw = document.querySelector('input[name="rtSw"]:checked');
+  const swIds = [...document.querySelectorAll('input[name="rtSw"]:checked')].map(i => i.value);
+  const sw = swIds.length ? swIds : null;
   const msg = $("rtMsg");
   if (role !== "superadmin" && !club){ msg.textContent = "Choose a club for this role."; msg.className = "msg err"; return; }
   if ((role === "coach" || role === "helper") && !squads.length){ msg.textContent = "Tick at least one squad (their \"own squads\")."; msg.className = "msg err"; return; }
   if ((role === "parent" || role === "swimmer") && !sw){ msg.textContent = "Pick the swimmer this account is linked to."; msg.className = "msg err"; return; }
   const { data: { session } } = await sb.auth.getSession();
-  const row = { user_id: session.user.id, role, club, squad_ids: squads, swimmer_ids: sw ? [sw.value] : [],
+  const row = { user_id: session.user.id, role, club, squad_ids: squads, swimmer_ids: swIds,
     started_at: new Date().toISOString(), expires_at: new Date(Date.now() + 8 * 3600e3).toISOString() };
   const { error } = await sb.from("role_test_mode").upsert(row);
   if (error){ msg.textContent = "Could not start test: " + error.message; msg.className = "msg err"; return; }
@@ -9821,11 +9831,11 @@ const UA_ROLE_HINT = {
   head_coach:"Edits attendance, feedback, plans, timetables and the season plan; roster read-only.",
   coach:"Edits attendance and plans; feedback for their own squads only; season plan read-only.",
   helper:"Marks attendance for their own squads and uses the stopwatch; plans read-only.",
-  parent:"Reads their own child's feedback, results and timetables.",
+  parent:"Reads their own children's feedback, results and timetables — link as many children as they have.",
   swimmer:"Reads their own feedback, results and timetables.",
   superadmin:"Everything, in every club, including App dev."
 };
-let uaSwimmerId = null;
+let uaChosen = new Map();   // swimmer id -> label, for the parent / swimmer being invited
 
 function uaAdminClubs(){
   if (!ACCESS) return [];
@@ -9852,13 +9862,22 @@ async function goAdminUsers(){
   await uaLoadPeople();
 }
 
+function uaRenderChosen(){
+  $("uaChosen").innerHTML = [...uaChosen].map(([id, label]) =>
+    `<span class="ua-chip">${escapeHtml(label)}<button type="button" data-unchoose="${escapeAttr(id)}" aria-label="Remove ${escapeAttr(label)}">×</button></span>`).join("");
+  document.querySelectorAll('#uaSwimmerResults input[name="uaSw"]').forEach(i => { i.checked = uaChosen.has(i.value); });
+}
 function uaUpdateFields(){
   const role = $("uaRole").value;
+  if (role === "swimmer" && uaChosen.size > 1){ const first = [...uaChosen][0]; uaChosen = new Map([first]); }
+  uaRenderChosen();
   $("uaRoleHint").textContent = UA_ROLE_HINT[role] || "";
   $("uaClubWrap").style.display = role === "superadmin" ? "none" : "";
   $("uaSquadWrap").style.display = (role === "coach" || role === "helper") ? "" : "none";
   $("uaSwimmerWrap").style.display = (role === "parent" || role === "swimmer") ? "" : "none";
-  $("uaSwimmerLabel").textContent = role === "swimmer" ? "Which swimmer is this?" : "Their child";
+  $("uaSwimmerLabel").textContent = role === "swimmer" ? "Which swimmer is this?" : "Their children";
+  $("uaSwimmerHint").textContent = role === "swimmer" ? "A swimmer account is linked to one swimmer."
+    : "Tick every child this parent should see. Search again to add another.";
 }
 async function uaFillSquads(){
   const club = $("uaClub").value, box = $("uaSquads");
@@ -9871,12 +9890,11 @@ async function uaFillSquads(){
 }
 async function uaSearchSwimmer(){
   const q = $("uaSwimmerQ").value.trim(), club = $("uaClub").value, out = $("uaSwimmerResults");
-  uaSwimmerId = null;
   if (q.length < 2){ out.innerHTML = ""; return; }
   const { data } = await sb.from("swimmers").select("id, full_name, squad")
     .eq("club", club).ilike("full_name", `%${q}%`).order("full_name").limit(8);
   out.innerHTML = (data || []).map(s =>
-    `<label class="ad-check"><input type="radio" name="uaSw" value="${escapeAttr(s.id)}"> ${escapeHtml(s.full_name)}${s.squad ? " · " + escapeHtml(s.squad) : ""}</label>`).join("")
+    `<label class="ad-check"><input type="checkbox" name="uaSw" value="${escapeAttr(s.id)}" data-label="${escapeAttr(s.full_name + (s.squad ? " · " + s.squad : ""))}"${uaChosen.has(s.id) ? " checked" : ""}> ${escapeHtml(s.full_name)}${s.squad ? " · " + escapeHtml(s.squad) : ""}</label>`).join("")
     || '<div class="hint">No swimmer with that name in this club.</div>';
 }
 
@@ -9925,18 +9943,19 @@ $("uaInviteBtn").addEventListener("click", async () => {
     role,
     club: role === "superadmin" ? null : $("uaClub").value,
     squad_ids: [...document.querySelectorAll("#uaSquads input:checked")].map(i => i.value),
-    swimmer_ids: (() => { const s = document.querySelector('input[name="uaSw"]:checked'); return s ? [s.value] : []; })(),
+    swimmer_ids: [...uaChosen.keys()],
     redirect_to: location.origin + location.pathname
   };
   if (!payload.email){ msg.textContent = "Enter their email address."; msg.className = "msg err"; return; }
   if ((role === "coach" || role === "helper") && !payload.squad_ids.length){ msg.textContent = "Tick at least one squad."; msg.className = "msg err"; return; }
-  if ((role === "parent" || role === "swimmer") && !payload.swimmer_ids.length){ msg.textContent = "Pick the swimmer."; msg.className = "msg err"; return; }
+  if ((role === "parent" || role === "swimmer") && !payload.swimmer_ids.length){ msg.textContent = role === "parent" ? "Pick at least one child." : "Pick the swimmer."; msg.className = "msg err"; return; }
   $("uaInviteBtn").disabled = true; $("uaInviteBtn").textContent = "Working…";
   try {
     const res = await uaCallInvite(payload);
     msg.textContent = `${ROLE_LABEL[role]} access given to ${payload.full_name || payload.email}.`; msg.className = "msg ok";
     uaShowLink(payload.full_name, payload.email, res.link, res.existing);
     $("uaName").value = ""; $("uaEmail").value = ""; $("uaSwimmerQ").value = ""; $("uaSwimmerResults").innerHTML = "";
+    uaChosen = new Map(); uaRenderChosen();
     document.querySelectorAll("#uaSquads input:checked").forEach(i => { i.checked = false; });
     await uaLoadPeople();
   } catch (e) {
@@ -9973,12 +9992,18 @@ async function uaLoadPeople(){
       const detail = [];
       if (x.role === "coach" || x.role === "helper")
         detail.push(p.squads.filter(q => q.squads && q.squads.club === x.club).map(q => q.squads.name).join(", ") || "no squads");
-      if (x.role === "parent" || x.role === "swimmer")
-        detail.push(p.kids.filter(k => k.swimmers && k.swimmers.club === x.club).map(k => k.swimmers.full_name).join(", ") || "no linked swimmer");
+      let kidsHtml = "";
+      if (x.role === "parent" || x.role === "swimmer"){
+        const kids = p.kids.filter(k => k.swimmers && k.swimmers.club === x.club);
+        kidsHtml = `<div class="ua-kids">${kids.length ? kids.map(k => `<div class="ua-kid"><span>${escapeHtml(k.swimmers.full_name)}</span>
+            ${kids.length > 1 || x.role === "parent" ? `<button type="button" data-act="unlink" data-user="${escapeAttr(p.user_id)}" data-swimmer="${escapeAttr(k.swimmer_id)}" data-name="${escapeAttr(k.swimmers.full_name)}">Unlink</button>` : ""}</div>`).join("")
+          : '<div class="ua-kid"><span>No linked swimmer</span></div>'}
+          ${x.role === "parent" ? `<button type="button" class="ua-addkid" data-act="addkid" data-user="${escapeAttr(p.user_id)}" data-club="${escapeAttr(x.club || "")}">+ Add another child</button>` : ""}</div>`;
+      }
       const canRemove = !(p.user_id === me && x.role === "superadmin");
       return `<div class="ua-role">
         <div>${escapeHtml(ROLE_LABEL[x.role] || x.role)} · ${escapeHtml(x.club || "all clubs")}
-          ${detail.length ? `<div class="ua-detail">${escapeHtml(detail.join(" · "))}</div>` : ""}</div>
+          ${detail.length ? `<div class="ua-detail">${escapeHtml(detail.join(" · "))}</div>` : ""}${kidsHtml}</div>
         ${canRemove ? `<button type="button" data-act="remove" data-user="${escapeAttr(p.user_id)}" data-role="${escapeAttr(x.role)}" data-club="${escapeAttr(x.club || "")}">Remove</button>` : ""}
       </div>`;
     }).join("") : '<div class="ua-role"><div class="ua-detail">No role</div></div>';
@@ -10011,6 +10036,24 @@ $("uaList").addEventListener("click", async (ev) => {
       if (kids.length) await sb.from("user_swimmers").delete().eq("user_id", p.user_id).in("swimmer_id", kids);
     }
     await uaLoadPeople();
+  } else if (b.dataset.act === "unlink"){
+    if (!confirm(`Stop ${p.full_name || p.email} seeing ${b.dataset.name}?`)) return;
+    const { error } = await sb.from("user_swimmers").delete().eq("user_id", p.user_id).eq("swimmer_id", b.dataset.swimmer);
+    if (error){ alert("Could not unlink: " + error.message); return; }
+    await uaLoadPeople();
+  } else if (b.dataset.act === "addkid"){
+    // Prefill the invite form for this parent: saving adds the new child to their existing account.
+    $("uaName").value = p.full_name || ""; $("uaEmail").value = p.email;
+    $("uaRole").value = "parent";
+    if (b.dataset.club){ $("uaClub").value = b.dataset.club; await uaFillSquads(); }
+    uaChosen = new Map(p.kids.filter(k => k.swimmers && k.swimmers.club === b.dataset.club)
+      .map(k => [k.swimmer_id, k.swimmers.full_name]));
+    uaUpdateFields();
+    $("uaMsg").textContent = `Search for ${p.full_name ? p.full_name.split(" ")[0] + "'s" : "their"} other child, tick them, then tap the button.`;
+    $("uaMsg").className = "msg ok";
+    $("uaSwimmerQ").value = ""; $("uaSwimmerResults").innerHTML = "";
+    $("uaSwimmerQ").scrollIntoView({ behavior: "smooth", block: "center" });
+    $("uaSwimmerQ").focus();
   } else if (b.dataset.act === "relink"){
     const x = p.roles[0];
     b.disabled = true; b.textContent = "Working…";
@@ -10028,8 +10071,20 @@ $("uaList").addEventListener("click", async (ev) => {
 });
 
 $("uaRole").addEventListener("change", uaUpdateFields);
-$("uaClub").addEventListener("change", () => { uaFillSquads(); $("uaSwimmerResults").innerHTML = ""; $("uaSwimmerQ").value = ""; });
+$("uaClub").addEventListener("change", () => { uaFillSquads(); $("uaSwimmerResults").innerHTML = ""; $("uaSwimmerQ").value = ""; uaChosen = new Map(); uaRenderChosen(); });
 $("uaSwimmerQ").addEventListener("input", () => { clearTimeout(uaSearchSwimmer._t); uaSearchSwimmer._t = setTimeout(uaSearchSwimmer, 250); });
+$("uaSwimmerResults").addEventListener("change", (ev) => {
+  const i = ev.target.closest('input[name="uaSw"]'); if (!i) return;
+  if (i.checked){
+    if ($("uaRole").value === "swimmer") uaChosen = new Map();
+    uaChosen.set(i.value, i.dataset.label);
+  } else uaChosen.delete(i.value);
+  uaRenderChosen();
+});
+$("uaChosen").addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-unchoose]"); if (!b) return;
+  uaChosen.delete(b.dataset.unchoose); uaRenderChosen();
+});
 $("adminUsersTile").addEventListener("click", goAdminUsers);
 $("backAdminUsers").addEventListener("click", goAdmin);
 
