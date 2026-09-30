@@ -1997,6 +1997,13 @@
         <div class="ht-sub">Transfer to a different club &amp; squad</div>
       </div>
     </div>
+    <div class="home-tile" id="adminDeactTile">
+      <div class="ht-icon">🗄️</div>
+      <div>
+        <div class="ht-title">Deactivate or reactivate a swimmer</div>
+        <div class="ht-sub">Anonymise &amp; archive · restore later</div>
+      </div>
+    </div>
   </div>
 
   <!-- ============ SWIMMERS: ROSTER (top-level; tap a row to open attendance/feedback/results) ============ -->
@@ -2145,6 +2152,39 @@
         <p class="hint">This updates the swimmer's club, closes their current squad membership, and — if a new squad is chosen — opens a new one from the date above.</p>
         <button class="submit-btn" id="doMoveClubBtn">Confirm move</button>
         <div class="msg" id="moveClubMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ADMIN: DEACTIVATE / REACTIVATE ============ -->
+  <div class="view" id="viewAdminDeactivate">
+    <a class="back-home" id="backAdmin5">Administrator</a>
+    <div class="card">
+      <h2>Deactivate a swimmer</h2>
+      <div class="autocomplete-wrap">
+        <input type="text" id="deactSearch" placeholder="Search swimmer by name…" autocomplete="off">
+        <div class="ac-results" id="deactAcResults"></div>
+      </div>
+      <div class="selected-pill" id="deactSelectedPill">
+        <span id="deactSelectedName"></span>
+        <button type="button" id="deactClear">change</button>
+      </div>
+      <div id="deactDetails" style="display:none;">
+        <label for="deactReason">Reason <span class="opt">(optional)</span></label>
+        <input type="text" id="deactReason" placeholder="e.g. Left the club">
+        <p class="hint">Their name, date of birth, Swim England ID and parent contact details move to a locked archive, and they are removed from every search in the app. Their results stay in group statistics, anonymised. Attendance and feedback are kept. Reactivating restores everything.</p>
+        <button class="submit-btn" id="deactBtn" style="background:var(--red);">Deactivate swimmer</button>
+      </div>
+      <div class="msg" id="deactMsg"></div>
+    </div>
+    <div class="card">
+      <h2>Deactivated swimmers <span class="count" id="deactCount"></span></h2>
+      <input type="search" id="deactArchiveSearch" placeholder="Search deactivated swimmers…" autocomplete="off" style="margin-bottom:10px;">
+      <div class="roster-table-wrap">
+        <table class="roster-table">
+          <thead><tr><th>Name</th><th>Deactivated</th><th>Return to squad</th><th></th></tr></thead>
+          <tbody id="deactArchiveTbody"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -2638,6 +2678,8 @@ $("backAdmin1").addEventListener("click", () => showView("viewAdmin"));
 $("backAdmin2").addEventListener("click", () => showView("viewAdmin"));
 $("backAdmin3").addEventListener("click", () => showView("viewAdmin"));
 $("backAdmin4").addEventListener("click", () => showView("viewAdmin"));
+$("adminDeactTile").addEventListener("click", () => { openDeactivate(); });
+$("backAdmin5").addEventListener("click", () => showView("viewAdmin"));
 
 // ===================================================================
 // SESSION PLANS
@@ -4998,6 +5040,132 @@ $("doMoveBtn").addEventListener("click", async () => {
   msg.textContent = `${moveSelected.full_name} moved.`; msg.className = "msg ok";
   loadSwimmers();
   setTimeout(() => { openMoveSquad(); }, 1000);
+});
+
+// --- Deactivate / reactivate ---
+// All archive reads and writes go through admin-only Supabase functions
+// (deactivate_swimmer, reactivate_swimmer, list_deactivated_swimmers); the
+// swimmer_archive table itself cannot be read from the app.
+let deactSwimmers = [];
+let deactSelected = null;
+let deactArchive = [];
+let deactSquads = [];
+
+function deactResetPick(){
+  deactSelected = null;
+  $("deactSelectedPill").style.display = "none";
+  $("deactDetails").style.display = "none";
+  $("deactSearch").style.display = "block";
+  $("deactSearch").value = "";
+  $("deactReason").value = "";
+}
+
+function openDeactivate(){
+  deactResetPick();
+  $("deactMsg").textContent = ""; $("deactMsg").className = "msg";
+  $("deactArchiveSearch").value = "";
+  sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club", currentClub).order("full_name")
+    .then(({ data }) => { deactSwimmers = data || []; });
+  loadDeactivatedSwimmers();
+  showView("viewAdminDeactivate");
+}
+
+const deactSearch = $("deactSearch");
+const deactAc = $("deactAcResults");
+deactSearch.addEventListener("input", () => {
+  const q = deactSearch.value.trim().toLowerCase();
+  if (!q){ deactAc.style.display = "none"; return; }
+  const matches = deactSwimmers.filter(s => s.full_name.toLowerCase().includes(q)).slice(0, 25);
+  deactAc.innerHTML = matches.length
+    ? matches.map(s => `<div data-id="${s.id}">${escapeHtml(s.full_name)}${s.squad ? `<span class="squad-tag">${escapeHtml(s.squad)}</span>` : ""}</div>`).join("")
+    : '<div style="color:var(--text-dim);cursor:default;">No matches</div>';
+  deactAc.style.display = "block";
+});
+deactAc.addEventListener("click", (e) => {
+  const row = e.target.closest("div[data-id]");
+  if (!row) return;
+  deactSelected = deactSwimmers.find(x => x.id === row.dataset.id);
+  $("deactSelectedName").textContent = deactSelected.full_name + (deactSelected.squad ? " · " + deactSelected.squad : " · no squad");
+  $("deactSelectedPill").style.display = "flex";
+  deactSearch.style.display = "none";
+  deactAc.style.display = "none";
+  $("deactDetails").style.display = "block";
+  $("deactMsg").textContent = "";
+});
+$("deactClear").addEventListener("click", () => { deactResetPick(); deactSearch.focus(); });
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#viewAdminDeactivate .autocomplete-wrap")) deactAc.style.display = "none";
+});
+
+$("deactBtn").addEventListener("click", async () => {
+  const msg = $("deactMsg");
+  msg.textContent = ""; msg.className = "msg";
+  if (!deactSelected) return;
+  if (!confirm(`Deactivate ${deactSelected.full_name}?\n\nThey will disappear from all searches and their personal details will be archived. You can reactivate them from this screen.`)) return;
+  $("deactBtn").disabled = true;
+  const { error } = await sb.rpc("deactivate_swimmer", { p_swimmer: deactSelected.id, p_reason: $("deactReason").value.trim() || null });
+  $("deactBtn").disabled = false;
+  if (error){ msg.textContent = "Deactivation failed — " + error.message; msg.className = "msg err"; return; }
+  msg.textContent = `${deactSelected.full_name} deactivated and archived.`; msg.className = "msg ok";
+  deactSwimmers = deactSwimmers.filter(s => s.id !== deactSelected.id);
+  deactResetPick();
+  loadSwimmers();
+  loadDeactivatedSwimmers();
+});
+
+async function loadDeactivatedSwimmers(){
+  const tbody = $("deactArchiveTbody");
+  tbody.innerHTML = '<tr><td colspan="4" class="empty">Loading…</td></tr>';
+  $("deactCount").textContent = "";
+  const [{ data: sq }, { data, error }] = await Promise.all([
+    sb.from("squads").select("id, name").eq("club", currentClub).order("name"),
+    sb.rpc("list_deactivated_swimmers", { p_club: currentClub })
+  ]);
+  if (error){ console.error(error); tbody.innerHTML = `<tr><td colspan="4" class="empty">Could not load — ${escapeHtml(error.message)}</td></tr>`; return; }
+  deactSquads = sq || [];
+  deactArchive = data || [];
+  renderDeactivatedSwimmers();
+}
+
+function renderDeactivatedSwimmers(){
+  const tbody = $("deactArchiveTbody");
+  const q = $("deactArchiveSearch").value.trim().toLowerCase();
+  $("deactCount").textContent = deactArchive.length ? `(${deactArchive.length})` : "";
+  const rows = deactArchive.filter(a => !q || a.full_name.toLowerCase().includes(q) || a.anon_name.toLowerCase().includes(q));
+  if (!deactArchive.length){ tbody.innerHTML = '<tr><td colspan="4" class="empty">No deactivated swimmers.</td></tr>'; return; }
+  if (!rows.length){ tbody.innerHTML = '<tr><td colspan="4" class="empty">No matches.</td></tr>'; return; }
+  tbody.innerHTML = rows.map(a => {
+    // Blank ("no squad") is only offered when their former squad no longer exists —
+    // reactivate_swimmer falls back to the former squad when none is chosen.
+    const hasFormer = deactSquads.some(q => q.id === a.squad_id);
+    const opts = (hasFormer ? "" : '<option value="">— no squad —</option>') + deactSquads.map(q =>
+      `<option value="${q.id}"${q.id === a.squad_id ? " selected" : ""}>${escapeHtml(q.name)}</option>`).join("");
+    const meta = [a.squad ? "was " + escapeHtml(a.squad) : "", `${a.result_count} result${a.result_count == 1 ? "" : "s"}`, a.reason ? escapeHtml(a.reason) : ""]
+      .filter(Boolean).join(" · ");
+    return `<tr data-id="${a.swimmer_id}">
+      <td>${escapeHtml(a.full_name)}<div class="plan-li-meta">${meta}</div></td>
+      <td class="nowrap">${fmtDate(a.deactivated_on)}</td>
+      <td><select class="deact-squad" style="min-width:120px;margin:0;">${opts}</select></td>
+      <td><button type="button" class="deact-restore" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 12px;font-weight:700;font-size:.8rem;cursor:pointer;">Reactivate</button></td>
+    </tr>`;
+  }).join("");
+}
+$("deactArchiveSearch").addEventListener("input", renderDeactivatedSwimmers);
+
+$("deactArchiveTbody").addEventListener("click", async (e) => {
+  const btn = e.target.closest(".deact-restore");
+  if (!btn) return;
+  const tr = btn.closest("tr");
+  const a = deactArchive.find(x => x.swimmer_id === tr.dataset.id);
+  const squadId = tr.querySelector(".deact-squad").value || null;
+  if (!confirm(`Reactivate ${a.full_name}? Their details, results notes and account links will be restored.`)) return;
+  btn.disabled = true; btn.textContent = "…";
+  const { error } = await sb.rpc("reactivate_swimmer", { p_swimmer: a.swimmer_id, p_squad: squadId });
+  if (error){ btn.disabled = false; btn.textContent = "Reactivate"; alert("Reactivation failed — " + error.message); return; }
+  const msg = $("deactMsg");
+  msg.textContent = `${a.full_name} reactivated.`; msg.className = "msg ok";
+  loadSwimmers();
+  openDeactivate();
 });
 
 // --- Move club ---
@@ -9533,7 +9701,7 @@ async function rtSearchSwimmer(){
   const out = $("rtSwimmerResults");
   rtSwimmerId = null;
   if (q.length < 2){ out.innerHTML = ""; return; }
-  let query = sb.from("swimmers").select("id, full_name, squad").ilike("full_name", `%${q}%`).order("full_name").limit(8);
+  let query = sb.from("swimmers").select("id, full_name, squad").eq("active", true).ilike("full_name", `%${q}%`).order("full_name").limit(8);
   if (club) query = query.eq("club", club);
   const { data } = await query;
   out.innerHTML = (data || []).map(s =>
