@@ -1031,6 +1031,12 @@
   .swt-item .swt-meta{font-size:.75rem;color:var(--text-dim);}
   .swt-del{background:none;border:none;color:var(--red);font-size:.78rem;cursor:pointer;text-decoration:underline;}
 
+  /* ============ ACCESS (roles) ============ */
+  .access-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 16px;background:#e8f1fb;color:var(--navy);font-size:.8rem;border-bottom:1px solid var(--border);}
+  .access-bar.testing{background:#fff4e0;color:#8a5a00;}
+  .access-bar button{background:none;border:1.5px solid currentColor;border-radius:8px;color:inherit;font-weight:700;font-size:.78rem;padding:5px 10px;cursor:pointer;white-space:nowrap;}
+  .ro-note{position:relative;z-index:2;margin:10px 16px 18px;padding:9px 12px;border-radius:10px;background:#fff4e0;color:#8a5a00;font-size:.82rem;font-weight:600;}
+
   /* ============ APP DEV (superadmin only) ============ */
   .ad-ms-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;}
   .ad-ms{border:1.5px solid var(--border);border-radius:9px;padding:7px 4px;text-align:center;font-size:.72rem;color:var(--text-dim);background:#fff;}
@@ -1089,6 +1095,8 @@
     <select id="clubSelect"><option value="Crawley Swimming Club">Crawley Swimming Club</option></select>
   </div>
 </header>
+<div id="accessBar" class="access-bar" style="display:none;"></div>
+<div id="roNote" class="ro-note" style="display:none;"></div>
 
 <div class="nav-overlay" id="navOverlay"></div>
 <nav class="nav-drawer" id="navDrawer">
@@ -2401,6 +2409,29 @@
 
     <!-- App dev content -->
     <div id="adMain" style="display:none;">
+      <div class="card" id="rtCard" style="display:none;">
+        <h2>Test as a role</h2>
+        <div class="hint">The database treats your account as this role until you tap <strong>Stop test</strong> in the bar at the top (or 8 hours pass). Your real role doesn't change.</div>
+        <label for="rtRole">Role</label>
+        <select id="rtRole">
+          <option value="club_admin">Club admin</option>
+          <option value="head_coach">Head coach</option>
+          <option value="coach" selected>Coach</option>
+          <option value="helper">Helper</option>
+          <option value="parent">Parent</option>
+          <option value="swimmer">Swimmer</option>
+          <option value="superadmin">Superadmin</option>
+        </select>
+        <div id="rtClubWrap"><label for="rtClub">Club</label><select id="rtClub"></select></div>
+        <div id="rtSquadWrap"><label>Their own squads</label><div id="rtSquads"></div></div>
+        <div id="rtSwimmerWrap" style="display:none;">
+          <label for="rtSwimmerQ">Linked swimmer</label>
+          <input type="search" id="rtSwimmerQ" placeholder="Type at least 2 letters of a name">
+          <div id="rtSwimmerResults"></div>
+        </div>
+        <button type="button" class="submit-btn" id="rtStartBtn">Start test</button>
+        <div class="msg" id="rtMsg"></div>
+      </div>
       <div class="card">
         <h2>App dev</h2>
         <div class="ad-now" id="adNow"></div>
@@ -2445,9 +2476,8 @@
 <script>
 const SUPABASE_URL = "https://nxlgeykipnvswyeshrbl.supabase.co";
 const SUPABASE_KEY = "sb_publishable_BYuKct-F0f4H04Gl_S58uQ_gKzuW_Ff";
-// detectSessionInUrl off: sign-in is handled only by the App dev client (sbDev) so this
-// client stays anonymous until M1 moves the whole app to signed-in access.
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { detectSessionInUrl: false } });
+// Signed out: anonymous access (as before). Signed in: the role policies apply to every query.
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const $ = id => document.getElementById(id);
 
@@ -2478,7 +2508,7 @@ $("clubSelect").addEventListener("change", () => {
   loadDrills();         // refresh the drills library cache for the new club
   showView("viewHome"); // drop out of any in-progress flow scoped to the old club
 });
-loadClubOptions().then(() => { loadSwimmers(); loadRecent(); });
+accessRefresh().then(loadClubOptions).then(() => { applyClubScope(); loadSwimmers(); loadRecent(); });
 loadDrills(); // pre-load the drills index so set-line prediction works even before the coach opens the library tab
 
 function fmtDate(d){
@@ -2490,6 +2520,9 @@ function fmtDate(d){
 // View routing
 // ===================================================================
 function showView(id){
+  let allowed = true;
+  try { allowed = accessOnShow(id); } catch (e) { /* access layer not ready yet */ }
+  if (!allowed) id = "viewHome";
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   $(id).classList.add("active");
   window.scrollTo(0, 0);
@@ -8945,9 +8978,7 @@ $("swpStopwatchList").addEventListener("click", async (ev) => {
 // Data: public.app_dev_tasks (RLS: superadmin via public.is_superadmin()).
 // Spec: claude/specs/app-dev-section.md · Maintained with the /coach-app skill.
 // ===================================================================
-const sbDev = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { storageKey: "coachToolsAppDevAuth", persistSession: true, detectSessionInUrl: true }
-});
+const sbDev = sb;   // one signed-in session for the whole app
 const AD_MILESTONES = [
   ["M0", "Baseline & spec"], ["M1", "Secure foundation"], ["M2", "Compliance pack"],
   ["M3", "Internal alpha"], ["M4", "Closed pilot"], ["M5", "Club rollout"],
@@ -8971,16 +9002,9 @@ function adOpts(list, cur, labels){
 }
 
 async function adRefreshAuth(){
-  const { data: { session } } = await sbDev.auth.getSession();
-  adUserEmail = session ? session.user.email : null;
-  adIsAdmin = false;
-  if (session){
-    const { data, error } = await sbDev.rpc("is_superadmin");
-    if (error) console.error(error);
-    adIsAdmin = data === true;
-  }
-  $("navAppDev").style.display = adIsAdmin ? "" : "none";
-  $("navDevAuthLabel").textContent = session ? "Sign out" : "Sign in";
+  await accessRefresh();
+  adUserEmail = accessUser ? accessUser.email : null;
+  adIsAdmin = !!accessUser && sectionLevel("appdev") === "E";
 }
 
 function adShowAuth(message, isErr){
@@ -8994,16 +9018,19 @@ function adShowAuth(message, isErr){
 }
 
 async function goAppDev(){
-  showView("viewAppDev");
   await adRefreshAuth();
-  if (adRecovery){ adShowAuth(); return; }
-  if (!adUserEmail){ adShowAuth(); return; }
-  if (!adIsAdmin){
-    adShowAuth(`Signed in as ${adUserEmail}, but this account doesn't have App dev access.`, true);
-    return;
+  if (adRecovery || !adUserEmail){
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+    $("viewAppDev").classList.add("active"); $("roNote").style.display = "none"; window.scrollTo(0, 0);
+    adShowAuth(); return;
   }
+  if (!adIsAdmin){ goHome(); return; }
+  showView("viewAppDev");
   $("adAuthCard").style.display = "none";
   $("adMain").style.display = "";
+  const testing = ACCESS && ACCESS.testing;
+  $("rtCard").style.display = (ACCESS && ACCESS.real_superadmin && !testing) ? "" : "none";
+  if (ACCESS && ACCESS.real_superadmin && !testing) rtInit();
   $("adSigned").innerHTML = `Signed in as ${escapeHtml(adUserEmail)} · <button type="button" id="adSignOutBtn">Sign out</button>`;
   $("adSignOutBtn").addEventListener("click", adSignOut);
   if (!$("adFArea").options.length){
@@ -9243,7 +9270,7 @@ $("adLoginBtn").addEventListener("click", async () => {
   $("adLoginBtn").disabled = false;
   $("adPassword").value = "";
   if (error){ adShowAuth("Sign-in failed: " + error.message, true); return; }
-  await goAppDev();
+  location.reload();   // reload so every section loads under the signed-in role
 });
 $("adPassword").addEventListener("keydown", e => { if (e.key === "Enter") $("adLoginBtn").click(); });
 $("adForgotBtn").addEventListener("click", async () => {
@@ -9260,29 +9287,229 @@ $("adNewPwBtn").addEventListener("click", async () => {
   $("adNewPw").value = "";
   if (error){ adShowAuth("Could not save password: " + error.message, true); return; }
   adRecovery = false;
-  await goAppDev();
-  adFlash("Password updated.");
+  location.hash = "";
+  location.reload();
 });
 async function adSignOut(){
-  await sbDev.auth.signOut();
-  adTasks = []; adOpenId = null;
-  await adRefreshAuth();
-  goHome();
+  await sb.auth.signOut();
+  location.reload();
 }
-sbDev.auth.onAuthStateChange((event) => {
-  if (event === "PASSWORD_RECOVERY"){
-    adRecovery = true;
-    goAppDev();
-  }
-});
 
 $("backHomeAd").addEventListener("click", goHome);
 navActions.appdev = goAppDev;
 navActions.devauth = async () => {
-  const { data: { session } } = await sbDev.auth.getSession();
+  const { data: { session } } = await sb.auth.getSession();
   if (session) await adSignOut(); else goAppDev();
 };
-adRefreshAuth();
+
+// ===================================================================
+// ACCESS — roles × sections matrix (agreed 2026-09-30, roadmap §4)
+// The database enforces it (RLS). This layer only hides what a role
+// can't use and labels read-only screens. Signed out = the app works
+// exactly as before (anonymous access, until the M1 cut-over).
+// ===================================================================
+const ACCESS_MATRIX = {
+  attendance:{superadmin:"E",club_admin:"E",head_coach:"E",coach:"E",helper:"SE"},
+  feedback:  {superadmin:"E",club_admin:"E",head_coach:"E",coach:"SE",parent:"CR",swimmer:"CR"},
+  plans:     {superadmin:"E",club_admin:"E",head_coach:"E",coach:"E",helper:"R"},
+  timetables:{superadmin:"E",club_admin:"E",head_coach:"E",coach:"R",helper:"R",parent:"R",swimmer:"R"},
+  season:    {superadmin:"E",club_admin:"E",head_coach:"E",coach:"R"},
+  roster:    {superadmin:"E",club_admin:"E",head_coach:"R",coach:"SR",helper:"SR",parent:"CR"},
+  stats:     {superadmin:"E",club_admin:"R",head_coach:"R",coach:"R",parent:"CR",swimmer:"CR"},
+  stopwatch: {superadmin:"E",club_admin:"E",head_coach:"E",coach:"E",helper:"E"},
+  admin:     {superadmin:"E",club_admin:"E"},
+  appdev:    {superadmin:"E"}
+};
+const ACCESS_RANK = { N:0, CR:1, SR:2, R:3, SE:4, E:5 };
+const ROLE_LABEL = { superadmin:"Superadmin", club_admin:"Club admin", head_coach:"Head coach", coach:"Coach",
+  helper:"Helper", parent:"Parent", swimmer:"Swimmer" };
+const NAV_SECTION = { attendance:"attendance", feedback:"feedback", season:"season", timetables:"timetables",
+  session:"plans", competitions:"timetables", drills:"plans", mi:"stats", admin:"admin", swimmer:"roster",
+  stopwatch:"stopwatch", appdev:"appdev" };
+const TILE_SECTION = { tileSwimmerProfile:"roster", tileFeedback:"feedback", tileAttendance:"attendance",
+  tileDrills:"plans", tileMI:"stats", tileAdmin:"admin", tileSeason:"season", tileCompetitions:"timetables",
+  tileStopwatch:"stopwatch" };
+const VIEW_SECTION = [
+  [/^viewAttendance/, "attendance"], [/^viewFeedback$/, "feedback"],
+  [/^view(Session|PlanEditor|PlanView|DrillsLibrary)$/, "plans"], [/^viewMI/, "stats"],
+  [/^view(Swimmers|SwimmerProfile)$/, "roster"], [/^viewStopwatch$/, "stopwatch"], [/^viewAdmin/, "admin"],
+  [/^view(Timetable|Competitions|CompForm)/, "timetables"], [/^view(Season|Planning|MacroForm|MicroForm)$/, "season"],
+  [/^viewAppDev$/, "appdev"]
+];
+const LEVEL_NOTE = {
+  R:"Read only for your role — changes will be refused.",
+  SR:"Read only, and only for your own squads.",
+  SE:"You can change records for your own squads only.",
+  CR:"Read only — your own child / your own record."
+};
+
+let ACCESS = null;        // null = signed out (legacy anonymous access)
+let accessUser = null;    // { email }
+
+function sectionLevel(section){
+  if (!ACCESS) return "E";
+  let best = "N";
+  (ACCESS.roles || []).forEach(r => {
+    const lv = (ACCESS_MATRIX[section] || {})[r.role] || "N";
+    if (ACCESS_RANK[lv] > ACCESS_RANK[best]) best = lv;
+  });
+  return best;
+}
+function viewSection(id){
+  const m = VIEW_SECTION.find(([re]) => re.test(id));
+  return m ? m[1] : null;
+}
+// Called by showView(): false = don't open (no access for this role).
+function accessOnShow(id){
+  const sec = viewSection(id);
+  const bar = $("roNote");
+  if (!sec || !ACCESS){ if (bar) bar.style.display = "none"; return true; }
+  const lv = sectionLevel(sec);
+  if (lv === "N"){
+    if (bar){ bar.textContent = "Your role doesn't have access to that section."; bar.style.display = ""; }
+    return false;
+  }
+  if (bar){
+    bar.textContent = LEVEL_NOTE[lv] || "";
+    bar.style.display = LEVEL_NOTE[lv] ? "" : "none";
+  }
+  return true;
+}
+
+function roleSummary(){
+  if (!ACCESS || !(ACCESS.roles || []).length) return "no role yet";
+  return ACCESS.roles.map(r => `${ROLE_LABEL[r.role] || r.role}${r.club ? " · " + r.club : " · all clubs"}`).join("; ");
+}
+
+function applyAccess(){
+  // Menu items and home tiles
+  document.querySelectorAll("#navDrawer .nav-item").forEach(item => {
+    const sec = NAV_SECTION[item.dataset.nav];
+    if (!sec) return;
+    if (sec === "appdev"){ item.style.display = (ACCESS && sectionLevel("appdev") === "E") ? "" : "none"; return; }
+    item.style.display = sectionLevel(sec) === "N" ? "none" : "";
+  });
+  Object.entries(TILE_SECTION).forEach(([id, sec]) => {
+    const el = $(id); if (el) el.style.display = sectionLevel(sec) === "N" ? "none" : "";
+  });
+  $("navDevAuthLabel").textContent = accessUser ? "Sign out" : "Sign in";
+
+  // Status bar
+  const bar = $("accessBar");
+  if (!accessUser){ bar.style.display = "none"; bar.innerHTML = ""; return; }
+  const t = ACCESS && ACCESS.testing;
+  bar.className = "access-bar" + (t ? " testing" : "");
+  bar.style.display = "";
+  if (t){
+    const bits = [ROLE_LABEL[t.role] || t.role, t.club || "all clubs"];
+    if ((t.squad_ids || []).length) bits.push(`${t.squad_ids.length} squad${t.squad_ids.length === 1 ? "" : "s"}`);
+    if ((t.swimmer_ids || []).length) bits.push("linked swimmer");
+    bar.innerHTML = `<span>🧪 Testing as <strong>${escapeHtml(bits.join(" · "))}</strong></span>
+      <button type="button" id="stopTestBtn">Stop test</button>`;
+    $("stopTestBtn").addEventListener("click", stopRoleTest);
+  } else {
+    bar.innerHTML = `<span>${escapeHtml(accessUser.email)} · <strong>${escapeHtml(roleSummary())}</strong></span>
+      <button type="button" id="accessSignOutBtn">Sign out</button>`;
+    $("accessSignOutBtn").addEventListener("click", adSignOut);
+  }
+}
+
+// Club picker: a signed-in user tied to specific clubs only sees those clubs.
+function applyClubScope(){
+  if (!ACCESS) return;
+  const roles = ACCESS.roles || [];
+  if (!roles.length || roles.some(r => !r.club)) return;       // no role, or an all-clubs role
+  const allowed = [...new Set(roles.map(r => r.club))];
+  const sel = $("clubSelect");
+  [...sel.options].forEach(o => { if (!allowed.includes(o.value)) o.remove(); });
+  allowed.forEach(c => { if (![...sel.options].some(o => o.value === c)) sel.add(new Option(c, c)); });
+  if (!allowed.includes(currentClub)){
+    currentClub = allowed[0];
+    localStorage.setItem("coachToolsClub", currentClub);
+  }
+  sel.value = currentClub;
+}
+
+async function accessRefresh(){
+  const { data: { session } } = await sb.auth.getSession();
+  accessUser = session ? { email: session.user.email } : null;
+  ACCESS = null;
+  if (session){
+    const { data, error } = await sb.rpc("my_access");
+    if (error){ console.error(error); ACCESS = { roles: [] }; }
+    else ACCESS = data || { roles: [] };
+  }
+  applyAccess();
+  return ACCESS;
+}
+
+// --- Test as role (real superadmin only) ---
+async function rtFillSquads(){
+  const club = $("rtClub").value;
+  const box = $("rtSquads");
+  if (!club){ box.innerHTML = '<div class="hint">All clubs selected — squads not needed.</div>'; return; }
+  const { data, error } = await sb.from("squads").select("id, name").eq("club", club).order("name");
+  if (error){ box.innerHTML = '<div class="hint">Could not load squads.</div>'; return; }
+  box.innerHTML = (data || []).map(q =>
+    `<label class="ad-check"><input type="checkbox" value="${escapeAttr(q.id)}"> ${escapeHtml(q.name)}</label>`).join("")
+    || '<div class="hint">No squads for this club.</div>';
+}
+function rtUpdateFields(){
+  const role = $("rtRole").value;
+  $("rtSquadWrap").style.display = (role === "coach" || role === "helper") ? "" : "none";
+  $("rtSwimmerWrap").style.display = (role === "parent" || role === "swimmer") ? "" : "none";
+  $("rtClubWrap").style.display = role === "superadmin" ? "none" : "";
+}
+let rtSwimmerId = null;
+async function rtSearchSwimmer(){
+  const q = $("rtSwimmerQ").value.trim(), club = $("rtClub").value;
+  const out = $("rtSwimmerResults");
+  rtSwimmerId = null;
+  if (q.length < 2){ out.innerHTML = ""; return; }
+  let query = sb.from("swimmers").select("id, full_name, squad").ilike("full_name", `%${q}%`).order("full_name").limit(8);
+  if (club) query = query.eq("club", club);
+  const { data } = await query;
+  out.innerHTML = (data || []).map(s =>
+    `<label class="ad-check"><input type="radio" name="rtSw" value="${escapeAttr(s.id)}"> ${escapeHtml(s.full_name)}${s.squad ? " · " + escapeHtml(s.squad) : ""}</label>`).join("")
+    || '<div class="hint">No match.</div>';
+}
+async function startRoleTest(){
+  const role = $("rtRole").value;
+  const club = role === "superadmin" ? null : ($("rtClub").value || null);
+  const squads = [...document.querySelectorAll('#rtSquads input:checked')].map(i => i.value);
+  const sw = document.querySelector('input[name="rtSw"]:checked');
+  const msg = $("rtMsg");
+  if (role !== "superadmin" && !club){ msg.textContent = "Choose a club for this role."; msg.className = "msg err"; return; }
+  if ((role === "coach" || role === "helper") && !squads.length){ msg.textContent = "Tick at least one squad (their \"own squads\")."; msg.className = "msg err"; return; }
+  if ((role === "parent" || role === "swimmer") && !sw){ msg.textContent = "Pick the swimmer this account is linked to."; msg.className = "msg err"; return; }
+  const { data: { session } } = await sb.auth.getSession();
+  const row = { user_id: session.user.id, role, club, squad_ids: squads, swimmer_ids: sw ? [sw.value] : [],
+    started_at: new Date().toISOString(), expires_at: new Date(Date.now() + 8 * 3600e3).toISOString() };
+  const { error } = await sb.from("role_test_mode").upsert(row);
+  if (error){ msg.textContent = "Could not start test: " + error.message; msg.className = "msg err"; return; }
+  if (club){ localStorage.setItem("coachToolsClub", club); }
+  location.hash = ""; location.reload();
+}
+async function stopRoleTest(){
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) await sb.from("role_test_mode").delete().eq("user_id", session.user.id);
+  location.reload();
+}
+function rtInit(){
+  $("rtClub").innerHTML = '<option value="">— choose club —</option>' +
+    [...$("clubSelect").options].map(o => `<option value="${escapeAttr(o.value)}">${escapeHtml(o.value)}</option>`).join("");
+  $("rtClub").value = currentClub;
+  rtUpdateFields(); rtFillSquads();
+}
+$("rtRole").addEventListener("change", rtUpdateFields);
+$("rtClub").addEventListener("change", () => { rtFillSquads(); $("rtSwimmerResults").innerHTML = ""; });
+$("rtSwimmerQ").addEventListener("input", () => { clearTimeout(rtSearchSwimmer._t); rtSearchSwimmer._t = setTimeout(rtSearchSwimmer, 250); });
+$("rtStartBtn").addEventListener("click", startRoleTest);
+
+sb.auth.onAuthStateChange((event) => {
+  if (event === "PASSWORD_RECOVERY"){ adRecovery = true; goAppDev(); }
+});
+accessRefresh().then(applyClubScope);
 </script>
 
 </body>
