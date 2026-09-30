@@ -2107,6 +2107,16 @@
         <div class="msg" id="moveMsg"></div>
       </div>
     </div>
+    <div class="card" id="unassignedCard">
+      <h2>Swimmers without a squad <span class="count" id="unassignedCount"></span></h2>
+      <p class="hint" style="margin-top:0;margin-bottom:10px;">Choose a squad and tap Save. The squad is date-stamped from today.</p>
+      <div class="roster-table-wrap">
+        <table class="roster-table">
+          <thead><tr><th>Name</th><th>Squad</th><th>New squad</th><th></th></tr></thead>
+          <tbody id="unassignedTbody"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- ============ ADMIN: MOVE CLUB ============ -->
@@ -4822,8 +4832,65 @@ function openMoveSquad(){
   // load all swimmers for the currently selected club, for search
   sb.from("swimmers").select("id, full_name, squad, squad_id").eq("active", true).eq("club", currentClub).order("full_name")
     .then(({ data }) => { moveSwimmers = data || []; });
+  loadUnassignedSwimmers();
   showView("viewAdminMove");
 }
+
+// Put a swimmer into a squad, date-stamped: close any open membership,
+// open a new one, then set swimmers.squad_id (trigger syncs the text column).
+async function assignSwimmerToSquad(swimmerId, squadId, onDate){
+  const { error: closeErr } = await sb.from("squad_memberships")
+    .update({ ended_on: onDate }).eq("swimmer_id", swimmerId).is("ended_on", null);
+  if (closeErr) console.error(closeErr);
+  const { error: openErr } = await sb.from("squad_memberships")
+    .insert({ swimmer_id: swimmerId, squad_id: squadId, joined_squad_on: onDate });
+  if (openErr) return openErr;
+  const { error: swErr } = await sb.from("swimmers").update({ squad_id: squadId }).eq("id", swimmerId);
+  return swErr || null;
+}
+
+// --- Swimmers without a squad (table under the search) ---
+async function loadUnassignedSwimmers(){
+  const tbody = $("unassignedTbody");
+  const count = $("unassignedCount");
+  tbody.innerHTML = '<tr><td colspan="4" class="empty">Loading…</td></tr>';
+  count.textContent = "";
+  const [{ data: sq }, { data, error }] = await Promise.all([
+    sb.from("squads").select("id, name").eq("club", currentClub).order("name"),
+    sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club", currentClub)
+      .is("squad_id", null).order("full_name")
+  ]);
+  if (error){ console.error(error); tbody.innerHTML = '<tr><td colspan="4" class="empty">Could not load swimmers.</td></tr>'; return; }
+  const rows = data || [];
+  count.textContent = rows.length ? `(${rows.length})` : "";
+  if (!rows.length){ tbody.innerHTML = '<tr><td colspan="4" class="empty">Every swimmer has a squad.</td></tr>'; return; }
+  const squads = sq || [];
+  const opts = '<option value="">— choose —</option>' +
+    squads.map(q => `<option value="${q.id}">${escapeHtml(q.name)}</option>`).join("");
+  tbody.innerHTML = rows.map(s => `<tr data-id="${s.id}">
+      <td>${escapeHtml(s.full_name)}</td>
+      <td class="nowrap" style="color:var(--text-dim);">${s.squad ? escapeHtml(s.squad) : "None"}</td>
+      <td><select class="unassigned-sel" style="min-width:120px;margin:0;">${opts}</select></td>
+      <td><button type="button" class="unassigned-save" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 12px;font-weight:700;font-size:.8rem;cursor:pointer;">Save</button></td>
+    </tr>`).join("");
+}
+
+$("unassignedTbody").addEventListener("click", async (e) => {
+  const btn = e.target.closest(".unassigned-save");
+  if (!btn) return;
+  const tr = btn.closest("tr");
+  const sel = tr.querySelector(".unassigned-sel");
+  if (!sel.value){ sel.focus(); return; }
+  btn.disabled = true; btn.textContent = "…";
+  const err = await assignSwimmerToSquad(tr.dataset.id, sel.value, new Date().toISOString().slice(0,10));
+  if (err){ btn.disabled = false; btn.textContent = "Save"; alert("Save failed — " + err.message); return; }
+  btn.textContent = "Saved";
+  // keep the search list in step with the new squad
+  const m = moveSwimmers.find(x => x.id === tr.dataset.id);
+  if (m){ m.squad_id = sel.value; m.squad = sel.options[sel.selectedIndex].text; }
+  loadSwimmers();
+  setTimeout(loadUnassignedSwimmers, 700);
+});
 
 const moveSearch = $("moveSwimmerSearch");
 const moveAc = $("moveAcResults");
