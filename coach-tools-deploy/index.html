@@ -9895,9 +9895,9 @@ function uaShowLink(name, email, link, existing){
     return;
   }
   const subject = "Your Coach Tools sign-in";
-  const text = `Hi${name ? " " + name.split(" ")[0] : ""},\n\nYou've been given access to Coach Tools. Tap this link to sign in and choose a password (it works once and expires in 24 hours):\n\n${link}\n`;
+  const text = `Hi${name ? " " + name.split(" ")[0] : ""},\n\nYou've been given access to Coach Tools. Tap this link to sign in and choose a password (it works once and expires soon, so please use it today):\n\n${link}\n`;
   box.innerHTML = `<div class="ua-link">
-    <p><strong>${existing ? "New sign-in link" : "Account created"}</strong> for ${escapeHtml(name || email)}. Send them this link — it works once and expires in 24 hours. When they open it they choose their own password.</p>
+    <p><strong>${existing ? "New sign-in link" : "Account created"}</strong> for ${escapeHtml(name || email)}. Send them this link now — it works once and expires after a short time (1 hour unless you've changed it in Supabase). When they open it they choose their own password.</p>
     <input type="text" id="uaLinkBox" readonly value="${escapeAttr(link)}">
     <div class="ad-btns">
       <button type="button" id="uaCopyBtn">Copy link</button>
