@@ -1030,6 +1030,52 @@
   .swt-item .swt-time{font-variant-numeric:tabular-nums;font-weight:800;}
   .swt-item .swt-meta{font-size:.75rem;color:var(--text-dim);}
   .swt-del{background:none;border:none;color:var(--red);font-size:.78rem;cursor:pointer;text-decoration:underline;}
+
+  /* ============ APP DEV (superadmin only) ============ */
+  .ad-ms-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;}
+  .ad-ms{border:1.5px solid var(--border);border-radius:9px;padding:7px 4px;text-align:center;font-size:.72rem;color:var(--text-dim);background:#fff;}
+  .ad-ms b{display:block;font-size:.95rem;color:var(--text);}
+  .ad-ms.current{border-color:var(--accent);background:#e8f6fd;}
+  .ad-ms.met{border-color:var(--green);background:#e6f4e8;}
+  .ad-now{font-size:.9rem;margin-top:4px;}
+  .ad-now strong{color:var(--navy);}
+  .ad-filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .ad-check{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:.85rem;color:var(--text-dim);}
+  .ad-check input{width:18px;height:18px;margin:0;}
+  .ad-group-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0 0 4px;}
+  .ad-group-h h2{margin:0;}
+  .ad-group-h .ad-score{font-size:.78rem;font-weight:700;color:var(--text-dim);white-space:nowrap;}
+  .ad-item{border-bottom:1px solid #f0f2f5;padding:10px 0;}
+  .ad-item:last-child{border-bottom:none;}
+  .ad-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start;}
+  .ad-title{font-size:.9rem;font-weight:600;cursor:pointer;line-height:1.3;}
+  .ad-title .ad-id{color:var(--text-dim);font-weight:700;font-size:.75rem;margin-right:6px;}
+  .ad-meta{font-size:.72rem;color:var(--text-dim);margin-top:3px;display:flex;flex-wrap:wrap;gap:4px;}
+  .ad-tag{border:1px solid var(--border);border-radius:20px;padding:1px 7px;background:#fff;}
+  .ad-tag.gate{border-color:var(--navy);color:var(--navy);font-weight:700;}
+  .ad-tag.must{border-color:var(--red);color:var(--red);}
+  .ad-status{padding:6px 8px;font-size:.78rem;font-weight:700;border-radius:8px;width:auto;min-width:92px;}
+  .ad-status[data-s="todo"]{background:#eceff2;}
+  .ad-status[data-s="doing"]{background:#e6f0ff;color:#0a5c8a;}
+  .ad-status[data-s="blocked"]{background:#fff4e0;color:#8a5a00;}
+  .ad-status[data-s="done"]{background:#e6f4e8;color:var(--green);}
+  .ad-status[data-s="dropped"]{background:#f4f4f4;color:#8a96a3;text-decoration:line-through;}
+  .ad-note{font-size:.78rem;color:var(--text-dim);margin-top:4px;}
+  .ad-edit{margin-top:10px;padding:10px;border-radius:10px;background:var(--grey-bg);}
+  .ad-edit .ad-grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .ad-btns{display:flex;gap:8px;margin-top:10px;}
+  .ad-btns button{flex:1;padding:11px;border-radius:9px;border:none;font-weight:700;font-size:.88rem;cursor:pointer;}
+  .ad-btns .ad-save{background:var(--accent);color:#fff;}
+  .ad-btns .ad-cancel{background:#fff;border:1.5px solid var(--border);color:var(--text-dim);}
+  .ad-btns .ad-drop{background:#fff;border:1.5px solid var(--red);color:var(--red);flex:0 0 auto;padding:11px 14px;}
+  .ad-signed{font-size:.78rem;color:var(--text-dim);text-align:center;margin-top:10px;}
+  .ad-signed button{background:none;border:none;color:var(--navy);text-decoration:underline;cursor:pointer;font-size:.78rem;}
+  .ad-link{display:block;margin:12px auto 0;background:none;border:none;color:var(--navy);text-decoration:underline;font-size:.82rem;cursor:pointer;}
+  input[type=email],input[type=password]{
+    width:100%;padding:11px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:.95rem;
+    background:#fff;color:var(--text);font-family:inherit;
+  }
+  input[type=email]:focus,input[type=password]:focus{outline:none;border-color:var(--accent);}
 </style>
 </head>
 <body>
@@ -1086,6 +1132,13 @@
   </div>
   <div class="nav-item" id="navStopwatch" data-nav="stopwatch">
     <span class="nav-icon">⏱️</span> Stopwatch
+  </div>
+  <div class="nav-item" id="navAppDev" data-nav="appdev" style="display:none;">
+    <span class="nav-icon">🛠️</span> App dev
+  </div>
+  <div class="nav-divider"></div>
+  <div class="nav-item" id="navDevAuth" data-nav="devauth">
+    <span class="nav-icon">🔑</span> <span id="navDevAuthLabel">Sign in</span>
   </div>
 </nav>
 
@@ -2321,12 +2374,80 @@
     </div>
   </div>
 
+  <!-- ============ APP DEV (superadmin only) ============ -->
+  <div class="view" id="viewAppDev">
+    <a class="back-home" id="backHomeAd">Home</a>
+
+    <!-- Sign-in (shown when not signed in as a superadmin) -->
+    <div class="card" id="adAuthCard">
+      <h2 id="adAuthTitle">Sign in</h2>
+      <div id="adLoginForm">
+        <label for="adEmail">Email</label>
+        <input type="email" id="adEmail" autocomplete="username">
+        <label for="adPassword">Password</label>
+        <input type="password" id="adPassword" autocomplete="current-password">
+        <button type="button" class="submit-btn" id="adLoginBtn">Sign in</button>
+        <button type="button" class="ad-link" id="adForgotBtn">Forgot password? Email me a reset link</button>
+      </div>
+      <div id="adNewPwForm" style="display:none;">
+        <label for="adNewPw">New password</label>
+        <input type="password" id="adNewPw" autocomplete="new-password">
+        <div class="hint">At least 8 characters.</div>
+        <button type="button" class="submit-btn" id="adNewPwBtn">Save new password</button>
+      </div>
+      <div class="msg" id="adAuthMsg"></div>
+      <div class="hint" style="text-align:center;margin-top:8px;">Signing in here only unlocks development tools. The rest of the app works as before.</div>
+    </div>
+
+    <!-- App dev content -->
+    <div id="adMain" style="display:none;">
+      <div class="card">
+        <h2>App dev</h2>
+        <div class="ad-now" id="adNow"></div>
+        <div class="ad-ms-grid" id="adMsGrid"></div>
+        <div class="hint">Gate score = exit-gate actions done ÷ gate actions (dropped excluded). A ring opens only at 100%.</div>
+      </div>
+
+      <div class="card">
+        <div class="ad-filters">
+          <div>
+            <label for="adFStatus">Status</label>
+            <select id="adFStatus">
+              <option value="">All open</option>
+              <option value="todo">To do</option>
+              <option value="doing">Doing</option>
+              <option value="blocked">Blocked</option>
+              <option value="done">Done</option>
+              <option value="dropped">Dropped</option>
+              <option value="*">Everything</option>
+            </select>
+          </div>
+          <div>
+            <label for="adFArea">Area</label>
+            <select id="adFArea"></select>
+          </div>
+        </div>
+        <label for="adFSearch">Search</label>
+        <input type="search" id="adFSearch" placeholder="Title, ID or notes">
+        <label class="ad-check"><input type="checkbox" id="adFGate"> Gate actions only</label>
+        <button type="button" class="submit-btn" id="adAddBtn">+ Add action</button>
+        <div id="adAddForm"></div>
+      </div>
+
+      <div id="adList"></div>
+      <div class="msg" id="adMsg"></div>
+      <div class="ad-signed" id="adSigned"></div>
+    </div>
+  </div>
+
 </main>
 
 <script>
 const SUPABASE_URL = "https://nxlgeykipnvswyeshrbl.supabase.co";
 const SUPABASE_KEY = "sb_publishable_BYuKct-F0f4H04Gl_S58uQ_gKzuW_Ff";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// detectSessionInUrl off: sign-in is handled only by the App dev client (sbDev) so this
+// client stays anonymous until M1 moves the whole app to signed-in access.
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { detectSessionInUrl: false } });
 
 const $ = id => document.getElementById(id);
 
@@ -8817,6 +8938,351 @@ $("swpStopwatchList").addEventListener("click", async (ev) => {
   if (error){ alert("Could not delete: " + error.message); return; }
   if (swpSelected) swpLoadStopwatch(swpSelected.id);
 });
+// ===================================================================
+// APP DEV — development action list (superadmin only)
+// Uses its OWN Supabase client (separate storage key) so signing in here
+// never changes the anonymous access the rest of the app relies on.
+// Data: public.app_dev_tasks (RLS: superadmin via public.is_superadmin()).
+// Spec: claude/specs/app-dev-section.md · Maintained with the /coach-app skill.
+// ===================================================================
+const sbDev = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { storageKey: "coachToolsAppDevAuth", persistSession: true, detectSessionInUrl: true }
+});
+const AD_MILESTONES = [
+  ["M0", "Baseline & spec"], ["M1", "Secure foundation"], ["M2", "Compliance pack"],
+  ["M3", "Internal alpha"], ["M4", "Closed pilot"], ["M5", "Club rollout"],
+  ["M6", "Multi-club & stores"], ["Later", "Later"]
+];
+const AD_MS_NAME = Object.fromEntries(AD_MILESTONES);
+const AD_AREAS = ["Specification","Integration","Deployment","Multi-user","Payments","Statistics",
+  "Data capture","Forums","Membership","Restricted access","GDPR","Android & iOS","PWA","Websites","CRM"];
+const AD_STATUSES = ["todo","doing","blocked","done","dropped"];
+const AD_STATUS_LABEL = { todo:"To do", doing:"Doing", blocked:"Blocked", done:"Done", dropped:"Dropped" };
+const AD_PRIORITIES = ["Must","Should","Could","Won't-now"];
+
+let adTasks = [];
+let adIsAdmin = false;
+let adUserEmail = null;
+let adOpenId = null;       // task currently expanded for editing
+let adRecovery = false;    // arrived from a password-reset email
+
+function adOpts(list, cur, labels){
+  return list.map(v => `<option value="${escapeAttr(v)}"${v === cur ? " selected" : ""}>${escapeHtml(labels ? labels[v] : v)}</option>`).join("");
+}
+
+async function adRefreshAuth(){
+  const { data: { session } } = await sbDev.auth.getSession();
+  adUserEmail = session ? session.user.email : null;
+  adIsAdmin = false;
+  if (session){
+    const { data, error } = await sbDev.rpc("is_superadmin");
+    if (error) console.error(error);
+    adIsAdmin = data === true;
+  }
+  $("navAppDev").style.display = adIsAdmin ? "" : "none";
+  $("navDevAuthLabel").textContent = session ? "Sign out" : "Sign in";
+}
+
+function adShowAuth(message, isErr){
+  $("adAuthCard").style.display = "";
+  $("adMain").style.display = "none";
+  $("adLoginForm").style.display = adRecovery ? "none" : "";
+  $("adNewPwForm").style.display = adRecovery ? "" : "none";
+  $("adAuthTitle").textContent = adRecovery ? "Set a new password" : "Sign in";
+  $("adAuthMsg").textContent = message || "";
+  $("adAuthMsg").className = "msg" + (message ? (isErr ? " err" : " ok") : "");
+}
+
+async function goAppDev(){
+  showView("viewAppDev");
+  await adRefreshAuth();
+  if (adRecovery){ adShowAuth(); return; }
+  if (!adUserEmail){ adShowAuth(); return; }
+  if (!adIsAdmin){
+    adShowAuth(`Signed in as ${adUserEmail}, but this account doesn't have App dev access.`, true);
+    return;
+  }
+  $("adAuthCard").style.display = "none";
+  $("adMain").style.display = "";
+  $("adSigned").innerHTML = `Signed in as ${escapeHtml(adUserEmail)} · <button type="button" id="adSignOutBtn">Sign out</button>`;
+  $("adSignOutBtn").addEventListener("click", adSignOut);
+  if (!$("adFArea").options.length){
+    $("adFArea").innerHTML = '<option value="">All areas</option>' + adOpts(AD_AREAS);
+  }
+  await adLoad();
+}
+
+async function adLoad(){
+  $("adList").innerHTML = '<div class="card"><div class="empty">Loading…</div></div>';
+  const { data, error } = await sbDev.from("app_dev_tasks").select("*").order("id");
+  if (error){
+    console.error(error);
+    $("adList").innerHTML = `<div class="card"><div class="empty">Could not load actions: ${escapeHtml(error.message)}</div></div>`;
+    return;
+  }
+  adTasks = data || [];
+  adRender();
+}
+
+function adGateScores(){
+  const out = {};
+  AD_MILESTONES.forEach(([m]) => {
+    const g = adTasks.filter(t => t.milestone === m && t.gate && t.status !== "dropped");
+    out[m] = { done: g.filter(t => t.status === "done").length, total: g.length };
+  });
+  return out;
+}
+function adCurrentMilestone(scores){
+  for (const [m] of AD_MILESTONES){
+    if (m === "Later") break;
+    const s = scores[m];
+    if (s.total && s.done < s.total) return m;
+  }
+  return "M6";
+}
+
+function adRender(){
+  const scores = adGateScores();
+  const cur = adCurrentMilestone(scores);
+  const open = adTasks.filter(t => t.status !== "done" && t.status !== "dropped").length;
+  const mustOpen = adTasks.filter(t => t.priority === "Must" && t.status !== "done" && t.status !== "dropped"
+    && AD_MILESTONES.findIndex(x => x[0] === t.milestone) <= AD_MILESTONES.findIndex(x => x[0] === cur)).length;
+  $("adNow").innerHTML = `Current milestone: <strong>${cur} ${escapeHtml(AD_MS_NAME[cur])}</strong> — gate ${scores[cur].done}/${scores[cur].total}. `
+    + `${open} open action${open === 1 ? "" : "s"}; ${mustOpen} Must action${mustOpen === 1 ? "" : "s"} open up to ${cur}.`;
+  $("adMsGrid").innerHTML = AD_MILESTONES.filter(([m]) => m !== "Later").map(([m]) => {
+    const s = scores[m];
+    const cls = m === cur ? "current" : (s.total && s.done === s.total ? "met" : "");
+    return `<div class="ad-ms ${cls}">${m}<b>${s.done}/${s.total}</b></div>`;
+  }).join("") + `<div class="ad-ms">All<b>${adTasks.filter(t => t.status === "done").length}/${adTasks.filter(t => t.status !== "dropped").length}</b></div>`;
+
+  const fs = $("adFStatus").value, fa = $("adFArea").value, q = $("adFSearch").value.trim().toLowerCase(), fg = $("adFGate").checked;
+  const shown = adTasks.filter(t => {
+    if (fs === "" && (t.status === "done" || t.status === "dropped")) return false;
+    if (fs && fs !== "*" && t.status !== fs) return false;
+    if (fa && t.area !== fa) return false;
+    if (fg && !t.gate) return false;
+    if (q && ![t.id, t.title, t.notes, t.evidence, t.area].some(v => (v || "").toLowerCase().includes(q))) return false;
+    return true;
+  });
+
+  if (!shown.length){
+    $("adList").innerHTML = '<div class="card"><div class="empty">No actions match these filters.</div></div>';
+    return;
+  }
+  $("adList").innerHTML = AD_MILESTONES.map(([m, name]) => {
+    const items = shown.filter(t => t.milestone === m);
+    if (!items.length) return "";
+    const s = scores[m];
+    return `<div class="card">
+      <div class="ad-group-h"><h2>${m} ${escapeHtml(name)}</h2>${s.total ? `<span class="ad-score">Gate ${s.done}/${s.total}</span>` : ""}</div>
+      ${items.map(adItemHtml).join("")}
+    </div>`;
+  }).join("");
+}
+
+function adItemHtml(t){
+  const tags = [
+    `<span class="ad-tag">${escapeHtml(t.area)}</span>`,
+    `<span class="ad-tag${t.priority === "Must" ? " must" : ""}">${escapeHtml(t.priority)}</span>`,
+    t.gate ? '<span class="ad-tag gate">Gate</span>' : "",
+    t.due_on ? `<span class="ad-tag">Due ${escapeHtml(fmtDate(t.due_on))}</span>` : "",
+    t.owner_role ? `<span class="ad-tag">${escapeHtml(t.owner_role)}</span>` : ""
+  ].join("");
+  const note = t.status === "done" && t.evidence ? "✔ " + t.evidence : (t.notes || "");
+  return `<div class="ad-item" data-id="${escapeAttr(t.id)}">
+    <div class="ad-row">
+      <div>
+        <div class="ad-title" data-act="open"><span class="ad-id">${escapeHtml(t.id)}</span>${escapeHtml(t.title)}</div>
+        <div class="ad-meta">${tags}</div>
+        ${note ? `<div class="ad-note">${escapeHtml(note)}</div>` : ""}
+      </div>
+      <select class="ad-status" data-act="status" data-s="${t.status}" aria-label="Status of ${escapeAttr(t.id)}">${adOpts(AD_STATUSES, t.status, AD_STATUS_LABEL)}</select>
+    </div>
+    ${adOpenId === t.id ? adEditorHtml(t) : ""}
+  </div>`;
+}
+
+function adEditorHtml(t, isNew){
+  const v = t || {};
+  return `<div class="ad-edit" data-editor="${isNew ? "new" : escapeAttr(v.id)}">
+    ${isNew ? `<label>ID</label><input type="text" data-f="id" value="${escapeAttr(v.id)}">` : ""}
+    <label>Action</label><textarea data-f="title" rows="2">${escapeHtml(v.title || "")}</textarea>
+    <div class="ad-grid2">
+      <div><label>Milestone</label><select data-f="milestone">${adOpts(AD_MILESTONES.map(x => x[0]), v.milestone || "M1")}</select></div>
+      <div><label>Area</label><select data-f="area">${adOpts(AD_AREAS, v.area || "Specification")}</select></div>
+      <div><label>Priority</label><select data-f="priority">${adOpts(AD_PRIORITIES, v.priority || "Should")}</select></div>
+      <div><label>Status</label><select data-f="status">${adOpts(AD_STATUSES, v.status || "todo", AD_STATUS_LABEL)}</select></div>
+      <div><label>Due</label><input type="date" data-f="due_on" value="${escapeAttr(v.due_on || "")}"></div>
+      <div><label>Owner role</label><input type="text" data-f="owner_role" value="${escapeAttr(v.owner_role || "")}" placeholder="e.g. Simon, welfare officer"></div>
+    </div>
+    <label class="ad-check"><input type="checkbox" data-f="gate"${v.gate ? " checked" : ""}> Exit-gate action for its milestone</label>
+    <label>Evidence <span class="opt">(needed to mark done)</span></label><textarea data-f="evidence" rows="2" placeholder="Link, query result or note proving it's done">${escapeHtml(v.evidence || "")}</textarea>
+    <label>Notes</label><textarea data-f="notes" rows="2">${escapeHtml(v.notes || "")}</textarea>
+    <div class="ad-btns">
+      <button type="button" class="ad-cancel" data-act="cancel">Cancel</button>
+      ${!isNew && v.status !== "dropped" ? '<button type="button" class="ad-drop" data-act="drop">Drop</button>' : ""}
+      <button type="button" class="ad-save" data-act="save">${isNew ? "Add action" : "Save"}</button>
+    </div>
+    <div class="msg" data-f="msg"></div>
+  </div>`;
+}
+
+function adReadEditor(ed){
+  const get = f => ed.querySelector(`[data-f="${f}"]`);
+  const row = {
+    title: get("title").value.trim(),
+    milestone: get("milestone").value,
+    area: get("area").value,
+    priority: get("priority").value,
+    status: get("status").value,
+    due_on: get("due_on").value || null,
+    owner_role: get("owner_role").value.trim() || null,
+    gate: get("gate").checked,
+    evidence: get("evidence").value.trim() || null,
+    notes: get("notes").value.trim() || null
+  };
+  if (get("id")) row.id = get("id").value.trim().toUpperCase();
+  return row;
+}
+function adEditorMsg(ed, text){
+  const m = ed.querySelector('[data-f="msg"]');
+  m.textContent = text; m.className = "msg err";
+}
+
+function adNextId(){
+  const n = adTasks.reduce((mx, t) => Math.max(mx, parseInt(String(t.id).replace(/\D/g, ""), 10) || 0), 0);
+  return "A-" + String(n + 1).padStart(3, "0");
+}
+
+async function adSave(ed, isNew){
+  const row = adReadEditor(ed);
+  if (!row.title){ adEditorMsg(ed, "Give the action a title."); return; }
+  if (row.status === "done" && !row.evidence){ adEditorMsg(ed, "Add evidence before marking this done."); return; }
+  if (isNew){
+    if (!/^A-\d{3,}$/.test(row.id)){ adEditorMsg(ed, "ID must look like A-084."); return; }
+    if (adTasks.some(t => t.id === row.id)){ adEditorMsg(ed, `${row.id} already exists.`); return; }
+    const { error } = await sbDev.from("app_dev_tasks").insert(row);
+    if (error){ adEditorMsg(ed, "Could not add: " + error.message); return; }
+    $("adAddForm").innerHTML = "";
+    adFlash(`Added ${row.id}.`);
+  } else {
+    const id = ed.dataset.editor;
+    const { error } = await sbDev.from("app_dev_tasks").update(row).eq("id", id);
+    if (error){ adEditorMsg(ed, "Could not save: " + error.message); return; }
+    adOpenId = null;
+    adFlash(`Saved ${id}.`);
+  }
+  await adLoad();
+}
+
+function adFlash(text, isErr){
+  $("adMsg").textContent = text;
+  $("adMsg").className = "msg " + (isErr ? "err" : "ok");
+  clearTimeout(adFlash._t);
+  adFlash._t = setTimeout(() => { $("adMsg").textContent = ""; }, 4000);
+}
+
+$("adList").addEventListener("click", async (ev) => {
+  const el = ev.target.closest("[data-act]"); if (!el) return;
+  const act = el.dataset.act;
+  const item = el.closest(".ad-item");
+  if (act === "open"){
+    adOpenId = adOpenId === item.dataset.id ? null : item.dataset.id;
+    adRender();
+  } else if (act === "cancel"){
+    adOpenId = null; adRender();
+  } else if (act === "save"){
+    await adSave(el.closest(".ad-edit"), false);
+  } else if (act === "drop"){
+    const id = item.dataset.id;
+    if (!confirm(`Drop ${id}? It stays on record with status Dropped.`)) return;
+    const { error } = await sbDev.from("app_dev_tasks").update({ status: "dropped" }).eq("id", id);
+    if (error){ adFlash("Could not drop: " + error.message, true); return; }
+    adOpenId = null; adFlash(`Dropped ${id}.`); await adLoad();
+  }
+});
+$("adList").addEventListener("change", async (ev) => {
+  const sel = ev.target.closest('select[data-act="status"]'); if (!sel) return;
+  const id = sel.closest(".ad-item").dataset.id;
+  const t = adTasks.find(x => x.id === id);
+  if (sel.value === "done" && !(t && t.evidence)){
+    // Evidence is required: open the editor with Done pre-selected.
+    adOpenId = id; adRender();
+    const ed = document.querySelector(`.ad-edit[data-editor="${CSS.escape(id)}"]`);
+    ed.querySelector('[data-f="status"]').value = "done";
+    adEditorMsg(ed, "Add evidence, then Save to mark this done.");
+    ed.querySelector('[data-f="evidence"]').focus();
+    return;
+  }
+  sel.dataset.s = sel.value;
+  const { error } = await sbDev.from("app_dev_tasks").update({ status: sel.value }).eq("id", id);
+  if (error){ adFlash("Could not update: " + error.message, true); await adLoad(); return; }
+  adFlash(`${id} → ${AD_STATUS_LABEL[sel.value]}.`);
+  await adLoad();
+});
+
+$("adAddBtn").addEventListener("click", () => {
+  const box = $("adAddForm");
+  if (box.innerHTML){ box.innerHTML = ""; return; }
+  box.innerHTML = adEditorHtml({ id: adNextId(), milestone: adCurrentMilestone(adGateScores()) }, true);
+});
+$("adAddForm").addEventListener("click", async (ev) => {
+  const el = ev.target.closest("[data-act]"); if (!el) return;
+  if (el.dataset.act === "cancel") $("adAddForm").innerHTML = "";
+  if (el.dataset.act === "save") await adSave(el.closest(".ad-edit"), true);
+});
+["adFStatus","adFArea","adFGate"].forEach(id => $(id).addEventListener("change", adRender));
+$("adFSearch").addEventListener("input", adRender);
+
+// --- Sign in / out ---
+$("adLoginBtn").addEventListener("click", async () => {
+  const email = $("adEmail").value.trim(), password = $("adPassword").value;
+  if (!email || !password){ adShowAuth("Enter your email and password.", true); return; }
+  $("adLoginBtn").disabled = true;
+  const { error } = await sbDev.auth.signInWithPassword({ email, password });
+  $("adLoginBtn").disabled = false;
+  $("adPassword").value = "";
+  if (error){ adShowAuth("Sign-in failed: " + error.message, true); return; }
+  await goAppDev();
+});
+$("adPassword").addEventListener("keydown", e => { if (e.key === "Enter") $("adLoginBtn").click(); });
+$("adForgotBtn").addEventListener("click", async () => {
+  const email = $("adEmail").value.trim();
+  if (!email){ adShowAuth("Enter your email first, then tap the reset link.", true); return; }
+  const { error } = await sbDev.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  if (error){ adShowAuth("Could not send reset email: " + error.message, true); return; }
+  adShowAuth("If that email has an account, a reset link is on its way. Open it on this device.");
+});
+$("adNewPwBtn").addEventListener("click", async () => {
+  const pw = $("adNewPw").value;
+  if (pw.length < 8){ adShowAuth("Use at least 8 characters.", true); return; }
+  const { error } = await sbDev.auth.updateUser({ password: pw });
+  $("adNewPw").value = "";
+  if (error){ adShowAuth("Could not save password: " + error.message, true); return; }
+  adRecovery = false;
+  await goAppDev();
+  adFlash("Password updated.");
+});
+async function adSignOut(){
+  await sbDev.auth.signOut();
+  adTasks = []; adOpenId = null;
+  await adRefreshAuth();
+  goHome();
+}
+sbDev.auth.onAuthStateChange((event) => {
+  if (event === "PASSWORD_RECOVERY"){
+    adRecovery = true;
+    goAppDev();
+  }
+});
+
+$("backHomeAd").addEventListener("click", goHome);
+navActions.appdev = goAppDev;
+navActions.devauth = async () => {
+  const { data: { session } } = await sbDev.auth.getSession();
+  if (session) await adSignOut(); else goAppDev();
+};
+adRefreshAuth();
 </script>
 
 </body>
