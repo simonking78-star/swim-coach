@@ -1037,6 +1037,20 @@
   .access-bar button{background:none;border:1.5px solid currentColor;border-radius:8px;color:inherit;font-weight:700;font-size:.78rem;padding:5px 10px;cursor:pointer;white-space:nowrap;}
   .ro-note{position:relative;z-index:2;margin:10px 16px 18px;padding:9px 12px;border-radius:10px;background:#fff4e0;color:#8a5a00;font-size:.82rem;font-weight:600;}
 
+  /* ============ USERS & ROLES ============ */
+  .ua-link{margin-top:12px;padding:12px;border-radius:10px;background:#e6f4e8;}
+  .ua-link p{margin:0 0 8px;font-size:.85rem;}
+  .ua-link input{width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.78rem;font-family:inherit;background:#fff;}
+  .ua-link .ad-btns button{background:#fff;border:1.5px solid var(--navy);color:var(--navy);}
+  .ua-person{border-bottom:1px solid #f0f2f5;padding:10px 0;}
+  .ua-person:last-child{border-bottom:none;}
+  .ua-name{font-weight:700;font-size:.92rem;}
+  .ua-email{font-size:.78rem;color:var(--text-dim);word-break:break-all;}
+  .ua-role{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px;font-size:.82rem;}
+  .ua-role .ua-detail{font-size:.74rem;color:var(--text-dim);}
+  .ua-role button,.ua-relink{background:none;border:none;color:var(--red);text-decoration:underline;font-size:.78rem;cursor:pointer;padding:0;white-space:nowrap;}
+  .ua-relink{color:var(--navy);margin-top:6px;}
+
   /* ============ APP DEV (superadmin only) ============ */
   .ad-ms-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;}
   .ad-ms{border:1.5px solid var(--border);border-radius:9px;padding:7px 4px;text-align:center;font-size:.72rem;color:var(--text-dim);background:#fff;}
@@ -2004,6 +2018,13 @@
         <div class="ht-sub">Anonymise &amp; archive · restore later</div>
       </div>
     </div>
+    <div class="home-tile" id="adminUsersTile">
+      <div class="ht-icon">👥</div>
+      <div>
+        <div class="ht-title">Users &amp; roles</div>
+        <div class="ht-sub">Invite coaches, helpers &amp; parents · choose what they can see</div>
+      </div>
+    </div>
   </div>
 
   <!-- ============ SWIMMERS: ROSTER (top-level; tap a row to open attendance/feedback/results) ============ -->
@@ -2432,6 +2453,44 @@
     </div>
   </div>
 
+  <!-- ============ ADMIN: USERS & ROLES ============ -->
+  <div class="view" id="viewAdminUsers">
+    <a class="back-home" id="backAdminUsers">Administrator</a>
+
+    <div class="card" id="uaSignedOut" style="display:none;">
+      <h2>Users &amp; roles</h2>
+      <div class="empty">Sign in (Menu → Sign in) to invite people and manage their access.</div>
+    </div>
+
+    <div id="uaMain" style="display:none;">
+      <div class="card">
+        <h2>Invite someone</h2>
+        <label for="uaName">Name</label>
+        <input type="text" id="uaName" autocomplete="off" placeholder="e.g. Jo Smith">
+        <label for="uaEmail">Email</label>
+        <input type="email" id="uaEmail" autocomplete="off" placeholder="name@example.com">
+        <label for="uaRole">Role</label>
+        <select id="uaRole"></select>
+        <div class="hint" id="uaRoleHint"></div>
+        <div id="uaClubWrap"><label for="uaClub">Club</label><select id="uaClub"></select></div>
+        <div id="uaSquadWrap" style="display:none;"><label>Their squads</label><div id="uaSquads"></div></div>
+        <div id="uaSwimmerWrap" style="display:none;">
+          <label for="uaSwimmerQ" id="uaSwimmerLabel">Their child</label>
+          <input type="search" id="uaSwimmerQ" placeholder="Type at least 2 letters of the swimmer's name">
+          <div id="uaSwimmerResults"></div>
+        </div>
+        <button type="button" class="submit-btn" id="uaInviteBtn">Create account &amp; sign-in link</button>
+        <div class="msg" id="uaMsg"></div>
+        <div id="uaResult"></div>
+      </div>
+
+      <div class="card">
+        <h2>People with access <span class="count" id="uaCount"></span></h2>
+        <div id="uaList"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ APP DEV (superadmin only) ============ -->
   <div class="view" id="viewAppDev">
     <a class="back-home" id="backHomeAd">Home</a>
@@ -2527,6 +2586,11 @@
 const SUPABASE_URL = "https://nxlgeykipnvswyeshrbl.supabase.co";
 const SUPABASE_KEY = "sb_publishable_BYuKct-F0f4H04Gl_S58uQ_gKzuW_Ff";
 // Signed out: anonymous access (as before). Signed in: the role policies apply to every query.
+// Read an invite / sign-in / reset link's type before the client consumes the URL.
+const AUTH_LINK = (() => {
+  const h = new URLSearchParams(location.hash.replace(/^#/, "")), q = new URLSearchParams(location.search);
+  return { type: h.get("type"), error: h.get("error_description") || q.get("error_description") };
+})();
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const $ = id => document.getElementById(id);
@@ -2558,7 +2622,7 @@ $("clubSelect").addEventListener("change", () => {
   loadDrills();         // refresh the drills library cache for the new club
   showView("viewHome"); // drop out of any in-progress flow scoped to the old club
 });
-accessRefresh().then(loadClubOptions).then(() => { applyClubScope(); loadSwimmers(); loadRecent(); });
+accessRefresh().then(loadClubOptions).then(() => { applyClubScope(); loadSwimmers(); loadRecent(); authLinkLanding(); });
 loadDrills(); // pre-load the drills index so set-line prediction works even before the coach opens the library tab
 
 function fmtDate(d){
@@ -9247,7 +9311,7 @@ function adShowAuth(message, isErr){
   $("adMain").style.display = "none";
   $("adLoginForm").style.display = adRecovery ? "none" : "";
   $("adNewPwForm").style.display = adRecovery ? "" : "none";
-  $("adAuthTitle").textContent = adRecovery ? "Set a new password" : "Sign in";
+  $("adAuthTitle").textContent = adRecovery ? "Choose your password" : "Sign in";
   $("adAuthMsg").textContent = message || "";
   $("adAuthMsg").className = "msg" + (message ? (isErr ? " err" : " ok") : "");
 }
@@ -9745,6 +9809,242 @@ sb.auth.onAuthStateChange((event) => {
   if (event === "PASSWORD_RECOVERY"){ adRecovery = true; goAppDev(); }
 });
 accessRefresh().then(applyClubScope);
+
+// ===================================================================
+// ADMIN — USERS & ROLES (A-083)
+// Invites go through the invite-user edge function (it holds the secret
+// key). It returns a one-time sign-in link to share, so invites don't
+// depend on Supabase's limited built-in email.
+// ===================================================================
+const UA_ROLE_HINT = {
+  club_admin:"Everything for their club, including inviting people.",
+  head_coach:"Edits attendance, feedback, plans, timetables and the season plan; roster read-only.",
+  coach:"Edits attendance and plans; feedback for their own squads only; season plan read-only.",
+  helper:"Marks attendance for their own squads and uses the stopwatch; plans read-only.",
+  parent:"Reads their own child's feedback, results and timetables.",
+  swimmer:"Reads their own feedback, results and timetables.",
+  superadmin:"Everything, in every club, including App dev."
+};
+let uaSwimmerId = null;
+
+function uaAdminClubs(){
+  if (!ACCESS) return [];
+  const roles = ACCESS.roles || [];
+  if (roles.some(r => r.role === "superadmin")) return [...$("clubSelect").options].map(o => o.value);
+  return [...new Set(roles.filter(r => r.role === "club_admin" && r.club).map(r => r.club))];
+}
+function uaCanGrantSuper(){
+  return !!(ACCESS && ACCESS.real_superadmin && !ACCESS.testing);
+}
+
+async function goAdminUsers(){
+  showView("viewAdminUsers");
+  if (!$("viewAdminUsers").classList.contains("active")) return;
+  if (!accessUser){ $("uaSignedOut").style.display = ""; $("uaMain").style.display = "none"; return; }
+  $("uaSignedOut").style.display = "none"; $("uaMain").style.display = "";
+  const roles = ["club_admin","head_coach","coach","helper","parent","swimmer"].concat(uaCanGrantSuper() ? ["superadmin"] : []);
+  const cur = $("uaRole").value || "coach";
+  $("uaRole").innerHTML = roles.map(r => `<option value="${r}"${r === cur ? " selected" : ""}>${ROLE_LABEL[r]}</option>`).join("");
+  const clubs = uaAdminClubs();
+  $("uaClub").innerHTML = clubs.map(c => `<option value="${escapeAttr(c)}"${c === currentClub ? " selected" : ""}>${escapeHtml(c)}</option>`).join("");
+  uaUpdateFields();
+  await uaFillSquads();
+  await uaLoadPeople();
+}
+
+function uaUpdateFields(){
+  const role = $("uaRole").value;
+  $("uaRoleHint").textContent = UA_ROLE_HINT[role] || "";
+  $("uaClubWrap").style.display = role === "superadmin" ? "none" : "";
+  $("uaSquadWrap").style.display = (role === "coach" || role === "helper") ? "" : "none";
+  $("uaSwimmerWrap").style.display = (role === "parent" || role === "swimmer") ? "" : "none";
+  $("uaSwimmerLabel").textContent = role === "swimmer" ? "Which swimmer is this?" : "Their child";
+}
+async function uaFillSquads(){
+  const club = $("uaClub").value, box = $("uaSquads");
+  if (!club){ box.innerHTML = ""; return; }
+  const { data, error } = await sb.from("squads").select("id, name").eq("club", club).order("name");
+  if (error){ box.innerHTML = '<div class="hint">Could not load squads.</div>'; return; }
+  box.innerHTML = (data || []).map(q =>
+    `<label class="ad-check"><input type="checkbox" value="${escapeAttr(q.id)}"> ${escapeHtml(q.name)}</label>`).join("")
+    || '<div class="hint">No squads set up for this club yet.</div>';
+}
+async function uaSearchSwimmer(){
+  const q = $("uaSwimmerQ").value.trim(), club = $("uaClub").value, out = $("uaSwimmerResults");
+  uaSwimmerId = null;
+  if (q.length < 2){ out.innerHTML = ""; return; }
+  const { data } = await sb.from("swimmers").select("id, full_name, squad")
+    .eq("club", club).ilike("full_name", `%${q}%`).order("full_name").limit(8);
+  out.innerHTML = (data || []).map(s =>
+    `<label class="ad-check"><input type="radio" name="uaSw" value="${escapeAttr(s.id)}"> ${escapeHtml(s.full_name)}${s.squad ? " · " + escapeHtml(s.squad) : ""}</label>`).join("")
+    || '<div class="hint">No swimmer with that name in this club.</div>';
+}
+
+async function uaCallInvite(payload){
+  const { data, error } = await sb.functions.invoke("invite-user", { body: payload });
+  if (!error) return data;
+  let msg = error.message, extra = {};
+  try { extra = await error.context.json(); msg = extra.error || msg; } catch (e) { /* not JSON */ }
+  const err = new Error(msg); err.extra = extra; throw err;
+}
+
+function uaShowLink(name, email, link, existing){
+  const box = $("uaResult");
+  if (!link){
+    box.innerHTML = `<div class="ua-link"><p><strong>${escapeHtml(name || email)}</strong> already has an account and has signed in before, so no link is needed — the new access applies next time they open the app. If they've forgotten their password they can use <em>Forgot password</em>.</p></div>`;
+    return;
+  }
+  const subject = "Your Coach Tools sign-in";
+  const text = `Hi${name ? " " + name.split(" ")[0] : ""},\n\nYou've been given access to Coach Tools. Tap this link to sign in and choose a password (it works once and expires in 24 hours):\n\n${link}\n`;
+  box.innerHTML = `<div class="ua-link">
+    <p><strong>${existing ? "New sign-in link" : "Account created"}</strong> for ${escapeHtml(name || email)}. Send them this link — it works once and expires in 24 hours. When they open it they choose their own password.</p>
+    <input type="text" id="uaLinkBox" readonly value="${escapeAttr(link)}">
+    <div class="ad-btns">
+      <button type="button" id="uaCopyBtn">Copy link</button>
+      <button type="button" id="uaMailBtn">Email it</button>
+      ${navigator.share ? '<button type="button" id="uaShareBtn">Share…</button>' : ""}
+    </div>
+    <div class="hint">Send it only to that person — anyone with the link can sign in as them until they use it.</div>
+  </div>`;
+  $("uaCopyBtn").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(link); } catch (e) { $("uaLinkBox").select(); document.execCommand("copy"); }
+    $("uaCopyBtn").textContent = "Copied ✓";
+  });
+  $("uaMailBtn").addEventListener("click", () => {
+    location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+  });
+  if (navigator.share) $("uaShareBtn").addEventListener("click", () => navigator.share({ title: subject, text }).catch(() => {}));
+}
+
+$("uaInviteBtn").addEventListener("click", async () => {
+  const msg = $("uaMsg"); msg.textContent = ""; msg.className = "msg"; $("uaResult").innerHTML = "";
+  const role = $("uaRole").value;
+  const payload = {
+    full_name: $("uaName").value.trim(),
+    email: $("uaEmail").value.trim(),
+    role,
+    club: role === "superadmin" ? null : $("uaClub").value,
+    squad_ids: [...document.querySelectorAll("#uaSquads input:checked")].map(i => i.value),
+    swimmer_ids: (() => { const s = document.querySelector('input[name="uaSw"]:checked'); return s ? [s.value] : []; })(),
+    redirect_to: location.origin + location.pathname
+  };
+  if (!payload.email){ msg.textContent = "Enter their email address."; msg.className = "msg err"; return; }
+  if ((role === "coach" || role === "helper") && !payload.squad_ids.length){ msg.textContent = "Tick at least one squad."; msg.className = "msg err"; return; }
+  if ((role === "parent" || role === "swimmer") && !payload.swimmer_ids.length){ msg.textContent = "Pick the swimmer."; msg.className = "msg err"; return; }
+  $("uaInviteBtn").disabled = true; $("uaInviteBtn").textContent = "Working…";
+  try {
+    const res = await uaCallInvite(payload);
+    msg.textContent = `${ROLE_LABEL[role]} access given to ${payload.full_name || payload.email}.`; msg.className = "msg ok";
+    uaShowLink(payload.full_name, payload.email, res.link, res.existing);
+    $("uaName").value = ""; $("uaEmail").value = ""; $("uaSwimmerQ").value = ""; $("uaSwimmerResults").innerHTML = "";
+    document.querySelectorAll("#uaSquads input:checked").forEach(i => { i.checked = false; });
+    await uaLoadPeople();
+  } catch (e) {
+    msg.textContent = e.message; msg.className = "msg err";
+    if (e.extra && e.extra.link) uaShowLink(payload.full_name, payload.email, e.extra.link, false);
+  } finally {
+    $("uaInviteBtn").disabled = false; $("uaInviteBtn").textContent = "Create account & sign-in link";
+  }
+});
+
+async function uaLoadPeople(){
+  const list = $("uaList");
+  list.innerHTML = '<div class="empty">Loading…</div>';
+  const [u, r, s, w] = await Promise.all([
+    sb.from("app_users").select("user_id, email, full_name, invited_at, last_link_at"),
+    sb.from("user_roles").select("user_id, role, club"),
+    sb.from("user_squads").select("user_id, squad_id, squads(name, club)"),
+    sb.from("user_swimmers").select("user_id, swimmer_id, relationship, swimmers(full_name, club)")
+  ]);
+  const err = u.error || r.error || s.error || w.error;
+  if (err){ console.error(err); list.innerHTML = `<div class="empty">Could not load people: ${escapeHtml(err.message)}</div>`; return; }
+  const me = (await sb.auth.getSession()).data.session?.user.id;
+  const people = (u.data || []).map(p => ({
+    ...p,
+    roles: (r.data || []).filter(x => x.user_id === p.user_id),
+    squads: (s.data || []).filter(x => x.user_id === p.user_id),
+    kids: (w.data || []).filter(x => x.user_id === p.user_id)
+  })).filter(p => p.roles.length || p.user_id === me)
+    .sort((a, b) => (a.full_name || a.email).localeCompare(b.full_name || b.email));
+  $("uaCount").textContent = people.length;
+  if (!people.length){ list.innerHTML = '<div class="empty">Nobody else has access yet.</div>'; return; }
+  list.innerHTML = people.map(p => {
+    const roles = p.roles.length ? p.roles.map(x => {
+      const detail = [];
+      if (x.role === "coach" || x.role === "helper")
+        detail.push(p.squads.filter(q => q.squads && q.squads.club === x.club).map(q => q.squads.name).join(", ") || "no squads");
+      if (x.role === "parent" || x.role === "swimmer")
+        detail.push(p.kids.filter(k => k.swimmers && k.swimmers.club === x.club).map(k => k.swimmers.full_name).join(", ") || "no linked swimmer");
+      const canRemove = !(p.user_id === me && x.role === "superadmin");
+      return `<div class="ua-role">
+        <div>${escapeHtml(ROLE_LABEL[x.role] || x.role)} · ${escapeHtml(x.club || "all clubs")}
+          ${detail.length ? `<div class="ua-detail">${escapeHtml(detail.join(" · "))}</div>` : ""}</div>
+        ${canRemove ? `<button type="button" data-act="remove" data-user="${escapeAttr(p.user_id)}" data-role="${escapeAttr(x.role)}" data-club="${escapeAttr(x.club || "")}">Remove</button>` : ""}
+      </div>`;
+    }).join("") : '<div class="ua-role"><div class="ua-detail">No role</div></div>';
+    const relink = p.user_id !== me && p.roles.length
+      ? `<button type="button" class="ua-relink" data-act="relink" data-user="${escapeAttr(p.user_id)}">New sign-in link</button>` : "";
+    return `<div class="ua-person">
+      <div class="ua-name">${escapeHtml(p.full_name || p.email)}${p.user_id === me ? " (you)" : ""}</div>
+      <div class="ua-email">${escapeHtml(p.email)}</div>
+      ${roles}${relink}
+    </div>`;
+  }).join("");
+  uaLoadPeople.people = people;
+}
+
+$("uaList").addEventListener("click", async (ev) => {
+  const b = ev.target.closest("[data-act]"); if (!b) return;
+  const p = (uaLoadPeople.people || []).find(x => x.user_id === b.dataset.user);
+  if (!p) return;
+  if (b.dataset.act === "remove"){
+    const club = b.dataset.club || null, role = b.dataset.role;
+    if (!confirm(`Remove ${ROLE_LABEL[role]} access (${club || "all clubs"}) from ${p.full_name || p.email}?`)) return;
+    const { error } = await sb.from("user_roles").delete().eq("user_id", p.user_id).eq("role", role);
+    if (error){ alert("Could not remove: " + error.message); return; }
+    // Tidy that club's squad / swimmer links if no other role still needs them.
+    const stillInClub = p.roles.some(x => x.role !== role && x.club === club);
+    if (club && !stillInClub){
+      const sq = p.squads.filter(q => q.squads && q.squads.club === club).map(q => q.squad_id);
+      const kids = p.kids.filter(k => k.swimmers && k.swimmers.club === club).map(k => k.swimmer_id);
+      if (sq.length) await sb.from("user_squads").delete().eq("user_id", p.user_id).in("squad_id", sq);
+      if (kids.length) await sb.from("user_swimmers").delete().eq("user_id", p.user_id).in("swimmer_id", kids);
+    }
+    await uaLoadPeople();
+  } else if (b.dataset.act === "relink"){
+    const x = p.roles[0];
+    b.disabled = true; b.textContent = "Working…";
+    try {
+      const res = await uaCallInvite({
+        email: p.email, full_name: p.full_name, role: x.role, club: x.club,
+        squad_ids: p.squads.map(q => q.squad_id), swimmer_ids: p.kids.map(k => k.swimmer_id),
+        redirect_to: location.origin + location.pathname
+      });
+      $("uaMsg").textContent = ""; uaShowLink(p.full_name, p.email, res.link, true);
+      $("uaResult").scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch (e) { alert(e.message); }
+    b.disabled = false; b.textContent = "New sign-in link";
+  }
+});
+
+$("uaRole").addEventListener("change", uaUpdateFields);
+$("uaClub").addEventListener("change", () => { uaFillSquads(); $("uaSwimmerResults").innerHTML = ""; $("uaSwimmerQ").value = ""; });
+$("uaSwimmerQ").addEventListener("input", () => { clearTimeout(uaSearchSwimmer._t); uaSearchSwimmer._t = setTimeout(uaSearchSwimmer, 250); });
+$("adminUsersTile").addEventListener("click", goAdminUsers);
+$("backAdminUsers").addEventListener("click", goAdmin);
+
+// Arrived from an invite / sign-in / reset link: ask them to choose a password.
+async function authLinkLanding(){
+  if (AUTH_LINK.error){
+    await goAppDev();
+    adShowAuth("That sign-in link has expired or was already used. Ask your club admin for a new one.", true);
+    return;
+  }
+  if (["invite", "magiclink", "recovery"].includes(AUTH_LINK.type) && accessUser){
+    adRecovery = true;
+    await goAppDev();
+  }
+}
 </script>
 
 </body>
