@@ -357,6 +357,72 @@
   .fb-panel{display:none;}
   .fb-panel.active{display:block;}
 
+  /* Feedback: Swimmers / Squads switch + squad feedback */
+  .fb-mode-bar{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;}
+  .fb-mode-btn{
+    padding:11px 8px;border-radius:10px;border:1.5px solid var(--border);background:#fff;
+    font-size:.88rem;font-weight:700;color:var(--text-dim);cursor:pointer;
+  }
+  .fb-mode-btn.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .sqf-tab{
+    flex:1;padding:10px 6px;border-radius:8px;border:none;background:transparent;
+    font-size:.8rem;font-weight:700;color:var(--text-dim);cursor:pointer;text-align:center;
+    display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.1;
+  }
+  .sqf-tab.active{background:#fff;color:var(--navy);box-shadow:0 2px 6px rgba(11,37,69,.12);}
+  .sqf-tab:disabled{opacity:.4;cursor:default;}
+  .sqf-tab .fb-tab-badge{font-size:.6rem;font-weight:800;background:var(--accent);color:#fff;border-radius:20px;padding:0 6px;margin-top:1px;min-width:16px;}
+  .sqf-panel{display:none;}
+  .sqf-panel.active{display:block;}
+  .sqf-squad-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .sqf-squad-btn{
+    padding:14px 10px;border-radius:10px;border:1.5px solid var(--border);background:#fafbfc;
+    font-weight:700;font-size:.9rem;color:var(--navy);cursor:pointer;text-align:left;
+  }
+  .sqf-squad-btn small{display:block;font-weight:600;font-size:.7rem;color:var(--text-dim);margin-top:3px;}
+  .sqf-squad-btn.active{border-color:var(--accent);background:#eaf6fc;}
+  .sqf-for{font-size:.78rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+  .sqf-link-box{margin-top:18px;border:1.5px solid #cfe6f3;background:#f5fbfe;border-radius:11px;padding:12px;}
+  .sqf-link-title{font-weight:800;color:var(--navy);font-size:.85rem;}
+  .sqf-drill-results{max-height:220px;overflow:auto;}
+  .sqf-drill-item{padding:9px 10px;border-bottom:1px solid var(--border);cursor:pointer;background:#fff;font-size:.86rem;}
+  .sqf-drill-item:first-child{border-top-left-radius:8px;border-top-right-radius:8px;}
+  .sqf-drill-item small{color:var(--text-dim);margin-left:6px;}
+  .sqf-week-tools{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px;}
+  .sqf-week-tools button{background:#fff;border:1.5px solid var(--border);border-radius:20px;padding:5px 11px;font-size:.74rem;font-weight:700;color:var(--navy);cursor:pointer;}
+  .sqf-weeks{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;}
+  .sqf-week{
+    border:1.5px solid var(--border);border-radius:9px;padding:7px 8px;background:#fff;cursor:pointer;
+    font-size:.74rem;line-height:1.25;user-select:none;
+  }
+  .sqf-week b{display:block;font-size:.8rem;color:var(--navy);}
+  .sqf-week .sqf-wk-tag{color:var(--text-dim);font-size:.66rem;}
+  .sqf-week.on{border-color:var(--green);background:#e6f4e8;}
+  .sqf-week.past{opacity:.55;}
+  .sqf-week.now{box-shadow:inset 0 0 0 1.5px var(--accent);}
+  .sqf-macro-head{grid-column:1/-1;font-size:.72rem;font-weight:800;color:var(--text-dim);margin-top:4px;}
+  .sqf-entry{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:#fff;}
+  .sqf-entry.old{background:#fafbfc;opacity:.8;}
+  .sqf-entry-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;}
+  .sqf-entry-title{font-weight:700;font-size:.9rem;color:var(--navy);}
+  .sqf-entry-meta{font-size:.72rem;color:var(--text-dim);margin-top:2px;}
+  .sqf-entry-body{font-size:.84rem;margin-top:6px;white-space:pre-wrap;}
+  .sqf-entry-fix{font-size:.82rem;margin-top:4px;color:#0a5c8a;white-space:pre-wrap;}
+  .sqf-chip{display:inline-block;font-size:.68rem;font-weight:700;border-radius:20px;padding:2px 8px;margin:4px 4px 0 0;background:#eef2f6;color:var(--navy);}
+  .sqf-chip.drill{background:#e6f4e8;color:var(--green);}
+  .sqf-chip.st-Started{background:#fff4e0;color:#8a5a00;}
+  .sqf-chip.st-Developing{background:#e6f0ff;color:#0a5c8a;}
+  .sqf-chip.st-Embedded{background:#e6f4e8;color:var(--green);}
+  .sqf-update-btn{background:none;border:1.5px solid var(--accent);color:var(--accent);border-radius:8px;padding:4px 9px;font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap;}
+  .sqf-old-toggle{background:none;border:none;color:var(--text-dim);font-size:.74rem;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 0;}
+  /* Drills fed from squad feedback (micro-cycles + session-plan editor) */
+  .sdw-box{margin-top:8px;border-top:1px dashed var(--border);padding-top:8px;}
+  .sdw-title{font-size:.72rem;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.3px;}
+  .sdw-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.82rem;padding:5px 0;}
+  .sdw-row small{display:block;color:var(--text-dim);font-size:.72rem;}
+  .sdw-add{background:var(--green);color:#fff;border:none;border-radius:8px;padding:5px 10px;font-size:.74rem;font-weight:700;cursor:pointer;white-space:nowrap;}
+  .sdw-add:disabled{background:#9aa7b5;cursor:default;}
+
   .media-btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .media-input-wrap{
     border:1.5px dashed var(--border);border-radius:9px;padding:14px 10px;
@@ -1332,6 +1398,13 @@
   <div class="view" id="viewFeedback">
     <a class="back-home" id="backHome4">Home</a>
 
+    <!-- Swimmers / Squads switch -->
+    <div class="fb-mode-bar" role="tablist">
+      <button type="button" class="fb-mode-btn active" id="fbModeSwimmers" data-mode="swimmers">👤 Swimmers</button>
+      <button type="button" class="fb-mode-btn" id="fbModeSquads" data-mode="squads">👥 Squads</button>
+    </div>
+
+    <div id="fbSwimmerMode">
     <div class="fb-tabs">
       <button type="button" class="fb-tab active" id="fbTabSwimmer" data-panel="fbPanelSwimmer">
         <span class="fb-tab-num">1</span>Swimmer
@@ -1469,6 +1542,121 @@
       <div class="msg" id="msg"></div>
     </div>
     </div>
+    </div><!-- /fbSwimmerMode -->
+
+    <!-- ============ SQUAD FEEDBACK ============ -->
+    <div id="fbSquadMode" style="display:none;">
+      <div class="fb-tabs sqf-tabs">
+        <button type="button" class="sqf-tab active" data-panel="sqfPanelSquad">
+          <span class="fb-tab-num">1</span>Squad
+        </button>
+        <button type="button" class="sqf-tab" id="sqfTabHistory" data-panel="sqfPanelHistory" disabled>
+          History<span class="fb-tab-badge" id="sqfHistoryBadge" style="display:none;">0</span>
+        </button>
+        <button type="button" class="sqf-tab" id="sqfTabForm" data-panel="sqfPanelForm" disabled>
+          <span class="fb-tab-num">2</span>Stroke / skill
+        </button>
+      </div>
+
+      <div class="sqf-panel active" id="sqfPanelSquad">
+        <div class="card">
+          <h2>1 · Squad</h2>
+          <p class="hint" style="margin-top:0;">Feedback on the squad as a whole — what the group needs to work on, the drill that fixes it, and the season weeks to work it in.</p>
+          <div class="sqf-squad-grid" id="sqfSquadGrid"><div class="empty">Loading squads…</div></div>
+        </div>
+        <div class="card">
+          <h2>Recently logged (all squads)</h2>
+          <div id="sqfRecentList"><div class="empty">Loading…</div></div>
+        </div>
+      </div>
+
+      <div class="sqf-panel" id="sqfPanelHistory">
+        <div class="card">
+          <h2>History for <span id="sqfHistoryName">this squad</span> <span class="count" id="sqfHistoryCount"></span></h2>
+          <div class="stroke-filter" id="sqfStrokeFilter"></div>
+          <div id="sqfHistoryList"><div class="empty">Pick a squad first.</div></div>
+        </div>
+      </div>
+
+      <div class="sqf-panel" id="sqfPanelForm">
+        <div class="card">
+          <div class="updating-banner" id="sqfUpdatingBanner" style="display:none;">
+            <div>
+              <div class="ub-title" id="sqfUpdatingTitle"></div>
+              <div class="thread-count">New entry added to this string — earlier entries are kept.</div>
+            </div>
+            <button type="button" id="sqfCancelUpdateBtn">Start new instead</button>
+          </div>
+          <div class="sqf-for" id="sqfFor"></div>
+          <h2>2 · Stroke / skill</h2>
+          <select id="sqfCategory">
+            <option value="" disabled selected>Choose one…</option>
+            <option>Free</option><option>Back</option><option>Breast</option><option>Fly</option>
+            <option>Dive</option><option>Transition</option><option>Touch turn</option><option>Tumble turn</option>
+            <option>Training mindset</option><option>Racing mindset</option>
+          </select>
+
+          <label style="margin-top:20px;">Entry type</label>
+          <div class="toggle-row">
+            <div class="toggle-btn active" id="sqfTypeStatusBtn">Status review</div>
+            <div class="toggle-btn" id="sqfTypeNoteBtn">Freeform note</div>
+          </div>
+
+          <div id="sqfCriterionBlock">
+            <label for="sqfCriterion">Criterion</label>
+            <input type="text" id="sqfCriterion" placeholder="e.g. Streamline off every wall" list="sqfCriterionList" autocomplete="off">
+            <datalist id="sqfCriterionList"></datalist>
+            <label>Squad status</label>
+            <div class="status-grid" id="sqfStatusGrid">
+              <div class="status-btn" data-status="Not discussed">Not discussed</div>
+              <div class="status-btn" data-status="Started">Started</div>
+              <div class="status-btn" data-status="Developing">Developing</div>
+              <div class="status-btn" data-status="Embedded">Embedded</div>
+            </div>
+          </div>
+
+          <label for="sqfObservation">Observation</label>
+          <textarea id="sqfObservation" placeholder="What did you see across the squad?"></textarea>
+
+          <label for="sqfRemedial">Remedial action <span class="opt">(optional)</span></label>
+          <textarea id="sqfRemedial" placeholder="The fix — cue, focus, set design…"></textarea>
+
+          <div class="sqf-link-box">
+            <div class="sqf-link-title">🔗 Drill → season plan</div>
+            <label for="sqfDrillSearch" style="margin-top:6px;">Drill <span class="opt">(from the Drills &amp; Skills library)</span></label>
+            <input type="text" id="sqfDrillSearch" placeholder="Search drills…" autocomplete="off">
+            <div class="sqf-drill-results" id="sqfDrillResults"></div>
+            <div class="selected-pill" id="sqfDrillPill" style="display:none;">
+              <span id="sqfDrillName"></span>
+              <button type="button" id="sqfDrillClear">change</button>
+            </div>
+
+            <div id="sqfWeeksWrap" style="display:none;">
+              <label style="margin-top:14px;">Weeks to work it <span class="opt">(micro-cycles in this squad's season plan)</span></label>
+              <div class="sqf-week-tools">
+                <button type="button" id="sqfWeeksNext4">Next 4 weeks</button>
+                <button type="button" id="sqfWeeksClear">Clear</button>
+                <button type="button" id="sqfWeeksPast">Show earlier weeks</button>
+              </div>
+              <div class="sqf-weeks" id="sqfWeeks"></div>
+            </div>
+          </div>
+
+          <label for="sqfNotes">Additional notes <span class="opt">(optional)</span></label>
+          <textarea id="sqfNotes" placeholder="Context — pool, numbers, effort…"></textarea>
+
+          <label for="sqfDate">Date</label>
+          <input type="date" id="sqfDate">
+
+          <label for="sqfPlanSelect">Session plan <span class="opt">(optional — the plan this was seen in)</span></label>
+          <select id="sqfPlanSelect"><option value="">— none / not linked —</option></select>
+
+          <p class="hint">Saving always adds a new dated entry. The drill weeks of the latest entry in a string are the ones shown in micro-cycles and session planning.</p>
+          <button class="submit-btn" id="sqfSubmitBtn">Save squad entry</button>
+          <div class="msg" id="sqfMsg"></div>
+        </div>
+      </div>
+    </div><!-- /fbSquadMode -->
 
   </div>
 
@@ -2654,7 +2842,13 @@ function showView(id){
 // Shared navigation actions — used by both the home tiles and the hamburger menu.
 function goHome(){ showView("viewHome"); }
 function goAttendance(){ resetAttendanceSetup(); showView("viewAttendanceSetup"); }
-function goFeedback(){ showView("viewFeedback"); resetFbTabs(); populateFbPlanSelect(); loadFbSquadOptions().then(loadSwimmers); loadRecent(); }
+function goFeedback(){ showView("viewFeedback"); resetFbTabs(); populateFbPlanSelect(); loadFbSquadOptions().then(loadSwimmers); loadRecent();
+  // Squad feedback is for coaching roles; parents/swimmers (own-child read) only see Swimmers.
+  const canSquad = sectionLevel("feedback") !== "CR";
+  document.querySelector(".fb-mode-bar").style.display = canSquad ? "grid" : "none";
+  if (!canSquad && fbMode === "squads") setFbMode("swimmers");
+  else if (fbMode === "squads") sqfOpen();
+}
 function goSession(){ if (typeof spSetReturn === "function") spSetReturn(null); showView("viewSession"); loadPlanList(); }  // Season → Session plans
 function goMI(){ showView("viewMI"); }
 function goAdmin(){ showView("viewAdmin"); }
@@ -2666,6 +2860,7 @@ $("tileFeedback").addEventListener("click", goFeedback);
 });
 $("goFeedbackBtn").addEventListener("click", () => {
   showView("viewFeedback");
+  setFbMode("swimmers");
   resetFbTabs();
   populateFbPlanSelect(attSession.plan_id);  // carry the attended session's plan across
   loadFbSquadOptions().then(loadSwimmers);
@@ -2727,6 +2922,409 @@ function setFbTabsEnabled(on){
 function resetFbTabs(){
   setFbTabsEnabled(!!selectedSwimmer);
   setFbTab(selectedSwimmer ? "fbPanelForm" : "fbPanelSwimmer");
+}
+
+// ===================================================================
+// FEEDBACK → SQUADS
+// Same structure as swimmer feedback, aimed at a squad as a whole. A squad
+// entry can name a drill and the season weeks (micro-cycles) to work it in;
+// those links (squad_drill_weeks) feed the micro-cycle cards and the
+// session-plan editor ("Drills to work this week").
+// ===================================================================
+let fbMode = "swimmers";
+const sqf = { squads: [], squad: null, entries: [], status: null, type: "status", drill: null,
+              weeks: new Set(), threadId: null, showPast: false, filter: "", drills: [], drillsClub: null,
+              openThreads: new Set() };
+
+function setFbMode(mode){
+  fbMode = mode;
+  document.querySelectorAll(".fb-mode-btn").forEach(b => b.classList.toggle("active", b.dataset.mode === mode));
+  $("fbSwimmerMode").style.display = mode === "swimmers" ? "block" : "none";
+  $("fbSquadMode").style.display = mode === "squads" ? "block" : "none";
+  if (mode === "squads") sqfOpen();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll(".fb-mode-btn").forEach(b => b.addEventListener("click", () => setFbMode(b.dataset.mode)));
+
+function setSqfTab(panelId){
+  const tab = document.querySelector(`.sqf-tab[data-panel="${panelId}"]`);
+  if (tab && tab.disabled) return;
+  document.querySelectorAll(".sqf-tab").forEach(t => t.classList.toggle("active", t.dataset.panel === panelId));
+  document.querySelectorAll(".sqf-panel").forEach(p => p.classList.toggle("active", p.id === panelId));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll(".sqf-tab").forEach(t => t.addEventListener("click", () => setSqfTab(t.dataset.panel)));
+function sqfTabsEnabled(on){ $("sqfTabHistory").disabled = !on; $("sqfTabForm").disabled = !on; }
+
+async function sqfOpen(){
+  sqfTabsEnabled(!!sqf.squad);
+  if (!$("sqfDate").value) $("sqfDate").value = ttToday();
+  sqfLoadSquads();
+  sqfLoadRecent();
+  sqfLoadDrills();
+  populateFbPlanSelect().then(() => {
+    const keep = $("sqfPlanSelect").value;
+    $("sqfPlanSelect").innerHTML = $("fbPlanSelect").innerHTML;
+    $("sqfPlanSelect").value = keep;
+  });
+}
+
+async function sqfLoadSquads(){
+  const grid = $("sqfSquadGrid");
+  const [sq, fb] = await Promise.all([
+    sb.from("squads").select("id, name").eq("club", currentClub).order("name"),
+    sb.from("squad_feedback").select("squad_id").eq("club", currentClub).eq("is_active", true)
+  ]);
+  if (sq.error){ console.error(sq.error); grid.innerHTML = '<div class="empty">Could not load squads.</div>'; return; }
+  sqf.squads = sq.data || [];
+  if (sqf.squad && !sqf.squads.some(x => x.id === sqf.squad.id)){   // club changed
+    sqf.squad = null; sqfResetForm(); sqfTabsEnabled(false); setSqfTab("sqfPanelSquad");
+  }
+  const counts = {};
+  (fb.data || []).forEach(r => { counts[r.squad_id] = (counts[r.squad_id] || 0) + 1; });
+  grid.innerHTML = sqf.squads.length ? sqf.squads.map(s => `
+    <button type="button" class="sqf-squad-btn ${sqf.squad && sqf.squad.id === s.id ? "active" : ""}" data-id="${s.id}">
+      ${escapeHtml(s.name)}<small>${counts[s.id] ? counts[s.id] + " entr" + (counts[s.id] === 1 ? "y" : "ies") : "No feedback yet"}</small>
+    </button>`).join("") : '<div class="empty">No squads set up for this club.</div>';
+}
+$("sqfSquadGrid").addEventListener("click", e => {
+  const b = e.target.closest(".sqf-squad-btn"); if (!b) return;
+  const s = sqf.squads.find(x => x.id === b.dataset.id); if (s) sqfPickSquad(s);
+});
+
+async function sqfPickSquad(s, goTo){
+  if (!sqf.squad || sqf.squad.id !== s.id) sqfResetForm();
+  sqf.squad = s;
+  document.querySelectorAll(".sqf-squad-btn").forEach(b => b.classList.toggle("active", b.dataset.id === s.id));
+  $("sqfHistoryName").textContent = s.name;
+  $("sqfFor").textContent = "Squad · " + s.name;
+  sqfTabsEnabled(true);
+  try { await spLoadMacros(); } catch (err){ console.error(err); }
+  await sqfLoadHistory();
+  sqfRenderWeeks();
+  setSqfTab(goTo || (sqf.entries.length ? "sqfPanelHistory" : "sqfPanelForm"));
+}
+
+async function sqfLoadRecent(){
+  const el = $("sqfRecentList");
+  const { data, error } = await sb.from("squad_feedback")
+    .select("id, squad_id, category, criterion, status, observation, session_date, squads(name), drills_library(drill_name)")
+    .eq("club", currentClub).eq("is_active", true)
+    .order("created_at", { ascending: false }).limit(12);
+  if (error){ console.error(error); el.innerHTML = '<div class="empty">Could not load recent squad feedback.</div>'; return; }
+  el.innerHTML = (data || []).length ? data.map(r => `
+    <div class="sqf-entry" data-squad="${r.squad_id}" style="cursor:pointer;">
+      <div class="sqf-entry-title">${escapeHtml(r.squads ? r.squads.name : "Squad")} · ${escapeHtml(r.category)}${r.criterion ? " — " + escapeHtml(r.criterion) : ""}</div>
+      <div class="sqf-entry-meta">${fmtDate(r.session_date)}${r.status ? " · " + escapeHtml(r.status) : ""}${r.drills_library ? " · Drill: " + escapeHtml(r.drills_library.drill_name) : ""}</div>
+      <div class="sqf-entry-body">${escapeHtml((r.observation || "").slice(0, 140))}</div>
+    </div>`).join("") : '<div class="empty">No squad feedback logged yet.</div>';
+}
+$("sqfRecentList").addEventListener("click", e => {
+  const c = e.target.closest("[data-squad]"); if (!c) return;
+  const s = sqf.squads.find(x => x.id === c.dataset.squad); if (s) sqfPickSquad(s, "sqfPanelHistory");
+});
+
+// --- History (grouped into strings by thread_id, latest first) ---
+async function sqfLoadHistory(){
+  const el = $("sqfHistoryList");
+  el.innerHTML = '<div class="empty">Loading…</div>';
+  const { data, error } = await sb.from("squad_feedback")
+    .select("*, drills_library(id, drill_name, stroke), squad_drill_weeks(micro_id, is_active)")
+    .eq("squad_id", sqf.squad.id).eq("is_active", true)
+    .order("session_date", { ascending: false }).order("created_at", { ascending: false });
+  if (error){ console.error(error); el.innerHTML = '<div class="empty">Could not load history.</div>'; sqf.entries = []; return; }
+  sqf.entries = data || [];
+  const n = sqf.entries.length;
+  $("sqfHistoryCount").textContent = n ? "(" + n + ")" : "";
+  $("sqfHistoryBadge").textContent = n; $("sqfHistoryBadge").style.display = n ? "inline-block" : "none";
+  sqfRenderFilter();
+  sqfRenderHistory();
+}
+function sqfRenderFilter(){
+  const cats = [...new Set(sqf.entries.map(e => e.category))];
+  if (sqf.filter && !cats.includes(sqf.filter)) sqf.filter = "";
+  $("sqfStrokeFilter").innerHTML = cats.length > 1
+    ? [`<span class="stroke-chip ${!sqf.filter ? "active" : ""}" data-cat="">All</span>`]
+        .concat(cats.map(c => `<span class="stroke-chip ${sqf.filter === c ? "active" : ""}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</span>`)).join("")
+    : "";
+}
+$("sqfStrokeFilter").addEventListener("click", e => {
+  const b = e.target.closest("[data-cat]"); if (!b) return;
+  sqf.filter = b.dataset.cat; sqfRenderFilter(); sqfRenderHistory();
+});
+function sqfWeekLabel(microId){
+  for (const m of (spMacroCache.macros || [])){
+    const mi = (m.micros || []).find(x => x.id === microId);
+    if (mi) return "Wk " + mi.week_no + (mi.week_commencing ? " (" + fmtDdMm(mi.week_commencing) + ")" : "");
+  }
+  return "Week";
+}
+function sqfEntryHtml(e, latest){
+  const weeks = (e.squad_drill_weeks || []).filter(w => w.is_active);
+  const wkChips = latest && weeks.length
+    ? weeks.map(w => ({ id: w.micro_id, l: sqfWeekLabel(w.micro_id) })).map(w => `<span class="sqf-chip">${escapeHtml(w.l)}</span>`).join("") : "";
+  return `
+    <div class="sqf-entry ${latest ? "" : "old"}">
+      <div class="sqf-entry-top">
+        <div>
+          <div class="sqf-entry-title">${escapeHtml(e.category)}${e.criterion ? " — " + escapeHtml(e.criterion) : ""}</div>
+          <div class="sqf-entry-meta">${fmtDate(e.session_date)} · ${e.entry_type === "status" ? "Status review" : "Note"}</div>
+        </div>
+        ${latest ? `<button type="button" class="sqf-update-btn" data-update="${e.thread_id}">Update</button>` : ""}
+      </div>
+      <div>${e.status ? `<span class="sqf-chip st-${e.status.replace(/\s/g, "")}">${escapeHtml(e.status)}</span>` : ""}${e.drills_library ? `<span class="sqf-chip drill">Drill: ${escapeHtml(e.drills_library.drill_name)}</span>` : ""}${wkChips}</div>
+      <div class="sqf-entry-body">${escapeHtml(e.observation || "")}</div>
+      ${e.remedial_action ? `<div class="sqf-entry-fix">Fix: ${escapeHtml(e.remedial_action)}</div>` : ""}
+      ${e.note ? `<div class="sqf-entry-meta" style="white-space:pre-wrap;">${escapeHtml(e.note)}</div>` : ""}
+    </div>`;
+}
+function sqfRenderHistory(){
+  const el = $("sqfHistoryList");
+  const list = sqf.entries.filter(e => !sqf.filter || e.category === sqf.filter);
+  if (!list.length){ el.innerHTML = '<div class="empty">No squad feedback yet — add the first entry under Stroke / skill.</div>'; return; }
+  const threads = [], byId = {};
+  list.forEach(e => { if (!byId[e.thread_id]){ byId[e.thread_id] = []; threads.push(e.thread_id); } byId[e.thread_id].push(e); });
+  el.innerHTML = threads.map(t => {
+    const items = byId[t], open = sqf.openThreads.has(t);
+    return sqfEntryHtml(items[0], true) +
+      (items.length > 1 ? `<button type="button" class="sqf-old-toggle" data-thread="${t}">${open ? "Hide" : "Show"} ${items.length - 1} earlier entr${items.length === 2 ? "y" : "ies"}</button>` +
+        (open ? items.slice(1).map(e => sqfEntryHtml(e, false)).join("") : "") : "");
+  }).join("");
+}
+$("sqfHistoryList").addEventListener("click", e => {
+  const tg = e.target.closest("[data-thread]");
+  if (tg){ const t = tg.dataset.thread; sqf.openThreads.has(t) ? sqf.openThreads.delete(t) : sqf.openThreads.add(t); sqfRenderHistory(); return; }
+  const up = e.target.closest("[data-update]");
+  if (up) sqfStartUpdate(up.dataset.update);
+});
+
+// --- Form ---
+function sqfSetType(t){
+  sqf.type = t;
+  $("sqfTypeStatusBtn").classList.toggle("active", t === "status");
+  $("sqfTypeNoteBtn").classList.toggle("active", t === "note");
+  $("sqfCriterionBlock").style.display = t === "status" ? "block" : "none";
+}
+$("sqfTypeStatusBtn").addEventListener("click", () => sqfSetType("status"));
+$("sqfTypeNoteBtn").addEventListener("click", () => sqfSetType("note"));
+function sqfSetStatus(s){
+  sqf.status = s;
+  document.querySelectorAll("#sqfStatusGrid .status-btn").forEach(b => b.classList.toggle("active", b.dataset.status === s));
+}
+$("sqfStatusGrid").addEventListener("click", e => { const b = e.target.closest(".status-btn"); if (b) sqfSetStatus(b.dataset.status); });
+$("sqfCategory").addEventListener("change", () => {
+  const cat = $("sqfCategory").value;
+  const crit = [...new Set(sqf.entries.filter(e => e.category === cat && e.criterion).map(e => e.criterion))];
+  $("sqfCriterionList").innerHTML = crit.map(c => `<option value="${escapeHtml(c)}">`).join("");
+});
+
+async function sqfLoadDrills(){
+  if (sqf.drillsClub === currentClub && sqf.drills.length) return;
+  const { data, error } = await sb.from("drills_library").select("id, drill_name, stroke, pseudonyms")
+    .eq("club", currentClub).order("stroke").order("drill_name");
+  if (error){ console.error(error); return; }
+  sqf.drills = data || []; sqf.drillsClub = currentClub;
+}
+function sqfRenderDrillResults(){
+  const q = $("sqfDrillSearch").value.trim().toLowerCase();
+  const box = $("sqfDrillResults");
+  if (!q){ box.innerHTML = ""; return; }
+  const hits = sqf.drills.filter(d => (d.drill_name || "").toLowerCase().includes(q) ||
+    (d.stroke || "").toLowerCase().includes(q) || (d.pseudonyms || []).some(p => (p || "").toLowerCase().includes(q))).slice(0, 12);
+  box.innerHTML = hits.length ? hits.map(d => `<div class="sqf-drill-item" data-id="${d.id}">${escapeHtml(d.drill_name)}<small>${escapeHtml(d.stroke || "")}</small></div>`).join("")
+    : '<div class="sqf-drill-item" style="cursor:default;color:var(--text-dim);">No drill matches — add it under Drills &amp; Skills first.</div>';
+}
+$("sqfDrillSearch").addEventListener("input", sqfRenderDrillResults);
+$("sqfDrillSearch").addEventListener("focus", () => { sqfLoadDrills(); });
+$("sqfDrillResults").addEventListener("click", e => {
+  const it = e.target.closest(".sqf-drill-item[data-id]"); if (!it) return;
+  const d = sqf.drills.find(x => x.id === it.dataset.id); if (d) sqfSetDrill(d);
+});
+function sqfSetDrill(d){
+  sqf.drill = d;
+  $("sqfDrillSearch").value = ""; $("sqfDrillResults").innerHTML = "";
+  $("sqfDrillSearch").style.display = d ? "none" : "block";
+  $("sqfDrillPill").style.display = d ? "flex" : "none";
+  $("sqfDrillName").textContent = d ? d.drill_name + (d.stroke ? " · " + d.stroke : "") : "";
+  $("sqfWeeksWrap").style.display = d ? "block" : "none";
+  if (!d) sqf.weeks.clear();
+  sqfRenderWeeks();
+}
+$("sqfDrillClear").addEventListener("click", () => sqfSetDrill(null));
+
+// The squad's season weeks: micro-cycles of active macros that include this squad.
+function sqfSquadWeeks(){
+  if (!sqf.squad) return [];
+  const out = [];
+  (spMacroCache.macros || []).forEach(m => {
+    if (!(m.macro_squads || []).some(x => x.squad_id === sqf.squad.id && x.is_active)) return;
+    (m.micros || []).filter(mi => mi.is_active && mi.week_commencing)
+      .forEach(mi => out.push({ ...mi, macroTitle: m.title }));
+  });
+  return out.sort((a, b) => a.week_commencing.localeCompare(b.week_commencing));
+}
+async function sqfRenderWeeks(){
+  const box = $("sqfWeeks");
+  if (!sqf.squad || !sqf.drill){ box.innerHTML = ""; return; }
+  try { await spLoadMacros(); } catch (err){ console.error(err); box.innerHTML = '<div class="tt-muted">Could not load the season plan.</div>'; return; }
+  const today = ttToday();
+  const weeks = sqfSquadWeeks();
+  if (!weeks.length){
+    box.innerHTML = `<div class="tt-muted" style="grid-column:1/-1;">${escapeHtml(sqf.squad.name)} isn't in a macro-cycle yet. Add it under Season → PLAN to link drills to weeks.</div>`;
+    $("sqfWeeksPast").style.display = "none"; return;
+  }
+  const hasPast = weeks.some(w => isoAdd(w.week_commencing, 6) < today);
+  $("sqfWeeksPast").style.display = hasPast ? "inline-block" : "none";
+  $("sqfWeeksPast").textContent = sqf.showPast ? "Hide earlier weeks" : "Show earlier weeks";
+  let lastMacro = null, html = "";
+  weeks.forEach(w => {
+    const past = isoAdd(w.week_commencing, 6) < today, now = w.week_commencing <= today && isoAdd(w.week_commencing, 6) >= today;
+    if (past && !sqf.showPast && !sqf.weeks.has(w.id)) return;
+    if (w.macroTitle !== lastMacro){ html += `<div class="sqf-macro-head">${escapeHtml(w.macroTitle)}</div>`; lastMacro = w.macroTitle; }
+    html += `<div class="sqf-week ${sqf.weeks.has(w.id) ? "on" : ""} ${past ? "past" : ""} ${now ? "now" : ""}" data-mid="${w.id}">
+      <b>Week ${w.week_no}</b>w/c ${fmtDdMm(w.week_commencing)}${w.qes_focus ? `<div class="sqf-wk-tag">${escapeHtml(QES[w.qes_focus] || w.qes_focus)}</div>` : ""}${now ? '<div class="sqf-wk-tag">This week</div>' : ""}
+    </div>`;
+  });
+  box.innerHTML = html || '<div class="tt-muted" style="grid-column:1/-1;">No weeks left in this season plan.</div>';
+}
+$("sqfWeeks").addEventListener("click", e => {
+  const w = e.target.closest(".sqf-week[data-mid]"); if (!w) return;
+  const id = w.dataset.mid;
+  sqf.weeks.has(id) ? sqf.weeks.delete(id) : sqf.weeks.add(id);
+  w.classList.toggle("on", sqf.weeks.has(id));
+});
+$("sqfWeeksNext4").addEventListener("click", () => {
+  const today = ttToday();
+  sqfSquadWeeks().filter(w => isoAdd(w.week_commencing, 6) >= today).slice(0, 4).forEach(w => sqf.weeks.add(w.id));
+  sqfRenderWeeks();
+});
+$("sqfWeeksClear").addEventListener("click", () => { sqf.weeks.clear(); sqfRenderWeeks(); });
+$("sqfWeeksPast").addEventListener("click", () => { sqf.showPast = !sqf.showPast; sqfRenderWeeks(); });
+
+function sqfResetForm(){
+  sqf.threadId = null; sqf.weeks.clear();
+  $("sqfUpdatingBanner").style.display = "none";
+  $("sqfCategory").value = ""; $("sqfCriterion").value = "";
+  $("sqfObservation").value = ""; $("sqfRemedial").value = ""; $("sqfNotes").value = "";
+  sqfSetType("status"); sqfSetStatus(null); sqfSetDrill(null);
+}
+$("sqfCancelUpdateBtn").addEventListener("click", sqfResetForm);
+
+// Continue a string: prefill from its latest entry (category, criterion, status, drill and its weeks).
+function sqfStartUpdate(threadId){
+  const latest = sqf.entries.find(e => e.thread_id === threadId); if (!latest) return;
+  sqfResetForm();
+  sqf.threadId = threadId;
+  $("sqfCategory").value = latest.category;
+  $("sqfCategory").dispatchEvent(new Event("change"));
+  sqfSetType(latest.entry_type === "note" ? "note" : "status");
+  $("sqfCriterion").value = latest.criterion || "";
+  sqfSetStatus(latest.status || null);
+  $("sqfRemedial").value = latest.remedial_action || "";
+  (latest.squad_drill_weeks || []).filter(w => w.is_active).forEach(w => sqf.weeks.add(w.micro_id));
+  if (latest.drills_library) sqfSetDrill(latest.drills_library); else sqfSetDrill(null);
+  $("sqfUpdatingTitle").textContent = "Updating: " + latest.category + (latest.criterion ? " — " + latest.criterion : "");
+  $("sqfUpdatingBanner").style.display = "flex";
+  setSqfTab("sqfPanelForm");
+}
+
+$("sqfSubmitBtn").addEventListener("click", async () => {
+  const msg = $("sqfMsg"); snMsg(msg, "", "");
+  if (!sqf.squad) return snMsg(msg, "err", "Pick a squad first.");
+  const category = $("sqfCategory").value;
+  if (!category) return snMsg(msg, "err", "Choose a stroke or skill.");
+  const date = $("sqfDate").value;
+  if (!date) return snMsg(msg, "err", "Set a date.");
+  const observation = $("sqfObservation").value.trim();
+  if (!observation) return snMsg(msg, "err", "Enter an observation — what did you see across the squad?");
+  const row = {
+    club: currentClub, squad_id: sqf.squad.id, entry_type: sqf.type, category, observation,
+    remedial_action: $("sqfRemedial").value.trim() || null,
+    note: $("sqfNotes").value.trim() || null,
+    drill_id: sqf.drill ? sqf.drill.id : null,
+    session_plan_id: $("sqfPlanSelect").value || null,
+    session_date: date
+  };
+  if (sqf.threadId) row.thread_id = sqf.threadId;
+  if (sqf.type === "status"){
+    const criterion = $("sqfCriterion").value.trim();
+    if (!criterion) return snMsg(msg, "err", "Enter a criterion.");
+    if (!sqf.status) return snMsg(msg, "err", "Pick the squad's status.");
+    row.criterion = criterion; row.status = sqf.status;
+  }
+  const btn = $("sqfSubmitBtn"); btn.disabled = true;
+  try {
+    const { data: saved, error } = await sb.from("squad_feedback").insert(row).select("id, thread_id").single();
+    if (error) throw error;
+    // Only the latest entry in a string drives the season weeks: retire earlier links.
+    const prevIds = sqf.entries.filter(e => e.thread_id === saved.thread_id).map(e => e.id);
+    if (prevIds.length){
+      const { error: ue } = await sb.from("squad_drill_weeks").update({ is_active: false }).in("squad_feedback_id", prevIds).eq("is_active", true);
+      if (ue) throw ue;
+    }
+    if (sqf.drill && sqf.weeks.size){
+      const { error: we } = await sb.from("squad_drill_weeks").insert([...sqf.weeks].map(mid => ({
+        squad_feedback_id: saved.id, squad_id: sqf.squad.id, drill_id: sqf.drill.id, micro_id: mid, club: currentClub })));
+      if (we) throw we;
+    }
+    const nWeeks = sqf.drill ? sqf.weeks.size : 0;
+    snMsg(msg, "ok", (sqf.threadId ? "Update added to the string" : "Saved") + " — dated " + fmtDate(date) +
+      (nWeeks ? ` · ${sqf.drill.drill_name} linked to ${nWeeks} week${nWeeks === 1 ? "" : "s"}.` : "."));
+    sqfResetForm();
+    await sqfLoadHistory();
+    sqfLoadRecent(); sqfLoadSquads();
+    setSqfTab("sqfPanelHistory");
+  } catch (err){
+    console.error(err);
+    snMsg(msg, "err", "Save failed — " + (err.message || err));
+  } finally { btn.disabled = false; }
+});
+
+// --- Drills fed from squad feedback, for given micro-cycle weeks ---
+async function sdwFetch(microIds, squadIds){
+  if (!microIds.length) return [];
+  let q = sb.from("squad_drill_weeks")
+    .select("micro_id, squad_id, drill_id, drills_library(id, drill_name, stroke), squad_feedback(category, criterion, status, remedial_action)")
+    .in("micro_id", microIds).eq("is_active", true);
+  if (squadIds && squadIds.length) q = q.in("squad_id", squadIds);
+  const { data, error } = await q;
+  if (error){ console.error(error); return []; }
+  return (data || []).filter(r => r.drills_library);
+}
+function sdwReason(r){
+  const f = r.squad_feedback || {};
+  return [f.category, f.criterion, f.status].filter(Boolean).join(" · ");
+}
+// Session-plan editor: list this week's drills for the squad with a one-tap add.
+async function sdwRenderPlan(microId, squadId){
+  const slot = $("planSdwSlot"); if (!slot) return;
+  const rows = await sdwFetch([microId], [squadId]);
+  if ($("planSquadSelect").value !== squadId || !$("planSdwSlot")) return;
+  if (!rows.length){ slot.innerHTML = ""; return; }
+  const seen = new Set(), list = rows.filter(r => !seen.has(r.drill_id) && seen.add(r.drill_id));
+  const inPlan = id => editorBlocks.some(b => b.type === "drill" && b.drill_id === id);
+  slot.innerHTML = `<div class="sdw-box"><div class="sdw-title">Drills to work this week · from squad feedback</div>${list.map(r => `
+    <div class="sdw-row"><div>${escapeHtml(r.drills_library.drill_name)}<small>${escapeHtml(sdwReason(r))}</small></div>
+      <button type="button" class="sdw-add" data-drill="${r.drill_id}" ${inPlan(r.drill_id) ? "disabled" : ""}>${inPlan(r.drill_id) ? "In plan" : "+ Add"}</button></div>`).join("")}</div>`;
+  slot.querySelectorAll(".sdw-add").forEach(b => b.addEventListener("click", () => {
+    const r = list.find(x => x.drill_id === b.dataset.drill); if (!r) return;
+    editorBlocks.push({ type: "drill", drill_id: r.drill_id, drill_name: r.drills_library.drill_name });
+    renderBlocks();
+    b.disabled = true; b.textContent = "In plan";
+  }));
+}
+// Micro-cycle cards: show each week's drills (by squad) under the sessions.
+async function sdwRenderMicros(){
+  if (!miState) return;
+  const ids = miState.weeks.map(w => w.id).filter(Boolean);
+  const rows = await sdwFetch(ids, miState.squads.map(s => s.id));
+  document.querySelectorAll("#miWeeks .sdw-slot").forEach(slot => {
+    const mine = rows.filter(r => r.micro_id === slot.dataset.mid);
+    if (!mine.length){ slot.innerHTML = ""; return; }
+    const multi = miState.squads.length > 1;
+    slot.innerHTML = `<div class="sdw-box"><div class="sdw-title">Drills from squad feedback</div>${mine.map(r => `
+      <div class="sdw-row"><div>${escapeHtml(r.drills_library.drill_name)}${multi ? " · " + escapeHtml((miState.squads.find(s => s.id === r.squad_id) || {}).name || "") : ""}<small>${escapeHtml(sdwReason(r))}</small></div></div>`).join("")}</div>`;
+  });
 }
 
 // Management Information routing
@@ -3343,7 +3941,9 @@ async function spRefreshMicro(){
           ${se.outline ? `<div class="sn-sess-outline">${escapeHtml(se.outline)}</div>` : ""}
         </div>` : '<div class="sp-micro-sess tt-muted">No session outlined for this date in the micro-cycle.</div>'}
       ${ctx.comp ? `<div class="sp-micro-comp">Competition this week: ${escapeHtml(ctx.comp.name)} (${escapeHtml(fmtDayShort(ctx.comp.date_from))})</div>` : ""}
+      <div id="planSdwSlot"></div>
     </div>`;
+  sdwRenderPlan(mi.id, squadId);
   const pick = $("planSessPick");
   if (pick) pick.addEventListener("change", () => { spPresetSessionId = pick.value; spRefreshMicro(); });
   // Pre-fill Stroke and Skills + Training zone from the micro-cycle until the coach changes them.
@@ -4412,7 +5012,7 @@ function startThreadUpdate(threadId){
   $("observation").value = "";                     // fresh observation for the new date-stamp
   $("remedialAction").value = latest.remedial_action || "";
   $("additionalNotes").value = "";
-  document.querySelectorAll(".status-grid .status-btn").forEach(b => b.classList.toggle("active", b.dataset.status === latest.status));
+  document.querySelectorAll("#statusGrid .status-btn").forEach(b => b.classList.toggle("active", b.dataset.status === latest.status));
   selectedStatus = latest.status || null;
 
   $("updatingBanner").style.display = "flex";
@@ -4434,7 +5034,7 @@ $("cancelUpdateBtn").addEventListener("click", () => {
   $("observation").value = "";
   $("remedialAction").value = "";
   $("additionalNotes").value = "";
-  document.querySelectorAll(".status-grid .status-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll("#statusGrid .status-btn").forEach(b => b.classList.remove("active"));
   selectedStatus = null;
 });
 
@@ -4499,9 +5099,9 @@ function setType(t){
   checkForMatch();
 }
 
-document.querySelectorAll(".status-grid .status-btn").forEach(btn => {
+document.querySelectorAll("#statusGrid .status-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".status-grid .status-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll("#statusGrid .status-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     selectedStatus = btn.dataset.status;
   });
@@ -4532,7 +5132,7 @@ $("prefillBtn").addEventListener("click", () => {
   $("observation").value = matchedEntry.observation || matchedEntry.note || "";
   $("remedialAction").value = matchedEntry.remedial_action || "";
   if (matchedEntry.status){
-    document.querySelectorAll(".status-grid .status-btn").forEach(b => b.classList.toggle("active", b.dataset.status === matchedEntry.status));
+    document.querySelectorAll("#statusGrid .status-btn").forEach(b => b.classList.toggle("active", b.dataset.status === matchedEntry.status));
     selectedStatus = matchedEntry.status;
   }
 });
@@ -4606,7 +5206,7 @@ $("submitBtn").addEventListener("click", async () => {
   $("remedialAction").value = "";
   $("additionalNotes").value = "";
   $("category").value = "";
-  document.querySelectorAll(".status-grid .status-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll("#statusGrid .status-btn").forEach(b => b.classList.remove("active"));
   selectedStatus = null;
   $("matchBanner").style.display = "none";
   pendingFiles = [];
@@ -8768,7 +9368,9 @@ function miRender(){
         </div>`).join("")
         : `<div class="tt-muted" style="margin-top:10px;">${w.wc ? "No timetabled sessions this week for these squads (check Timetables or season breaks)." : "Set the week commencing date to load this week's sessions."}</div>`}
       ${miCompNote(w)}
+      ${w.id ? `<div class="sdw-slot" data-mid="${w.id}"></div>` : ""}
     </div>`).join("");
+  sdwRenderMicros();
 }
 
 $("miWeeks").addEventListener("input", e => {
