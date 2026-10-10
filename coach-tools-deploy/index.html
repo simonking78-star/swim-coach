@@ -1048,6 +1048,86 @@
   .mi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .mi-grid .full{grid-column:1 / -1;}
   .mi-grid .hint{display:block;margin:0 0 4px;font-weight:600;}
+  /* --- Season planner: blocks, calendar, roll-forward --- */
+  .tone-endurance{background:#dff0e2;color:#1f5d23;}
+  .tone-quality{background:#ebe0fb;color:#4c2385;}
+  .tone-sprint{background:#ffecc7;color:#7a4e00;}
+  .tone-racepace{background:#d9ecfb;color:#0a4f79;}
+  .tone-taper{background:#fbdfe3;color:#8c1f2f;}
+  .tone-recovery{background:#e9edf2;color:#4a5869;}
+  .sc-card{padding-bottom:12px;}
+  .sc-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+  .sc-head h2{margin:0;}
+  .sc-head select{width:auto;max-width:58%;padding:7px 9px;font-size:.8rem;margin:0;}
+  .sc-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:10px;background:#fff;}
+  .sc-grid{--sc-label:108px;--sc-col:32px;--sc-n:1;display:inline-block;min-width:100%;vertical-align:top;}
+  .sc-row{display:grid;grid-template-columns:var(--sc-label) repeat(var(--sc-n),var(--sc-col));}
+  .sc-row.group{border-top:2px solid var(--border);}
+  .sc-label{grid-row:1;grid-column:1;position:sticky;left:0;z-index:2;background:#fff;border-right:1px solid var(--border);padding:3px 6px;
+    font-size:.66rem;font-weight:700;color:var(--text-dim);display:flex;align-items:center;min-width:0;line-height:1.15;}
+  .sc-label.sq{color:var(--navy);font-weight:800;font-size:.72rem;}
+  .sc-label span{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .sc-month{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:var(--navy);padding:5px 4px 3px;border-left:1px solid var(--border);white-space:nowrap;overflow:hidden;background:#f8fafc;}
+  .sc-row.months .sc-label{background:#f8fafc;}
+  .sc-cell,.sc-wk{height:28px;border-left:1px solid #eef1f5;display:flex;align-items:center;justify-content:center;font-size:.66rem;color:var(--text-dim);
+    position:relative;background:none;border-top:none;border-right:none;border-bottom:none;padding:0;font-family:inherit;min-width:0;}
+  .sc-wk{height:20px;font-weight:600;border-bottom:1px solid var(--border);}
+  .sc-wk.today{background:var(--navy);color:#fff;font-weight:800;border-radius:0 0 5px 5px;}
+  .sc-cell.today{box-shadow:inset 2px 0 0 var(--navy),inset -2px 0 0 var(--navy);}
+  .sc-cell.brk,.sc-wk.brk{background-image:repeating-linear-gradient(135deg,#e3e8ee 0 3px,transparent 3px 7px);}
+  .sc-cell.brkp{background-image:repeating-linear-gradient(135deg,#eef1f5 0 2px,transparent 2px 9px);}
+  button.sc-cell{cursor:pointer;}
+  .sc-meet{font-size:.78rem;}
+  .sc-meet small{font-size:.6rem;font-weight:800;color:var(--navy);margin-left:1px;}
+  .sc-w{font-weight:800;color:var(--navy);}
+  .sc-w.q{background-color:#f1e8ff;color:#5b2a9a;}
+  .sc-w.e{background-color:#e6f4e8;color:var(--green);}
+  .sc-w.s{background-color:#fff4e0;color:#8a5a00;}
+  .sc-w.sel,.sc-bar.sel,.sc-meet.sel{outline:2px solid var(--accent);outline-offset:-2px;}
+  .sc-w .mk{position:absolute;top:0;right:1px;font-style:normal;font-size:.56rem;font-weight:900;line-height:1;color:var(--text-dim);}
+  .sc-w .mk.target{color:var(--red);font-size:.66rem;}
+  .sc-w .mk.qualifying{color:#0a5c8a;}
+  .sc-bar{grid-row:1;height:24px;margin:3px 1px;border:none;border-radius:6px;padding:0 6px;font-family:inherit;font-size:.66rem;font-weight:800;
+    white-space:nowrap;text-align:left;cursor:pointer;min-width:0;}
+  .sc-bar span{display:block;width:fit-content;max-width:100%;overflow:hidden;text-overflow:ellipsis;position:sticky;left:calc(var(--sc-label) + 7px);}
+  @media (max-width:767px){ .sc-grid{--sc-label:88px;--sc-col:30px;} }
+  .sc-bar.none{background:#fff;border:1.5px dashed #b9c3cf;color:var(--text-dim);font-weight:600;}
+  .sc-legend{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:9px;font-size:.68rem;color:var(--text-dim);align-items:center;}
+  .sc-legend .sn-tag{font-size:.62rem;padding:2px 7px;}
+  .sc-legend b{color:var(--navy);}
+  .sc-detail{margin-top:12px;border:1.5px solid var(--border);border-radius:11px;background:#f8fafc;padding:10px 12px;}
+  .sc-detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .sc-detail-title{font-weight:800;color:var(--navy);font-size:.92rem;}
+  .sc-detail .tt-rm{flex-shrink:0;}
+  .sc-detail-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .sc-aim{font-size:.82rem;line-height:1.4;margin-top:4px;}
+  .sc-prov{display:inline-block;font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.3px;background:#fff4e0;color:#8a5a00;border-radius:20px;padding:2px 7px;margin-left:6px;vertical-align:middle;}
+  .mf-block{border:1.5px solid var(--border);border-left:6px solid #b9c3cf;border-radius:10px;padding:9px 10px;margin-bottom:8px;background:#fff;color:var(--text);}
+  .mf-block.tone-endurance{border-left-color:#3d9a46;} .mf-block.tone-quality{border-left-color:#7c4bc9;}
+  .mf-block.tone-sprint{border-left-color:#e0a100;} .mf-block.tone-racepace{border-left-color:#1c87c9;}
+  .mf-block.tone-taper{border-left-color:#d1495b;} .mf-block.tone-recovery{border-left-color:#8a96a6;}
+  .mf-block-top{display:grid;grid-template-columns:1fr 40px;gap:8px;}
+  .mf-block-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px;}
+  .mf-block-grid .hint{display:block;margin:0 0 3px;font-weight:600;}
+  .mf-block-grid select,.mf-block-grid input{padding:8px 6px;font-size:.82rem;}
+  .mf-block-when{font-size:.72rem;color:var(--text-dim);margin-top:6px;}
+  .mf-total{font-size:.78rem;font-weight:700;margin:6px 0 2px;color:var(--text-dim);}
+  .mf-total.bad{color:var(--red);} .mf-total.ok{color:var(--green);}
+  .mf-model-note{font-size:.78rem;line-height:1.4;color:var(--text-dim);margin-top:6px;}
+  .mi-week-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:none;border:none;padding:0;font-family:inherit;cursor:pointer;text-align:left;color:inherit;}
+  .mi-week .mi-week-head h3{margin:0;}
+  .mi-week-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;align-items:center;}
+  .mi-week-tags .n{font-size:.68rem;color:var(--text-dim);font-weight:600;}
+  .mi-week:not(.open) .mi-week-body{display:none;}
+  .mi-week.open .mi-week-head{margin-bottom:12px;}
+  .mi-week.open .tt-chevron{transform:rotate(180deg);}
+  .mi-week.now{border-color:var(--accent);}
+  .pl-row-acts.wrap{flex-wrap:wrap;justify-content:flex-end;max-width:150px;}
+  .pl-season-pick{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:12px;align-items:center;}
+  .pl-season-pick select{margin:0;}
+  .pl-season-pick select{min-width:0;}
+  .tt-dates > div,.pl-break > *{min-width:0;}
+  #viewPlanning input[type=date],#viewMacroForm input[type=date]{min-width:0;max-width:100%;}
   .mi-comp-note{margin-top:10px;background:#fff4e0;border-radius:9px;padding:8px 10px;font-size:.78rem;color:#8a5a00;font-weight:600;}
   .mi-sess{border:1.5px solid var(--border);border-radius:11px;padding:10px;margin-top:10px;background:#fbfcfd;}
   .mi-sess-when{font-weight:800;font-size:.82rem;color:var(--navy);margin-bottom:6px;}
@@ -2505,6 +2585,16 @@
       <button type="button" class="submit-btn sn-sp-btn" id="snSessionsBtn">Session plans</button>
     </div>
     <div class="sn-season-head" id="snSeasonHead"></div>
+    <div class="card sc-card" id="scCard" style="display:none;">
+      <div class="sc-head">
+        <h2>Season calendar</h2>
+        <select id="scSquad" aria-label="Squads shown on the calendar"></select>
+      </div>
+      <div class="sc-scroll" id="scScroll"><div class="sc-grid" id="scGrid"></div></div>
+      <div class="sc-legend" id="scLegend"></div>
+      <div id="scNote" class="hint"></div>
+      <div id="scDetail"></div>
+    </div>
     <div id="snSquadList"><div class="empty">Loading season…</div></div>
   </div>
 
@@ -2513,6 +2603,7 @@
     <a class="back-home" id="backPlanning">Season</a>
     <div class="card">
       <h2>Planning</h2>
+      <div id="plSeasonPick"></div>
       <label for="plTitle">Season title</label>
       <input type="text" id="plTitle" placeholder="e.g. 2026–27 Winter Season">
       <div class="tt-dates" style="margin-top:12px;">
@@ -2538,6 +2629,23 @@
     <div class="card">
       <h2>Macro-cycles</h2>
       <div id="plMacroList"><div class="empty">No macro-cycles yet — use Add macro.</div></div>
+    </div>
+    <div class="card" id="rfCard" style="display:none;">
+      <h2>Next season</h2>
+      <p class="hint" style="margin-top:0;">Roll this season forward into a new one. Breaks, meets, macros, blocks and weeks are copied and moved on by whole weeks, so each week keeps its weekdays. Copied meets are marked “date to confirm” until you check them.</p>
+      <label for="rfTitle">New season title</label>
+      <input type="text" id="rfTitle">
+      <div class="tt-dates" style="margin-top:12px;">
+        <div><span class="hint">Season start</span><input type="date" id="rfStart"></div>
+        <div><span class="hint">Season finish</span><input type="date" id="rfFinish"></div>
+      </div>
+      <label class="mf-check" style="margin-top:12px;"><input type="checkbox" id="rfSessions" checked> Copy session outlines and stroke focus</label>
+      <label class="mf-check" style="margin-top:6px;"><input type="checkbox" id="rfTimetables" checked> Copy squad timetables</label>
+      <button class="submit-btn" id="rfBtn">Roll forward</button>
+      <div class="msg" id="rfMsg"></div>
+      <div id="plRemoveSeasonWrap" style="display:none;margin-top:14px;text-align:center;">
+        <button type="button" class="tt-act del" id="plRemoveSeasonBtn">Remove this season</button>
+      </div>
     </div>
   </div>
 
@@ -2620,6 +2728,24 @@
       <textarea id="mfNote" rows="4"></textarea>
       <label for="mfCount">Micro-cycles <span class="opt">(number of weeks)</span></label>
       <input type="number" id="mfCount" min="1" max="52" inputmode="numeric">
+      <label for="mfStart">Week 1 commencing</label>
+      <input type="date" id="mfStart">
+      <div class="hint" id="mfStartHint"></div>
+      <button type="button" class="tt-add-another" id="mfTargetBtn">Finish on the last target meet</button>
+
+      <label for="mfModel" style="margin-top:16px;">Periodisation model</label>
+      <select id="mfModel"><option value="">— none —</option></select>
+      <div class="mf-model-note" id="mfModelNote"></div>
+
+      <label style="margin-top:16px;">Blocks <span class="opt">(run back to back from week 1)</span></label>
+      <div id="mfBlocks"></div>
+      <div class="mf-total" id="mfTotal"></div>
+      <div class="pl-btn-row" style="margin-top:8px;">
+        <button type="button" class="tt-ctrl" id="mfBuildBtn">Build blocks from model</button>
+        <button type="button" class="tt-ctrl" id="mfAddBlockBtn">+ Add block</button>
+      </div>
+      <label class="mf-check" style="margin-top:12px;"><input type="checkbox" id="mfOverwrite"> Overwrite the Meso and QES already set on weeks with each block's values</label>
+      <p class="hint">Left unticked, a block only fills weeks where Meso or QES is still blank.</p>
       <button class="submit-btn" id="mfSaveBtn">Add micro-cycles</button>
       <div class="msg" id="mfMsg"></div>
     </div>
@@ -2631,6 +2757,7 @@
     <div class="card" style="padding-bottom:10px;">
       <h2 id="miTitle">Micro-cycles</h2>
       <div class="hint" id="miSub"></div>
+      <button type="button" class="sn-comp-link" id="miToggleAll" style="margin-top:8px;font-size:.78rem;">Expand all weeks</button>
     </div>
     <div id="miWeeks"></div>
     <button class="submit-btn" id="miSaveBtn">Save micro-cycles</button>
@@ -3420,6 +3547,7 @@ function spSuggestFocus(ctx){
   const q = ctx.micro.qes_focus;
   if (q === "sprint") zone = "Sprint";
   else if (q === "endurance") zone = "A1-3";
+  else if (ctx.micro.block && ctx.micro.block.training_zone) zone = ctx.micro.block.training_zone;   // the block's zone when the week gives none
   return { skills: SP_SKILLS.filter(k => skills.has(k)), zone };
 }
 function spFocusTagsHtml(skills, zone){
@@ -3686,6 +3814,7 @@ $("savePlanBtn").addEventListener("click", async () => {
     micro_session_id: ctx && ctx.session ? ctx.session.id : null,
     macro: ctx && ctx.micro ? ctx.micro.macroTitle || null : null,
     meso: ctx && ctx.micro && ctx.micro.meso ? String(ctx.micro.meso) : null,
+    block_model: ctx && ctx.micro ? ctx.micro.modelName || null : null,
     stroke_skills: spReadSkills(),
     training_zone: $("planZone").value || null,
     pool_size: poolBtn ? poolBtn.dataset.pool : null,
@@ -3759,7 +3888,7 @@ async function spLoadMacros(force){
   let macros = [], sessions = [], comps = [], breaks = [];
   if (ids.length){
     const [mq, cq, bq] = await Promise.all([
-      sb.from("macros").select("id, title, season_id, macro_squads(squad_id, is_active), micros(id, week_no, week_commencing, meso, qes_focus, technical_focus, break_days, is_active)")
+      sb.from("macros").select("id, title, season_id, periodisation_models(name), macro_blocks(id, name, start_week, weeks, tone, training_zone, aim, is_active), macro_squads(squad_id, is_active), micros(id, week_no, week_commencing, meso, qes_focus, technical_focus, break_days, block_id, is_active)")
         .in("season_id", ids).eq("is_active", true),
       sb.from("season_competitions").select("id, name, date_from, date_to").in("season_id", ids).eq("is_active", true),
       sb.from("season_breaks").select("season_id, break_start, break_end").in("season_id", ids).eq("is_active", true)
@@ -3787,7 +3916,11 @@ function spMicroSync(squadId, date, sessionId){
     if (micro || !(m.macro_squads || []).some(x => x.squad_id === squadId && x.is_active)) return;
     const hit = (m.micros || []).find(mi => mi.is_active && mi.week_commencing &&
       mi.week_commencing <= date && isoAdd(mi.week_commencing, 6) >= date);
-    if (hit) micro = { ...hit, macroTitle: m.title, seasonId: m.season_id };
+    if (hit){
+      const bl = (m.macro_blocks || []).filter(b => b.is_active);
+      const block = bl.find(b => b.id === hit.block_id) || bl.find(b => hit.week_no >= b.start_week && hit.week_no < b.start_week + b.weeks) || null;
+      micro = { ...hit, macroTitle: m.title, seasonId: m.season_id, block, modelName: m.periodisation_models ? m.periodisation_models.name : null };
+    }
   });
   if (!micro) return null;
   const daySessions = spMacroCache.sessions
@@ -3807,7 +3940,8 @@ async function spMicroFor(squadId, date, sessionId){
 }
 function spMicroTagsHtml(mi){
   const q = mi.qes_focus;
-  return `${mi.meso ? `<span class="sn-tag">Meso ${mi.meso}</span>` : ""}` +
+  return `${mi.block ? `<span class="sn-tag tone-${mi.block.tone}">${escapeHtml(mi.block.name)}</span>` : ""}` +
+         `${mi.meso ? `<span class="sn-tag">Meso ${mi.meso}</span>` : ""}` +
          `${q ? `<span class="sn-tag ${q[0]}">${QES[q]}</span>` : ""}` +
          `${mi.technical_focus ? `<span class="sn-tag">Technical: ${mi.technical_focus}. ${TECH_FOCUS[mi.technical_focus]}</span>` : ""}`;
 }
@@ -3932,13 +4066,14 @@ async function spRefreshMicro(){
     <div class="sp-micro-card">
       ${ctx.season ? `<div class="sp-micro-line">Season: <strong>${escapeHtml(ctx.season.title)}</strong></div>` : ""}
       <div class="sp-micro-line">Macro: <strong>${escapeHtml(mi.macroTitle)}</strong> · Week ${mi.week_no} · w/c ${fmtDdMm(mi.week_commencing)}</div>
+      ${mi.block || mi.modelName ? `<div class="sp-micro-line">${mi.modelName ? "Model: <strong>" + escapeHtml(mi.modelName) + "</strong>" : ""}${mi.block ? (mi.modelName ? " · " : "") + "Block: <strong>" + escapeHtml(mi.block.name) + "</strong>" + (mi.block.aim ? " — " + escapeHtml(mi.block.aim) : "") : ""}</div>` : ""}
       ${ctx.isBreak ? '<div class="sp-break-warn">This day is marked as a break day in the season plan.</div>' : ""}
       ${pickHtml}
       <div class="sn-week-head">${spMicroTagsHtml(mi)}</div>
       ${se ? `<div class="sp-micro-sess">
           <div class="sn-sess-when">${escapeHtml(fmtWhen(se.session_date, se.start_time, se.end_time))}</div>
           ${se.stroke_focus ? `<div class="sn-sess-stroke">Stroke focus: ${escapeHtml(se.stroke_focus)}</div>` : ""}
-          ${se.outline ? `<div class="sn-sess-outline">${escapeHtml(se.outline)}</div>` : ""}
+          ${se.outline ? `<div class="sn-sess-outline">${escapeHtml(se.outline)}</div><button type="button" class="sp-plan-link" id="planPullOutline">Add this outline to the plan</button>` : ""}
         </div>` : '<div class="sp-micro-sess tt-muted">No session outlined for this date in the micro-cycle.</div>'}
       ${ctx.comp ? `<div class="sp-micro-comp">Competition this week: ${escapeHtml(ctx.comp.name)} (${escapeHtml(fmtDayShort(ctx.comp.date_from))})</div>` : ""}
       <div id="planSdwSlot"></div>
@@ -3946,6 +4081,13 @@ async function spRefreshMicro(){
   sdwRenderPlan(mi.id, squadId);
   const pick = $("planSessPick");
   if (pick) pick.addEventListener("change", () => { spPresetSessionId = pick.value; spRefreshMicro(); });
+  // Pull the planned outline into the session plan as its opening note (once).
+  const pull = $("planPullOutline");
+  if (pull) pull.addEventListener("click", () => {
+    const text = "Plan outline: " + se.outline;
+    if (!editorBlocks.some(b => b.type === "note" && b.text === text)){ editorBlocks.unshift({ type: "note", text }); renderBlocks(); }
+    pull.textContent = "Outline added to the plan"; pull.disabled = true;
+  });
   // Pre-fill Stroke and Skills + Training zone from the micro-cycle until the coach changes them.
   if (!spFocusTouched){
     const sug = spSuggestFocus(ctx);
@@ -8673,8 +8815,8 @@ $("backTtEnter").addEventListener("click", () => { showView(enterReturnView); if
 // No user action issues a SQL DELETE — removal sets is_active=false.
 // ===================================================================
 
-// Until roles exist, everyone is the superuser administrator.
-function snCanPlan(){ return true; }
+// Planning controls show only for roles that may edit the Season section (the database enforces the same rule).
+function snCanPlan(){ return sectionLevel("season") === "E"; }
 
 const EVENTS_18 = [
   [1,"50 Free","50 Free"],[2,"50 Back","50 Back"],[3,"50 Breast","50 Breast"],[4,"50 Fly","50 Fly"],
@@ -8715,18 +8857,29 @@ function snMsg(el, cls, text){ el.className = "msg " + cls; el.textContent = tex
 const isNarrow = () => window.matchMedia("(max-width: 767px)").matches;
 
 // ---------- shared loaders ----------
-let snSeason = null;   // active season row for currentClub
+let snSeason = null;   // the season being shown / planned for currentClub
+let snSeasons = [];    // every active season for currentClub, oldest first
 let snSquads = [];     // squads for currentClub
+const snSeasonKey = () => "snSeason:" + currentClub;
+function snChooseSeason(id){ if (id) sessionStorage.setItem(snSeasonKey(), id); else sessionStorage.removeItem(snSeasonKey()); }
 
+// Seasons are always read for currentClub only. The one shown is the one picked in this
+// sitting, else the season running today, else the next to start, else the latest.
 async function snLoadActiveSeason(){
   const { data, error } = await sb.from("seasons").select("*")
     .eq("club", currentClub).eq("is_active", true).order("start_date");
   if (error) throw error;
   const today = ttToday(), rows = data || [];
-  snSeason = rows.find(s => s.start_date <= today && s.finish_date >= today)
+  snSeasons = rows;
+  const chosen = sessionStorage.getItem(snSeasonKey());
+  snSeason = rows.find(s => s.id === chosen)
+          || rows.find(s => s.start_date <= today && s.finish_date >= today)
           || rows.find(s => s.start_date > today)
           || rows[rows.length - 1] || null;
   return snSeason;
+}
+function snSeasonOptions(){
+  return snSeasons.map(s => `<option value="${s.id}" ${snSeason && s.id === snSeason.id ? "selected" : ""}>${escapeHtml(s.title)}</option>`).join("");
 }
 async function snLoadSquads(){
   const { data, error } = await sb.from("squads").select("id, name").eq("club", currentClub).order("name");
@@ -8736,7 +8889,7 @@ async function snLoadSquads(){
 }
 
 // ===================================================================
-// SEASON (read-only overview, concertina per squad)
+// SEASON (calendar + read-only overview, concertina per squad)
 // ===================================================================
 const snOpen = new Set(JSON.parse(sessionStorage.getItem("snOpen") || "[]"));
 function snPersistOpen(){ sessionStorage.setItem("snOpen", JSON.stringify([...snOpen])); }
@@ -8747,39 +8900,47 @@ async function goSeason(){
   const list = $("snSquadList");
   list.innerHTML = '<div class="tt-item" style="padding:14px;"><div class="sn-skel" style="width:40%"></div><div class="sn-skel"></div><div class="sn-skel" style="width:70%"></div></div>'.repeat(3);
   $("snSeasonHead").innerHTML = "";
+  $("scCard").style.display = "none"; $("scDetail").innerHTML = ""; scData = null;
   try {
     await Promise.all([snLoadActiveSeason(), snLoadSquads()]);
     const today = ttToday();
     const s = snSeason;
     $("snSeasonHead").innerHTML = s
-      ? `<div class="sn-season-title">${escapeHtml(s.title)}</div><div class="tt-season">${fmtDate(s.start_date)} – ${fmtDate(s.finish_date)}</div>`
-      : '<div class="tt-muted">No season set up yet — tap PLAN to create one.</div>';
+      ? (snSeasons.length > 1
+          ? `<select id="snSeasonPick" aria-label="Season" style="margin:0 0 4px;font-weight:800;color:var(--navy);">${snSeasonOptions()}</select>`
+          : `<div class="sn-season-title">${escapeHtml(s.title)}</div>`) +
+        `<div class="tt-season">${fmtDate(s.start_date)} – ${fmtDate(s.finish_date)}</div>`
+      : '<div class="tt-muted">No season set up yet' + (snCanPlan() ? " — tap PLAN to create one." : ".") + '</div>';
+    const pick = $("snSeasonPick");
+    if (pick) pick.addEventListener("change", () => { snChooseSeason(pick.value); goSeason(); });
     if (!snSquads.length){ list.innerHTML = '<div class="empty">No squads for this club yet — add one under Administrator.</div>'; return; }
 
-    let macros = [], comps = [], sessions = [];
+    let macros = [], allComps = [], sessions = [], breaks = [];
     if (s){
-      const [mq, cq] = await Promise.all([
-        sb.from("macros").select("id, title, macro_squads(squad_id, is_active), micros(id, week_no, week_commencing, meso, qes_focus, technical_focus, is_active)")
-          .eq("season_id", s.id).eq("is_active", true),
-        sb.from("season_competitions").select("id, competition_id, name, date_from, date_to, course, level")
-          .eq("season_id", s.id).eq("is_active", true).gte("date_to", today).order("date_from")
+      const [mq, cq, bq] = await Promise.all([
+        sb.from("macros").select("id, title, start_date, micro_count, model_id, periodisation_models(name), macro_squads(squad_id, is_active), macro_blocks(id, seq, name, start_week, weeks, tone, meso, qes_focus, training_zone, aim, is_active), macro_competitions(season_competition_id, designation, is_active), micros(id, week_no, week_commencing, meso, qes_focus, technical_focus, block_id, is_active)")
+          .eq("season_id", s.id).eq("is_active", true).order("created_at"),
+        sb.from("season_competitions").select("id, competition_id, name, date_from, date_to, course, level, is_provisional")
+          .eq("season_id", s.id).eq("is_active", true).order("date_from"),
+        sb.from("season_breaks").select("break_start, break_end").eq("season_id", s.id).eq("is_active", true)
       ]);
-      if (mq.error) throw mq.error; if (cq.error) throw cq.error;
-      macros = mq.data || []; comps = cq.data || [];
+      if (mq.error) throw mq.error; if (cq.error) throw cq.error; if (bq.error) throw bq.error;
+      macros = mq.data || []; allComps = cq.data || []; breaks = bq.data || [];
     }
+    const comps = allComps.filter(c => c.date_to >= today);
     // For each squad, pick this week's micro (or the next one coming up).
-    const pick = {};
+    const pick2 = {};
     snSquads.forEach(sq => {
       const micros = [];
       macros.forEach(m => {
         if (!(m.macro_squads || []).some(x => x.squad_id === sq.id && x.is_active)) return;
-        (m.micros || []).forEach(mi => { if (mi.is_active && mi.week_commencing) micros.push({ ...mi, macroTitle: m.title }); });
+        (m.micros || []).forEach(mi => { if (mi.is_active && mi.week_commencing) micros.push({ ...mi, macroTitle: m.title, block: scBlockForWeek(m, mi.week_no) }); });
       });
       micros.sort((a, b) => a.week_commencing.localeCompare(b.week_commencing));
-      pick[sq.id] = micros.find(mi => mi.week_commencing <= today && isoAdd(mi.week_commencing, 6) >= today)
+      pick2[sq.id] = micros.find(mi => mi.week_commencing <= today && isoAdd(mi.week_commencing, 6) >= today)
                  || micros.find(mi => mi.week_commencing > today) || null;
     });
-    const microIds = [...new Set(Object.values(pick).filter(Boolean).map(m => m.id))];
+    const microIds = [...new Set(Object.values(pick2).filter(Boolean).map(m => m.id))];
     if (microIds.length){
       const { data, error } = await sb.from("micro_sessions")
         .select("micro_id, squad_id, session_date, start_time, end_time, stroke_focus, outline")
@@ -8788,7 +8949,7 @@ async function goSeason(){
       sessions = data || [];
     }
     snPlans = [];
-    const pickedWeeks = Object.values(pick).filter(Boolean);
+    const pickedWeeks = Object.values(pick2).filter(Boolean);
     if (pickedWeeks.length){
       const from = pickedWeeks.map(m => m.week_commencing).sort()[0];
       const to = isoAdd(pickedWeeks.map(m => m.week_commencing).sort().slice(-1)[0], 6);
@@ -8796,7 +8957,8 @@ async function goSeason(){
         .eq("club", currentClub).gte("intended_date", from).lte("intended_date", to).not("squad_id", "is", null);
       if (error) console.error(error); else snPlans = data || [];
     }
-    list.innerHTML = snSquads.map(sq => snPanelHtml(sq, pick[sq.id], sessions, comps)).join("");
+    list.innerHTML = snSquads.map(sq => snPanelHtml(sq, pick2[sq.id], sessions, comps)).join("");
+    if (s){ scData = { macros, comps: allComps, breaks }; scRender(true); }
   } catch (err){
     console.error(err);
     snErr(list, "Could not load the season.", goSeason);
@@ -8817,6 +8979,7 @@ function snPanelHtml(sq, micro, sessions, comps){
     training = `
       <div class="tt-muted" style="margin-bottom:4px;">${escapeHtml(micro.macroTitle)} · Week ${micro.week_no} · w/c ${fmtDdMm(micro.week_commencing)}</div>
       <div class="sn-week-head">
+        ${micro.block ? `<span class="sn-tag tone-${micro.block.tone}">${escapeHtml(micro.block.name)}</span>` : ""}
         ${micro.meso ? `<span class="sn-tag">Meso ${micro.meso}</span>` : ""}
         ${q ? `<span class="sn-tag ${q[0]}">${QES[q]}</span>` : ""}
         ${micro.technical_focus ? `<span class="sn-tag">${micro.technical_focus}. ${TECH_FOCUS[micro.technical_focus]}</span>` : ""}
@@ -8826,19 +8989,19 @@ function snPanelHtml(sq, micro, sessions, comps){
           <div class="sn-sess-when">${escapeHtml(fmtWhen(r.session_date, r.start_time, r.end_time))}</div>
           ${r.stroke_focus ? `<div class="sn-sess-stroke">Stroke focus: ${escapeHtml(r.stroke_focus)}</div>` : ""}
           ${r.outline ? `<div class="sn-sess-outline">${escapeHtml(r.outline)}</div>` : ""}
-          ${snCanPlan() ? (() => {
+          ${(() => {
             const pl = snPlans.find(x => x.squad_id === sq.id && x.intended_date === r.session_date);
             return pl
               ? `<button type="button" class="sp-plan-link has" data-plan="${pl.id}">View session plan</button>`
-              : `<button type="button" class="sp-plan-link" data-newplan="${sq.id}" data-date="${r.session_date}">+ Write session plan</button>`;
-          })() : ""}
+              : (sectionLevel("plans") === "E" ? `<button type="button" class="sp-plan-link" data-newplan="${sq.id}" data-date="${r.session_date}">+ Write session plan</button>` : "");
+          })()}
         </div>`).join("") : '<div class="tt-muted">No sessions recorded for this week.</div>'}
       <div class="sn-cd">Coach's discretion may result in the sessions being altered</div>`;
   }
   const compsHtml = comps.length ? comps.map(c => `
       <div class="tt-meet">
         <div>
-          <button type="button" class="sn-comp-link" data-comp="${c.competition_id || ""}" data-name="${escapeAttr(c.name)}">${escapeHtml(c.name)}</button>
+          <button type="button" class="sn-comp-link" data-comp="${c.competition_id || ""}" data-name="${escapeAttr(c.name)}">${escapeHtml(c.name)}</button>${c.is_provisional ? '<span class="sc-prov">date to confirm</span>' : ""}
           <div class="tt-meet-date">${ttRange(c.date_from, c.date_to)}${c.level ? " · L" + c.level : ""} · ${c.course}</div>
         </div>
       </div>`).join("")
@@ -8859,13 +9022,18 @@ function snPanelHtml(sq, micro, sessions, comps){
     </div>`;
 }
 
-$("snSquadList").addEventListener("click", e => {
+// Session-plan and competition links, shared by the squad panels and the calendar's detail panel.
+function snLinkClick(e){
   const pl = e.target.closest("[data-plan]");
-  if (pl){ spSetReturn("season"); openPlanViewer(pl.dataset.plan); return; }
+  if (pl){ spSetReturn("season"); openPlanViewer(pl.dataset.plan); return true; }
   const np = e.target.closest("[data-newplan]");
-  if (np){ spSetReturn("season"); openEditor(null, { squadId: np.dataset.newplan, date: np.dataset.date }); return; }
+  if (np){ spSetReturn("season"); openEditor(null, { squadId: np.dataset.newplan, date: np.dataset.date, sessionId: np.dataset.sess || null }); return true; }
   const link = e.target.closest(".sn-comp-link[data-name]");
-  if (link){ goCompetitions({ focusId: link.dataset.comp || null, name: link.dataset.name }); return; }
+  if (link){ goCompetitions({ focusId: link.dataset.comp || null, name: link.dataset.name }); return true; }
+  return false;
+}
+$("snSquadList").addEventListener("click", e => {
+  if (snLinkClick(e)) return;
   const t = e.target.closest("[data-act=toggle]");
   if (!t) return;
   const card = t.closest(".tt-item"), id = card.dataset.sq;
@@ -8880,18 +9048,296 @@ $("snSquadList").addEventListener("click", e => {
 });
 
 // ===================================================================
+// SEASON CALENDAR
+// One column per week of the season. Top rows: months, week commencing, the
+// season's meets. Then, per squad plan: its blocks as bars and its weeks
+// coloured by QES focus, with a marker where a designated meet falls.
+// ===================================================================
+const TONES = { endurance: "Endurance", quality: "Quality", sprint: "Sprint", racepace: "Race pace", taper: "Taper", recovery: "Recovery" };
+const DESIG_MARK = { target: "★", qualifying: "Q", team: "T", train_through: "•" };
+const DESIG_RANK = { target: 4, qualifying: 3, team: 2, train_through: 1 };
+let scData = null;   // { macros, comps, breaks } for snSeason
+let scSeq = 0;       // guards the detail panel against slow replies
+
+function scBlocks(m){ return (m.macro_blocks || []).filter(b => b.is_active).sort((a, b) => a.start_week - b.start_week); }
+function scBlockForWeek(m, no){ return scBlocks(m).find(b => no >= b.start_week && no < b.start_week + b.weeks) || null; }
+// Monday of week `no`: the saved week's own date, else counted on from the macro's week-1 date.
+function scWeekDate(m, no){
+  const mi = (m.micros || []).find(x => x.is_active && x.week_no === no && x.week_commencing);
+  if (mi) return mi.week_commencing;
+  return m.start_date ? isoAdd(isoMonday(m.start_date), 7 * (no - 1)) : null;
+}
+function scMacrosFor(squadId){ return scData.macros.filter(m => (m.macro_squads || []).some(x => x.squad_id === squadId && x.is_active)); }
+function scMacroSquads(m){ return snSquads.filter(q => (m.macro_squads || []).some(x => x.squad_id === q.id && x.is_active)); }
+function scWeekComps(wc){ const end = isoAdd(wc, 6); return scData.comps.filter(c => c.date_from <= end && c.date_to >= wc); }
+function scDesignation(m, compId){
+  const mc = (m.macro_competitions || []).find(x => x.is_active && x.season_competition_id === compId);
+  return mc ? mc.designation : null;
+}
+
+function scRender(scrollToToday){
+  const card = $("scCard"), s = snSeason;
+  if (!s || !scData){ card.style.display = "none"; return; }
+  card.style.display = "";
+  const planned = snSquads.filter(q => scMacrosFor(q.id).length);
+  const mine = new Set((typeof ACCESS !== "undefined" && ACCESS && ACCESS.squads) || []);
+  const anyMine = planned.some(q => mine.has(q.id));
+  const key = "scSquad:" + currentClub;
+  let cur = sessionStorage.getItem(key);
+  if (cur === null) cur = anyMine ? "mine" : "";
+  if ((cur === "mine" && !anyMine) || (cur && cur !== "mine" && !planned.some(q => q.id === cur))) cur = "";
+  const sel = $("scSquad");
+  sel.innerHTML = '<option value="">All planned squads</option>' + (anyMine ? '<option value="mine">My squads</option>' : "") +
+    planned.map(q => `<option value="${q.id}">${escapeHtml(q.name)}</option>`).join("");
+  sel.value = cur;
+  sel.style.display = planned.length > 1 ? "" : "none";
+  const shown = planned.filter(q => !cur || (cur === "mine" ? mine.has(q.id) : q.id === cur));
+
+  const start = isoMonday(s.start_date), N = isoDiffDays(start, isoMonday(s.finish_date)) / 7 + 1;
+  const wkIso = i => isoAdd(start, 7 * i);
+  const col = iso => Math.floor(isoDiffDays(start, iso) / 7);
+  const today = ttToday(), todayCol = today >= start && col(today) < N ? col(today) : -1;
+  const brk = Array.from({ length: N }, (_, i) => {
+    const a = wkIso(i), b = isoAdd(a, 6);
+    return scData.breaks.some(x => x.break_start <= a && x.break_end >= b) ? " brk"
+         : scData.breaks.some(x => x.break_start <= b && x.break_end >= a) ? " brkp" : "";
+  });
+  const cls = i => (i === todayCol ? " today" : "") + brk[i];
+
+  let months = "";
+  for (let i = 0; i < N;){
+    const d = new Date(wkIso(i) + "T00:00:00"), k = d.getFullYear() * 12 + d.getMonth();
+    let j = i + 1;
+    while (j < N){ const e = new Date(wkIso(j) + "T00:00:00"); if (e.getFullYear() * 12 + e.getMonth() !== k) break; j++; }
+    months += `<div class="sc-month" style="grid-column:span ${j - i}">${d.toLocaleDateString("en-GB", { month: "short" })}${j - i > 1 ? " " + String(d.getFullYear()).slice(2) : ""}</div>`;
+    i = j;
+  }
+  let wkRow = "", meetRow = "";
+  for (let i = 0; i < N; i++){
+    const wc = wkIso(i), cs = scWeekComps(wc);
+    wkRow += `<div class="sc-wk${cls(i)}" title="Week commencing ${fmtDate(wc)}">${new Date(wc + "T00:00:00").getDate()}</div>`;
+    meetRow += cs.length
+      ? `<button type="button" class="sc-cell sc-meet${cls(i)}" data-meetwk="${i}" title="${escapeAttr(cs.map(c => c.name).join(" · "))}" aria-label="${cs.length} meet${cs.length === 1 ? "" : "s"}, week commencing ${fmtDdMm(wc)}">🏁${cs.length > 1 ? `<small>${cs.length}</small>` : ""}</button>`
+      : `<div class="sc-cell${cls(i)}"></div>`;
+  }
+  let html = `<div class="sc-row months"><div class="sc-label"></div>${months}</div>
+    <div class="sc-row"><div class="sc-label">w/c</div>${wkRow}</div>
+    <div class="sc-row"><div class="sc-label">Meets</div>${meetRow}</div>`;
+
+  // Squads that share exactly the same macros share one pair of rows.
+  const groups = new Map();
+  shown.forEach(q => {
+    const ms = scMacrosFor(q.id), k = ms.map(m => m.id).sort().join(",");
+    if (!groups.has(k)) groups.set(k, { macros: ms, squads: [] });
+    groups.get(k).squads.push(q);
+  });
+  const tonesUsed = new Set(), undated = [];
+  groups.forEach(g => {
+    let bars = "";
+    const cells = Array.from({ length: N }, (_, i) => `<div class="sc-cell${cls(i)}"></div>`);
+    g.macros.forEach(m => {
+      const d1 = scWeekDate(m, 1), dn = scWeekDate(m, m.micro_count);
+      if (!d1 || !dn){ undated.push(m.title); return; }
+      const span = (a, z) => { const c1 = Math.max(0, col(a)), c2 = Math.min(N - 1, col(z)); return c2 < c1 ? null : `grid-column:${c1 + 2} / span ${c2 - c1 + 1}`; };
+      const bl = scBlocks(m);
+      if (!bl.length){
+        const st = span(d1, dn);
+        if (st) bars += `<button type="button" class="sc-bar none" style="${st}" data-macro="${m.id}" data-block=""><span>${escapeHtml(m.title)} — no blocks yet</span></button>`;
+      }
+      bl.forEach(b => {
+        const a = scWeekDate(m, b.start_week), z = scWeekDate(m, Math.min(m.micro_count, b.start_week + b.weeks - 1));
+        const st = a && z ? span(a, z) : null;
+        if (!st) return;
+        tonesUsed.add(b.tone);
+        bars += `<button type="button" class="sc-bar tone-${b.tone}" style="${st}" data-macro="${m.id}" data-block="${b.id}" title="${escapeAttr(b.name + " · " + b.weeks + " week" + (b.weeks === 1 ? "" : "s"))}"><span>${escapeHtml(b.name)}</span></button>`;
+      });
+      for (let no = 1; no <= m.micro_count; no++){
+        const d = scWeekDate(m, no); if (!d) continue;
+        const c = col(d); if (c < 0 || c >= N) continue;
+        const mi = (m.micros || []).find(x => x.is_active && x.week_no === no);
+        const b = scBlockForWeek(m, no);
+        const q = (mi && mi.qes_focus) || (b && b.qes_focus) || "";
+        let des = null;
+        scWeekComps(wkIso(c)).forEach(cp => { const dg = scDesignation(m, cp.id); if (dg && (!des || DESIG_RANK[dg] > DESIG_RANK[des])) des = dg; });
+        cells[c] = `<button type="button" class="sc-cell sc-w ${q ? q[0] : ""}${cls(c)}" data-macro="${m.id}" data-week="${no}" aria-label="Week ${no}, commencing ${fmtDdMm(d)}${q ? ", " + QES[q] : ""}${des ? ", " + DESIGNATIONS[des] + " meet" : ""}">${no}${des ? `<i class="mk ${des}">${DESIG_MARK[des]}</i>` : ""}</button>`;
+      }
+    });
+    const models = [...new Set(g.macros.map(m => m.periodisation_models ? m.periodisation_models.name : "").filter(Boolean))];
+    html += `<div class="sc-row group"><div class="sc-label sq"><span>${escapeHtml(g.squads.map(q => q.name).join(", "))}</span></div>${bars}</div>
+      <div class="sc-row"><div class="sc-label"><span>${escapeHtml(models.join(" / ") || "Weeks")}</span></div>${cells.join("")}</div>`;
+  });
+  const grid = $("scGrid");
+  grid.style.setProperty("--sc-n", N);
+  grid.innerHTML = html;
+
+  $("scLegend").innerHTML =
+    [...tonesUsed].map(t => `<span class="sn-tag tone-${t}">${TONES[t]}</span>`).join("") +
+    (groups.size ? `<span><b>Weeks:</b> <span class="sn-tag q">Q</span> <span class="sn-tag e">E</span> <span class="sn-tag s">S</span></span>
+      <span><b style="color:var(--red)">★</b> target · <b>Q</b> qualifying · <b>T</b> team · <b>•</b> train-through</span>` : "") +
+    (scData.breaks.length ? "<span>Hatched = break</span>" : "");
+  const noPlan = snSquads.length - planned.length;
+  $("scNote").textContent =
+    (!planned.length ? "No macro-cycles in this season yet" + (snCanPlan() ? " — PLAN → Add macro puts a squad's blocks on this calendar. " : ". ")
+      : noPlan && !cur ? noPlan + " squad" + (noPlan === 1 ? " has" : "s have") + " no plan in this season. " : "") +
+    (undated.length ? "Not shown (no dates yet): " + undated.join(", ") + " — set Week 1 commencing on the macro. " : "") +
+    (groups.size ? "Tap a week, a block or a 🏁 for the detail." : "");
+  if (scrollToToday){ const cw = parseFloat(getComputedStyle(grid).getPropertyValue("--sc-col")) || 32; $("scScroll").scrollLeft = todayCol > 1 ? (todayCol - 1) * cw : 0; }
+}
+$("scSquad").addEventListener("change", () => {
+  sessionStorage.setItem("scSquad:" + currentClub, $("scSquad").value);
+  $("scDetail").innerHTML = ""; scRender(false);
+});
+
+function scMark(el){
+  document.querySelectorAll("#scGrid .sel").forEach(x => x.classList.remove("sel"));
+  if (el) el.classList.add("sel");
+}
+function scDetailShell(title, sub, body){
+  return `<div class="sc-detail">
+    <div class="sc-detail-head">
+      <div><div class="sc-detail-title">${title}</div>${sub ? `<div class="tt-muted">${sub}</div>` : ""}</div>
+      <button type="button" class="tt-rm" data-close="1" aria-label="Close">✕</button>
+    </div>${body}</div>`;
+}
+function scCompLine(c, m){
+  const dg = m ? scDesignation(m, c.id) : null;
+  return `<div class="tt-meet"><div>
+      <button type="button" class="sn-comp-link" data-comp="${c.competition_id || ""}" data-name="${escapeAttr(c.name)}">${escapeHtml(c.name)}</button>${c.is_provisional ? '<span class="sc-prov">date to confirm</span>' : ""}
+      <div class="tt-meet-date">${ttRange(c.date_from, c.date_to)}${c.level ? " · L" + c.level : ""} · ${c.course}${dg ? " · <strong>" + DESIGNATIONS[dg] + "</strong>" : ""}</div>
+    </div></div>`;
+}
+function scBlockTags(b){
+  return `<div class="sn-week-head" style="margin:6px 0 0;">
+    <span class="sn-tag tone-${b.tone}">${TONES[b.tone]}</span>
+    ${b.meso ? `<span class="sn-tag">Meso ${b.meso}</span>` : ""}
+    ${b.qes_focus ? `<span class="sn-tag ${b.qes_focus[0]}">${QES[b.qes_focus]}</span>` : ""}
+    ${b.training_zone ? `<span class="sn-tag">Zone: ${escapeHtml(b.training_zone)}</span>` : ""}</div>`;
+}
+
+function scShowMeets(i){
+  scSeq++;
+  const wc = isoAdd(isoMonday(snSeason.start_date), 7 * i), cs = scWeekComps(wc);
+  const lines = cs.map(c => {
+    const uses = scData.macros.map(m => ({ m, d: scDesignation(m, c.id) })).filter(x => x.d);
+    return scCompLine(c, null) + (uses.length
+      ? `<div class="tt-muted" style="margin:-4px 0 6px;">${uses.map(x => DESIGNATIONS[x.d] + " for " + escapeHtml(x.m.title)).join(" · ")}</div>`
+      : '<div class="tt-muted" style="margin:-4px 0 6px;">Not in any macro yet.</div>');
+  }).join("");
+  $("scDetail").innerHTML = scDetailShell("Meets · w/c " + fmtDdMm(wc), "", lines);
+}
+
+function scShowBlock(macroId, blockId){
+  scSeq++;
+  const m = scData.macros.find(x => x.id === macroId); if (!m) return;
+  const b = scBlocks(m).find(x => x.id === blockId);
+  const squads = scMacroSquads(m).map(q => q.name).join(", ");
+  const model = m.periodisation_models ? m.periodisation_models.name : "";
+  let title, sub, body;
+  if (b){
+    const z = Math.min(m.micro_count, b.start_week + b.weeks - 1), a = scWeekDate(m, b.start_week), e = scWeekDate(m, z);
+    title = escapeHtml(b.name);
+    sub = escapeHtml(squads) + " · " + (z > b.start_week ? "Weeks " + b.start_week + "–" + z : "Week " + b.start_week) + (a && e ? " · " + fmtDdMm(a) + " – " + fmtDdMm(isoAdd(e, 6)) : "");
+    body = scBlockTags(b) + (b.aim ? `<div class="sc-aim">${escapeHtml(b.aim)}</div>` : "") +
+      `<div class="tt-muted" style="margin-top:6px;">${escapeHtml(m.title)}${model ? " · " + escapeHtml(model) : ""}</div>`;
+  } else {
+    title = escapeHtml(m.title); sub = escapeHtml(squads) + " · " + m.micro_count + " weeks";
+    body = '<div class="sc-aim">This macro has no blocks yet. Choose a periodisation model and build its blocks to lay the plan out against the meets.</div>';
+  }
+  if (snCanPlan()) body += `<div class="sc-detail-acts"><button type="button" class="tt-act select" data-editmacro="${m.id}">${b ? "Edit blocks" : "Add blocks"}</button></div>`;
+  $("scDetail").innerHTML = scDetailShell(title, sub, body);
+}
+
+async function scShowWeek(macroId, no){
+  const seq = ++scSeq;
+  const m = scData.macros.find(x => x.id === macroId); if (!m) return;
+  const wc = scWeekDate(m, no), mi = (m.micros || []).find(x => x.is_active && x.week_no === no) || null;
+  const b = scBlockForWeek(m, no), squads = scMacroSquads(m);
+  const q = mi ? mi.qes_focus : null;
+  const title = "Week " + no + " · w/c " + fmtDdMm(wc);
+  const sub = escapeHtml(squads.map(x => x.name).join(", ")) + " · " + escapeHtml(m.title);
+  const tags = `<div class="sn-week-head" style="margin:6px 0 0;">
+      ${b ? `<span class="sn-tag tone-${b.tone}">${escapeHtml(b.name)}</span>` : ""}
+      ${mi && mi.meso ? `<span class="sn-tag">Meso ${mi.meso}</span>` : ""}
+      ${q ? `<span class="sn-tag ${q[0]}">${QES[q]}</span>` : ""}
+      ${mi && mi.technical_focus ? `<span class="sn-tag">${mi.technical_focus}. ${TECH_FOCUS[mi.technical_focus]}</span>` : ""}
+      ${b && b.training_zone ? `<span class="sn-tag">Zone: ${escapeHtml(b.training_zone)}</span>` : ""}</div>` +
+    (b && b.aim ? `<div class="sc-aim">${escapeHtml(b.aim)}</div>` : "");
+  const cs = scWeekComps(wc);
+  const meets = cs.length ? '<div class="tt-sec-title" style="margin-top:12px;">Meets this week</div>' + cs.map(c => scCompLine(c, m)).join("") : "";
+  const acts = snCanPlan() ? `<div class="sc-detail-acts">
+      <button type="button" class="tt-act select" data-editweek="${m.id}" data-no="${no}">Edit this week</button>
+      <button type="button" class="tt-act" data-editmacro="${m.id}">Edit blocks</button></div>` : "";
+  const box = $("scDetail");
+  const paint = sessHtml => { box.innerHTML = scDetailShell(title, sub, tags + meets + '<div class="tt-sec-title" style="margin-top:12px;">Sessions</div>' + sessHtml + acts); };
+  if (!mi){ paint('<div class="tt-muted">This week is not saved yet' + (snCanPlan() ? " — Edit this week to set its sessions." : ".") + "</div>"); return; }
+  paint('<div class="sn-skel" style="width:60%"></div>');
+  const [sq, pq] = await Promise.all([
+    sb.from("micro_sessions").select("id, squad_id, session_date, start_time, end_time, stroke_focus, outline")
+      .eq("micro_id", mi.id).eq("is_active", true).order("session_date").order("start_time"),
+    sb.from("session_plans").select("id, squad_id, intended_date, micro_session_id")
+      .eq("club", currentClub).gte("intended_date", wc).lte("intended_date", isoAdd(wc, 6)).not("squad_id", "is", null)
+  ]);
+  if (seq !== scSeq) return;
+  if (sq.error || pq.error){ console.error(sq.error || pq.error); paint('<div class="tt-muted">Could not load the sessions.</div>'); return; }
+  const rows = sq.data || [], plans = pq.data || [], used = new Set();
+  const canWrite = sectionLevel("plans") === "E";
+  let written = 0;
+  const sessHtml = rows.map(r => {
+    const pl = plans.find(p => p.micro_session_id === r.id) ||
+               plans.find(p => !used.has(p.id) && !p.micro_session_id && p.squad_id === r.squad_id && p.intended_date === r.session_date);
+    if (pl){ used.add(pl.id); written++; }
+    const name = squads.length > 1 ? (squads.find(x => x.id === r.squad_id) || {}).name + " · " : "";
+    return `<div class="sn-sess">
+      <div class="sn-sess-when">${escapeHtml(name + fmtWhen(r.session_date, r.start_time, r.end_time))}</div>
+      ${r.stroke_focus ? `<div class="sn-sess-stroke">Stroke focus: ${escapeHtml(r.stroke_focus)}</div>` : ""}
+      ${r.outline ? `<div class="sn-sess-outline">${escapeHtml(r.outline)}</div>` : ""}
+      ${pl ? `<button type="button" class="sp-plan-link has" data-plan="${pl.id}">View session plan</button>`
+           : canWrite ? `<button type="button" class="sp-plan-link" data-newplan="${r.squad_id}" data-date="${r.session_date}" data-sess="${r.id}">+ Write session plan</button>` : ""}
+    </div>`;
+  }).join("");
+  paint(rows.length
+    ? `<div class="tt-muted">${rows.length} session${rows.length === 1 ? "" : "s"} · ${written} session plan${written === 1 ? "" : "s"} written</div>` + sessHtml
+    : '<div class="tt-muted">No sessions set for this week.</div>');
+}
+
+$("scGrid").addEventListener("click", e => {
+  const w = e.target.closest("[data-week]");
+  if (w){ scMark(w); scShowWeek(w.dataset.macro, +w.dataset.week); return; }
+  const b = e.target.closest(".sc-bar");
+  if (b){ scMark(b); scShowBlock(b.dataset.macro, b.dataset.block); return; }
+  const mw = e.target.closest("[data-meetwk]");
+  if (mw){ scMark(mw); scShowMeets(+mw.dataset.meetwk); }
+});
+$("scDetail").addEventListener("click", e => {
+  if (snLinkClick(e)) return;
+  if (e.target.closest("[data-close]")){ scSeq++; $("scDetail").innerHTML = ""; scMark(null); return; }
+  const ew = e.target.closest("[data-editweek]");
+  if (ew){ snSetBack("season"); miOpen(ew.dataset.editweek, +ew.dataset.no); return; }
+  const em = e.target.closest("[data-editmacro]");
+  if (em){ snSetBack("season"); mfOpenById(em.dataset.editmacro); }
+});
+
+// ===================================================================
 // PLANNING (season title, dates, breaks; entry point to events & macros)
 // ===================================================================
 let plState = { seasonId: null, breaks: [], removedBreakIds: [] };
 let plComps = [], plMacros = [], plConfirm = null;
+let snBackTo = null; // "season" when the macro / weeks form was opened from the Season calendar
+function snSetBack(where){
+  snBackTo = where || null;
+  const label = snBackTo === "season" ? "Season" : "Planning";
+  $("backMacroForm").textContent = label; $("backMicroForm").textContent = label;
+}
+function snFormBack(){ const r = snBackTo; snSetBack(null); if (r === "season") goSeason(); else goPlanning(); }
 
-async function goPlanning(){
+async function goPlanning(opts){
+  const blank = !!(opts && opts.blank);   // start a new, empty season for this club
   showView("viewPlanning");
-  snMsg($("plMsg"), "", "");
+  snMsg($("plMsg"), "", ""); snMsg($("rfMsg"), "", "");
   $("plSaveBtn").disabled = false; $("plSaveBtn").textContent = "Save";
   try {
     await snLoadActiveSeason();
-    const s = snSeason;
+    const s = blank ? null : snSeason;
     plState = { seasonId: s ? s.id : null, breaks: [], removedBreakIds: [] };
     $("plTitle").value = s ? s.title : "";
     $("plStart").value = s ? s.start_date : "";
@@ -8902,11 +9348,26 @@ async function goPlanning(){
       if (error) throw error;
       plState.breaks = (data || []).map(b => ({ id: b.id, start: b.break_start, end: b.break_end }));
     }
+    plRenderSeasonPick(blank);
     plRenderBreaks();
     await plLoadLists();
+    rfFill(s);
   } catch (err){
     console.error(err); snMsg($("plMsg"), "err", "Could not load the season: " + (err.message || err));
   }
+}
+
+// Season picker: a club can hold several seasons (this one, next one), never another club's.
+function plRenderSeasonPick(blank){
+  const box = $("plSeasonPick");
+  if (!snSeasons.length){ box.innerHTML = ""; return; }
+  box.innerHTML = `<div class="pl-season-pick">
+      <select id="plSeasonSel" aria-label="Season to plan">${blank ? '<option value="">New season (not saved yet)</option>' : ""}${snSeasons.map(s =>
+        `<option value="${s.id}" ${!blank && snSeason && s.id === snSeason.id ? "selected" : ""}>${escapeHtml(s.title)}</option>`).join("")}</select>
+      <button type="button" class="tt-act" id="plNewSeasonBtn">+ New</button>
+    </div>`;
+  $("plSeasonSel").addEventListener("change", () => { const v = $("plSeasonSel").value; if (v){ snChooseSeason(v); goPlanning(); } });
+  $("plNewSeasonBtn").addEventListener("click", () => goPlanning({ blank: true }));
 }
 
 function plRenderBreaks(){
@@ -8947,7 +9408,7 @@ async function plSave(){
   const bad = plValidate();
   if (bad){ snMsg($("plMsg"), "err", bad); return null; }
   const row = { club: currentClub, title: $("plTitle").value.trim(), start_date: $("plStart").value, finish_date: $("plFinish").value, updated_at: new Date().toISOString() };
-  // One active season per club at a time: reject an overlap with a different active season.
+  // Seasons of one club must not overlap: reject an overlap with a different active season.
   const { data: others, error: oe } = await sb.from("seasons").select("id, title, start_date, finish_date")
     .eq("club", currentClub).eq("is_active", true).lte("start_date", row.finish_date).gte("finish_date", row.start_date);
   if (oe){ snMsg($("plMsg"), "err", "Could not check seasons: " + oe.message); return null; }
@@ -8974,7 +9435,10 @@ async function plSave(){
       if (error) throw error;
       plState.removedBreakIds = [];
     }
-    snSeason = { ...(snSeason && snSeason.id === plState.seasonId ? snSeason : {}), ...row, id: plState.seasonId, is_active: true };
+    snChooseSeason(plState.seasonId);
+    await snLoadActiveSeason();
+    plRenderSeasonPick(false);
+    rfFill(snSeason);
     snMsg($("plMsg"), "ok", "Season saved.");
     return plState.seasonId;
   } catch (err){
@@ -8990,6 +9454,7 @@ $("plAddEventBtn").addEventListener("click", async () => { if (await plEnsureSea
 $("plAddMacroBtn").addEventListener("click", async () => {
   if (!(await plEnsureSeason())) return;
   if (!plComps.length){ snMsg($("plMsg"), "err", "Add at least one competition to the season before building a macro."); return; }
+  snSetBack(null);
   mfOpen(null);
 });
 
@@ -8997,7 +9462,7 @@ async function plLoadLists(){
   if (!plState.seasonId){ plComps = []; plMacros = []; plRenderLists(); return; }
   const [c, m] = await Promise.all([
     sb.from("season_competitions").select("*, competition_events(id, is_active)").eq("season_id", plState.seasonId).eq("is_active", true).order("date_from"),
-    sb.from("macros").select("id, title, head_coach_note, micro_count, macro_squads(squad_id, is_active, squads(name)), macro_competitions(season_competition_id, designation, is_active)")
+    sb.from("macros").select("id, title, head_coach_note, micro_count, model_id, start_date, periodisation_models(name), macro_squads(squad_id, is_active, squads(name)), macro_competitions(season_competition_id, designation, is_active), macro_blocks(id, seq, name, start_week, weeks, tone, meso, qes_focus, training_zone, aim, is_active), micros(id, week_no, week_commencing, is_active)")
       .eq("season_id", plState.seasonId).eq("is_active", true).order("created_at")
   ]);
   if (c.error) throw c.error; if (m.error) throw m.error;
@@ -9012,19 +9477,21 @@ function plRenderLists(){
   $("plCompList").innerHTML = plComps.length ? plComps.map(c => {
     const n = (c.competition_events || []).filter(e => e.is_active).length;
     return `<div class="pl-row">
-      <div><div class="pl-row-name">${escapeHtml(c.name)}</div>
+      <div><div class="pl-row-name">${escapeHtml(c.name)}${c.is_provisional ? '<span class="sc-prov">date to confirm</span>' : ""}</div>
         <div class="pl-row-sub">${ttRange(c.date_from, c.date_to)} · ${c.total_days} day${c.total_days === 1 ? "" : "s"} · ${c.level ? "L" + c.level + " · " : ""}${c.course} · ${n} event${n === 1 ? "" : "s"}</div></div>
       <div class="pl-row-acts"><button type="button" class="tt-act select" data-act="edit-comp" data-id="${c.id}">Edit</button>${act("comp", c.id)}</div>
     </div>`; }).join("")
     : '<div class="empty">No competitions yet — use Add event.</div>';
   $("plMacroList").innerHTML = plMacros.length ? plMacros.map(m => {
     const sq = (m.macro_squads || []).filter(x => x.is_active).map(x => x.squads ? x.squads.name : "").join(", ");
+    const nb = (m.macro_blocks || []).filter(b => b.is_active).length;
     return `<div class="pl-row">
       <div><div class="pl-row-name">${escapeHtml(m.title)}</div>
-        <div class="pl-row-sub">${escapeHtml(sq || "No squads")} · ${m.micro_count} week${m.micro_count === 1 ? "" : "s"}</div></div>
-      <div class="pl-row-acts">
+        <div class="pl-row-sub">${escapeHtml(sq || "No squads yet")} · ${m.micro_count} week${m.micro_count === 1 ? "" : "s"}${m.periodisation_models ? " · " + escapeHtml(m.periodisation_models.name) : ""} · ${nb ? nb + " block" + (nb === 1 ? "" : "s") : "no blocks"}</div></div>
+      <div class="pl-row-acts wrap">
         <button type="button" class="tt-act" data-act="weeks" data-id="${m.id}">Weeks</button>
-        <button type="button" class="tt-act select" data-act="edit-macro" data-id="${m.id}">Edit</button>${act("macro", m.id)}</div>
+        <button type="button" class="tt-act select" data-act="edit-macro" data-id="${m.id}">Edit</button>
+        <button type="button" class="tt-act" data-act="copy-macro" data-id="${m.id}">Copy</button>${act("macro", m.id)}</div>
     </div>`; }).join("")
     : '<div class="empty">No macro-cycles yet — use Add macro.</div>';
 }
@@ -9033,8 +9500,18 @@ async function plOnListClick(e){
   const b = e.target.closest("[data-act]"); if (!b) return;
   const a = b.dataset.act, id = b.dataset.id;
   if (a === "edit-comp") cfOpen(plComps.find(c => c.id === id));
-  else if (a === "edit-macro") mfOpen(plMacros.find(m => m.id === id));
-  else if (a === "weeks") miOpen(id);
+  else if (a === "edit-macro"){ snSetBack(null); mfOpen(plMacros.find(m => m.id === id)); }
+  else if (a === "weeks"){ snSetBack(null); miOpen(id); }
+  else if (a === "copy-macro"){
+    // A second plan from the same template, for other squads of this club.
+    const src = plMacros.find(m => m.id === id);
+    b.disabled = true; b.textContent = "Copying…";
+    const { data, error } = await sb.rpc("copy_macro", { p_macro: id, p_title: src.title + " (copy)", p_squads: [] });
+    if (error){ snMsg($("plMsg"), "err", "Could not copy: " + error.message); plRenderLists(); return; }
+    await plLoadLists();
+    const m = plMacros.find(x => x.id === data);
+    if (m){ snSetBack(null); mfOpen(m); snMsg($("mfMsg"), "ok", "Copied with its blocks, weeks and meets. Tick the squads this copy is for, then save."); }
+  }
   else if (a.startsWith("remove-")){ plConfirm = a.slice(7) + id; plRenderLists(); }
   else if (a.startsWith("confirm-")){
     const table = a === "confirm-comp" ? "season_competitions" : "macros";
@@ -9048,6 +9525,62 @@ async function plOnListClick(e){
 }
 $("plCompList").addEventListener("click", plOnListClick);
 $("plMacroList").addEventListener("click", plOnListClick);
+
+// ---------- Roll forward to next season ----------
+let rfConfirm = false, plRemoveConfirm = false;
+// "2026-2027 …" → "2027-2028 …", "2026–27 …" → "2027–28 …"
+function rfNextTitle(t){
+  return String(t || "").replace(/\b(20\d\d)(?:([-–\/])(\d\d)\b)?/g, (all, y, sep, yy) =>
+    (+y + 1) + (sep ? sep + String((+yy + 1) % 100).padStart(2, "0") : ""));
+}
+function rfFill(s){
+  const card = $("rfCard");
+  if (!s || !snCanPlan()){ card.style.display = "none"; return; }
+  card.style.display = "";
+  $("rfTitle").value = rfNextTitle(s.title);
+  $("rfStart").value = isoAdd(s.start_date, 364);     // 52 weeks on, same weekday
+  $("rfFinish").value = isoAdd(s.finish_date, 364);
+  rfConfirm = false; $("rfBtn").disabled = false; $("rfBtn").textContent = "Roll forward";
+  plRemoveConfirm = false; $("plRemoveSeasonBtn").textContent = "Remove this season"; $("plRemoveSeasonBtn").className = "tt-act del";
+  $("plRemoveSeasonWrap").style.display = snSeasons.length > 1 ? "" : "none";
+}
+["rfTitle", "rfStart", "rfFinish"].forEach(id => $(id).addEventListener("input", () => { rfConfirm = false; $("rfBtn").textContent = "Roll forward"; }));
+$("rfBtn").addEventListener("click", async () => {
+  const fail = t => snMsg($("rfMsg"), "err", t);
+  const title = $("rfTitle").value.trim(), start = $("rfStart").value, finish = $("rfFinish").value;
+  if (!plState.seasonId) return fail("Save this season first.");
+  if (!title) return fail("Give the new season a title.");
+  if (!start || !finish || finish < start) return fail("Set the new season's start and finish dates.");
+  const clash = snSeasons.find(o => o.start_date <= finish && o.finish_date >= start);
+  if (clash) return fail("Those dates overlap “" + clash.title + "”. A club's seasons cannot overlap.");
+  const btn = $("rfBtn");
+  if (!rfConfirm){ rfConfirm = true; snMsg($("rfMsg"), "", ""); btn.textContent = "Create “" + title + "”?"; return; }
+  btn.disabled = true; btn.textContent = "Rolling forward…";
+  const { data, error } = await sb.rpc("roll_forward_season", { p_season: plState.seasonId, p_title: title, p_start: start, p_finish: finish,
+    p_copy_sessions: $("rfSessions").checked, p_copy_timetables: $("rfTimetables").checked });
+  if (error){ console.error(error); rfConfirm = false; btn.disabled = false; btn.textContent = "Roll forward"; return fail("Could not roll forward: " + error.message); }
+  const n = (k, w) => data[k] + " " + w + (data[k] === 1 ? "" : "s");
+  snChooseSeason(data.season_id);
+  if (typeof spMacroCache !== "undefined") spMacroCache.club = null;   // session plans re-read the new season
+  await goPlanning();
+  snMsg($("plMsg"), "ok", "New season created: " + n("macros", "macro") + ", " + n("competitions", "meet") + " (dates to confirm), " +
+    n("breaks", "break") + ", " + n("timetables", "timetable") + ". You are now planning it.");
+});
+$("plRemoveSeasonBtn").addEventListener("click", async () => {
+  const btn = $("plRemoveSeasonBtn");
+  if (!plState.seasonId) return;
+  if (!plRemoveConfirm){ plRemoveConfirm = true; btn.textContent = "Confirm: remove “" + $("plTitle").value.trim() + "”"; btn.className = "tt-act confirm"; return; }
+  btn.disabled = true;
+  const now = new Date().toISOString();
+  const r1 = await sb.from("seasons").update({ is_active: false, disabled_at: now }).eq("id", plState.seasonId);
+  const r2 = r1.error ? r1 : await sb.from("timetables").update({ is_active: false, disabled_at: now }).eq("season_id", plState.seasonId).eq("is_active", true);
+  btn.disabled = false;
+  if (r1.error || r2.error){ snMsg($("rfMsg"), "err", "Could not remove: " + (r1.error || r2.error).message); return; }
+  snChooseSeason(null);
+  if (typeof spMacroCache !== "undefined") spMacroCache.club = null;
+  await goPlanning();
+  snMsg($("plMsg"), "ok", "Season removed. It is disabled, not erased.");
+});
 
 // ===================================================================
 // ADD / EDIT COMPETITION (season event + sessions & events table)
@@ -9158,7 +9691,7 @@ async function cfSave(){
   const row = {
     season_id: snSeason.id, competition_id: cfState.competitionId, name, course,
     level: $("cfLevel").value ? +$("cfLevel").value : null, date_from: from, date_to: to,
-    venue_name: $("cfVenue").value.trim() || null, venue_url: url || null, updated_at: new Date().toISOString()
+    venue_name: $("cfVenue").value.trim() || null, venue_url: url || null, is_provisional: false, updated_at: new Date().toISOString()
   };
   const btn = $("cfSaveBtn"); btn.disabled = true; btn.textContent = "Saving…";
   try {
@@ -9183,22 +9716,75 @@ async function cfSave(){
 $("cfSaveBtn").addEventListener("click", cfSave);
 
 // ===================================================================
-// ADD / EDIT MACRO
+// ADD / EDIT MACRO (a plan for one or more squads: model, blocks, meets)
 // ===================================================================
-let mfState = null; // { id, squads:Set, comps:{scId: designation}, prevSquads:Set, prevComps:Set }
+let mfState = null; // { id, squads:Set, comps:{scId: designation}, prevSquads, prevComps, modelId, start, startLocked, blocks:[], removedBlocks:[] }
+let mfModels = null; // shared periodisation model library (reference data, same for every club)
+
+async function mfLoadModels(){
+  if (mfModels) return mfModels;
+  const { data, error } = await sb.from("periodisation_models")
+    .select("id, key, name, summary, guidance, cycle_weeks, phases").eq("is_active", true).order("sort_order");
+  if (error) throw error;
+  return (mfModels = data || []);
+}
+
+// Share n weeks across parts by weight (largest remainder), each part getting its minimum where n allows.
+function mfSplit(n, parts){
+  if (n <= 0) return parts.map(() => 0);
+  if (n < parts.length) return parts.map((_, i) => i >= parts.length - n ? 1 : 0);
+  let mins = parts.map(p => Math.max(1, p.min || 1));
+  if (mins.reduce((a, b) => a + b, 0) > n) mins = parts.map(() => 1);
+  const tot = parts.reduce((s, p) => s + p.share, 0) || 1;
+  const out = mins.slice();
+  for (let r = n - out.reduce((a, b) => a + b, 0); r > 0; r--){
+    let best = 0, gap = -Infinity;
+    parts.forEach((p, i) => { const g = n * p.share / tot - out[i]; if (g > gap){ gap = g; best = i; } });
+    out[best]++;
+  }
+  return out;
+}
+// Blocks for an n-week macro from a model: its phase sequence once, or repeated in cycles of about cycle_weeks.
+function mfBlocksFromModel(model, n){
+  const ph = (model.phases || []).map(p => ({ ...p, share: +p.share || 0, min: +p.min_weeks || 1 }));
+  if (!ph.length || n < 1) return [];
+  const cycles = model.cycle_weeks ? Math.max(1, Math.round(n / model.cycle_weeks)) : 1;
+  const lens = mfSplit(n, Array.from({ length: cycles }, () => ({ share: 1, min: 1 })));
+  const out = [];
+  lens.forEach((len, c) => {
+    mfSplit(len, ph).forEach((w, i) => {
+      if (w > 0) out.push({ id: null, name: ph[i].name + (cycles > 1 ? " " + (c + 1) : ""), weeks: w, tone: TONES[ph[i].tone] ? ph[i].tone : "quality",
+                            meso: ph[i].meso ? String(ph[i].meso) : "", qes: QES[ph[i].qes] ? ph[i].qes : "", zone: ph[i].zone || "", aim: ph[i].aim || "" });
+    });
+  });
+  return out;
+}
 
 async function mfOpen(existing){
   const actSq = existing ? (existing.macro_squads || []).filter(x => x.is_active).map(x => x.squad_id) : [];
   const actMc = existing ? (existing.macro_competitions || []).filter(x => x.is_active) : [];
+  const saved = existing ? (existing.micros || []).filter(x => x.is_active && x.week_commencing).sort((a, b) => a.week_no - b.week_no) : [];
   mfState = { id: existing ? existing.id : null, squads: new Set(actSq), prevSquads: new Set(actSq),
-              comps: Object.fromEntries(actMc.map(x => [x.season_competition_id, x.designation])), prevComps: new Set(actMc.map(x => x.season_competition_id)) };
+              comps: Object.fromEntries(actMc.map(x => [x.season_competition_id, x.designation])), prevComps: new Set(actMc.map(x => x.season_competition_id)),
+              modelId: existing ? existing.model_id || "" : "",
+              start: saved.length ? isoAdd(saved[0].week_commencing, -7 * (saved[0].week_no - 1)) : (existing && existing.start_date) || "",
+              startLocked: saved.length > 0,
+              blocks: existing ? (existing.macro_blocks || []).filter(b => b.is_active).sort((a, b) => a.start_week - b.start_week)
+                .map(b => ({ id: b.id, name: b.name, weeks: b.weeks, tone: b.tone, meso: b.meso ? String(b.meso) : "", qes: b.qes_focus || "", zone: b.training_zone || "", aim: b.aim || "" })) : [],
+              removedBlocks: [], confirmBuild: false };
   $("mfTitle").textContent = existing ? "Edit macro" : "Add macro";
   $("mfName").value = existing ? existing.title : "";
   $("mfNote").value = existing ? existing.head_coach_note || "" : "";
   $("mfCount").value = existing ? existing.micro_count || "" : "";
+  $("mfStart").value = mfState.start; $("mfStart").disabled = mfState.startLocked;
+  $("mfStartHint").textContent = mfState.startLocked ? "Weeks are already saved with their own dates — change a week's date under Weeks." : "Any day in the week will do; it is set to that week's Monday.";
+  $("mfTargetBtn").style.display = mfState.startLocked ? "none" : "";
+  $("mfOverwrite").checked = false;
+  $("mfBuildBtn").textContent = "Build blocks from model";
   $("mfSaveBtn").disabled = false; $("mfSaveBtn").textContent = existing ? "Save & open weeks" : "Add micro-cycles";
   snMsg($("mfMsg"), "", "");
   showView("viewMacroForm");
+  mfRenderBlocks();
   try { await snLoadSquads(); } catch (e){ console.error(e); }
   $("mfSquads").innerHTML = snSquads.length ? snSquads.map(s => `
     <label class="mf-check"><input type="checkbox" value="${s.id}" ${mfState.squads.has(s.id) ? "checked" : ""}> ${escapeHtml(s.name)}</label>`).join("")
@@ -9211,7 +9797,111 @@ async function mfOpen(existing){
         ${Object.entries(DESIGNATIONS).map(([k, v]) => `<option value="${k}" ${mfState.comps[c.id] === k ? "selected" : ""}>${v}</option>`).join("")}
       </select>
     </div>`).join("");
+  try {
+    const models = await mfLoadModels();
+    $("mfModel").innerHTML = '<option value="">— none —</option>' +
+      models.map(m => `<option value="${m.id}" ${m.id === mfState.modelId ? "selected" : ""}>${escapeHtml(m.name)}</option>`).join("");
+  } catch (e){ console.error(e); $("mfModel").innerHTML = '<option value="">Could not load models</option>'; }
+  mfModelNote();
 }
+function mfModelNote(){
+  const m = (mfModels || []).find(x => x.id === mfState.modelId);
+  $("mfModelNote").innerHTML = m ? `<strong>${escapeHtml(m.summary || "")}</strong> ${escapeHtml(m.guidance || "")}` : "";
+}
+function mfWeekDate(no){ return mfState.start ? isoAdd(isoMonday(mfState.start), 7 * (no - 1)) : null; }
+
+function mfRenderBlocks(){
+  const opt = (v, l, cur) => `<option value="${v}" ${String(cur) === String(v) ? "selected" : ""}>${l}</option>`;
+  $("mfBlocks").innerHTML = mfState.blocks.length ? mfState.blocks.map((b, i) => `
+    <div class="mf-block tone-${b.tone}" data-b="${i}">
+      <div class="mf-block-top">
+        <input type="text" data-f="name" value="${escapeAttr(b.name)}" placeholder="Block name" aria-label="Block name">
+        <button type="button" class="tt-rm" data-rmblock="${i}" aria-label="Remove block">✕</button>
+      </div>
+      <div class="mf-block-grid">
+        <div><span class="hint">Weeks</span><input type="number" data-f="weeks" min="1" max="52" inputmode="numeric" value="${b.weeks}"></div>
+        <div><span class="hint">Meso</span><select data-f="meso"><option value="">—</option>${[1, 2, 3].map(n => opt(n, n, b.meso)).join("")}</select></div>
+        <div><span class="hint">QES</span><select data-f="qes"><option value="">—</option>${Object.entries(QES).map(([k, v]) => opt(k, v, b.qes)).join("")}</select></div>
+        <div><span class="hint">Zone</span><select data-f="zone"><option value="">—</option>${SP_ZONES.map(z => opt(z, z, b.zone)).join("")}</select></div>
+        <div style="grid-column:span 2;"><span class="hint">Colour</span><select data-f="tone">${Object.entries(TONES).map(([k, v]) => opt(k, v, b.tone)).join("")}</select></div>
+      </div>
+      <input type="text" data-f="aim" value="${escapeAttr(b.aim)}" placeholder="Aim of the block (optional)" style="margin-top:6px;" aria-label="Aim of the block">
+      <div class="mf-block-when"></div>
+    </div>`).join("")
+    : '<div class="tt-muted">No blocks yet — choose a model and tap “Build blocks from model”, or add them one at a time.</div>';
+  mfRefreshMeta();
+}
+// Week ranges, dates and the running total; safe to call on every keystroke (does not rebuild inputs).
+function mfRefreshMeta(){
+  const count = parseInt($("mfCount").value, 10) || 0;
+  let wk = 1;
+  document.querySelectorAll("#mfBlocks .mf-block").forEach((el, i) => {
+    const b = mfState.blocks[i], n = Math.max(0, parseInt(b.weeks, 10) || 0);
+    const a = wk, z = wk + n - 1; wk += n;
+    el.className = "mf-block tone-" + b.tone;
+    const d1 = n ? mfWeekDate(a) : null, d2 = n ? mfWeekDate(z) : null;
+    el.querySelector(".mf-block-when").textContent = !n ? "Set the number of weeks."
+      : (n === 1 ? "Week " + a : "Weeks " + a + "–" + z) + (d1 ? " · " + fmtDdMm(d1) + " – " + fmtDdMm(isoAdd(d2, 6)) : "");
+  });
+  const used = wk - 1, t = $("mfTotal");
+  if (!mfState.blocks.length){ t.textContent = ""; t.className = "mf-total"; return; }
+  if (!count){ t.textContent = "Blocks cover " + used + " week" + (used === 1 ? "" : "s") + ". Set the number of micro-cycles above."; t.className = "mf-total"; }
+  else if (used > count){ t.textContent = "Blocks cover " + used + " weeks but the macro has " + count + " — shorten a block or add weeks."; t.className = "mf-total bad"; }
+  else if (used < count){ t.textContent = "Blocks cover " + used + " of " + count + " weeks — " + (count - used) + " not in a block yet."; t.className = "mf-total"; }
+  else { t.textContent = "Blocks cover all " + count + " weeks."; t.className = "mf-total ok"; }
+}
+$("mfBlocks").addEventListener("input", e => {
+  const el = e.target, card = el.closest(".mf-block"); if (!card || !el.dataset.f) return;
+  mfState.blocks[+card.dataset.b][el.dataset.f] = el.value;
+  mfRefreshMeta();
+});
+$("mfBlocks").addEventListener("click", e => {
+  const b = e.target.closest("[data-rmblock]"); if (!b) return;
+  const [gone] = mfState.blocks.splice(+b.dataset.rmblock, 1);
+  if (gone && gone.id) mfState.removedBlocks.push(gone.id);
+  mfRenderBlocks();
+});
+$("mfAddBlockBtn").addEventListener("click", () => {
+  const count = parseInt($("mfCount").value, 10) || 0;
+  const used = mfState.blocks.reduce((s, b) => s + (parseInt(b.weeks, 10) || 0), 0);
+  mfState.blocks.push({ id: null, name: "", weeks: Math.max(1, count - used), tone: "quality", meso: "", qes: "", zone: "", aim: "" });
+  mfRenderBlocks();
+});
+$("mfModel").addEventListener("change", () => {
+  mfState.modelId = $("mfModel").value; mfState.confirmBuild = false;
+  $("mfBuildBtn").textContent = "Build blocks from model"; mfModelNote();
+});
+$("mfBuildBtn").addEventListener("click", () => {
+  const fail = t => snMsg($("mfMsg"), "err", t);
+  const model = (mfModels || []).find(x => x.id === mfState.modelId), count = parseInt($("mfCount").value, 10);
+  if (!model) return fail("Choose a periodisation model first.");
+  if (!(count >= 1 && count <= 52)) return fail("Enter the number of micro-cycles first — the model is spread across them.");
+  if (mfState.blocks.length && !mfState.confirmBuild){
+    mfState.confirmBuild = true; $("mfBuildBtn").textContent = "Replace the current blocks?"; return;
+  }
+  mfState.blocks.forEach(b => { if (b.id) mfState.removedBlocks.push(b.id); });
+  mfState.blocks = mfBlocksFromModel(model, count);
+  mfState.confirmBuild = false; $("mfBuildBtn").textContent = "Build blocks from model";
+  snMsg($("mfMsg"), "", "");
+  mfRenderBlocks();
+});
+$("mfCount").addEventListener("input", mfRefreshMeta);
+$("mfStart").addEventListener("change", () => {
+  const v = $("mfStart").value;
+  mfState.start = v ? isoMonday(v) : ""; $("mfStart").value = mfState.start;
+  mfRefreshMeta();
+});
+$("mfTargetBtn").addEventListener("click", () => {
+  const fail = t => snMsg($("mfMsg"), "err", t);
+  const count = parseInt($("mfCount").value, 10);
+  if (!(count >= 1 && count <= 52)) return fail("Enter the number of micro-cycles first.");
+  const targets = plComps.filter(c => mfState.comps[c.id] === "target").sort((a, b) => a.date_to.localeCompare(b.date_to));
+  if (!targets.length) return fail("Mark a season competition as Target first.");
+  const last = targets[targets.length - 1];
+  mfState.start = isoAdd(isoMonday(last.date_to), -7 * (count - 1)); $("mfStart").value = mfState.start;
+  snMsg($("mfMsg"), "ok", "Week " + count + " now ends on " + last.name + ".");
+  mfRefreshMeta();
+});
 $("mfSquads").addEventListener("change", e => {
   const cb = e.target; if (cb.type !== "checkbox") return;
   if (cb.checked) mfState.squads.add(cb.value); else mfState.squads.delete(cb.value);
@@ -9227,49 +9917,91 @@ async function mfSave(){
   if (!mfState.squads.size) return fail("Tick at least one squad.");
   if (!title) return fail("Give the macro a title.");
   if (!(count >= 1 && count <= 52)) return fail("Enter a number of micro-cycles between 1 and 52.");
-  const btn = $("mfSaveBtn"); btn.disabled = true; btn.textContent = "Saving…";
+  let used = 0;
+  for (let i = 0; i < mfState.blocks.length; i++){
+    const b = mfState.blocks[i], n = parseInt(b.weeks, 10);
+    if (!String(b.name).trim()) return fail("Block " + (i + 1) + ": give it a name, or remove it.");
+    if (!(n >= 1 && n <= 52)) return fail("Block " + (i + 1) + ": set how many weeks it lasts.");
+    used += n;
+  }
+  if (used > count) return fail("The blocks cover " + used + " weeks but the macro has " + count + ".");
+  const btn = $("mfSaveBtn"), label = btn.textContent; btn.disabled = true; btn.textContent = "Saving…";
   const now = new Date().toISOString();
+  const ck = r => { if (r.error) throw r.error; return r; };
   try {
-    const row = { season_id: snSeason.id, title, head_coach_note: $("mfNote").value.trim() || null, micro_count: count, updated_at: now };
-    if (mfState.id){ const { error } = await sb.from("macros").update(row).eq("id", mfState.id); if (error) throw error; }
-    else { const { data, error } = await sb.from("macros").insert(row).select("id").single(); if (error) throw error; mfState.id = data.id; }
+    const row = { season_id: snSeason.id, title, head_coach_note: $("mfNote").value.trim() || null, micro_count: count,
+                  model_id: mfState.modelId || null, start_date: mfState.start || null, updated_at: now };
+    if (mfState.id) ck(await sb.from("macros").update(row).eq("id", mfState.id));
+    else mfState.id = ck(await sb.from("macros").insert(row).select("id").single()).data.id;
     const sqRows = [...new Set([...mfState.squads, ...mfState.prevSquads])]
       .map(id => ({ macro_id: mfState.id, squad_id: id, is_active: mfState.squads.has(id) }));
-    if (sqRows.length){ const { error } = await sb.from("macro_squads").upsert(sqRows, { onConflict: "macro_id,squad_id" }); if (error) throw error; }
-    const mcRows = [...new Set([...Object.keys(mfState.comps), ...mfState.prevComps])]
-      .map(id => mfState.comps[id]
-        ? { macro_id: mfState.id, season_competition_id: id, designation: mfState.comps[id], is_active: true, updated_at: now }
-        : null).filter(Boolean);
-    if (mcRows.length){ const { error } = await sb.from("macro_competitions").upsert(mcRows, { onConflict: "macro_id,season_competition_id" }); if (error) throw error; }
+    if (sqRows.length) ck(await sb.from("macro_squads").upsert(sqRows, { onConflict: "macro_id,squad_id" }));
+    const mcRows = Object.keys(mfState.comps)
+      .map(id => ({ macro_id: mfState.id, season_competition_id: id, designation: mfState.comps[id], is_active: true, updated_at: now }));
+    if (mcRows.length) ck(await sb.from("macro_competitions").upsert(mcRows, { onConflict: "macro_id,season_competition_id" }));
     const dropped = [...mfState.prevComps].filter(id => !mfState.comps[id]);
-    if (dropped.length){
-      const { error } = await sb.from("macro_competitions").update({ is_active: false, updated_at: now }).eq("macro_id", mfState.id).in("season_competition_id", dropped);
-      if (error) throw error;
+    if (dropped.length) ck(await sb.from("macro_competitions").update({ is_active: false, updated_at: now }).eq("macro_id", mfState.id).in("season_competition_id", dropped));
+
+    // Blocks run back to back from week 1.
+    let wk = 1; const ranges = [];
+    for (let i = 0; i < mfState.blocks.length; i++){
+      const b = mfState.blocks[i], n = parseInt(b.weeks, 10);
+      const p = { macro_id: mfState.id, seq: i + 1, name: String(b.name).trim(), start_week: wk, weeks: n, tone: b.tone,
+                  meso: b.meso ? +b.meso : null, qes_focus: b.qes || null, training_zone: b.zone || null,
+                  aim: String(b.aim || "").trim() || null, is_active: true, updated_at: now };
+      if (b.id) ck(await sb.from("macro_blocks").update(p).eq("id", b.id));
+      else b.id = ck(await sb.from("macro_blocks").insert(p).select("id").single()).data.id;
+      ranges.push({ id: b.id, a: wk, z: wk + n - 1, meso: p.meso, qes: p.qes_focus });
+      wk += n;
     }
+    if (mfState.removedBlocks.length){
+      ck(await sb.from("macro_blocks").update({ is_active: false, updated_at: now }).in("id", mfState.removedBlocks));
+      mfState.removedBlocks = [];
+    }
+    // Tie the weeks already saved to their block, and carry the block's Meso / QES into them.
+    const over = $("mfOverwrite").checked;
+    const inBlock = (r, patch) => sb.from("micros").update({ ...patch, updated_at: now }).eq("macro_id", mfState.id).gte("week_no", r.a).lte("week_no", r.z);
+    for (const r of ranges){
+      ck(await inBlock(r, { block_id: r.id }));
+      if (r.meso){ const q = inBlock(r, { meso: r.meso }); ck(await (over ? q : q.is("meso", null))); }
+      if (r.qes){ const q = inBlock(r, { qes_focus: r.qes }); ck(await (over ? q : q.is("qes_focus", null))); }
+    }
+    ck(await sb.from("micros").update({ block_id: null, updated_at: now }).eq("macro_id", mfState.id).gte("week_no", wk));
   } catch (err){
-    console.error(err); btn.disabled = false; btn.textContent = "Add micro-cycles";
+    console.error(err); btn.disabled = false; btn.textContent = label;
     return fail("Could not save: " + (err.message || err));
   }
   miOpen(mfState.id);
 }
 $("mfSaveBtn").addEventListener("click", mfSave);
 
+// Open the macro form straight from the Season calendar.
+async function mfOpenById(id){
+  try {
+    plState.seasonId = snSeason.id;
+    await plLoadLists();
+    const m = plMacros.find(x => x.id === id);
+    if (m) mfOpen(m);
+  } catch (err){ console.error(err); }
+}
+
 // ===================================================================
 // MICRO-CYCLES (one card per week; sessions seeded from timetables)
 // ===================================================================
-let miState = null; // { macro, squads:[{id,name}], weeks:[], comps:[], timetables:[], breaks:[] }
+let miState = null; // { macro, squads:[{id,name}], weeks:[], comps:[], timetables:[], breaks:[], blocks:[], open:Set }
 
-async function miOpen(macroId){
+async function miOpen(macroId, focusWeek){
   showView("viewMicroForm");
   $("miWeeks").innerHTML = '<div class="empty">Loading weeks…</div>';
   snMsg($("miMsg"), "", "");
   $("miSaveBtn").disabled = false; $("miSaveBtn").textContent = "Save micro-cycles";
   try {
     const { data: macro, error } = await sb.from("macros")
-      .select("id, title, micro_count, season_id, macro_squads(squad_id, is_active, squads(name))").eq("id", macroId).single();
+      .select("id, title, micro_count, season_id, start_date, periodisation_models(name), macro_blocks(id, name, start_week, weeks, tone, meso, qes_focus, training_zone, aim, is_active), macro_squads(squad_id, is_active, squads(name))").eq("id", macroId).single();
     if (error) throw error;
     const squads = (macro.macro_squads || []).filter(x => x.is_active).map(x => ({ id: x.squad_id, name: x.squads ? x.squads.name : "Squad" }));
     const sqIds = squads.map(s => s.id);
+    const blocks = (macro.macro_blocks || []).filter(b => b.is_active).sort((a, b) => a.start_week - b.start_week);
     const [mi, sc, tt, br] = await Promise.all([
       sb.from("micros").select("id, week_no, week_commencing, meso, qes_focus, technical_focus, break_days, micro_sessions(id, squad_id, session_date, start_time, end_time, stroke_focus, outline, timetable_session_id, is_active)")
         .eq("macro_id", macroId).eq("is_active", true).order("week_no"),
@@ -9280,26 +10012,39 @@ async function miOpen(macroId){
     ]);
     for (const r of [mi, sc, tt, br]) if (r.error) throw r.error;
     const existing = mi.data || [];
-    const weeks = [];
+    const weeks = [], today = ttToday();
     for (let n = 1; n <= macro.micro_count; n++){
       const e = existing.find(x => x.week_no === n);
       const prev = weeks[n - 2];
+      const block = blocks.find(b => n >= b.start_week && n < b.start_week + b.weeks) || null;
       const wc = e && e.week_commencing ? e.week_commencing
         : prev && prev.wc ? isoAdd(prev.wc, 7)
-        : n === 1 && snSeason ? isoMonday(snSeason.start_date > ttToday() ? snSeason.start_date : ttToday()) : "";
-      weeks.push({ id: e ? e.id : null, no: n, wc, meso: e && e.meso ? String(e.meso) : "", qes: e ? e.qes_focus || "" : "",
+        : n === 1 && macro.start_date ? isoMonday(macro.start_date)
+        : n === 1 && snSeason ? isoMonday(snSeason.start_date > today ? snSeason.start_date : today) : "";
+      // A week not saved yet starts from its block's Meso and QES.
+      weeks.push({ id: e ? e.id : null, no: n, wc, block,
+                   meso: e ? (e.meso ? String(e.meso) : "") : (block && block.meso ? String(block.meso) : ""),
+                   qes: e ? e.qes_focus || "" : (block && block.qes_focus) || "",
                    tech: e && e.technical_focus ? String(e.technical_focus) : "",
                    breakDays: new Set(e && e.break_days ? e.break_days.map(Number) : []),
                    saved: e ? (e.micro_sessions || []).filter(s => s.is_active) : [], sessions: [] });
     }
-    miState = { macro, squads, weeks, comps: sc.data || [], timetables: tt.data || [], breaks: br.data || [] };
+    const nowIdx = weeks.findIndex(w => w.wc && w.wc <= today && isoAdd(w.wc, 6) >= today);
+    const openIdx = focusWeek ? Math.min(weeks.length, Math.max(1, focusWeek)) - 1 : Math.max(0, nowIdx);
+    miState = { macro, squads, weeks, comps: sc.data || [], timetables: tt.data || [], breaks: br.data || [], blocks, open: new Set([openIdx]), nowIdx };
     weeks.forEach(miSeed);
     $("miTitle").textContent = macro.title;
-    $("miSub").textContent = (squads.map(s => s.name).join(", ") || "No squads") + " · " + macro.micro_count + " week" + (macro.micro_count === 1 ? "" : "s");
+    $("miSub").textContent = (squads.map(s => s.name).join(", ") || "No squads") + " · " + macro.micro_count + " week" + (macro.micro_count === 1 ? "" : "s") +
+      (macro.periodisation_models ? " · " + macro.periodisation_models.name : "");
+    $("miToggleAll").textContent = "Expand all weeks";
     miRender();
+    if (openIdx > 0){
+      const card = document.querySelector('#miWeeks .mi-week[data-w="' + openIdx + '"]');
+      if (card) card.scrollIntoView({ block: "start" });
+    }
   } catch (err){
     console.error(err);
-    snErr($("miWeeks"), "Could not load the micro-cycles.", () => miOpen(macroId));
+    snErr($("miWeeks"), "Could not load the micro-cycles.", () => miOpen(macroId, focusWeek));
   }
 }
 
@@ -9340,13 +10085,27 @@ function miCompNote(w){
   const hits = miState.comps.filter(c => c.date_from >= lo && c.date_from <= hi);
   return hits.map(c => `<div class="mi-comp-note">🏁 ${escapeHtml(c.name)} · ${ttRange(c.date_from, c.date_to)}</div>`).join("");
 }
+function miTagsHtml(w){
+  const n = w.sessions.length;
+  return (w.block ? `<span class="sn-tag tone-${w.block.tone}">${escapeHtml(w.block.name)}</span>` : "") +
+    (w.meso ? `<span class="sn-tag">Meso ${w.meso}</span>` : "") +
+    (w.qes ? `<span class="sn-tag ${w.qes[0]}">${QES[w.qes]}</span>` : "") +
+    (w.tech ? `<span class="sn-tag">${w.tech}. ${TECH_FOCUS[w.tech]}</span>` : "") +
+    `<span class="n">${n ? n + " session" + (n === 1 ? "" : "s") : "no sessions"}</span>`;
+}
 
 function miRender(){
   const opt = (v, l, cur) => `<option value="${v}" ${String(cur) === String(v) ? "selected" : ""}>${l}</option>`;
   const sqName = id => (miState.squads.find(s => s.id === id) || {}).name || "";
   $("miWeeks").innerHTML = miState.weeks.map((w, i) => `
-    <div class="mi-week" data-w="${i}">
-      <h3>Week ${w.no}${w.wc ? " · w/c " + fmtDdMm(w.wc) : ""}</h3>
+    <div class="mi-week${miState.open.has(i) ? " open" : ""}${i === miState.nowIdx ? " now" : ""}" data-w="${i}">
+      <button type="button" class="mi-week-head" data-toggle="1" aria-expanded="${miState.open.has(i)}">
+        <span><h3>Week ${w.no}${w.wc ? " · w/c " + fmtDdMm(w.wc) : ""}${i === miState.nowIdx ? " · this week" : ""}</h3>
+          <span class="mi-week-tags">${miTagsHtml(w)}</span></span>
+        <span class="tt-chevron">▼</span>
+      </button>
+      <div class="mi-week-body">
+      ${w.block && w.block.aim ? `<div class="sc-aim" style="margin:0 0 10px;"><strong>${escapeHtml(w.block.name)}:</strong> ${escapeHtml(w.block.aim)}${w.block.training_zone ? " · " + escapeHtml(w.block.training_zone) : ""}</div>` : ""}
       <div class="mi-grid">
         <div class="full"><span class="hint">Week commencing</span><input type="date" data-f="wc" value="${w.wc}"></div>
         <div><span class="hint">Meso</span><select data-f="meso"><option value="">—</option>${[1, 2, 3].map(n => opt(n, n, w.meso)).join("")}</select></div>
@@ -9369,6 +10128,7 @@ function miRender(){
         : `<div class="tt-muted" style="margin-top:10px;">${w.wc ? "No timetabled sessions this week for these squads (check Timetables or season breaks)." : "Set the week commencing date to load this week's sessions."}</div>`}
       ${miCompNote(w)}
       ${w.id ? `<div class="sdw-slot" data-mid="${w.id}"></div>` : ""}
+      </div>
     </div>`).join("");
   sdwRenderMicros();
 }
@@ -9377,9 +10137,16 @@ $("miWeeks").addEventListener("input", e => {
   const el = e.target, card = el.closest(".mi-week"); if (!card || !el.dataset.f) return;
   const w = miState.weeks[+card.dataset.w];
   if (el.dataset.s !== undefined) w.sessions[+el.dataset.s][el.dataset.f] = el.value;
-  else if (el.dataset.f !== "wc") w[el.dataset.f] = el.value;
+  else if (el.dataset.f !== "wc"){ w[el.dataset.f] = el.value; card.querySelector(".mi-week-tags").innerHTML = miTagsHtml(w); }
 });
 $("miWeeks").addEventListener("click", e => {
+  const head = e.target.closest("[data-toggle]");
+  if (head){
+    const card = head.closest(".mi-week"), i = +card.dataset.w, open = !card.classList.contains("open");
+    card.classList.toggle("open", open); head.setAttribute("aria-expanded", open);
+    if (open) miState.open.add(i); else miState.open.delete(i);
+    return;
+  }
   const chip = e.target.closest("[data-break]"); if (!chip || chip.disabled) return;
   const w = miState.weeks[+chip.closest(".mi-week").dataset.w], dow = +chip.dataset.break;
   if (w.breakDays.has(dow)) w.breakDays.delete(dow); else w.breakDays.add(dow);
@@ -9389,6 +10156,13 @@ $("miWeeks").addEventListener("change", e => {
   const el = e.target; if (el.dataset.f !== "wc") return;
   const w = miState.weeks[+el.closest(".mi-week").dataset.w];
   w.wc = el.value; miSeed(w); miRender();
+});
+$("miToggleAll").addEventListener("click", () => {
+  if (!miState) return;
+  const all = miState.open.size < miState.weeks.length;
+  miState.open = new Set(all ? miState.weeks.map((_, i) => i) : []);
+  $("miToggleAll").textContent = all ? "Collapse all weeks" : "Expand all weeks";
+  miRender();
 });
 
 async function miSave(){
@@ -9400,7 +10174,7 @@ async function miSave(){
   try {
     const { data: saved, error } = await sb.from("micros").upsert(miState.weeks.map(w => ({
       macro_id: macroId, week_no: w.no, week_commencing: w.wc, meso: w.meso ? +w.meso : null,
-      qes_focus: w.qes || null, technical_focus: w.tech ? +w.tech : null,
+      qes_focus: w.qes || null, technical_focus: w.tech ? +w.tech : null, block_id: w.block ? w.block.id : null,
       break_days: [...w.breakDays].sort((a, b) => a - b), is_active: true, updated_at: now
     })), { onConflict: "macro_id,week_no" }).select("id, week_no");
     if (error) throw error;
@@ -9429,6 +10203,7 @@ async function miSave(){
   }
   btn.disabled = false; btn.textContent = "Save micro-cycles";
   snMsg($("miMsg"), "ok", "Micro-cycles saved.");
+  miRender();
 }
 $("miSaveBtn").addEventListener("click", miSave);
 
@@ -9582,8 +10357,8 @@ $("snPlanBtn").addEventListener("click", goPlanning);
 $("backPlanning").addEventListener("click", goSeason);
 $("backHomeComp").addEventListener("click", () => showView("viewHome"));
 $("backCompForm").addEventListener("click", () => showView("viewPlanning"));
-$("backMacroForm").addEventListener("click", () => showView("viewPlanning"));
-$("backMicroForm").addEventListener("click", goPlanning);
+$("backMacroForm").addEventListener("click", snFormBack);
+$("backMicroForm").addEventListener("click", snFormBack);
 
 // ===================================================================
 // Boot
