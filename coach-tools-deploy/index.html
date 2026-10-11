@@ -1048,21 +1048,25 @@
   .mi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .mi-grid .full{grid-column:1 / -1;}
   .mi-grid .hint{display:block;margin:0 0 4px;font-weight:600;}
-  .mi-days{border:1.5px solid var(--border);border-radius:10px;background:#fbfcfd;}
+  .mi-days,.mi-outs{border:1.5px solid var(--border);border-radius:10px;background:#fbfcfd;}
   .mi-days summary{cursor:pointer;padding:9px 10px;font-weight:700;font-size:.8rem;color:var(--navy);display:flex;justify-content:space-between;align-items:center;gap:8px;list-style:none;}
   .mi-days summary::-webkit-details-marker{display:none;}
   .mi-days summary::after{content:"▾";color:var(--text-dim);transition:transform .15s;}
-  .mi-days[open] summary::after{transform:rotate(180deg);}
+  .mi-days[open] > summary::after,.mi-outs[open] > summary::after{transform:rotate(180deg);}
   .mi-days summary small{font-weight:500;font-size:.72rem;color:var(--text-dim);margin-left:auto;text-align:right;}
-  .mi-days-body{padding:2px 10px 10px;display:grid;gap:6px;}
+  .mi-days-body{padding:2px 10px 10px;display:grid;gap:10px;}
+  .mi-day{display:grid;gap:6px;}
+  .mi-day + .mi-day{border-top:1px solid var(--border);padding-top:10px;}
   .mi-day-row{display:grid;grid-template-columns:86px 1fr;gap:8px;align-items:center;}
   .mi-day-row label{font-weight:700;font-size:.78rem;color:var(--navy);line-height:1.2;}
   .mi-day-row label small{display:block;font-weight:500;font-size:.66rem;color:var(--text-dim);}
-  .mi-day-row.off label{color:#8a96a6;}
+  .mi-day.off label{color:#8a96a6;}
+  .mi-outs{background:#fff;}
+  .mi-outs summary{padding:8px 10px;font-size:.76rem;}
+  .mi-outs-body{padding:0 10px 10px;display:grid;gap:8px;}
+  .mi-out-when{font-weight:700;font-size:.74rem;color:var(--navy);margin-bottom:4px;}
+  .mi-outs textarea{min-height:52px;}
   .mi-comp-note{margin-top:10px;background:#fff4e0;border-radius:9px;padding:8px 10px;font-size:.78rem;color:#8a5a00;font-weight:600;}
-  .mi-sess{border:1.5px solid var(--border);border-radius:11px;padding:10px;margin-top:10px;background:#fbfcfd;}
-  .mi-sess-when{font-weight:800;font-size:.82rem;color:var(--navy);margin-bottom:6px;}
-  .mi-sess textarea{min-height:52px;margin-top:6px;}
   .cp-files{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
   .cp-file{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:600;color:#0a5c8a;background:#eaf6fc;border-radius:8px;padding:5px 9px;text-decoration:none;}
   .cp-acts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px;}
@@ -9374,14 +9378,31 @@ function miDaySummary(w){
   }
   return bits.join(" · ");
 }
+function miOutSummary(list){
+  const done = list.filter(x => (x.s.outline || "").trim()).length;
+  return list.length === 1 ? (done ? "Written" : "Empty") : done + " of " + list.length + " written";
+}
+// One concertina per week: each day has its stroke focus dropdown, then a nested
+// concertina holding that day's session outlines.
 function miDaysHtml(w){
+  const sqName = id => (miState.squads.find(s => s.id === id) || {}).name || "";
   return `<details class="mi-days" ${w.daysOpen ? "open" : ""}>
-    <summary>Stroke focus by day <small>${escapeHtml(miDaySummary(w))}</small></summary>
+    <summary>Stroke focus &amp; session outlines by day <small>${escapeHtml(miDaySummary(w))}</small></summary>
     <div class="mi-days-body">${w.wc ? TT_DAYS_SHORT.slice(1).map((d, k) => {
-      const date = isoAdd(w.wc, k), n = miDaySessions(w, date).length;
-      return `<div class="mi-day-row ${n ? "" : "off"}">
-        <label>${d} ${fmtDdMm(date)}<small>${n ? n + " session" + (n === 1 ? "" : "s") : "No sessions"}</small></label>
-        <select data-day="${date}" aria-label="${d} stroke focus" ${n ? "" : "disabled"}>${miDayStrokeOpts(miDayStroke(w, date))}</select>
+      const date = isoAdd(w.wc, k);
+      const list = w.sessions.map((s, j) => ({ s, j })).filter(x => x.s.session_date === date), n = list.length;
+      return `<div class="mi-day ${n ? "" : "off"}">
+        <div class="mi-day-row">
+          <label>${d} ${fmtDdMm(date)}<small>${n ? n + " session" + (n === 1 ? "" : "s") : "No sessions"}</small></label>
+          <select data-day="${date}" aria-label="${d} stroke focus" ${n ? "" : "disabled"}>${miDayStrokeOpts(miDayStroke(w, date))}</select>
+        </div>
+        ${n ? `<details class="mi-outs" data-out="${date}" ${w.outOpen && w.outOpen.has(date) ? "open" : ""}>
+          <summary>Session outline${n === 1 ? "" : "s"} <small>${miOutSummary(list)}</small></summary>
+          <div class="mi-outs-body">${list.map(({ s, j }) => `<div>
+            <div class="mi-out-when">${escapeHtml(sqName(s.squad_id))} · ${escapeHtml(fmtWhen(s.session_date, s.start_time, s.end_time).split(", ").slice(1).join(", "))}</div>
+            <textarea data-s="${j}" data-f="outline" placeholder="Session outline">${escapeHtml(s.outline)}</textarea>
+          </div>`).join("")}</div>
+        </details>` : ""}
       </div>`;
     }).join("") : '<div class="tt-muted">Set the week commencing date first.</div>'}</div>
   </details>`;
@@ -9389,7 +9410,6 @@ function miDaysHtml(w){
 
 function miRender(){
   const opt = (v, l, cur) => `<option value="${v}" ${String(cur) === String(v) ? "selected" : ""}>${l}</option>`;
-  const sqName = id => (miState.squads.find(s => s.id === id) || {}).name || "";
   $("miWeeks").innerHTML = miState.weeks.map((w, i) => `
     <div class="mi-week" data-w="${i}">
       <h3>Week ${w.no}${w.wc ? " · w/c " + fmtDdMm(w.wc) : ""}</h3>
@@ -9407,13 +9427,7 @@ function miRender(){
           }).join("")}</div>
         </div>
       </div>
-      ${w.sessions.length ? w.sessions.map((s, j) => `
-        <div class="mi-sess">
-          <div class="mi-sess-when">${escapeHtml(sqName(s.squad_id))} · ${escapeHtml(fmtWhen(s.session_date, s.start_time, s.end_time))}</div>
-          <input type="text" data-s="${j}" data-f="stroke_focus" placeholder="Stroke focus" value="${escapeAttr(s.stroke_focus)}">
-          <textarea data-s="${j}" data-f="outline" placeholder="Session outline">${escapeHtml(s.outline)}</textarea>
-        </div>`).join("")
-        : `<div class="tt-muted" style="margin-top:10px;">${w.wc ? "No timetabled sessions this week for these squads (check Timetables or season breaks)." : "Set the week commencing date to load this week's sessions."}</div>`}
+      ${w.sessions.length ? "" : `<div class="tt-muted" style="margin-top:10px;">${w.wc ? "No timetabled sessions this week for these squads (check Timetables or season breaks)." : "Set the week commencing date to load this week's sessions."}</div>`}
       ${miCompNote(w)}
       ${w.id ? `<div class="sdw-slot" data-mid="${w.id}"></div>` : ""}
     </div>`).join("");
@@ -9425,11 +9439,9 @@ $("miWeeks").addEventListener("input", e => {
   const w = miState.weeks[+card.dataset.w];
   if (el.dataset.s !== undefined){
     const s = w.sessions[+el.dataset.s]; s[el.dataset.f] = el.value;
-    if (el.dataset.f === "stroke_focus"){
-      const sel = card.querySelector(`select[data-day="${s.session_date}"]`);
-      if (sel) sel.innerHTML = miDayStrokeOpts(miDayStroke(w, s.session_date));
-      card.querySelector(".mi-days summary small").textContent = miDaySummary(w);
-    }
+    const box = el.closest(".mi-outs");
+    if (box) box.querySelector("summary small").textContent =
+      miOutSummary(w.sessions.filter(x => x.session_date === s.session_date).map(x => ({ s: x })));
   }
   else if (el.dataset.f !== "wc") w[el.dataset.f] = el.value;
 });
@@ -9437,17 +9449,18 @@ $("miWeeks").addEventListener("input", e => {
 $("miWeeks").addEventListener("change", e => {
   const el = e.target; if (!el.dataset.day) return;
   const card = el.closest(".mi-week"), w = miState.weeks[+card.dataset.w];
-  w.sessions.forEach((s, j) => {
-    if (s.session_date !== el.dataset.day) return;
-    s.stroke_focus = el.value;
-    const box = card.querySelector(`input[data-s="${j}"][data-f="stroke_focus"]`); if (box) box.value = el.value;
-  });
+  w.sessions.forEach(s => { if (s.session_date === el.dataset.day) s.stroke_focus = el.value; });
   el.innerHTML = miDayStrokeOpts(miDayStroke(w, el.dataset.day));
   card.querySelector(".mi-days summary small").textContent = miDaySummary(w);
 });
 $("miWeeks").addEventListener("toggle", e => {
-  const d = e.target; if (!d.classList || !d.classList.contains("mi-days")) return;
-  miState.weeks[+d.closest(".mi-week").dataset.w].daysOpen = d.open;
+  const d = e.target; if (!d.classList) return;
+  const w = miState.weeks[+d.closest(".mi-week").dataset.w];
+  if (d.classList.contains("mi-days")) w.daysOpen = d.open;
+  else if (d.classList.contains("mi-outs")){
+    w.outOpen = w.outOpen || new Set();
+    if (d.open) w.outOpen.add(d.dataset.out); else w.outOpen.delete(d.dataset.out);
+  }
 }, true);
 $("miWeeks").addEventListener("click", e => {
   const chip = e.target.closest("[data-break]"); if (!chip || chip.disabled) return;
