@@ -1048,6 +1048,17 @@
   .mi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .mi-grid .full{grid-column:1 / -1;}
   .mi-grid .hint{display:block;margin:0 0 4px;font-weight:600;}
+  .mi-days{border:1.5px solid var(--border);border-radius:10px;background:#fbfcfd;}
+  .mi-days summary{cursor:pointer;padding:9px 10px;font-weight:700;font-size:.8rem;color:var(--navy);display:flex;justify-content:space-between;align-items:center;gap:8px;list-style:none;}
+  .mi-days summary::-webkit-details-marker{display:none;}
+  .mi-days summary::after{content:"▾";color:var(--text-dim);transition:transform .15s;}
+  .mi-days[open] summary::after{transform:rotate(180deg);}
+  .mi-days summary small{font-weight:500;font-size:.72rem;color:var(--text-dim);margin-left:auto;text-align:right;}
+  .mi-days-body{padding:2px 10px 10px;display:grid;gap:6px;}
+  .mi-day-row{display:grid;grid-template-columns:86px 1fr;gap:8px;align-items:center;}
+  .mi-day-row label{font-weight:700;font-size:.78rem;color:var(--navy);line-height:1.2;}
+  .mi-day-row label small{display:block;font-weight:500;font-size:.66rem;color:var(--text-dim);}
+  .mi-day-row.off label{color:#8a96a6;}
   .mi-comp-note{margin-top:10px;background:#fff4e0;border-radius:9px;padding:8px 10px;font-size:.78rem;color:#8a5a00;font-weight:600;}
   .mi-sess{border:1.5px solid var(--border);border-radius:11px;padding:10px;margin-top:10px;background:#fbfcfd;}
   .mi-sess-when{font-weight:800;font-size:.82rem;color:var(--navy);margin-bottom:6px;}
@@ -9341,6 +9352,41 @@ function miCompNote(w){
   return hits.map(c => `<div class="mi-comp-note">🏁 ${escapeHtml(c.name)} · ${ttRange(c.date_from, c.date_to)}</div>`).join("");
 }
 
+// Per-day stroke focus: one choice per day, written to every session on that day.
+const MI_STROKES = ["Free", "Back", "Brs", "Fly", "IM"];
+function miDaySessions(w, date){ return date ? w.sessions.filter(s => s.session_date === date) : []; }
+// "" = none set, "*" = sessions on the day differ, otherwise the shared value.
+function miDayStroke(w, date){
+  const vals = [...new Set(miDaySessions(w, date).map(s => (s.stroke_focus || "").trim()))];
+  return vals.length > 1 ? "*" : vals[0] || "";
+}
+function miDayStrokeOpts(cur){
+  const o = (v, l, extra) => `<option value="${escapeAttr(v)}" ${cur === v ? "selected" : ""} ${extra || ""}>${escapeHtml(l)}</option>`;
+  return o("", "—") + MI_STROKES.map(x => o(x, x)).join("") +
+    (cur === "*" ? o("*", "Mixed", "disabled") : cur && !MI_STROKES.includes(cur) ? o(cur, cur) : "");
+}
+function miDaySummary(w){
+  if (!w.wc) return "";
+  const bits = [];
+  for (let k = 0; k < 7; k++){
+    const v = miDayStroke(w, isoAdd(w.wc, k));
+    if (v) bits.push(TT_DAYS_SHORT[k + 1] + " " + (v === "*" ? "Mixed" : v));
+  }
+  return bits.join(" · ");
+}
+function miDaysHtml(w){
+  return `<details class="mi-days" ${w.daysOpen ? "open" : ""}>
+    <summary>Stroke focus by day <small>${escapeHtml(miDaySummary(w))}</small></summary>
+    <div class="mi-days-body">${w.wc ? TT_DAYS_SHORT.slice(1).map((d, k) => {
+      const date = isoAdd(w.wc, k), n = miDaySessions(w, date).length;
+      return `<div class="mi-day-row ${n ? "" : "off"}">
+        <label>${d} ${fmtDdMm(date)}<small>${n ? n + " session" + (n === 1 ? "" : "s") : "No sessions"}</small></label>
+        <select data-day="${date}" aria-label="${d} stroke focus" ${n ? "" : "disabled"}>${miDayStrokeOpts(miDayStroke(w, date))}</select>
+      </div>`;
+    }).join("") : '<div class="tt-muted">Set the week commencing date first.</div>'}</div>
+  </details>`;
+}
+
 function miRender(){
   const opt = (v, l, cur) => `<option value="${v}" ${String(cur) === String(v) ? "selected" : ""}>${l}</option>`;
   const sqName = id => (miState.squads.find(s => s.id === id) || {}).name || "";
@@ -9352,6 +9398,7 @@ function miRender(){
         <div><span class="hint">Meso</span><select data-f="meso"><option value="">—</option>${[1, 2, 3].map(n => opt(n, n, w.meso)).join("")}</select></div>
         <div><span class="hint">QES focus</span><select data-f="qes"><option value="">—</option>${Object.entries(QES).map(([k, v]) => opt(k, v, w.qes)).join("")}</select></div>
         <div class="full"><span class="hint">Technical focus</span><select data-f="tech"><option value="">—</option>${TECH_FOCUS.slice(1).map((t, k) => opt(k + 1, (k + 1) + ". " + t, w.tech)).join("")}</select></div>
+        <div class="full">${miDaysHtml(w)}</div>
         <div class="full"><span class="hint">Break days <span class="opt">(tap to rest a day — its sessions drop out and it is dimmed in Timetables)</span></span>
           <div class="mi-break-days">${TT_DAYS_SHORT.slice(1).map((d, k) => {
             const dow = k + 1, date = w.wc ? isoAdd(w.wc, k) : "";
@@ -9376,9 +9423,32 @@ function miRender(){
 $("miWeeks").addEventListener("input", e => {
   const el = e.target, card = el.closest(".mi-week"); if (!card || !el.dataset.f) return;
   const w = miState.weeks[+card.dataset.w];
-  if (el.dataset.s !== undefined) w.sessions[+el.dataset.s][el.dataset.f] = el.value;
+  if (el.dataset.s !== undefined){
+    const s = w.sessions[+el.dataset.s]; s[el.dataset.f] = el.value;
+    if (el.dataset.f === "stroke_focus"){
+      const sel = card.querySelector(`select[data-day="${s.session_date}"]`);
+      if (sel) sel.innerHTML = miDayStrokeOpts(miDayStroke(w, s.session_date));
+      card.querySelector(".mi-days summary small").textContent = miDaySummary(w);
+    }
+  }
   else if (el.dataset.f !== "wc") w[el.dataset.f] = el.value;
 });
+// Day dropdown → every session on that day.
+$("miWeeks").addEventListener("change", e => {
+  const el = e.target; if (!el.dataset.day) return;
+  const card = el.closest(".mi-week"), w = miState.weeks[+card.dataset.w];
+  w.sessions.forEach((s, j) => {
+    if (s.session_date !== el.dataset.day) return;
+    s.stroke_focus = el.value;
+    const box = card.querySelector(`input[data-s="${j}"][data-f="stroke_focus"]`); if (box) box.value = el.value;
+  });
+  el.innerHTML = miDayStrokeOpts(miDayStroke(w, el.dataset.day));
+  card.querySelector(".mi-days summary small").textContent = miDaySummary(w);
+});
+$("miWeeks").addEventListener("toggle", e => {
+  const d = e.target; if (!d.classList || !d.classList.contains("mi-days")) return;
+  miState.weeks[+d.closest(".mi-week").dataset.w].daysOpen = d.open;
+}, true);
 $("miWeeks").addEventListener("click", e => {
   const chip = e.target.closest("[data-break]"); if (!chip || chip.disabled) return;
   const w = miState.weeks[+chip.closest(".mi-week").dataset.w], dow = +chip.dataset.break;
