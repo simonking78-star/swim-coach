@@ -1184,6 +1184,27 @@
     background:#fff;color:var(--text);font-family:inherit;
   }
   input[type=email]:focus,input[type=password]:focus{outline:none;border-color:var(--accent);}
+  /* ===== Statistics: Monthly Squad Review ===== */
+  .sqr-modes{display:flex;gap:8px;margin-top:10px;}
+  .sqr-delta{display:block;font-size:.66rem;font-weight:700;margin-top:1px;}
+  .sqr-delta.up{color:var(--green);} .sqr-delta.down{color:var(--red);} .sqr-delta.flat{color:var(--text-dim);}
+  .sqr-table td,.sqr-table th{text-align:right;}
+  .sqr-table td:first-child,.sqr-table th:first-child{text-align:left;white-space:normal;}
+  .sqr-table td:last-child{color:inherit;font-size:.85rem;white-space:nowrap;}
+  .sqr-small{font-size:.66rem;color:var(--text-dim);font-weight:500;}
+  .sqr-source{font-size:.72rem;color:var(--text-dim);margin-top:8px;}
+  .sqr-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .sqr-actions .submit-btn{margin-top:0;}
+  .sqr-dict dt{font-weight:700;color:var(--navy);font-size:.8rem;margin-top:8px;}
+  .sqr-dict dd{margin:2px 0 0;font-size:.78rem;color:var(--text-dim);}
+  #sqrPrint{display:none;}
+  @media print{
+    body.sqr-printing > *:not(#sqrPrint){display:none !important;}
+    body.sqr-printing #sqrPrint{display:block;padding:12px;font-size:11pt;color:#000;}
+    #sqrPrint table{width:100%;border-collapse:collapse;margin-top:8px;}
+    #sqrPrint th,#sqrPrint td{border:1px solid #999;padding:4px 6px;text-align:right;font-size:9.5pt;}
+    #sqrPrint th:first-child,#sqrPrint td:first-child{text-align:left;}
+  }
 </style>
 </head>
 <body>
@@ -1915,6 +1936,13 @@
         <div class="ht-sub">A swimmer vs another swimmer, their birth-year average or a squad average</div>
       </div>
     </div>
+    <div class="home-tile" id="miSquadTile">
+      <div class="ht-icon">📅</div>
+      <div>
+        <div class="ht-title">Monthly Squad Review</div>
+        <div class="ht-sub">Attendance, race times, skills &amp; feedback by squad, month on month</div>
+      </div>
+    </div>
   </div>
 
   <!-- ============ STATISTICS: SWIMMER COMPARISON ============ -->
@@ -2023,6 +2051,54 @@
     </div>
 
     <div id="cmpResultArea"></div>
+  </div>
+
+  <!-- ============ STATISTICS: MONTHLY SQUAD REVIEW ============ -->
+  <div class="view" id="viewMISquad">
+    <a class="back-home" id="backMI3">Statistics</a>
+    <div class="card">
+      <h2>Monthly Squad Review</h2>
+      <div class="mi-select-row">
+        <div>
+          <label for="sqrMonth">Month</label>
+          <select id="sqrMonth"></select>
+        </div>
+        <div>
+          <label for="sqrMetric">Chart</label>
+          <select id="sqrMetric"></select>
+        </div>
+      </div>
+      <div class="sqr-modes">
+        <div class="toggle-btn active" id="sqrModeSquads" style="flex:1;">Squad vs squad</div>
+        <div class="toggle-btn" id="sqrModeTrend" style="flex:1;">Month on month</div>
+      </div>
+      <div id="sqrSquadWrap" style="display:none;margin-top:8px;">
+        <label for="sqrSquad">Squad</label>
+        <select id="sqrSquad"></select>
+      </div>
+    </div>
+    <div id="sqrResultArea"><div class="mi-empty">Loading…</div></div>
+    <div class="card">
+      <div class="sqr-actions">
+        <button type="button" class="submit-btn" id="sqrCsvBtn">Download CSV</button>
+        <button type="button" class="submit-btn" id="sqrPrintBtn">Print / PDF summary</button>
+      </div>
+      <p class="hint">Exports are squad totals only — no swimmer is named — so they can go to club admins and parents.</p>
+      <details style="margin-top:10px;">
+        <summary style="font-weight:700;color:var(--navy);font-size:.85rem;cursor:pointer;">How each figure is worked out</summary>
+        <dl class="sqr-dict">
+          <dt>Swimmers</dt><dd>Squad members during the month (squad history where recorded, otherwise current squad).</dd>
+          <dt>Attendance %</dt><dd>Present marks ÷ all register marks for squad members that month. Sessions = distinct date + time registers.</dd>
+          <dt>PBs</dt><dd>Swims flagged PB, or faster than the swimmer's previous best in that event and course.</dd>
+          <dt>Median time gain %</dt><dd>For swims with an earlier best in the same event and course: (previous best − time) ÷ previous best. Negative = slower than best. Shown with the number of swims (n); treat n&nbsp;&lt;&nbsp;5 with caution.</dd>
+          <dt>Skill score</dt><dd>Average of status entries (swimmer and squad feedback) that month: Not discussed 0, Started 1, Developing 2, Embedded 3.</dd>
+          <dt>Skill steps up / down</dt><dd>Criteria whose latest status this month is higher / lower than their last status before the month.</dd>
+          <dt>Developing/Embedded %</dt><dd>Share of status entries at Developing or Embedded — used as the feedback tone. Free-text notes are counted but not scored.</dd>
+          <dt>Squad drills</dt><dd>Distinct drills named in squad feedback that month.</dd>
+          <dt>Frozen / live</dt><dd>Closed months are frozen at month-end so shared reports don't change; the current month is live.</dd>
+        </dl>
+      </details>
+    </div>
   </div>
 
   <!-- ============ MANAGEMENT INFORMATION: REGRESSION ANALYSIS ============ -->
@@ -2865,7 +2941,7 @@ function goFeedback(){ showView("viewFeedback"); resetFbTabs(); populateFbPlanSe
   else if (fbMode === "squads") sqfOpen();
 }
 function goSession(){ if (typeof spSetReturn === "function") spSetReturn(null); showView("viewSession"); loadPlanList(); }  // Season → Session plans
-function goMI(){ showView("viewMI"); }
+function goMI(){ showView("viewMI"); sqrApplyAccess(); }
 function goAdmin(){ showView("viewAdmin"); }
 
 $("tileAttendance").addEventListener("click", goAttendance);
@@ -3349,6 +3425,8 @@ $("miRegressionTile").addEventListener("click", () => { resetMIRegression(); sho
 $("backMI1").addEventListener("click", () => showView("viewMI"));
 $("miCompareTile").addEventListener("click", () => { showView("viewMICompare"); cmpOpen(); });
 $("backMI2").addEventListener("click", () => showView("viewMI"));
+$("miSquadTile").addEventListener("click", () => { showView("viewMISquad"); sqrOpen(); });
+$("backMI3").addEventListener("click", () => showView("viewMI"));
 
 // Admin routing
 $("tileAdmin").addEventListener("click", goAdmin);
@@ -6975,6 +7053,304 @@ function cmpRender(){
     }
   });
 }
+
+// ===================================================================
+// STATISTICS: MONTHLY SQUAD REVIEW
+// One row per squad per month from public.squad_month_review (live) and
+// public.squad_month_snapshots (frozen at month-end). Squad totals only.
+// Visibility: Statistics read + Feedback read for the squad (coach = own
+// squads); the database applies the same rule.
+// ===================================================================
+const SQR_METRICS = [
+  { k:"attendance_pct", label:"Attendance %", fmt:"pct1" },
+  { k:"members", label:"Swimmers", fmt:"int" },
+  { k:"sessions", label:"Sessions", fmt:"int" },
+  { k:"swims", label:"Race swims", fmt:"int" },
+  { k:"pbs", label:"PBs", fmt:"int" },
+  { k:"median_improvement_pct", label:"Median time gain %", fmt:"pct2" },
+  { k:"skill_score", label:"Skill score (0–3)", fmt:"dec2" },
+  { k:"skill_moves_up", label:"Skill steps up", fmt:"int" },
+  { k:"positive_feedback_pct", label:"Developing/Embedded %", fmt:"pct1" },
+  { k:"feedback_entries", label:"Feedback entries", fmt:"int" },
+  { k:"drills_worked", label:"Squad drills", fmt:"int" }
+];
+const SQR_NUM = ["members","sessions","marks","present","attendance_pct","swimmers_attending","swims","swimmers_raced",
+  "pbs","improved_swims","avg_improvement_pct","median_improvement_pct","status_entries","st_not_discussed","st_started",
+  "st_developing","st_embedded","skill_score","skill_moves_up","skill_moves_down","feedback_entries","feedback_notes",
+  "positive_feedback_pct","squad_entries","drills_worked"];
+const sqr = { club:null, rows:[], month:null, mode:"squads", squadId:null, metric:"attendance_pct", chart:null, error:null };
+
+function sqrMonthKey(d){ return String(d).slice(0, 7); }
+function sqrMonthLabel(k){
+  const [y, m] = k.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("en-GB", { month:"short", year:"numeric" });
+}
+function sqrFmt(v, f){
+  if (v == null || isNaN(v)) return "–";
+  if (f === "pct1") return v.toFixed(1) + "%";
+  if (f === "pct2") return (v > 0 ? "+" : "") + v.toFixed(2) + "%";
+  if (f === "dec2") return v.toFixed(2);
+  return String(Math.round(v));
+}
+function sqrTick(v, m){ const n = +Number(v).toFixed(2); return m.fmt.startsWith("pct") ? n + "%" : n; }
+function sqrMetric(k){ return SQR_METRICS.find(m => m.k === k) || SQR_METRICS[0]; }
+function sqrHasData(r){ return r && (r.marks > 0 || r.swims > 0 || r.feedback_entries > 0); }
+function sqrPrevKey(k){
+  const [y, m] = k.split("-").map(Number);
+  const d = new Date(y, m - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+function sqrRow(squadId, k){ return sqr.rows.find(r => r.squad_id === squadId && r.mk === k); }
+function sqrDelta(cur, prev, key, f){
+  if (!cur || !prev || cur[key] == null || prev[key] == null || !sqrHasData(prev)) return "";
+  const d = cur[key] - prev[key];
+  if (Math.abs(d) < 0.005) return `<span class="sqr-delta flat">= last month</span>`;
+  const txt = f === "int" ? Math.round(d) : d.toFixed(f === "dec2" || f === "pct2" ? 2 : 1);
+  return `<span class="sqr-delta ${d > 0 ? "up" : "down"}">${d > 0 ? "▲ +" : "▼ "}${txt}${f && f.startsWith("pct") ? " pts" : ""}</span>`;
+}
+
+// Hide the tile for roles that can't see squad totals (parents/swimmers, no feedback read).
+function sqrApplyAccess(){
+  const tile = $("miSquadTile"); if (!tile) return;
+  const st = sectionLevel("stats"), fb = sectionLevel("feedback");
+  tile.style.display = (st === "N" || st === "CR" || fb === "N" || fb === "CR") ? "none" : "";
+}
+
+async function sqrLoad(){
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth() - 12, 1);
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+  const curKey = iso(now).slice(0, 7);
+  sqr.error = null;
+  const [live, snap] = await Promise.all([
+    sb.rpc("squad_month_review", { p_club: currentClub, p_from: iso(from), p_to: iso(now) }),
+    sb.from("squad_month_snapshots").select("squad_id,month,metrics,generated_at").eq("club", currentClub).gte("month", iso(from))
+  ]);
+  if (live.error){
+    sqr.rows = [];
+    sqr.error = /squad_month_review|function/i.test(live.error.message || "")
+      ? "The monthly review isn't installed in the database yet."
+      : "Could not load the review: " + live.error.message;
+    return;
+  }
+  const frozen = {};
+  (snap.data || []).forEach(s => { frozen[s.squad_id + "|" + sqrMonthKey(s.month)] = s; });
+  sqr.rows = (live.data || []).map(r => {
+    const mk = sqrMonthKey(r.month);
+    const f = mk < curKey ? frozen[r.squad_id + "|" + mk] : null;
+    const row = f ? Object.assign({ squad_id: r.squad_id, month: r.month, squad_name: r.squad_name }, f.metrics) : Object.assign({}, r);
+    SQR_NUM.forEach(k => { row[k] = row[k] == null ? null : Number(row[k]); });
+    row.mk = mk;
+    row.source = f ? "frozen " + fmtDate(String(f.generated_at).slice(0, 10)) : "live";
+    return row;
+  });
+  sqr.club = currentClub;
+}
+
+async function sqrOpen(){
+  if (!$("sqrMetric").options.length){
+    SQR_METRICS.forEach(m => $("sqrMetric").add(new Option(m.label, m.k)));
+    $("sqrMetric").value = sqr.metric;
+  }
+  if (sqr.club !== currentClub || !sqr.rows.length){
+    $("sqrResultArea").innerHTML = '<div class="mi-empty">Loading…</div>';
+    await sqrLoad();
+  }
+  const months = [...new Set(sqr.rows.map(r => r.mk))].sort().reverse();
+  const sel = $("sqrMonth"); sel.innerHTML = "";
+  months.forEach(k => sel.add(new Option(sqrMonthLabel(k) + (k === months[0] ? " (so far)" : ""), k)));
+  if (!sqr.month || !months.includes(sqr.month)){
+    const withData = months.filter(k => sqr.rows.some(r => r.mk === k && sqrHasData(r)));
+    sqr.month = months[1] && withData.includes(months[1]) ? months[1] : (withData[0] || months[0] || null);
+  }
+  if (sqr.month) sel.value = sqr.month;
+
+  const squads = [...new Map(sqr.rows.map(r => [r.squad_id, r.squad_name])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  const ss = $("sqrSquad"); ss.innerHTML = "";
+  squads.forEach(([id, name]) => ss.add(new Option(name, id)));
+  if (!sqr.squadId || !squads.some(([id]) => id === sqr.squadId)){
+    const busiest = sqr.rows.filter(r => r.mk === sqr.month).sort((a, b) => (b.marks + b.swims + b.feedback_entries) - (a.marks + a.swims + a.feedback_entries))[0];
+    sqr.squadId = busiest ? busiest.squad_id : (squads[0] || [])[0];
+  }
+  if (sqr.squadId) ss.value = sqr.squadId;
+  sqrRender();
+}
+
+function sqrSetMode(mode){
+  sqr.mode = mode;
+  $("sqrModeSquads").classList.toggle("active", mode === "squads");
+  $("sqrModeTrend").classList.toggle("active", mode === "trend");
+  $("sqrSquadWrap").style.display = mode === "trend" ? "" : "none";
+  sqrRender();
+}
+
+function sqrRender(){
+  const area = $("sqrResultArea");
+  if (sqr.chart){ sqr.chart.destroy(); sqr.chart = null; }
+  if (sqr.error){ area.innerHTML = `<div class="card"><div class="mi-empty">${escapeHtml(sqr.error)}</div></div>`; return; }
+  if (!sqr.rows.length){ area.innerHTML = '<div class="card"><div class="mi-empty">No squads you can see in this club.</div></div>'; return; }
+  return sqr.mode === "trend" ? sqrRenderTrend(area) : sqrRenderSquads(area);
+}
+
+function sqrRenderSquads(area){
+  const m = sqrMetric(sqr.metric), prevKey = sqrPrevKey(sqr.month);
+  const all = sqr.rows.filter(r => r.mk === sqr.month);
+  const rows = all.filter(sqrHasData).sort((a, b) => a.squad_name.localeCompare(b.squad_name));
+  const hidden = all.length - rows.length;
+  if (!rows.length){
+    area.innerHTML = `<div class="card"><div class="mi-empty">Nothing recorded for any squad in ${escapeHtml(sqrMonthLabel(sqr.month))}.</div></div>`;
+    return;
+  }
+  const cell = (r, key, f, n) => {
+    const p = sqrRow(r.squad_id, prevKey);
+    return `<td>${sqrFmt(r[key], f)}${n != null ? `<span class="sqr-small" style="display:block;">n=${n}</span>` : ""}${sqrDelta(r, p, key, f)}</td>`;
+  };
+  const sources = [...new Set(rows.map(r => r.source))];
+  area.innerHTML = `
+    <div class="mi-chart-card">
+      <div class="mi-chart-title">${escapeHtml(m.label)} · ${escapeHtml(sqrMonthLabel(sqr.month))}</div>
+      <div class="mi-chart-sub">${escapeHtml(currentClub)} · squads with activity this month</div>
+      <div class="mi-canvas-wrap" style="height:${Math.max(160, rows.length * 34 + 40)}px;"><canvas id="sqrCanvas"></canvas></div>
+    </div>
+    <div class="mi-chart-card">
+      <div class="mi-chart-title">Squad summary</div>
+      <div class="mi-chart-sub">Arrows compare with ${escapeHtml(sqrMonthLabel(prevKey))}</div>
+      <div style="overflow-x:auto;">
+      <table class="mi-table sqr-table">
+        <thead><tr><th>Squad</th><th>Attend.</th><th>PBs</th><th>Time gain</th><th>Skill</th><th>Feedback</th></tr></thead>
+        <tbody>${rows.map(r => `<tr>
+          <td>${escapeHtml(r.squad_name)}<span class="sqr-small" style="display:block;">${r.members} swimmers · ${r.sessions} sessions</span></td>
+          ${cell(r, "attendance_pct", "pct1", r.marks || null)}
+          ${cell(r, "pbs", "int", null)}
+          ${cell(r, "median_improvement_pct", "pct2", r.swims ? r.improved_swims + "/" + r.swims : null)}
+          ${cell(r, "skill_score", "dec2", r.status_entries || null)}
+          ${cell(r, "feedback_entries", "int", null)}
+        </tr>`).join("")}</tbody>
+      </table>
+      </div>
+      ${rows.some(r => r.swims > 0 && r.swims < 5) ? '<div class="mi-flags"><div class="mi-flag">⚠ Some squads raced fewer than 5 times — treat their time gain as a rough guide.</div></div>' : ""}
+      <div class="sqr-source">${hidden ? `${hidden} squad${hidden === 1 ? "" : "s"} with nothing recorded hidden. ` : ""}Figures: ${escapeHtml(sources.join(", "))}.</div>
+    </div>`;
+
+  const cRows = rows.filter(r => r[m.k] != null);
+  const data = cRows.map(r => r[m.k]);
+  if (!cRows.length){ $("sqrCanvas").parentNode.innerHTML = `<div class="mi-empty">No ${escapeHtml(m.label.toLowerCase())} recorded this month.</div>`; return; }
+  $("sqrCanvas").parentNode.style.height = Math.max(140, cRows.length * 34 + 40) + "px";
+  sqr.chart = new Chart($("sqrCanvas").getContext("2d"), {
+    type: "bar",
+    data: { labels: cRows.map(r => r.squad_name), datasets: [{ label: m.label, data, backgroundColor: "#00a8e8", borderRadius: 4, maxBarThickness: 22 }] },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${m.label}: ${sqrFmt(c.parsed.x, m.fmt)}` } } },
+      scales: { x: { beginAtZero: true, ticks: { maxTicksLimit: 6, callback: v => sqrTick(v, m) } }, y: { ticks: { font: { size: 11 } } } }
+    }
+  });
+}
+
+function sqrRenderTrend(area){
+  const m = sqrMetric(sqr.metric);
+  const rows = sqr.rows.filter(r => r.squad_id === sqr.squadId).sort((a, b) => a.mk.localeCompare(b.mk));
+  if (!rows.length){ area.innerHTML = '<div class="card"><div class="mi-empty">Choose a squad.</div></div>'; return; }
+  const name = rows[0].squad_name;
+  const firstData = rows.findIndex(sqrHasData);
+  const shown = firstData < 0 ? rows : rows.slice(firstData);
+  // Club average for the same metric, across squads with activity that month.
+  const clubAvg = shown.map(r => {
+    const vals = sqr.rows.filter(x => x.mk === r.mk && sqrHasData(x) && x[m.k] != null).map(x => x[m.k]);
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  });
+  area.innerHTML = `
+    <div class="mi-chart-card">
+      <div class="mi-chart-title">${escapeHtml(name)} · ${escapeHtml(m.label)}</div>
+      <div class="mi-chart-sub">Month on month, with the average of all active squads in ${escapeHtml(currentClub)}</div>
+      <div class="mi-canvas-wrap" style="height:260px;"><canvas id="sqrCanvas"></canvas></div>
+    </div>
+    <div class="mi-chart-card">
+      <div class="mi-chart-title">${escapeHtml(name)} by month</div>
+      <div style="overflow-x:auto;">
+      <table class="mi-table sqr-table">
+        <thead><tr><th>Month</th><th>Swimmers</th><th>Attend.</th><th>Swims</th><th>PBs</th><th>Time gain</th><th>Skill</th><th>Steps ↑/↓</th><th>Dev/Emb</th><th>Feedback</th><th>Drills</th></tr></thead>
+        <tbody>${shown.slice().reverse().map(r => `<tr>
+          <td>${escapeHtml(sqrMonthLabel(r.mk))}<span class="sqr-small" style="display:block;">${escapeHtml(r.source)}</span></td>
+          <td>${r.members}</td><td>${sqrFmt(r.attendance_pct, "pct1")}</td><td>${r.swims}</td><td>${r.pbs}</td>
+          <td>${sqrFmt(r.median_improvement_pct, "pct2")}</td><td>${sqrFmt(r.skill_score, "dec2")}</td>
+          <td>${r.skill_moves_up}/${r.skill_moves_down}</td><td>${sqrFmt(r.positive_feedback_pct, "pct1")}</td>
+          <td>${r.feedback_entries}</td><td>${r.drills_worked}</td>
+        </tr>`).join("")}</tbody>
+      </table>
+      </div>
+    </div>`;
+  sqr.chart = new Chart($("sqrCanvas").getContext("2d"), {
+    type: "line",
+    data: {
+      labels: shown.map(r => sqrMonthLabel(r.mk)),
+      datasets: [
+        { label: name, data: shown.map(r => r[m.k]), borderColor: "#0b2545", backgroundColor: "#0b2545", tension: .25, spanGaps: true },
+        { label: "Club squad average", data: clubAvg, borderColor: "#00a8e8", backgroundColor: "#00a8e8", borderDash: [5, 4], tension: .25, spanGaps: true, pointRadius: 2 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 10 } } },
+                 tooltip: { callbacks: { label: c => `${c.dataset.label}: ${sqrFmt(c.parsed.y, m.fmt)}` } } },
+      scales: { y: { beginAtZero: m.k !== "median_improvement_pct", grace: "10%", ticks: { maxTicksLimit: 6, callback: v => sqrTick(v, m) } } }
+    }
+  });
+}
+
+// Rows the current view is showing (for export).
+function sqrExportRows(){
+  return sqr.mode === "trend"
+    ? sqr.rows.filter(r => r.squad_id === sqr.squadId).sort((a, b) => a.mk.localeCompare(b.mk))
+    : sqr.rows.filter(r => r.mk === sqr.month && sqrHasData(r)).sort((a, b) => a.squad_name.localeCompare(b.squad_name));
+}
+
+function sqrCsv(){
+  const rows = sqrExportRows();
+  if (!rows.length){ alert("Nothing to export for this view."); return; }
+  const cols = ["month","squad_name",...SQR_NUM,"source"];
+  const q = v => { const t = v == null ? "" : String(v); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+  const csv = [["club", ...cols].join(",")].concat(rows.map(r => [currentClub, ...cols.map(c => c === "month" ? r.mk : r[c])].map(q).join(","))).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a = document.createElement("a");
+  const tag = sqr.mode === "trend" ? (rows[0].squad_name || "squad").replace(/\W+/g, "_") : sqr.month;
+  a.href = URL.createObjectURL(blob);
+  a.download = `Squad_Review_${currentClub.replace(/\W+/g, "_")}_${tag}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+function sqrPrint(){
+  const rows = sqrExportRows();
+  if (!rows.length){ alert("Nothing to print for this view."); return; }
+  const trend = sqr.mode === "trend";
+  const title = trend ? `${rows[0].squad_name} — month on month` : `All squads — ${sqrMonthLabel(sqr.month)}`;
+  const first = trend ? r => sqrMonthLabel(r.mk) : r => r.squad_name;
+  const pb = rows.reduce((a, r) => a + r.pbs, 0), sw = rows.reduce((a, r) => a + r.swims, 0);
+  const mk = rows.reduce((a, r) => a + r.marks, 0), pr = rows.reduce((a, r) => a + r.present, 0);
+  $("sqrPrint").innerHTML = `
+    <h2 style="margin:0;">${escapeHtml(currentClub)} · Monthly Squad Review</h2>
+    <div>${escapeHtml(title)} · printed ${escapeHtml(fmtDate(new Date().toISOString().slice(0, 10)))}</div>
+    <p>${trend ? "Across these months" : "This month"}: attendance ${mk ? (100 * pr / mk).toFixed(1) + "%" : "–"} over ${mk} register marks; ${pb} PBs from ${sw} race swims.</p>
+    <table><thead><tr><th>${trend ? "Month" : "Squad"}</th><th>Swimmers</th><th>Attendance</th><th>Swims</th><th>PBs</th><th>Median time gain</th><th>Skill score</th><th>Dev/Emb</th><th>Feedback</th></tr></thead>
+    <tbody>${rows.filter(sqrHasData).map(r => `<tr><td>${escapeHtml(first(r))}</td><td>${r.members}</td><td>${sqrFmt(r.attendance_pct, "pct1")}</td>
+      <td>${r.swims}</td><td>${r.pbs}</td><td>${sqrFmt(r.median_improvement_pct, "pct2")}</td><td>${sqrFmt(r.skill_score, "dec2")}</td>
+      <td>${sqrFmt(r.positive_feedback_pct, "pct1")}</td><td>${r.feedback_entries}</td></tr>`).join("")}</tbody></table>
+    <p style="font-size:9pt;">Squad totals only; no individual swimmer is identified. Time gain = change against each swimmer's previous best in the same event and course. Skill score: Not discussed 0 – Embedded 3.</p>`;
+  document.body.classList.add("sqr-printing");
+  const done = () => { document.body.classList.remove("sqr-printing"); window.removeEventListener("afterprint", done); };
+  window.addEventListener("afterprint", done);
+  window.print();
+  setTimeout(done, 30000);
+}
+
+$("sqrMonth").addEventListener("change", e => { sqr.month = e.target.value; sqrRender(); });
+$("sqrMetric").addEventListener("change", e => { sqr.metric = e.target.value; sqrRender(); });
+$("sqrSquad").addEventListener("change", e => { sqr.squadId = e.target.value; sqrRender(); });
+$("sqrModeSquads").addEventListener("click", () => sqrSetMode("squads"));
+$("sqrModeTrend").addEventListener("click", () => sqrSetMode("trend"));
+$("sqrCsvBtn").addEventListener("click", sqrCsv);
+$("sqrPrintBtn").addEventListener("click", sqrPrint);
 
 // ===================================================================
 // SWIMMER PROFILE
@@ -10787,5 +11163,6 @@ async function authLinkLanding(){
 }
 </script>
 
+<div id="sqrPrint"></div>
 </body>
 </html>
