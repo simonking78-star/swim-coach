@@ -1498,18 +1498,8 @@
         <button type="button" id="cancelUpdateBtn">Start new instead</button>
       </div>
       <h2>2 · Stroke / skill</h2>
-      <select id="category">
+      <select id="category" data-stroke-select data-blank="" data-extra="Dive|Transition|Touch turn|Tumble turn|Training mindset|Racing mindset">
         <option value="" disabled selected>Choose one…</option>
-        <option>Free</option>
-        <option>Back</option>
-        <option>Breast</option>
-        <option>Fly</option>
-        <option>Dive</option>
-        <option>Transition</option>
-        <option>Touch turn</option>
-        <option>Tumble turn</option>
-        <option>Training mindset</option>
-        <option>Racing mindset</option>
       </select>
 
       <label style="margin-top:20px;">Entry type</label>
@@ -1625,11 +1615,8 @@
           </div>
           <div class="sqf-for" id="sqfFor"></div>
           <h2>2 · Stroke / skill</h2>
-          <select id="sqfCategory">
+          <select id="sqfCategory" data-stroke-select data-blank="" data-extra="Dive|Transition|Touch turn|Tumble turn|Training mindset|Racing mindset">
             <option value="" disabled selected>Choose one…</option>
-            <option>Free</option><option>Back</option><option>Breast</option><option>Fly</option>
-            <option>Dive</option><option>Transition</option><option>Touch turn</option><option>Tumble turn</option>
-            <option>Training mindset</option><option>Racing mindset</option>
           </select>
 
           <label style="margin-top:20px;">Entry type</label>
@@ -1835,7 +1822,12 @@
       <h2 id="drillEditTitle">New drill</h2>
       <div class="di-row">
         <label for="deStroke">Stroke / Skills</label>
-        <input type="text" id="deStroke" placeholder="e.g. Frontcrawl">
+        <select id="deStroke" data-stroke-select data-blank="— none —">
+          <option value="">— none —</option>
+        </select>
+        <label for="deSkill">Skill (optional)</label>
+        <input type="text" id="deSkill" placeholder="e.g. Turn" list="deSkillList" autocomplete="off">
+        <datalist id="deSkillList"><option value="Turn"><option value="Start"><option value="Finish"><option value="Transition"><option value="Underwater"></datalist>
       </div>
       <div class="di-row">
         <label for="deName">Drill name</label>
@@ -1954,12 +1946,8 @@
       <div class="mi-select-row">
         <div>
           <label for="cmpStroke">Stroke</label>
-          <select id="cmpStroke">
+          <select id="cmpStroke" data-stroke-select data-stroke-value="name">
             <option value="Freestyle">Freestyle</option>
-            <option value="Backstroke">Backstroke</option>
-            <option value="Breaststroke">Breaststroke</option>
-            <option value="Butterfly">Butterfly</option>
-            <option value="Individual Medley">Individual Medley</option>
           </select>
         </div>
         <div>
@@ -2233,15 +2221,8 @@
       <div class="sw-grid2">
         <div>
           <label for="swStroke">Stroke</label>
-          <select id="swStroke">
-            <option value="Freestyle">Freestyle</option>
-            <option value="Backstroke">Backstroke</option>
-            <option value="Breaststroke">Breaststroke</option>
-            <option value="Butterfly">Butterfly</option>
-            <option value="Individual Medley">IM</option>
-            <option value="Kick">Kick</option>
-            <option value="Drill">Drill</option>
-            <option value="Pull">Pull</option>
+          <select id="swStroke" data-stroke-select data-extra="Kick|Drill|Pull">
+            <option value="Fr">Freestyle</option>
           </select>
         </div>
         <div>
@@ -2884,6 +2865,74 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
 
 // ===================================================================
+// STROKE LOOKUP — public.stroke_lookup is the single source for every
+// stroke label in the app. Data stores the short code (Fr, Bk, Brs, Fly,
+// IM, DLK). Dropdowns show the long name; chips, tags and tight spaces
+// show the short code. The list below is only a fallback used until the
+// table has loaded (or if it can't be reached).
+// ===================================================================
+let STROKES = [
+  { code: "Fr",  name: "Freestyle",         aliases: ["fr","free","freestyle","frontcrawl","front crawl","crawl"] },
+  { code: "Bk",  name: "Backstroke",        aliases: ["bk","back","backstroke"] },
+  { code: "Brs", name: "Breaststroke",      aliases: ["brs","br","breast","breaststroke"] },
+  { code: "Fly", name: "Butterfly",         aliases: ["fly","butterfly"] },
+  { code: "IM",  name: "Individual Medley", aliases: ["im","individual medley","medley"] },
+  { code: "DLK", name: "Dolphin",           aliases: ["dlk","dolphin","dolphin kick"] },
+];
+const STROKE_CODES = () => STROKES.map(s => s.code);
+function strokeFind(v){
+  const k = (v == null ? "" : String(v)).trim().toLowerCase();
+  if (!k) return null;
+  return STROKES.find(s => s.code.toLowerCase() === k || s.name.toLowerCase() === k || (s.aliases || []).includes(k)) || null;
+}
+// Any spelling → short code; non-stroke values (Dive, Kick, Turns…) are returned unchanged.
+function strokeCode(v){ const s = strokeFind(v); return s ? s.code : (v == null ? "" : String(v).trim()); }
+// Long form for dropdowns, PDFs and headings.
+function strokeName(v){ const s = strokeFind(v); return s ? s.name : (v == null ? "" : String(v)); }
+// Compact form for chips, tags and summaries.
+function strokeShort(v){ return strokeCode(v); }
+// Drill tile label: long stroke name plus any skill tag ("Backstroke · Turn").
+function drillStrokeLabel(d){ return [d && d.stroke ? strokeName(d.stroke) : "", d && d.skill ? d.skill : ""].filter(Boolean).join(" · "); }
+// <option> list: value = code (or name when valueIs:"name"), label = long name.
+function strokeOptionsHtml(selected, opts = {}){
+  const valueIs = opts.valueIs || "code";
+  const list = opts.only ? STROKES.filter(opts.only) : STROKES;
+  const sel = valueIs === "name" ? strokeName(selected) : strokeCode(selected);
+  return list.map(s => {
+    const v = valueIs === "name" ? s.name : s.code;
+    return `<option value="${escapeAttr(v)}"${v === sel ? " selected" : ""}>${escapeHtml(s.name)}</option>`;
+  }).join("");
+}
+// Fill every stroke dropdown from STROKES (keeps the current choice).
+// Each select is marked data-stroke-select; extra non-stroke options live in
+// data-extra ("Dive|Transition|…") and are kept after the strokes.
+function refreshStrokeControls(){
+  document.querySelectorAll("select[data-stroke-select]").forEach(sel => {
+    const cur = sel.value;
+    const valueIs = sel.dataset.strokeValue || "code";
+    const only = sel.id === "cmpStroke" ? (s => !!CMP_DISTANCES[s.name]) : null;
+    const extra = (sel.dataset.extra || "").split("|").filter(Boolean);
+    const blank = sel.dataset.blank;
+    sel.innerHTML =
+      (blank != null ? `<option value=""${blank ? "" : " disabled"}${cur ? "" : " selected"}>${escapeHtml(blank || "Choose one…")}</option>` : "") +
+      strokeOptionsHtml(cur, { valueIs, only }) +
+      extra.map(x => `<option value="${escapeAttr(x)}"${x === cur ? " selected" : ""}>${escapeHtml(x)}</option>`).join("");
+    if (cur && [...sel.options].some(o => o.value === (valueIs === "name" ? strokeName(cur) : strokeCode(cur)))) sel.value = valueIs === "name" ? strokeName(cur) : strokeCode(cur);
+    else if (cur && [...sel.options].some(o => o.value === cur)) sel.value = cur;
+  });
+}
+async function loadStrokes(){
+  try {
+    const { data, error } = await sb.from("stroke_lookup")
+      .select("code, name, sort_order, aliases, is_active").eq("is_active", true).order("sort_order");
+    if (!error && data && data.length) STROKES = data.map(s => ({ ...s, aliases: (s.aliases || []).map(a => a.toLowerCase()) }));
+    else if (error) console.warn("stroke_lookup not available, using built-in list:", error.message);
+  } catch (e) { console.warn("stroke_lookup load failed:", e); }
+  refreshStrokeControls();
+  document.dispatchEvent(new Event("strokesloaded"));
+}
+
+// ===================================================================
 // TOP-LEVEL CLUB FILTER
 // Every swimmer/squad/session-plan query in the app — including the
 // Management Information regression tool — is scoped to currentClub.
@@ -3105,7 +3154,7 @@ async function sqfLoadRecent(){
   if (error){ console.error(error); el.innerHTML = '<div class="empty">Could not load recent squad feedback.</div>'; return; }
   el.innerHTML = (data || []).length ? data.map(r => `
     <div class="sqf-entry" data-squad="${r.squad_id}" style="cursor:pointer;">
-      <div class="sqf-entry-title">${escapeHtml(r.squads ? r.squads.name : "Squad")} · ${escapeHtml(r.category)}${r.criterion ? " — " + escapeHtml(r.criterion) : ""}</div>
+      <div class="sqf-entry-title">${escapeHtml(r.squads ? r.squads.name : "Squad")} · ${escapeHtml(strokeShort(r.category))}${r.criterion ? " — " + escapeHtml(r.criterion) : ""}</div>
       <div class="sqf-entry-meta">${fmtDate(r.session_date)}${r.status ? " · " + escapeHtml(r.status) : ""}${r.drills_library ? " · Drill: " + escapeHtml(r.drills_library.drill_name) : ""}</div>
       <div class="sqf-entry-body">${escapeHtml((r.observation || "").slice(0, 140))}</div>
     </div>`).join("") : '<div class="empty">No squad feedback logged yet.</div>';
@@ -3136,7 +3185,7 @@ function sqfRenderFilter(){
   if (sqf.filter && !cats.includes(sqf.filter)) sqf.filter = "";
   $("sqfStrokeFilter").innerHTML = cats.length > 1
     ? [`<span class="stroke-chip ${!sqf.filter ? "active" : ""}" data-cat="">All</span>`]
-        .concat(cats.map(c => `<span class="stroke-chip ${sqf.filter === c ? "active" : ""}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</span>`)).join("")
+        .concat(cats.map(c => `<span class="stroke-chip ${sqf.filter === c ? "active" : ""}" data-cat="${escapeHtml(c)}">${escapeHtml(strokeShort(c))}</span>`)).join("")
     : "";
 }
 $("sqfStrokeFilter").addEventListener("click", e => {
@@ -3158,7 +3207,7 @@ function sqfEntryHtml(e, latest){
     <div class="sqf-entry ${latest ? "" : "old"}">
       <div class="sqf-entry-top">
         <div>
-          <div class="sqf-entry-title">${escapeHtml(e.category)}${e.criterion ? " — " + escapeHtml(e.criterion) : ""}</div>
+          <div class="sqf-entry-title">${escapeHtml(strokeShort(e.category))}${e.criterion ? " — " + escapeHtml(e.criterion) : ""}</div>
           <div class="sqf-entry-meta">${fmtDate(e.session_date)} · ${e.entry_type === "status" ? "Status review" : "Note"}</div>
         </div>
         ${latest ? `<button type="button" class="sqf-update-btn" data-update="${e.thread_id}">Update</button>` : ""}
@@ -3221,8 +3270,8 @@ function sqfRenderDrillResults(){
   const box = $("sqfDrillResults");
   if (!q){ box.innerHTML = ""; return; }
   const hits = sqf.drills.filter(d => (d.drill_name || "").toLowerCase().includes(q) ||
-    (d.stroke || "").toLowerCase().includes(q) || (d.pseudonyms || []).some(p => (p || "").toLowerCase().includes(q))).slice(0, 12);
-  box.innerHTML = hits.length ? hits.map(d => `<div class="sqf-drill-item" data-id="${d.id}">${escapeHtml(d.drill_name)}<small>${escapeHtml(d.stroke || "")}</small></div>`).join("")
+    (d.stroke || "").toLowerCase().includes(q) || strokeName(d.stroke).toLowerCase().includes(q) || (d.pseudonyms || []).some(p => (p || "").toLowerCase().includes(q))).slice(0, 12);
+  box.innerHTML = hits.length ? hits.map(d => `<div class="sqf-drill-item" data-id="${d.id}">${escapeHtml(d.drill_name)}<small>${escapeHtml(strokeShort(d.stroke))}</small></div>`).join("")
     : '<div class="sqf-drill-item" style="cursor:default;color:var(--text-dim);">No drill matches — add it under Drills &amp; Skills first.</div>';
 }
 $("sqfDrillSearch").addEventListener("input", sqfRenderDrillResults);
@@ -3236,7 +3285,7 @@ function sqfSetDrill(d){
   $("sqfDrillSearch").value = ""; $("sqfDrillResults").innerHTML = "";
   $("sqfDrillSearch").style.display = d ? "none" : "block";
   $("sqfDrillPill").style.display = d ? "flex" : "none";
-  $("sqfDrillName").textContent = d ? d.drill_name + (d.stroke ? " · " + d.stroke : "") : "";
+  $("sqfDrillName").textContent = d ? d.drill_name + (d.stroke ? " · " + strokeName(d.stroke) : "") : "";
   $("sqfWeeksWrap").style.display = d ? "block" : "none";
   if (!d) sqf.weeks.clear();
   sqfRenderWeeks();
@@ -3306,7 +3355,7 @@ function sqfStartUpdate(threadId){
   const latest = sqf.entries.find(e => e.thread_id === threadId); if (!latest) return;
   sqfResetForm();
   sqf.threadId = threadId;
-  $("sqfCategory").value = latest.category;
+  $("sqfCategory").value = strokeCode(latest.category);
   $("sqfCategory").dispatchEvent(new Event("change"));
   sqfSetType(latest.entry_type === "note" ? "note" : "status");
   $("sqfCriterion").value = latest.criterion || "";
@@ -3480,14 +3529,16 @@ function blockDistance(block){
 function planDistance(content){ return (content || []).reduce((s, b) => s + blockDistance(b), 0); }
 
 // --- Session focus: Stroke & Skills ticks + Training zone ---
-const SP_SKILLS = ["FR", "BK", "Brs", "Fly", "IM", "Turns", "Trans.", "DLK", "Start", "Finish"];
-// Older saved values → current labels
-const SP_SKILL_ALIASES = { Fr: "FR", Bk: "BK", Transitions: "Trans." };
+// Stroke ticks come from stroke_lookup (short codes); the rest are skills.
+const SP_SKILL_ONLY = ["Turns", "Trans.", "Start", "Finish"];
+const SP_SKILLS_LIST = () => [...STROKE_CODES(), ...SP_SKILL_ONLY];
+// Older saved values → current labels (any stroke spelling → its code)
+const SP_SKILL_ALIASES = new Proxy({ Transitions: "Trans." }, { get: (t, k) => t[k] || (strokeFind(k) ? strokeCode(k) : undefined) });
 const SP_ZONES  = ["A1-3", "Threshold", "V02m", "LT/LP", "Sprint"];
 let spFocusTouched = false;   // coach has changed the ticks/zone by hand → stop auto-filling
 function spRenderFocus(skills, zone){
   const on = new Set((skills || []).map(k => SP_SKILL_ALIASES[k] || k));
-  $("planSkills").innerHTML = SP_SKILLS.map(k =>
+  $("planSkills").innerHTML = SP_SKILLS_LIST().map(k =>
     `<label class="sp-skill"><input type="checkbox" value="${k}" ${on.has(k) ? "checked" : ""}><span>${k}</span></label>`).join("");
   $("planZone").innerHTML = '<option value="">— choose a zone —</option>' +
     SP_ZONES.map(z => `<option value="${z}" ${z === zone ? "selected" : ""}>${z}</option>`).join("");
@@ -3500,8 +3551,8 @@ function spSuggestFocus(ctx){
   if (!ctx) return { skills: [], zone };
   const t = ((ctx.session && ctx.session.stroke_focus) || "").toLowerCase();
   if (/\b(im|medley)\b/.test(t)) skills.add("IM");
-  if (/\b(fr|free|freestyle|front ?crawl|crawl)\b/.test(t)) skills.add("FR");
-  if (/\b(bk|back|backstroke)\b/.test(t)) skills.add("BK");
+  if (/\b(fr|free|freestyle|front ?crawl|crawl)\b/.test(t)) skills.add("Fr");
+  if (/\b(bk|back|backstroke)\b/.test(t)) skills.add("Bk");
   if (/\bdlk\b|dolphin ?kick|underwater/.test(t)) skills.add("DLK");
   if (/\b(br|brs|breast|breaststroke)\b/.test(t)) skills.add("Brs");
   if (/\b(fly|butterfly)\b/.test(t)) skills.add("Fly");
@@ -3513,7 +3564,7 @@ function spSuggestFocus(ctx){
   const q = ctx.micro.qes_focus;
   if (q === "sprint") zone = "Sprint";
   else if (q === "endurance") zone = "A1-3";
-  return { skills: SP_SKILLS.filter(k => skills.has(k)), zone };
+  return { skills: SP_SKILLS_LIST().filter(k => skills.has(k)), zone };
 }
 function spFocusTagsHtml(skills, zone){
   return (zone ? `<span class="plan-tag zone">${escapeHtml(zone)}</span>` : "") +
@@ -3972,7 +4023,7 @@ function renderPlanList(plans){
     tags.push(spFocusTagsHtml(p.stroke_skills, p.training_zone));
     const ctx = spMicroSync(p.squad_id, p.intended_date, p.micro_session_id);
     const microHtml = ctx
-      ? `<div class="sp-micro-line" style="margin-top:6px;">Week ${ctx.micro.week_no} · w/c ${fmtDdMm(ctx.micro.week_commencing)}${ctx.session && ctx.session.stroke_focus ? " · Stroke: " + escapeHtml(ctx.session.stroke_focus) : ""}</div>
+      ? `<div class="sp-micro-line" style="margin-top:6px;">Week ${ctx.micro.week_no} · w/c ${fmtDdMm(ctx.micro.week_commencing)}${ctx.session && ctx.session.stroke_focus ? " · Stroke: " + escapeHtml(strokeName(ctx.session.stroke_focus)) : ""}</div>
          <div class="sn-week-head" style="margin:4px 0 0;">${spMicroTagsHtml(ctx.micro)}</div>`
       : "";
     html += `<div class="plan-list-item" data-id="${p.id}">
@@ -4030,7 +4081,7 @@ async function spRefreshMicro(){
       <div class="sn-week-head">${spMicroTagsHtml(mi)}</div>
       ${se ? `<div class="sp-micro-sess">
           <div class="sn-sess-when">${escapeHtml(fmtWhen(se.session_date, se.start_time, se.end_time))}</div>
-          ${se.stroke_focus ? `<div class="sn-sess-stroke">Stroke focus: ${escapeHtml(se.stroke_focus)}</div>` : ""}
+          ${se.stroke_focus ? `<div class="sn-sess-stroke">Stroke focus: ${escapeHtml(strokeName(se.stroke_focus))}</div>` : ""}
           ${se.outline ? `<div class="sn-sess-outline">${escapeHtml(se.outline)}</div>` : ""}
         </div>` : '<div class="sp-micro-sess tt-muted">No session outlined for this date in the micro-cycle.</div>'}
       ${ctx.comp ? `<div class="sp-micro-comp">Competition this week: ${escapeHtml(ctx.comp.name)} (${escapeHtml(fmtDayShort(ctx.comp.date_from))})</div>` : ""}
@@ -4048,7 +4099,7 @@ async function spRefreshMicro(){
   // A new plan with no title yet gets a sensible default from the squad, day and focus.
   if (!editingPlanId && !$("planTitle").value.trim()){
     const bits = [spSquadName(squadId), fmtDayShort(date)];
-    if (se && se.stroke_focus) bits.push(se.stroke_focus);
+    if (se && se.stroke_focus) bits.push(strokeName(se.stroke_focus));
     else if (mi.qes_focus) bits.push(QES[mi.qes_focus]);
     $("planTitle").value = bits.filter(Boolean).join(" — ");
   }
@@ -4075,7 +4126,7 @@ async function openPlanViewer(id){
   const focusTags = spFocusTagsHtml(data.stroke_skills, data.training_zone);
   $("pvBody").innerHTML = (focusTags ? `<div class="plan-li-tags" style="margin-bottom:10px;">${focusTags}</div>` : "") +
     (vctx ? `<div class="sp-micro-card" style="margin-bottom:12px;">
-      <div class="sp-micro-line">Week ${vctx.micro.week_no} · w/c ${fmtDdMm(vctx.micro.week_commencing)}${vctx.session && vctx.session.stroke_focus ? " · Stroke focus: " + escapeHtml(vctx.session.stroke_focus) : ""}</div>
+      <div class="sp-micro-line">Week ${vctx.micro.week_no} · w/c ${fmtDdMm(vctx.micro.week_commencing)}${vctx.session && vctx.session.stroke_focus ? " · Stroke focus: " + escapeHtml(strokeName(vctx.session.stroke_focus)) : ""}</div>
       <div class="sn-week-head">${spMicroTagsHtml(vctx.micro)}</div></div>` : "") +
     renderPlanReadonly(data.content || []) +
     (data.notes ? `<div class="pv-note" style="margin-top:12px;">${escapeHtml(data.notes)}</div>` : "");
@@ -4983,7 +5034,7 @@ function renderStrokeFilter(){
   if (!swimmerHistory.length){ wrap.innerHTML = ""; return; }
   const strokes = [...new Set(swimmerHistory.map(r => r.category).filter(Boolean))];
   const chips = [`<span class="stroke-chip ${strokeFilter==="ALL"?"active":""}" data-stroke="ALL">All</span>`];
-  strokes.forEach(s => chips.push(`<span class="stroke-chip ${strokeFilter===s?"active":""}" data-stroke="${escapeAttr(s)}">${escapeHtml(s)}</span>`));
+  strokes.forEach(s => chips.push(`<span class="stroke-chip ${strokeFilter===s?"active":""}" data-stroke="${escapeAttr(s)}">${escapeHtml(strokeShort(s))}</span>`));
   wrap.innerHTML = chips.join("");
   wrap.querySelectorAll(".stroke-chip").forEach(chip => {
     chip.addEventListener("click", () => { strokeFilter = chip.dataset.stroke; renderStrokeFilter(); renderThreads(); });
@@ -5037,7 +5088,7 @@ function renderThreads(){
           <div class="hist-item">
             <div class="hist-top">
               <span class="hist-date">${fmtDate(r.session_date)}</span>
-              <span class="hist-cat">${escapeHtml(r.category || "")}</span>
+              <span class="hist-cat">${escapeHtml(strokeShort(r.category))}</span>
               ${r.status ? `<span class="hist-badge ${r.status==="Not discussed"?"Not":r.status}">${r.status}</span>` : ""}
               ${idx===0 ? `<span class="thread-origin-tag">ORIGINAL</span>` : ""}
             </div>
@@ -5080,7 +5131,7 @@ function feedbackEntryHtml(r, isLatest){
   const obs = r.observation || r.note || "";
   return `<div class="hist-top">
       <span class="hist-date">${fmtDate(r.session_date)}</span>
-      <span class="hist-cat">${escapeHtml(r.category || "")}</span>
+      <span class="hist-cat">${escapeHtml(strokeShort(r.category))}</span>
       ${badgeClass ? `<span class="hist-badge ${badgeClass}">${r.status}</span>` : ""}
     </div>
     ${r.criterion ? `<div class="hist-crit">${escapeHtml(r.criterion)}</div>` : ""}
@@ -5098,7 +5149,7 @@ function startThreadUpdate(threadId){
   activeThreadId = threadId;
 
   // bind the form to this thread and prefill from the latest entry
-  $("category").value = latest.category || "";
+  $("category").value = strokeCode(latest.category);
   loadCriterionPool(latest.category || "");
   setType(latest.entry_type || "status");
   $("criterion").value = latest.criterion || "";
@@ -5151,7 +5202,7 @@ async function loadRecent(){
         <span class="hist-date">${fmtDate(r.session_date)}</span>
       </div>
       <div class="hist-top" style="margin-top:2px;">
-        <span class="hist-cat">${r.category || ""}</span>
+        <span class="hist-cat">${escapeHtml(strokeShort(r.category))}</span>
         ${badgeClass ? `<span class="hist-badge ${badgeClass}">${r.status}</span>` : ""}
       </div>
       ${r.criterion ? `<div class="hist-crit">${r.criterion}</div>` : ""}
@@ -5320,9 +5371,10 @@ $("submitBtn").addEventListener("click", async () => {
 // ===================================================================
 // Section order in the PDF. Edit this list to re-order. Any category not listed
 // (e.g. one added later) is placed at the end, A-Z, so nothing is dropped.
-const FB_PDF_ORDER = ["Free","Back","Breast","Fly","Dive","Transition","Touch turn","Tumble turn","Training mindset","Racing mindset"];
+const FB_PDF_ORDER = () => [...STROKE_CODES(), "Dive","Transition","Touch turn","Tumble turn","Training mindset","Racing mindset"];
 // Headline shown for a section (falls back to the category name as saved).
-const FB_PDF_HEADLINES = { "Free":"Freestyle", "Back":"Backstroke", "Breast":"Breaststroke", "Fly":"Butterfly" };
+// Stroke headlines come from stroke_lookup (long name); other categories print as saved.
+const FB_PDF_HEADLINES = new Proxy({}, { get: (_, k) => strokeFind(k) ? strokeName(k) : undefined });
 
 // jsPDF's built-in fonts only cover Latin-1: swap smart punctuation, drop anything else (emoji etc.)
 function fbPdfSafe(s){
@@ -5339,11 +5391,11 @@ function fbPdfSafe(s){
 function fbPdfGroups(rows){
   const byCat = {};
   rows.forEach(r => {
-    const c = (r.category || "").trim() || "Other";
+    const c = strokeCode(r.category) || "Other";
     (byCat[c] = byCat[c] || []).push(r);
   });
-  const known = FB_PDF_ORDER.filter(c => byCat[c]);
-  const extra = Object.keys(byCat).filter(c => !FB_PDF_ORDER.includes(c)).sort();
+  const known = FB_PDF_ORDER().filter(c => byCat[c]);
+  const extra = Object.keys(byCat).filter(c => !FB_PDF_ORDER().includes(c)).sort();
   return [...known, ...extra].map(c => ({
     category: c,
     rows: byCat[c].slice().sort((a, b) =>
@@ -7553,7 +7605,7 @@ async function swpLoadFeedback(swimmerId){
     return `<div class="hist-item">
       <div class="hist-top">
         <span class="hist-date">${fmtDate(r.session_date)}</span>
-        <span class="hist-cat">${escapeHtml(r.category || "")}</span>
+        <span class="hist-cat">${escapeHtml(strokeShort(r.category))}</span>
         ${badgeClass ? `<span class="hist-badge ${badgeClass}">${r.status}</span>` : ""}
       </div>
       ${r.criterion ? `<div class="hist-crit">${escapeHtml(r.criterion)}</div>` : ""}
@@ -7824,10 +7876,11 @@ function buildDrillIndex(){
 
 // --- tile grid ---
 function renderDrillStrokeFilter(){
-  const strokes = [...new Set(allDrills.map(d => d.stroke).filter(Boolean))].sort();
+  const present = new Set(allDrills.map(d => d.stroke).filter(Boolean));
+  const strokes = [...STROKE_CODES().filter(c => present.has(c)), ...[...present].filter(c => !STROKE_CODES().includes(c)).sort()];
   const el = $("drillStrokeFilter");
   el.innerHTML = ["ALL", ...strokes].map(s =>
-    `<div class="drill-stroke-chip ${currentStrokeFilter === s ? "active" : ""}" data-stroke="${escapeAttr(s)}">${s === "ALL" ? "All" : escapeHtml(s)}</div>`
+    `<div class="drill-stroke-chip ${currentStrokeFilter === s ? "active" : ""}" data-stroke="${escapeAttr(s)}">${s === "ALL" ? "All" : escapeHtml(strokeName(s))}</div>`
   ).join("");
 }
 $("drillStrokeFilter").addEventListener("click", (e) => {
@@ -7844,7 +7897,7 @@ function renderDrillTiles(){
   if (q) list = list.filter(d =>
     (d.drill_name || "").toLowerCase().includes(q) ||
     (d.pseudonyms || []).some(p => p.toLowerCase().includes(q)) ||
-    (d.stroke || "").toLowerCase().includes(q)
+    (d.stroke || "").toLowerCase().includes(q) || strokeName(d.stroke).toLowerCase().includes(q) || (d.skill || "").toLowerCase().includes(q)
   );
   const el = $("drillTileGrid");
   if (!list.length){ el.innerHTML = '<div class="empty">No drills match.</div>'; return; }
@@ -7858,7 +7911,7 @@ function renderDrillTiles(){
         <button type="button" data-edit-id="${d.id}">Edit</button>
         <button type="button" data-export-id="${d.id}">Export</button>
       </div>
-      ${d.stroke ? `<div class="drill-tile-stroke">${escapeHtml(d.stroke)}</div>` : ""}
+      ${d.stroke || d.skill ? `<div class="drill-tile-stroke">${escapeHtml(drillStrokeLabel(d))}</div>` : ""}
       <div class="drill-tile-name">${escapeHtml(d.drill_name)}</div>
       ${d.primary_purpose ? `<div class="drill-tile-purpose">${escapeHtml(d.primary_purpose)}</div>` : ""}
       ${pseudo}
@@ -7901,7 +7954,7 @@ async function openDrillInfoModal(id){
   const { data: periRows } = await sb.from("drill_periodisation").select("*").eq("drill_id", id);
   const row = (label, val) => `<div class="di-row"><div class="di-label">${label}</div><div class="di-value ${val ? "" : "empty"}">${val ? escapeHtml(val) : "—"}</div></div>`;
   let html = `<h2>${escapeHtml(d.drill_name)}</h2>`;
-  if (d.stroke) html += `<div class="drill-tile-stroke" style="margin-bottom:10px;">${escapeHtml(d.stroke)}</div>`;
+  if (d.stroke || d.skill) html += `<div class="drill-tile-stroke" style="margin-bottom:10px;">${escapeHtml(drillStrokeLabel(d))}</div>`;
   if (d.pseudonyms && d.pseudonyms.length) html += row("Also known as", d.pseudonyms.join(", "));
   html += row("Primary purpose", d.primary_purpose);
   html += row("BLABT / focus", d.blabt);
@@ -7923,7 +7976,9 @@ async function openDrillInfoModal(id){
 function openDrillEditModal(drill){
   editingDrillId = drill ? drill.id : null;
   $("drillEditTitle").textContent = drill ? "Edit drill" : "New drill";
-  $("deStroke").value = drill?.stroke || "";
+  refreshStrokeControls();
+  $("deStroke").value = strokeCode(drill?.stroke) || "";
+  $("deSkill").value = drill?.skill || "";
   $("deName").value = drill?.drill_name || "";
   $("dePseudo").value = (drill?.pseudonyms || []).join(", ");
   $("dePurpose").value = drill?.primary_purpose || "";
@@ -7965,7 +8020,8 @@ $("saveDrillBtn").addEventListener("click", async () => {
   if (!name){ msg.textContent = "Give the drill a name."; msg.className = "msg err"; return; }
   const pseudonyms = $("dePseudo").value.split(",").map(s => s.trim()).filter(Boolean);
   const payload = {
-    stroke: $("deStroke").value.trim() || null,
+    stroke: $("deStroke").value || null,
+    skill: $("deSkill").value.trim() || null,
     drill_name: name,
     pseudonyms: pseudonyms.length ? pseudonyms : null,
     primary_purpose: $("dePurpose").value.trim() || null,
@@ -8024,7 +8080,7 @@ function exportDrillPdf(d){
   doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(16);
   doc.text(d.drill_name || "Drill", marginL, 36);
   doc.setFont("helvetica", "normal"); doc.setFontSize(9.5);
-  doc.text(d.stroke || "", marginL, 54);
+  doc.text(drillStrokeLabel(d), marginL, 54);
   doc.setTextColor(26, 35, 50);
   const fields = [
     ["Also known as", (d.pseudonyms || []).join(", ")],
@@ -8061,7 +8117,7 @@ function renderDrillPickList(q){
     (d.drill_name || "").toLowerCase().includes(q) || (d.pseudonyms || []).some(p => p.toLowerCase().includes(q))
   );
   $("drillPickList").innerHTML = list.slice(0, 100).map(d =>
-    `<div class="drill-pick-item" data-id="${d.id}"><div class="dpi-stroke">${escapeHtml(d.stroke || "")}</div>${escapeHtml(d.drill_name)}</div>`
+    `<div class="drill-pick-item" data-id="${d.id}"><div class="dpi-stroke">${escapeHtml(strokeShort(d.stroke))}</div>${escapeHtml(d.drill_name)}</div>`
   ).join("") || '<div class="empty">No matches</div>';
 }
 $("drillPickSearch").addEventListener("input", () => renderDrillPickList($("drillPickSearch").value.trim()));
@@ -8178,7 +8234,7 @@ function showSetLineAc(el, matches, token){
   setLineAcBox.style.top = Math.round(rect.bottom + 4) + "px";
   setLineAcBox.style.width = Math.max(rect.width, 180) + "px";
   setLineAcBox.innerHTML = matches.map(d =>
-    `<div data-drill-id="${escapeAttr(d.id)}">${escapeHtml(d.name)}<span class="sla-stroke">${escapeHtml(d.stroke || "")}</span></div>`
+    `<div data-drill-id="${escapeAttr(d.id)}">${escapeHtml(d.name)}<span class="sla-stroke">${escapeHtml(strokeShort(d.stroke))}</span></div>`
   ).join("");
   setLineAcBox.style.display = "block";
   setLineAcBox._activeEl = el;
@@ -8506,7 +8562,7 @@ function ttWeekCardHtml(sq, wk, today){
       }
       return `<div class="tt-ws">
           <div class="tt-ws-when">${when}${r.ts.pool_size ? `<span class="tt-sess-pool">${escapeHtml(r.ts.pool_size)}</span>` : ""}</div>
-          ${r.m && r.m.stroke_focus ? `<div class="sn-sess-stroke">Stroke focus: ${escapeHtml(r.m.stroke_focus)}</div>` : ""}
+          ${r.m && r.m.stroke_focus ? `<div class="sn-sess-stroke">Stroke focus: ${escapeHtml(strokeName(r.m.stroke_focus))}</div>` : ""}
           ${outline ? `<div class="sn-sess-outline">${escapeHtml(outline)}</div>` : ""}
           ${planHtml}
         </div>`;
@@ -9215,7 +9271,7 @@ function snPanelHtml(sq, micro, sessions, comps){
       ${rows.length ? rows.map(r => `
         <div class="sn-sess">
           <div class="sn-sess-when">${escapeHtml(fmtWhen(r.session_date, r.start_time, r.end_time))}</div>
-          ${r.stroke_focus ? `<div class="sn-sess-stroke">Stroke focus: ${escapeHtml(r.stroke_focus)}</div>` : ""}
+          ${r.stroke_focus ? `<div class="sn-sess-stroke">Stroke focus: ${escapeHtml(strokeName(r.stroke_focus))}</div>` : ""}
           ${r.outline ? `<div class="sn-sess-outline">${escapeHtml(r.outline)}</div>` : ""}
           ${snCanPlan() ? (() => {
             const pl = snPlans.find(x => x.squad_id === sq.id && x.intended_date === r.session_date);
@@ -9733,7 +9789,8 @@ function miCompNote(w){
 }
 
 // Per-day stroke focus: one choice per day, written to every session on that day.
-const MI_STROKES = ["Free", "Back", "Brs", "Fly", "IM"];
+// Stroke focus options come from stroke_lookup: value = code, label = long name.
+const MI_STROKES = () => STROKE_CODES();
 function miDaySessions(w, date){ return date ? w.sessions.filter(s => s.session_date === date) : []; }
 // "" = none set, "*" = sessions on the day differ, otherwise the shared value.
 function miDayStroke(w, date){
@@ -9742,15 +9799,16 @@ function miDayStroke(w, date){
 }
 function miDayStrokeOpts(cur){
   const o = (v, l, extra) => `<option value="${escapeAttr(v)}" ${cur === v ? "selected" : ""} ${extra || ""}>${escapeHtml(l)}</option>`;
-  return o("", "—") + MI_STROKES.map(x => o(x, x)).join("") +
-    (cur === "*" ? o("*", "Mixed", "disabled") : cur && !MI_STROKES.includes(cur) ? o(cur, cur) : "");
+  cur = cur === "*" ? cur : strokeCode(cur);
+  return o("", "—") + MI_STROKES().map(x => o(x, strokeName(x))).join("") +
+    (cur === "*" ? o("*", "Mixed", "disabled") : cur && !MI_STROKES().includes(cur) ? o(cur, cur) : "");
 }
 function miDaySummary(w){
   if (!w.wc) return "";
   const bits = [];
   for (let k = 0; k < 7; k++){
     const v = miDayStroke(w, isoAdd(w.wc, k));
-    if (v) bits.push(TT_DAYS_SHORT[k + 1] + " " + (v === "*" ? "Mixed" : v));
+    if (v) bits.push(TT_DAYS_SHORT[k + 1] + " " + (v === "*" ? "Mixed" : strokeShort(v)));
   }
   return bits.join(" · ");
 }
@@ -10050,6 +10108,7 @@ $("backMicroForm").addEventListener("click", goPlanning);
 resetAttendanceSetup();
 // loadSwimmers() and loadRecent() run after loadClubOptions() resolves (see TOP-LEVEL CLUB FILTER).
 loadFbSquadOptions();
+loadStrokes();   // fills every stroke dropdown from public.stroke_lookup
 
 // ===================================================================
 // STOPWATCH (Home → Stopwatch)
@@ -10323,7 +10382,7 @@ async function swpLoadStopwatch(swimmerId){
     const meta = [fmtDate(r.session_date), r.course, what].filter(Boolean).join(" · ");
     return `<div class="swt-item">
       <div>
-        <div><strong>${r.distance_m}m ${escapeHtml(r.stroke)}</strong></div>
+        <div><strong>${r.distance_m}m ${escapeHtml(strokeName(r.stroke))}</strong></div>
         <div class="swt-meta">${escapeHtml(meta)}${r.note ? " — " + escapeHtml(r.note) : ""}</div>
       </div>
       <div style="text-align:right;">

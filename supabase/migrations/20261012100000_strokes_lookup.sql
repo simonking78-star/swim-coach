@@ -4,7 +4,7 @@
 -- A normaliser trigger maps legacy spellings (Free, Frontcrawl, BK, Breast…)
 -- to the code on write, so older skills/imports keep working.
 
-create table if not exists public.strokes (
+create table if not exists public.stroke_lookup (
   code        text primary key,
   name        text not null unique,
   sort_order  smallint not null,
@@ -12,7 +12,7 @@ create table if not exists public.strokes (
   is_active   boolean not null default true
 );
 
-insert into public.strokes (code, name, sort_order, aliases) values
+insert into public.stroke_lookup (code, name, sort_order, aliases) values
   ('Fr',  'Freestyle',         1, array['fr','free','freestyle','frontcrawl','front crawl','crawl']),
   ('Bk',  'Backstroke',        2, array['bk','back','backstroke']),
   ('Brs', 'Breaststroke',      3, array['brs','br','breast','breaststroke']),
@@ -22,15 +22,15 @@ insert into public.strokes (code, name, sort_order, aliases) values
 on conflict (code) do update
   set name = excluded.name, sort_order = excluded.sort_order, aliases = excluded.aliases;
 
-alter table public.strokes enable row level security;
-create policy strokes_read on public.strokes for select to anon, authenticated using (true);
+alter table public.stroke_lookup enable row level security;
+create policy stroke_lookup_read on public.stroke_lookup for select to anon, authenticated using (true);
 
 -- Returns the stroke code for any known spelling; anything else is returned unchanged
 -- (so non-stroke values such as 'Dive', 'Kick', 'Turns' pass straight through).
 create or replace function public.stroke_code(v text)
 returns text language sql stable set search_path = public as $$
   select coalesce(
-    (select s.code from public.strokes s
+    (select s.code from public.stroke_lookup s
       where lower(btrim(v)) = lower(s.code) or lower(btrim(v)) = lower(s.name)
          or lower(btrim(v)) = any (s.aliases)
       limit 1),
@@ -58,9 +58,9 @@ alter table public.swimmer_feedback add constraint swimmer_feedback_category_che
 
 -- Pure stroke columns link to the lookup.
 alter table public.drills_library add constraint drills_library_stroke_fkey
-  foreign key (stroke) references public.strokes(code) on update cascade;
+  foreign key (stroke) references public.stroke_lookup(code) on update cascade;
 alter table public.micro_sessions add constraint micro_sessions_stroke_focus_fkey
-  foreign key (stroke_focus) references public.strokes(code) on update cascade;
+  foreign key (stroke_focus) references public.stroke_lookup(code) on update cascade;
 
 -- ---------- Normalise on write ----------
 create or replace function public.trg_normalise_stroke()
@@ -95,4 +95,4 @@ begin
 end $$;
 
 -- Results tables (swim_results, qualifying_times, conversion_factors, competition_events)
--- already use the long names ("100m Backstroke"), which match strokes.name — left as is.
+-- already use the long names ("100m Backstroke"), which match stroke_lookup.name — left as is.
