@@ -1205,9 +1205,13 @@
     #sqrPrint th,#sqrPrint td{border:1px solid #999;padding:4px 6px;text-align:right;font-size:9.5pt;}
     #sqrPrint th:first-child,#sqrPrint td:first-child{text-align:left;}
   }
+  /* Signed out: only the sign-in card is shown */
+  body.signed-out .club-switcher, body.signed-out #navDrawer, body.signed-out #navOverlay,
+  body.signed-out #backHomeAd, body.signed-out #accessBar, body.signed-out #roNote{display:none !important;}
+  body.signed-out .view:not(#viewAppDev){display:none !important;}
 </style>
 </head>
-<body>
+<body class="signed-out">
 
 <header>
   <h1>Coach Tools</h1>
@@ -2801,7 +2805,7 @@
         <button type="button" class="submit-btn" id="adNewPwBtn">Save new password</button>
       </div>
       <div class="msg" id="adAuthMsg"></div>
-      <div class="hint" style="text-align:center;margin-top:8px;">Signing in here only unlocks development tools. The rest of the app works as before.</div>
+      <div class="hint" style="text-align:center;margin-top:8px;">Sign in with the account your club admin invited you with. No account yet? Ask your club admin for an invite.</div>
     </div>
 
     <!-- App dev content -->
@@ -2873,7 +2877,8 @@
 <script>
 const SUPABASE_URL = "https://nxlgeykipnvswyeshrbl.supabase.co";
 const SUPABASE_KEY = "sb_publishable_BYuKct-F0f4H04Gl_S58uQ_gKzuW_Ff";
-// Signed out: anonymous access (as before). Signed in: the role policies apply to every query.
+// Sign-in is required: signed-out visitors only see the sign-in screen, and the database
+// refuses anonymous access to club data (A-013/A-014 cut-over). Signed in: role policies apply.
 // Read an invite / sign-in / reset link's type before the client consumes the URL.
 const AUTH_LINK = (() => {
   const h = new URLSearchParams(location.hash.replace(/^#/, "")), q = new URLSearchParams(location.search);
@@ -2910,8 +2915,13 @@ $("clubSelect").addEventListener("change", () => {
   loadDrills();         // refresh the drills library cache for the new club
   showView("viewHome"); // drop out of any in-progress flow scoped to the old club
 });
-accessRefresh().then(loadClubOptions).then(() => { applyClubScope(); loadSwimmers(); loadRecent(); authLinkLanding(); });
-loadDrills(); // pre-load the drills index so set-line prediction works even before the coach opens the library tab
+accessRefresh().then(async () => {
+  if (!accessUser){ await requireSignIn(); authLinkLanding(); return; }
+  document.body.classList.remove("signed-out");
+  await loadClubOptions();
+  applyClubScope(); loadSwimmers(); loadRecent(); bootData(); authLinkLanding();
+  loadDrills(); // pre-load the drills index so set-line prediction works even before the coach opens the library tab
+});
 
 function fmtDate(d){
   const dt = new Date(d + "T00:00:00");
@@ -2922,6 +2932,7 @@ function fmtDate(d){
 // View routing
 // ===================================================================
 function showView(id){
+  if (document.body.classList.contains("signed-out")){ requireSignIn(); return; }
   let allowed = true;
   try { allowed = accessOnShow(id); } catch (e) { /* access layer not ready yet */ }
   if (!allowed) id = "viewHome";
@@ -4626,9 +4637,9 @@ async function uploadPendingFiles(swimmerId){
       progressEl.textContent = "";
       throw new Error(`Upload failed for ${f.name}: ${upErr.message}`);
     }
-    const { data: pub } = sb.storage.from("feedback-media").getPublicUrl(path);
+    // The bucket is private: store the path; links are signed when displayed.
     uploaded.push({
-      url: pub.publicUrl,
+      path,
       type: f.type.startsWith("video/") ? "video" : "image",
       name: f.name
     });
@@ -4637,14 +4648,35 @@ async function uploadPendingFiles(swimmerId){
   return uploaded;
 }
 
+// Feedback media lives in a PRIVATE bucket. Grids are rendered with the file
+// path only; mediaSigner (below) swaps in short-lived signed links.
+// Older entries stored a public URL — their path is recovered from it.
+function mediaPath(m){
+  if (m.path) return m.path;
+  const i = (m.url || "").indexOf("/feedback-media/");
+  return i < 0 ? null : decodeURIComponent(m.url.slice(i + "/feedback-media/".length).split("?")[0]);
+}
 function mediaGridHtml(mediaArr){
   if (!mediaArr || !mediaArr.length) return "";
-  return `<div class="hist-media-grid">${mediaArr.map(m =>
-    m.type === "video"
-      ? `<a href="${m.url}" target="_blank" rel="noopener"><video src="${m.url}" muted preload="metadata"></video><span class="hm-video-tag">▶</span></a>`
-      : `<a href="${m.url}" target="_blank" rel="noopener"><img src="${m.url}"></a>`
-  ).join("")}</div>`;
+  return `<div class="hist-media-grid">${mediaArr.map(m => {
+    const p = mediaPath(m); if (!p) return "";
+    const a = escapeAttr(p);
+    return m.type === "video"
+      ? `<a data-mpath="${a}" target="_blank" rel="noopener"><video data-mpath="${a}" muted preload="metadata"></video><span class="hm-video-tag">▶</span></a>`
+      : `<a data-mpath="${a}" target="_blank" rel="noopener"><img data-mpath="${a}" alt=""></a>`;
+  }).join("")}</div>`;
 }
+const mediaSigner = new MutationObserver(async () => {
+  const els = [...document.querySelectorAll("[data-mpath]:not([data-signed])")];
+  if (!els.length) return;
+  els.forEach(el => el.dataset.signed = "1");
+  const paths = [...new Set(els.map(el => el.dataset.mpath))];
+  const { data, error } = await sb.storage.from("feedback-media").createSignedUrls(paths, 3600);
+  if (error){ console.error(error); return; }
+  const map = Object.fromEntries((data || []).filter(d => d.signedUrl).map(d => [d.path, d.signedUrl]));
+  els.forEach(el => { const u = map[el.dataset.mpath]; if (!u) return; if (el.tagName === "A") el.href = u; else el.src = u; });
+});
+mediaSigner.observe(document.body, { childList: true, subtree: true });
 
 async function loadSwimmers(){
   let query = sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club", currentClub).order("full_name");
@@ -10047,9 +10079,11 @@ $("backMicroForm").addEventListener("click", goPlanning);
 // ===================================================================
 // Boot
 // ===================================================================
-resetAttendanceSetup();
-// loadSwimmers() and loadRecent() run after loadClubOptions() resolves (see TOP-LEVEL CLUB FILTER).
-loadFbSquadOptions();
+// Runs once signed in (see the startup chain under TOP-LEVEL CLUB FILTER), after loadClubOptions().
+function bootData(){
+  resetAttendanceSetup();
+  loadFbSquadOptions();
+}
 
 // ===================================================================
 // STOPWATCH (Home → Stopwatch)
@@ -10342,8 +10376,6 @@ $("swpStopwatchList").addEventListener("click", async (ev) => {
 });
 // ===================================================================
 // APP DEV — development action list (superadmin only)
-// Uses its OWN Supabase client (separate storage key) so signing in here
-// never changes the anonymous access the rest of the app relies on.
 // Data: public.app_dev_tasks (RLS: superadmin via public.is_superadmin()).
 // Spec: claude/specs/app-dev-section.md · Maintained with the /coach-app skill.
 // ===================================================================
@@ -10663,6 +10695,14 @@ async function adSignOut(){
   await sb.auth.signOut();
   location.reload();
 }
+// Signed out: show only the sign-in screen. Nothing else loads until sign-in.
+async function requireSignIn(){
+  document.body.classList.add("signed-out");
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  $("viewAppDev").classList.add("active");
+  $("roNote").style.display = "none";
+  adShowAuth();
+}
 
 $("backHomeAd").addEventListener("click", goHome);
 navActions.appdev = goAppDev;
@@ -10674,8 +10714,7 @@ navActions.devauth = async () => {
 // ===================================================================
 // ACCESS — roles × sections matrix (agreed 2026-09-30, roadmap §4)
 // The database enforces it (RLS). This layer only hides what a role
-// can't use and labels read-only screens. Signed out = the app works
-// exactly as before (anonymous access, until the M1 cut-over).
+// can't use and labels read-only screens. Signed out = sign-in screen only.
 // ===================================================================
 const ACCESS_MATRIX = {
   attendance:{superadmin:"E",club_admin:"E",head_coach:"E",coach:"E",helper:"SE"},
@@ -10712,7 +10751,7 @@ const LEVEL_NOTE = {
   CR:"Read only — your own child / your own record."
 };
 
-let ACCESS = null;        // null = signed out (legacy anonymous access)
+let ACCESS = null;        // null = signed out (sign-in screen only)
 let accessUser = null;    // { email }
 
 function sectionLevel(section){
@@ -10878,6 +10917,7 @@ $("rtStartBtn").addEventListener("click", startRoleTest);
 
 sb.auth.onAuthStateChange((event) => {
   if (event === "PASSWORD_RECOVERY"){ adRecovery = true; goAppDev(); }
+  if (event === "SIGNED_OUT" && !document.body.classList.contains("signed-out")) location.reload();
 });
 accessRefresh().then(applyClubScope);
 
