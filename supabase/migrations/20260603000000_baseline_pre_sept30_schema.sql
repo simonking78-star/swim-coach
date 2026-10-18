@@ -216,7 +216,7 @@ create table public.competitions (
   name text not null,
   date_start date not null,
   date_end date,
-  year smallint default (EXTRACT(year FROM date_start))::smallint,
+  year smallint generated always as ((EXTRACT(year FROM date_start))::smallint) stored,
   level smallint not null,
   course text not null,
   pool_length_m smallint,
@@ -244,7 +244,7 @@ create table public.season_competitions (
   course text not null,
   date_from date not null,
   date_to date not null,
-  total_days integer default ((date_to - date_from) + 1),
+  total_days integer generated always as (((date_to - date_from) + 1)) stored,
   venue_name text,
   venue_url text,
   is_active boolean not null default true,
@@ -690,9 +690,12 @@ create index timetables_squad_idx on public.timetables using btree (squad_id) wh
 -- ---------------------------------------------------------------------
 -- Row level security -- enable on all 30 tables. Policies for 28 of
 -- them (everything except assessments/coaches) are created by the
--- already-committed 20260930190000_role_based_access.sql, which must
--- run immediately after this file. assessments/coaches get their
--- (superadmin-only) policies here directly -- see header note.
+-- already-committed 20260930190000_role_based_access.sql. assessments/
+-- coaches policies can't be created here: they're gated on
+-- public.is_superadmin(), which doesn't exist until
+-- 20260930170000_app_dev_tasks.sql runs. See
+-- 20260930173000_assessments_coaches_initial_policies.sql, timestamped
+-- just after that function is created, for those 10 policies instead.
 -- ---------------------------------------------------------------------
 
 alter table public.assessments enable row level security;
@@ -725,28 +728,6 @@ alter table public.swimmer_feedback enable row level security;
 alter table public.swimmers enable row level security;
 alter table public.timetable_sessions enable row level security;
 alter table public.timetables enable row level security;
-
-create policy "Authenticated users can insert assessments" on public.assessments
-  for insert to authenticated with check (public.is_superadmin());
-create policy "Authenticated users can read assessments" on public.assessments
-  for select to authenticated using (public.is_superadmin());
-create policy coaches_select_all on public.assessments
-  for select to authenticated using (public.is_superadmin());
-create policy coaches_insert on public.assessments
-  for insert to authenticated with check (public.is_superadmin());
-create policy coaches_update_own on public.assessments
-  for update to authenticated using (public.is_superadmin()) with check (public.is_superadmin());
-create policy coaches_delete_own on public.assessments
-  for delete to authenticated using (public.is_superadmin());
-
-create policy coaches_select_own on public.coaches
-  for select to authenticated using (public.is_superadmin());
-create policy coaches_insert_own on public.coaches
-  for insert to authenticated with check (public.is_superadmin());
-create policy coaches_update_own on public.coaches
-  for update to authenticated using (public.is_superadmin()) with check (public.is_superadmin());
-create policy coaches_delete_own on public.coaches
-  for delete to authenticated using (public.is_superadmin());
 
 -- ---------------------------------------------------------------------
 -- Views (security_invoker, matching their current production state)
