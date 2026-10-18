@@ -1,0 +1,16 @@
+# coach-tools-deploy is a static site with no app-level build step. The
+# [build] command below is a no-op for production; deploy-preview and
+# branch-deploy contexts run scripts/swap-staging-env.sh first, which
+# points the app at the staging Supabase project (A-018) instead of
+# production. See that script for details.
+
+[build]
+  base = "/"
+  publish = "coach-tools-deploy"
+  command = "true"
+
+[context.deploy-preview]
+  command = "bash scripts/swap-staging-env.sh"
+
+[context.branch-deploy]
+  command = "bash scripts/swap-staging-env.sh"
