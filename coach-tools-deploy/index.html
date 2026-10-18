@@ -578,7 +578,15 @@
     width:46px;height:40px;border-radius:7px;border:none;background:#e8a93c;color:#fff;
     font-weight:800;font-size:.82rem;cursor:pointer;
   }
-  .partial-menu button.pm-excused{background:var(--navy);font-size:.68rem;}
+  .partial-menu button.pm-other{background:var(--navy);font-size:.72rem;}
+
+  .tick-mins-btn{
+    flex-shrink:0;padding:5px 9px;margin-left:6px;border-radius:7px;
+    border:1.5px solid var(--border);background:#fff;color:var(--text-dim);
+    font-weight:700;font-size:.68rem;cursor:pointer;
+  }
+  .tick-mins-btn.set{border-color:#e8a93c;color:#e8a93c;}
+  .tick-row-main{display:flex;align-items:center;gap:0;flex:1;justify-content:space-between;}
 
   .finish-btn{
     width:100%;padding:14px;border:none;border-radius:10px;
@@ -1437,7 +1445,7 @@
         </div>
         <div class="swipe-tap-btns-row2">
           <button type="button" class="swipe-tap-btn excused" id="tapExcusedBtn">Excused</button>
-          <button type="button" class="swipe-tap-btn partial" id="tapPartialBtn">¼ / ½ / ¾</button>
+          <button type="button" class="swipe-tap-btn partial" id="tapPartialBtn">Partial (mins)</button>
         </div>
       </div>
 
@@ -1450,10 +1458,10 @@
   </div>
 
   <div class="partial-menu" id="attPartialMenu" style="display:none;">
-    <button type="button" data-s="q1">¼</button>
-    <button type="button" data-s="q2">½</button>
-    <button type="button" data-s="q3">¾</button>
-    <button type="button" class="pm-excused" data-s="excused">Exc</button>
+    <button type="button" data-m="15">15m</button>
+    <button type="button" data-m="30">30m</button>
+    <button type="button" data-m="45">45m</button>
+    <button type="button" class="pm-other" data-m="other">Other</button>
   </div>
 
   <!-- ============ ATTENDANCE: DONE ============ -->
@@ -4438,10 +4446,15 @@ $("startAttendanceBtn").addEventListener("click", async () => {
   if (!time){ msg.textContent = "Set a time."; msg.className = "msg err"; return; }
   if (!poolBtn){ msg.textContent = "Choose a pool size."; msg.className = "msg err"; return; }
 
-  attSession = { date, time, pool: poolBtn.dataset.pool, plan_id: $("attPlanSelect").value || null };
+  attSession = { date, time, pool: poolBtn.dataset.pool, plan_id: $("attPlanSelect").value || null, sessionMinutes: 60 };
 
   $("startAttendanceBtn").disabled = true;
   msg.textContent = "Loading swimmers…"; msg.className = "msg";
+
+  // Resolve the planned session length from the weekly timetable (A-093
+  // partial-attendance minutes need this). Only possible for a single-squad
+  // register with a matching timetable slot; falls back to 60.
+  attSession.sessionMinutes = await resolveSessionMinutes(date, time, attScope, currentClub);
 
   // Swimmers in scope
   let sq = sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club", currentClub).order("full_name");
@@ -4453,25 +4466,29 @@ $("startAttendanceBtn").addEventListener("click", async () => {
   // Any existing marks already logged for this exact session
   const { data: existing, error: eErr } = await sb
     .from("attendance_records")
-    .select("swimmer_id, status")
+    .select("swimmer_id, status, minutes_attended")
     .eq("session_date", date)
     .eq("session_time", time + ":00")
     .eq("pool_size", attSession.pool);
   if (eErr) console.error(eErr);
   const existingMap = {};
-  (existing || []).forEach(r => { existingMap[r.swimmer_id] = r.status; });
+  (existing || []).forEach(r => { existingMap[r.swimmer_id] = r; });
 
   // status is null ("unmarked") for any swimmer with no existing mark this
   // session — All In only touches these. A previously-saved mark (including
   // an explicit Out) is loaded as-is and left alone by All In.
-  attSwimmers = (swimmers || []).map(s => ({
-    id: s.id,
-    full_name: s.full_name,
-    status: existingMap.hasOwnProperty(s.id) ? existingMap[s.id] : null
-  }));
+  attSwimmers = (swimmers || []).map(s => {
+    const ex = existingMap[s.id];
+    return {
+      id: s.id,
+      full_name: s.full_name,
+      status: ex ? ex.status : null,
+      minutes_attended: ex ? ex.minutes_attended : null
+    };
+  });
   attIndex = 0;
 
-  const sessionLabel = `${fmtDate(date)} · ${time} · ${attSession.pool} · ${attScope === "ALL" ? "Whole club" : attScope} · ${currentClub}`;
+  const sessionLabel = `${fmtDate(date)} · ${time} · ${attSession.pool} · ${attScope === "ALL" ? "Whole club" : attScope} · ${currentClub} · ${attSession.sessionMinutes} min session`;
   $("sessionInfoLine").textContent = sessionLabel;
 
   if (attMode === "swipe"){
@@ -4488,19 +4505,54 @@ $("startAttendanceBtn").addEventListener("click", async () => {
   showView("viewAttendanceMark");
 });
 
-// A-093: six attendance states. Weights mirror public.attendance_weight() —
-// keep these two in sync. Excused is left out of both sides of the %.
-const ATT_WEIGHTS = { in: 1, q3: 0.75, q2: 0.5, q1: 0.25, out: 0, excused: null };
-const ATT_CHIP = { in: "✓", out: "✕", excused: "Exc", q1: "¼", q2: "½", q3: "¾" };
+// A-093: in / out / excused / partial. Partial carries minutes_attended
+// against session_minutes resolved below — mirrors public.attendance_weight()
+// in the DB; keep the two in sync. Excused is left out of both sides of the %.
+function attWeight(status, minutesAttended, sessionMinutes){
+  if (status === "in") return 1;
+  if (status === "out") return 0;
+  if (status === "partial") return Math.min(1, Math.max(0, (minutesAttended || 0) / (sessionMinutes || 60)));
+  return null; // excused / unmarked
+}
+function attChip(s){
+  if (!s.status) return "";
+  if (s.status === "in") return "✓";
+  if (s.status === "out") return "✕";
+  if (s.status === "excused") return "Exc";
+  return (s.minutes_attended || 0) + "m";
+}
 
-async function upsertAttendance(swimmerId, status){
+// Looks up the squad's weekly timetable for a matching day/start-time slot
+// and returns its length in minutes, or 60 if none is found (whole-club
+// registers, or a squad with no timetable entry yet).
+async function resolveSessionMinutes(date, time, squadName, club){
+  if (squadName === "ALL") return 60;
+  const dow = isoDow(date);
+  const { data, error } = await sb.from("timetables")
+    .select("id, season_start, season_end, squads!inner(name, club), timetable_sessions(day_of_week, start_time, end_time, is_active)")
+    .eq("is_active", true).eq("squads.club", club).eq("squads.name", squadName);
+  if (error || !data) return 60;
+  const t = data.find(x => x.season_start <= date && x.season_end >= date);
+  if (!t) return 60;
+  const slot = (t.timetable_sessions || []).find(s =>
+    s.is_active !== false && s.day_of_week === dow && s.start_time.slice(0, 5) === time.slice(0, 5));
+  if (!slot || !slot.end_time) return 60;
+  const [sh, sm] = slot.start_time.split(":").map(Number);
+  const [eh, em] = slot.end_time.split(":").map(Number);
+  const mins = (eh * 60 + em) - (sh * 60 + sm);
+  return mins > 0 ? mins : 60;
+}
+
+async function upsertAttendance(swimmerId, status, minutesAttended){
   const payload = {
     swimmer_id: swimmerId,
     session_date: attSession.date,
     session_time: attSession.time + ":00",
     pool_size: attSession.pool,
     status: status,
-    present: status === "in" || status === "q1" || status === "q2" || status === "q3",
+    minutes_attended: status === "partial" ? minutesAttended : null,
+    session_minutes: status === "partial" ? attSession.sessionMinutes : null,
+    present: status === "in" || status === "partial",
     session_plan_id: attSession.plan_id,
     marked_at: new Date().toISOString(),
     coach: "Simon"
@@ -4525,8 +4577,8 @@ function updateAttHeader(){
     else if (s.status === "out") counts.out++;
     else if (s.status === "excused") counts.excused++;
     else counts.partial++;
-    const w = ATT_WEIGHTS[s.status];
-    if (w !== null && w !== undefined){ weightSum += w; weighted++; }
+    const w = attWeight(s.status, s.minutes_attended, attSession.sessionMinutes);
+    if (w !== null){ weightSum += w; weighted++; }
   });
   $("attHeaderCounts").innerHTML =
     `<b>${counts.in}</b> In · <b>${counts.partial}</b> partial · <b>${counts.out}</b> Out · ` +
@@ -4546,7 +4598,9 @@ $("allInBtn").addEventListener("click", async () => {
   updateAttHeader();
 });
 
-// Shared long-press / tap-to-open partial+excused picker, used by both modes.
+// Tap-to-open minutes picker (15/30/45/Other), used by both modes. Plain
+// tap, not long-press — a long-press is too easy for a touchscreen to
+// cancel as a scroll gesture before it registers.
 function openPartialMenu(anchorEl, onPick){
   const menu = $("attPartialMenu");
   const r = anchorEl.getBoundingClientRect();
@@ -4554,9 +4608,15 @@ function openPartialMenu(anchorEl, onPick){
   menu.style.top = (r.bottom + 6) + "px";
   menu.style.display = "flex";
   const onBtn = (e) => {
-    const s = e.target.closest("button")?.dataset.s;
+    const m = e.target.closest("button")?.dataset.m;
     cleanup();
-    if (s) onPick(s);
+    if (!m) return;
+    if (m === "other"){
+      const v = parseInt(window.prompt("Minutes attended:", ""), 10);
+      if (Number.isFinite(v) && v >= 0) onPick(v);
+    } else {
+      onPick(parseInt(m, 10));
+    }
   };
   const onOutside = (e) => { if (!menu.contains(e.target)) cleanup(); };
   function cleanup(){
@@ -4623,17 +4683,18 @@ function attachSwipeHandlers(card){
   card.addEventListener("pointerleave", () => { if (dragging) onUp(); });
 }
 
-function commitSwipe(status){
+function commitSwipe(status, minutesAttended){
   const card = $("swipeCardEl");
   if (card){
-    const toRight = status === "in" || status === "q2" || status === "q3";
+    const toRight = status === "in" || status === "partial";
     card.style.transition = "transform .25s ease, opacity .25s ease";
     card.style.transform = `translateX(${toRight ? 600 : -600}px) rotate(${toRight ? 25 : -25}deg)`;
     card.style.opacity = "0";
   }
   const s = attSwimmers[attIndex];
   s.status = status;
-  upsertAttendance(s.id, status);
+  s.minutes_attended = status === "partial" ? minutesAttended : null;
+  upsertAttendance(s.id, status, minutesAttended);
   updateAttHeader();
   attIndex++;
   setTimeout(renderSwipeCard, 200);
@@ -4644,14 +4705,15 @@ $("tapInBtn").addEventListener("click", () => { if (attIndex < attSwimmers.lengt
 $("tapExcusedBtn").addEventListener("click", () => { if (attIndex < attSwimmers.length) commitSwipe("excused"); });
 $("tapPartialBtn").addEventListener("click", (e) => {
   if (attIndex >= attSwimmers.length) return;
-  openPartialMenu(e.currentTarget, (status) => commitSwipe(status));
+  openPartialMenu(e.currentTarget, (mins) => commitSwipe("partial", mins));
 });
 
 // --- Tick list mode ---
-// Tap cycles unmarked/partial → In → Out → Excused → In …
-// Long-press (or a slow click) opens the ¼ / ½ / ¾ / Excused picker.
+// Tap the status chip cycles unmarked/partial → In → Out → Excused → In …
+// A separate "mins" button opens the 15/30/45/Other picker — a plain tap,
+// not a long-press, since a long-press is unreliable on a touchscreen.
 function nextTickStatus(cur){
-  if (cur === null || cur === "in" || cur === "q1" || cur === "q2" || cur === "q3") return "out";
+  if (cur === null || cur === "in" || cur === "partial") return "out";
   if (cur === "out") return "excused";
   return "in"; // excused -> in
 }
@@ -4661,38 +4723,40 @@ function renderTickList(){
   el.innerHTML = attSwimmers.map((s, i) => `
     <div class="tick-row">
       <span class="tick-name">${s.full_name}</span>
-      <span class="tick-box ${s.status ? "st-" + s.status : ""}" data-i="${i}">${s.status ? ATT_CHIP[s.status] : ""}</span>
+      <div class="tick-row-main">
+        <span class="tick-box ${s.status ? "st-" + s.status : ""}" data-i="${i}">${attChip(s)}</span>
+        <button type="button" class="tick-mins-btn${s.status === "partial" ? " set" : ""}" data-i="${i}">mins</button>
+      </div>
     </div>`).join("");
 
   el.querySelectorAll(".tick-box").forEach(box => {
-    let pressTimer = null, longPressed = false;
     const i = Number(box.dataset.i);
-
-    const applyStatus = async (status) => {
+    box.addEventListener("click", async () => {
+      const status = nextTickStatus(attSwimmers[i].status);
       attSwimmers[i].status = status;
+      attSwimmers[i].minutes_attended = null;
       box.className = "tick-box" + (status ? " st-" + status : "");
-      box.textContent = status ? ATT_CHIP[status] : "";
+      box.textContent = attChip(attSwimmers[i]);
+      box.parentElement.querySelector(".tick-mins-btn").classList.remove("set");
       updateAttHeader();
-      await upsertAttendance(attSwimmers[i].id, status);
-    };
+      await upsertAttendance(attSwimmers[i].id, status, null);
+    });
+  });
 
-    const startPress = () => {
-      longPressed = false;
-      pressTimer = setTimeout(() => {
-        longPressed = true;
-        openPartialMenu(box, (status) => applyStatus(status));
-      }, 480);
-    };
-    const endPress = () => {
-      clearTimeout(pressTimer);
-      if (!longPressed) applyStatus(nextTickStatus(attSwimmers[i].status));
-    };
-    const cancelPress = () => clearTimeout(pressTimer);
-
-    box.addEventListener("pointerdown", startPress);
-    box.addEventListener("pointerup", endPress);
-    box.addEventListener("pointerleave", cancelPress);
-    box.addEventListener("pointercancel", cancelPress);
+  el.querySelectorAll(".tick-mins-btn").forEach(btn => {
+    const i = Number(btn.dataset.i);
+    btn.addEventListener("click", () => {
+      openPartialMenu(btn, async (mins) => {
+        attSwimmers[i].status = "partial";
+        attSwimmers[i].minutes_attended = mins;
+        const box = btn.parentElement.querySelector(".tick-box");
+        box.className = "tick-box st-partial";
+        box.textContent = attChip(attSwimmers[i]);
+        btn.classList.add("set");
+        updateAttHeader();
+        await upsertAttendance(attSwimmers[i].id, "partial", mins);
+      });
+    });
   });
 }
 
@@ -4710,21 +4774,24 @@ $("finishAttendanceBtn").addEventListener("click", async () => {
     } else if (attMode === "swipe" && i >= attIndex){
       // swipe mode may have un-swiped trailing rows with a saved status
       // from a previous session on this register that still needs re-saving
-      await upsertAttendance(attSwimmers[i].id, attSwimmers[i].status);
+      await upsertAttendance(attSwimmers[i].id, attSwimmers[i].status, attSwimmers[i].minutes_attended);
     }
   }
 
   const inCount = attSwimmers.filter(s => s.status === "in").length;
-  const partialCount = attSwimmers.filter(s => s.status === "q1" || s.status === "q2" || s.status === "q3").length;
+  const partialCount = attSwimmers.filter(s => s.status === "partial").length;
   const outCount = attSwimmers.filter(s => s.status === "out").length;
   const excusedCount = attSwimmers.filter(s => s.status === "excused").length;
-  const weighted = attSwimmers.filter(s => s.status !== "excused");
-  const weightSum = weighted.reduce((a, s) => a + (ATT_WEIGHTS[s.status] || 0), 0);
+  let weightSum = 0, weightedN = 0;
+  attSwimmers.forEach(s => {
+    const w = attWeight(s.status, s.minutes_attended, attSession.sessionMinutes);
+    if (w !== null){ weightSum += w; weightedN++; }
+  });
   $("doneInCount").textContent = inCount;
   $("donePartialCount").textContent = partialCount;
   $("doneOutCount").textContent = outCount;
   $("doneExcusedCount").textContent = excusedCount;
-  $("donePctLine").textContent = weighted.length ? `Session attendance: ${Math.round(100 * weightSum / weighted.length)}%` : "";
+  $("donePctLine").textContent = weightedN ? `Session attendance: ${Math.round(100 * weightSum / weightedN)}%` : "";
   $("doneSessionLine").textContent = $("sessionInfoLine").textContent;
 
   $("finishAttendanceBtn").disabled = false;
@@ -7623,15 +7690,15 @@ async function swpLoadAttendance(swimmerId){
   const since90 = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
   const since30 = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
   const { data, error } = await sb.from("attendance_records")
-    .select("session_date, status, present")
+    .select("session_date, status, present, minutes_attended, session_minutes")
     .eq("swimmer_id", swimmerId)
     .gte("session_date", since90);
   if (error){ console.error(error); $("swpAtt30").textContent = "–"; $("swpAtt90").textContent = "–"; return; }
   const rows = data || [];
-  // A-093: weighted attendance (a ¾ session counts as .75, not 1) rather
-  // than a raw "present" boolean count. Falls back to the boolean for any
-  // row written before status existed.
-  const weight = r => r.status ? (ATT_WEIGHTS[r.status] || 0) : (r.present ? 1 : 0);
+  // A-093: weighted attendance (a partial session counts as its minutes
+  // fraction, not 1) rather than a raw "present" boolean count. Falls back
+  // to the boolean for any row written before status existed.
+  const weight = r => r.status ? (attWeight(r.status, r.minutes_attended, r.session_minutes) || 0) : (r.present ? 1 : 0);
   const sum = rs => Math.round(rs.reduce((a, r) => a + weight(r), 0) * 10) / 10;
   $("swpAtt90").textContent = sum(rows);
   $("swpAtt30").textContent = sum(rows.filter(r => r.session_date >= since30));
