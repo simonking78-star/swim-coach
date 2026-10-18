@@ -536,6 +536,9 @@
   }
   .swipe-tap-btn.out{background:var(--red);}
   .swipe-tap-btn.in{background:var(--green);}
+  .swipe-tap-btn.excused{background:var(--navy);}
+  .swipe-tap-btn.partial{background:#e8a93c;}
+  .swipe-tap-btns-row2{display:flex;gap:10px;margin-bottom:10px;}
 
   .tick-row{
     display:flex;align-items:center;justify-content:space-between;
@@ -546,9 +549,36 @@
   .tick-box{
     width:30px;height:30px;border-radius:8px;border:2px solid var(--border);
     display:flex;align-items:center;justify-content:center;
-    font-weight:800;color:#fff;cursor:pointer;flex-shrink:0;
+    font-weight:800;color:#fff;cursor:pointer;flex-shrink:0;user-select:none;touch-action:manipulation;
   }
-  .tick-box.ticked{background:var(--green);border-color:var(--green);}
+  /* Attendance status chip colours: in=green, out=red, excused=navy, partials=amber */
+  .tick-box.st-in{background:var(--green);border-color:var(--green);}
+  .tick-box.st-out{background:var(--red);border-color:var(--red);}
+  .tick-box.st-excused{background:var(--navy);border-color:var(--navy);font-size:.6rem;}
+  .tick-box.st-q1,.tick-box.st-q2,.tick-box.st-q3{background:#e8a93c;border-color:#e8a93c;font-size:.62rem;}
+
+  .att-header-bar{
+    display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+    padding:8px 2px 12px;border-bottom:1px solid #f0f2f5;margin-bottom:6px;
+  }
+  .att-header-counts{font-size:.78rem;color:var(--text-dim);line-height:1.5;}
+  .att-header-counts b{color:var(--navy);}
+  .att-header-pct{font-size:1.1rem;font-weight:800;color:var(--navy);}
+  .all-in-btn{
+    padding:7px 14px;border-radius:8px;border:1.5px solid var(--green);
+    background:#fff;color:var(--green);font-weight:700;font-size:.8rem;cursor:pointer;
+  }
+
+  .partial-menu{
+    position:fixed;z-index:50;display:flex;gap:6px;
+    background:#fff;border:1px solid var(--border);border-radius:10px;
+    box-shadow:0 10px 26px rgba(11,37,69,.22);padding:6px;
+  }
+  .partial-menu button{
+    width:46px;height:40px;border-radius:7px;border:none;background:#e8a93c;color:#fff;
+    font-weight:800;font-size:.82rem;cursor:pointer;
+  }
+  .partial-menu button.pm-excused{background:var(--navy);font-size:.68rem;}
 
   .finish-btn{
     width:100%;padding:14px;border:none;border-radius:10px;
@@ -1391,6 +1421,11 @@
     <a class="back-home" id="backHome2">Home</a>
     <div class="card">
       <div class="session-info-line" id="sessionInfoLine"></div>
+      <div class="att-header-bar">
+        <div class="att-header-counts" id="attHeaderCounts"></div>
+        <div class="att-header-pct" id="attHeaderPct"></div>
+        <button type="button" class="all-in-btn" id="allInBtn">All In</button>
+      </div>
 
       <div id="swipeModeBlock">
         <div class="progress-line" id="progressLine"></div>
@@ -1399,6 +1434,10 @@
         <div class="swipe-tap-btns">
           <button type="button" class="swipe-tap-btn out" id="tapOutBtn">✕ Out</button>
           <button type="button" class="swipe-tap-btn in" id="tapInBtn">✓ In</button>
+        </div>
+        <div class="swipe-tap-btns-row2">
+          <button type="button" class="swipe-tap-btn excused" id="tapExcusedBtn">Excused</button>
+          <button type="button" class="swipe-tap-btn partial" id="tapPartialBtn">¼ / ½ / ¾</button>
         </div>
       </div>
 
@@ -1410,6 +1449,13 @@
     </div>
   </div>
 
+  <div class="partial-menu" id="attPartialMenu" style="display:none;">
+    <button type="button" data-s="q1">¼</button>
+    <button type="button" data-s="q2">½</button>
+    <button type="button" data-s="q3">¾</button>
+    <button type="button" class="pm-excused" data-s="excused">Exc</button>
+  </div>
+
   <!-- ============ ATTENDANCE: DONE ============ -->
   <div class="view" id="viewAttendanceDone">
     <div class="card">
@@ -1417,8 +1463,11 @@
       <div class="session-info-line" id="doneSessionLine"></div>
       <div class="done-tally">
         <div class="done-stat in-stat"><div class="ds-num" id="doneInCount">0</div><div class="ds-label">In</div></div>
+        <div class="done-stat"><div class="ds-num" id="donePartialCount">0</div><div class="ds-label">Partial</div></div>
         <div class="done-stat out-stat"><div class="ds-num" id="doneOutCount">0</div><div class="ds-label">Out</div></div>
+        <div class="done-stat"><div class="ds-num" id="doneExcusedCount">0</div><div class="ds-label">Excused</div></div>
       </div>
+      <div class="att-header-pct" id="donePctLine" style="margin:-6px 0 14px;"></div>
       <p class="hint" style="margin-bottom:10px;">What next?</p>
       <div class="next-step-row">
         <div class="next-step-btn" id="goFeedbackBtn">
@@ -4404,18 +4453,21 @@ $("startAttendanceBtn").addEventListener("click", async () => {
   // Any existing marks already logged for this exact session
   const { data: existing, error: eErr } = await sb
     .from("attendance_records")
-    .select("swimmer_id, present")
+    .select("swimmer_id, status")
     .eq("session_date", date)
     .eq("session_time", time + ":00")
     .eq("pool_size", attSession.pool);
   if (eErr) console.error(eErr);
   const existingMap = {};
-  (existing || []).forEach(r => { existingMap[r.swimmer_id] = r.present; });
+  (existing || []).forEach(r => { existingMap[r.swimmer_id] = r.status; });
 
+  // status is null ("unmarked") for any swimmer with no existing mark this
+  // session — All In only touches these. A previously-saved mark (including
+  // an explicit Out) is loaded as-is and left alone by All In.
   attSwimmers = (swimmers || []).map(s => ({
     id: s.id,
     full_name: s.full_name,
-    present: existingMap.hasOwnProperty(s.id) ? existingMap[s.id] : false
+    status: existingMap.hasOwnProperty(s.id) ? existingMap[s.id] : null
   }));
   attIndex = 0;
 
@@ -4431,17 +4483,24 @@ $("startAttendanceBtn").addEventListener("click", async () => {
     $("tickModeBlock").style.display = "block";
     renderTickList();
   }
+  updateAttHeader();
 
   showView("viewAttendanceMark");
 });
 
-async function upsertAttendance(swimmerId, present){
+// A-093: six attendance states. Weights mirror public.attendance_weight() —
+// keep these two in sync. Excused is left out of both sides of the %.
+const ATT_WEIGHTS = { in: 1, q3: 0.75, q2: 0.5, q1: 0.25, out: 0, excused: null };
+const ATT_CHIP = { in: "✓", out: "✕", excused: "Exc", q1: "¼", q2: "½", q3: "¾" };
+
+async function upsertAttendance(swimmerId, status){
   const payload = {
     swimmer_id: swimmerId,
     session_date: attSession.date,
     session_time: attSession.time + ":00",
     pool_size: attSession.pool,
-    present: present,
+    status: status,
+    present: status === "in" || status === "q1" || status === "q2" || status === "q3",
     session_plan_id: attSession.plan_id,
     marked_at: new Date().toISOString(),
     coach: "Simon"
@@ -4451,6 +4510,62 @@ async function upsertAttendance(swimmerId, present){
   });
   if (error) console.error("Attendance save failed:", error);
   return !error;
+}
+
+// Live header: In / partial / Out / Excused / unmarked counts and the %
+// (sum of weights over marks that aren't Excused or unmarked) — same
+// weighting as public.attendance_weight() so the register agrees with
+// Statistics > Monthly Squad Review.
+function updateAttHeader(){
+  const counts = { in: 0, out: 0, excused: 0, partial: 0, unmarked: 0 };
+  let weightSum = 0, weighted = 0;
+  attSwimmers.forEach(s => {
+    if (s.status === null){ counts.unmarked++; return; }
+    if (s.status === "in") counts.in++;
+    else if (s.status === "out") counts.out++;
+    else if (s.status === "excused") counts.excused++;
+    else counts.partial++;
+    const w = ATT_WEIGHTS[s.status];
+    if (w !== null && w !== undefined){ weightSum += w; weighted++; }
+  });
+  $("attHeaderCounts").innerHTML =
+    `<b>${counts.in}</b> In · <b>${counts.partial}</b> partial · <b>${counts.out}</b> Out · ` +
+    `<b>${counts.excused}</b> Excused${counts.unmarked ? ` · <b>${counts.unmarked}</b> unmarked` : ""}`;
+  $("attHeaderPct").textContent = weighted ? Math.round(100 * weightSum / weighted) + "%" : "—";
+}
+
+// All In — only swimmers never marked this session (status still null);
+// a swimmer already marked, even explicitly Out, is left alone.
+$("allInBtn").addEventListener("click", async () => {
+  const toMark = attSwimmers.filter(s => s.status === null);
+  for (const s of toMark){
+    s.status = "in";
+    await upsertAttendance(s.id, "in");
+  }
+  if (attMode === "swipe") renderSwipeCard(); else renderTickList();
+  updateAttHeader();
+});
+
+// Shared long-press / tap-to-open partial+excused picker, used by both modes.
+function openPartialMenu(anchorEl, onPick){
+  const menu = $("attPartialMenu");
+  const r = anchorEl.getBoundingClientRect();
+  menu.style.left = Math.max(8, Math.min(window.innerWidth - 190, r.left)) + "px";
+  menu.style.top = (r.bottom + 6) + "px";
+  menu.style.display = "flex";
+  const onBtn = (e) => {
+    const s = e.target.closest("button")?.dataset.s;
+    cleanup();
+    if (s) onPick(s);
+  };
+  const onOutside = (e) => { if (!menu.contains(e.target)) cleanup(); };
+  function cleanup(){
+    menu.style.display = "none";
+    menu.querySelectorAll("button").forEach(b => b.removeEventListener("click", onBtn));
+    document.removeEventListener("pointerdown", onOutside, true);
+  }
+  menu.querySelectorAll("button").forEach(b => b.addEventListener("click", onBtn));
+  setTimeout(() => document.addEventListener("pointerdown", onOutside, true), 0);
 }
 
 // --- Swipe mode ---
@@ -4496,8 +4611,8 @@ function attachSwipeHandlers(card){
     if (!dragging) return;
     dragging = false;
     card.classList.remove("dragging");
-    if (dx > threshold) commitSwipe(true);
-    else if (dx < -threshold) commitSwipe(false);
+    if (dx > threshold) commitSwipe("in");
+    else if (dx < -threshold) commitSwipe("out");
     else { card.style.transform = "translateX(0) rotate(0)"; $("ovIn").style.opacity = 0; $("ovOut").style.opacity = 0; }
     dx = 0;
   };
@@ -4508,39 +4623,76 @@ function attachSwipeHandlers(card){
   card.addEventListener("pointerleave", () => { if (dragging) onUp(); });
 }
 
-function commitSwipe(present){
+function commitSwipe(status){
   const card = $("swipeCardEl");
   if (card){
+    const toRight = status === "in" || status === "q2" || status === "q3";
     card.style.transition = "transform .25s ease, opacity .25s ease";
-    card.style.transform = `translateX(${present ? 600 : -600}px) rotate(${present ? 25 : -25}deg)`;
+    card.style.transform = `translateX(${toRight ? 600 : -600}px) rotate(${toRight ? 25 : -25}deg)`;
     card.style.opacity = "0";
   }
   const s = attSwimmers[attIndex];
-  s.present = present;
-  upsertAttendance(s.id, present);
+  s.status = status;
+  upsertAttendance(s.id, status);
+  updateAttHeader();
   attIndex++;
   setTimeout(renderSwipeCard, 200);
 }
 
-$("tapOutBtn").addEventListener("click", () => { if (attIndex < attSwimmers.length) commitSwipe(false); });
-$("tapInBtn").addEventListener("click", () => { if (attIndex < attSwimmers.length) commitSwipe(true); });
+$("tapOutBtn").addEventListener("click", () => { if (attIndex < attSwimmers.length) commitSwipe("out"); });
+$("tapInBtn").addEventListener("click", () => { if (attIndex < attSwimmers.length) commitSwipe("in"); });
+$("tapExcusedBtn").addEventListener("click", () => { if (attIndex < attSwimmers.length) commitSwipe("excused"); });
+$("tapPartialBtn").addEventListener("click", (e) => {
+  if (attIndex >= attSwimmers.length) return;
+  openPartialMenu(e.currentTarget, (status) => commitSwipe(status));
+});
 
 // --- Tick list mode ---
+// Tap cycles unmarked/partial → In → Out → Excused → In …
+// Long-press (or a slow click) opens the ¼ / ½ / ¾ / Excused picker.
+function nextTickStatus(cur){
+  if (cur === null || cur === "in" || cur === "q1" || cur === "q2" || cur === "q3") return "out";
+  if (cur === "out") return "excused";
+  return "in"; // excused -> in
+}
+
 function renderTickList(){
   const el = $("tickListStage");
   el.innerHTML = attSwimmers.map((s, i) => `
     <div class="tick-row">
       <span class="tick-name">${s.full_name}</span>
-      <span class="tick-box ${s.present ? "ticked" : ""}" data-i="${i}">${s.present ? "✓" : ""}</span>
+      <span class="tick-box ${s.status ? "st-" + s.status : ""}" data-i="${i}">${s.status ? ATT_CHIP[s.status] : ""}</span>
     </div>`).join("");
+
   el.querySelectorAll(".tick-box").forEach(box => {
-    box.addEventListener("click", async () => {
-      const i = Number(box.dataset.i);
-      attSwimmers[i].present = !attSwimmers[i].present;
-      box.classList.toggle("ticked", attSwimmers[i].present);
-      box.textContent = attSwimmers[i].present ? "✓" : "";
-      await upsertAttendance(attSwimmers[i].id, attSwimmers[i].present);
-    });
+    let pressTimer = null, longPressed = false;
+    const i = Number(box.dataset.i);
+
+    const applyStatus = async (status) => {
+      attSwimmers[i].status = status;
+      box.className = "tick-box" + (status ? " st-" + status : "");
+      box.textContent = status ? ATT_CHIP[status] : "";
+      updateAttHeader();
+      await upsertAttendance(attSwimmers[i].id, status);
+    };
+
+    const startPress = () => {
+      longPressed = false;
+      pressTimer = setTimeout(() => {
+        longPressed = true;
+        openPartialMenu(box, (status) => applyStatus(status));
+      }, 480);
+    };
+    const endPress = () => {
+      clearTimeout(pressTimer);
+      if (!longPressed) applyStatus(nextTickStatus(attSwimmers[i].status));
+    };
+    const cancelPress = () => clearTimeout(pressTimer);
+
+    box.addEventListener("pointerdown", startPress);
+    box.addEventListener("pointerup", endPress);
+    box.addEventListener("pointerleave", cancelPress);
+    box.addEventListener("pointercancel", cancelPress);
   });
 }
 
@@ -4549,17 +4701,30 @@ $("finishAttendanceBtn").addEventListener("click", async () => {
   $("finishAttendanceBtn").disabled = true;
   $("finishAttendanceBtn").textContent = "Saving…";
 
-  if (attMode === "swipe"){
-    // Anyone not yet swiped defaults to Out — "no swipe = Out", same rule as the tick list.
-    for (let i = attIndex; i < attSwimmers.length; i++){
-      await upsertAttendance(attSwimmers[i].id, attSwimmers[i].present);
+  // Anyone still unmarked (never touched this session) defaults to Out —
+  // same "no mark = Out" rule as before, now expressed via status.
+  for (let i = 0; i < attSwimmers.length; i++){
+    if (attSwimmers[i].status === null){
+      attSwimmers[i].status = "out";
+      await upsertAttendance(attSwimmers[i].id, "out");
+    } else if (attMode === "swipe" && i >= attIndex){
+      // swipe mode may have un-swiped trailing rows with a saved status
+      // from a previous session on this register that still needs re-saving
+      await upsertAttendance(attSwimmers[i].id, attSwimmers[i].status);
     }
   }
 
-  const inCount = attSwimmers.filter(s => s.present).length;
-  const outCount = attSwimmers.length - inCount;
+  const inCount = attSwimmers.filter(s => s.status === "in").length;
+  const partialCount = attSwimmers.filter(s => s.status === "q1" || s.status === "q2" || s.status === "q3").length;
+  const outCount = attSwimmers.filter(s => s.status === "out").length;
+  const excusedCount = attSwimmers.filter(s => s.status === "excused").length;
+  const weighted = attSwimmers.filter(s => s.status !== "excused");
+  const weightSum = weighted.reduce((a, s) => a + (ATT_WEIGHTS[s.status] || 0), 0);
   $("doneInCount").textContent = inCount;
+  $("donePartialCount").textContent = partialCount;
   $("doneOutCount").textContent = outCount;
+  $("doneExcusedCount").textContent = excusedCount;
+  $("donePctLine").textContent = weighted.length ? `Session attendance: ${Math.round(100 * weightSum / weighted.length)}%` : "";
   $("doneSessionLine").textContent = $("sessionInfoLine").textContent;
 
   $("finishAttendanceBtn").disabled = false;
@@ -7458,13 +7623,18 @@ async function swpLoadAttendance(swimmerId){
   const since90 = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
   const since30 = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
   const { data, error } = await sb.from("attendance_records")
-    .select("session_date, present")
+    .select("session_date, status, present")
     .eq("swimmer_id", swimmerId)
     .gte("session_date", since90);
   if (error){ console.error(error); $("swpAtt30").textContent = "–"; $("swpAtt90").textContent = "–"; return; }
   const rows = data || [];
-  $("swpAtt90").textContent = rows.filter(r => r.present).length;
-  $("swpAtt30").textContent = rows.filter(r => r.present && r.session_date >= since30).length;
+  // A-093: weighted attendance (a ¾ session counts as .75, not 1) rather
+  // than a raw "present" boolean count. Falls back to the boolean for any
+  // row written before status existed.
+  const weight = r => r.status ? (ATT_WEIGHTS[r.status] || 0) : (r.present ? 1 : 0);
+  const sum = rs => Math.round(rs.reduce((a, r) => a + weight(r), 0) * 10) / 10;
+  $("swpAtt90").textContent = sum(rows);
+  $("swpAtt30").textContent = sum(rows.filter(r => r.session_date >= since30));
 }
 
 // --- Results: full archive (both courses), used for both the PB list and event drill-down ---
