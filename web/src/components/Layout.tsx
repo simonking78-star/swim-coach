@@ -3,10 +3,12 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { ROLE_LABEL, roleSummary, sectionLevel } from "../lib/access";
 import { SECTIONS } from "../sections";
+import { usePendingWrites } from "../lib/offline";
 
 export function Layout() {
   const { access, session, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const pending = usePendingWrites();
   const location = useLocation();
 
   useEffect(() => setMenuOpen(false), [location.pathname]);
@@ -35,6 +37,7 @@ export function Layout() {
             ? <>🧪 Testing as <strong>{ROLE_LABEL[testing.role] ?? testing.role} · {testing.club ?? "all clubs"}</strong></>
             : <>{session?.user.email} · <strong>{roleSummary(access)}</strong></>}
         </span>
+        {pending > 0 && <span className="queued-badge" role="status">{pending === 1 ? "1 save queued" : `${pending} saves queued`} — will sync</span>}
         <button className="link-btn light" onClick={signOut}>Sign out</button>
       </div>
 

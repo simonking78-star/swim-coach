@@ -14,7 +14,7 @@ export interface NavSection {
 
 // Order matches the current app's menu.
 export const SECTIONS: NavSection[] = [
-  { key: "attendance",   label: "Attendance",       icon: "✅", blurb: "Mark a session register",              section: "attendance", legacyGo: "attendance",   migrated: false },
+  { key: "attendance",   label: "Attendance",       icon: "✅", blurb: "Mark a session register",              section: "attendance", legacyGo: "attendance",   migrated: true  },
   { key: "feedback",     label: "Feedback",         icon: "💬", blurb: "Swimmer and squad feedback",           section: "feedback",   legacyGo: "feedback",     migrated: false },
   { key: "season",       label: "Season planner",   icon: "🗓️", blurb: "Seasons, macro and micro cycles",       section: "season",     legacyGo: "season",       migrated: false },
   { key: "timetables",   label: "Timetables",       icon: "🕒", blurb: "Weekly sessions per squad",            section: "timetables", legacyGo: "timetables",   migrated: false },

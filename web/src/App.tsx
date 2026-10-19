@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { SetPassword, SignIn } from "./auth/SignIn";
 import { ClubProvider } from "./club/ClubProvider";
 import { Layout } from "./components/Layout";
+import { Attendance } from "./pages/Attendance";
 import { Home } from "./pages/Home";
 import { SectionPage } from "./pages/SectionPage";
 import { Settings } from "./pages/Settings";
@@ -19,6 +20,7 @@ function Gate() {
         <Route element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="attendance" element={<Attendance />} />
           <Route path=":key" element={<SectionPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
