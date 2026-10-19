@@ -22,7 +22,7 @@ export const SECTIONS: NavSection[] = [
   { key: "sessions",     label: "Session plans",    icon: "📋", blurb: "Plan and archive sessions",            section: "plans",      legacyGo: "session",      migrated: false },
   { key: "drills",       label: "Drills & Skills",  icon: "🧩", blurb: "Drills library",                       section: "plans",      legacyGo: "drills",       migrated: false },
   { key: "statistics",   label: "Statistics",       icon: "📈", blurb: "Comparison, regression, squad review", section: "stats",      legacyGo: "mi",           migrated: false },
-  { key: "swimmers",     label: "Swimmers",         icon: "🏊", blurb: "Roster and swimmer profiles",          section: "roster",     legacyGo: "swimmer",      migrated: false },
+  { key: "swimmers",     label: "Swimmers",         icon: "🏊", blurb: "Roster and swimmer profiles",          section: "roster",     legacyGo: "swimmer",      migrated: true  },
   { key: "stopwatch",    label: "Stopwatch",        icon: "⏱️", blurb: "Time reps and post to profiles",        section: "stopwatch",  legacyGo: "stopwatch",    migrated: true  },
   { key: "admin",        label: "Admin",            icon: "⚙️", blurb: "Squads, members and users",            section: "admin",      legacyGo: "admin",        migrated: false },
   { key: "appdev",       label: "App dev",          icon: "🛠️", blurb: "Development actions and milestones",   section: "appdev",     legacyGo: "appdev",       migrated: false }

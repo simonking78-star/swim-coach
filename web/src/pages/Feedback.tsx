@@ -74,6 +74,16 @@ function SwimmerFeedback({ editable }: { editable: boolean }) {
   useEffect(() => { setSquad(""); }, [club]);
   useEffect(() => { clearSwimmer(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [club, squad]);
 
+  // Opened from a swimmer's profile (?swimmer=<id>): go straight to their history.
+  const wanted = params.get("swimmer");
+  const [usedWanted, setUsedWanted] = useState(false);
+  useEffect(() => {
+    if (!wanted || usedWanted || !swimmers.data) return;
+    const s = swimmers.data.find(x => x.id === wanted);
+    if (s) { setUsedWanted(true); pick(s); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wanted, usedWanted, swimmers.data]);
+
   const pick = (s: SwimmerLite) => { setSwimmer(s); setUpdating(null); setFlash(null); setTab("history"); scrollTo(0, 0); };
   function clearSwimmer() { setSwimmer(null); setUpdating(null); setTab("pick"); }
 
