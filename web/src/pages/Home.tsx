@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
-import { useClub } from "../club/ClubProvider";
-import { allowedItems, useHomeLayout } from "../home/layout";
+import { ClubPicker } from "../club/ClubPicker";
+import { allowedItems, PANELS, useHomeLayout, type LayoutItem } from "../home/layout";
 import { PANEL_COMPONENTS } from "../home/Panels";
 import { SECTIONS } from "../sections";
 
@@ -9,18 +9,46 @@ import { SECTIONS } from "../sections";
 // section buttons the user has switched on in Settings, both in their chosen order.
 export function Home() {
   const { access } = useAuth();
-  const { club } = useClub();
   const { layout, loading } = useHomeLayout();
   const { panels, buttons } = allowedItems(layout, access);
   const shownPanels = panels.filter(p => p.visible);
   const shownButtons = buttons.filter(b => b.visible);
+
+  // System-wide panels and club panels are kept in separate groups, so the club
+  // picker sits directly above the figures it controls. Each group keeps the
+  // user's own order; whichever group has the user's first panel comes first.
+  const scopeOf = (p: LayoutItem) => PANELS.find(d => d.id === p.id)?.scope ?? "club";
+  const systemPanels = shownPanels.filter(p => scopeOf(p) === "system");
+  const clubPanels = shownPanels.filter(p => scopeOf(p) === "club");
+  const clubFirst = shownPanels.length > 0 && scopeOf(shownPanels[0]) === "club";
+
+  const renderPanels = (list: LayoutItem[]) => (
+    <div className="panel-grid">
+      {list.map(p => {
+        const Panel = PANEL_COMPONENTS[p.id as keyof typeof PANEL_COMPONENTS];
+        return <Panel key={p.id} />;
+      })}
+    </div>
+  );
+
+  const systemGroup = systemPanels.length > 0 && (
+    <section className="panel-group" aria-label="All clubs">{renderPanels(systemPanels)}</section>
+  );
+  const clubGroup = clubPanels.length > 0 && (
+    <section className="panel-group" aria-labelledby="club-group-title">
+      <div className="group-head">
+        <h2 id="club-group-title" className="group-title">Club</h2>
+        <ClubPicker hideLabel />
+      </div>
+      {renderPanels(clubPanels)}
+    </section>
+  );
 
   return (
     <>
       <div className="page-head row">
         <div>
           <h1>Home</h1>
-          {club && <p className="dim">{club}</p>}
         </div>
         <Link to="/settings" className="btn small">Customise</Link>
       </div>
@@ -31,12 +59,7 @@ export function Home() {
 
       {!loading && (
         <>
-          <div className="panel-grid">
-            {shownPanels.map(p => {
-              const Panel = PANEL_COMPONENTS[p.id as keyof typeof PANEL_COMPONENTS];
-              return <Panel key={p.id} />;
-            })}
-          </div>
+          {clubFirst ? <>{clubGroup}{systemGroup}</> : <>{systemGroup}{clubGroup}</>}
 
           {shownButtons.length > 0 && (
             <>

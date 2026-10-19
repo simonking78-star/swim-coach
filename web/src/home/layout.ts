@@ -13,6 +13,8 @@ export interface PanelDef {
   id: PanelId;
   label: string;
   description: string;
+  /** "system" = across every club the user can see; "club" = follows the club picker */
+  scope: "system" | "club";
   /** whether this user's roles can have the panel at all */
   available: (a: Access | null) => boolean;
 }
@@ -26,18 +28,21 @@ export const PANELS: PanelDef[] = [
     id: "system",
     label: "System totals",
     description: "Clubs, swimmers, personal bests and feedback across everything you can see",
+    scope: "system",
     available: a => hasRole(a, "superadmin", "club_admin")
   },
   {
     id: "squads",
     label: "Squads at a glance",
     description: "Swimmers and feedback posts per squad",
+    scope: "club",
     available: a => levelIn(a, "roster", "E", "R", "SR") || levelIn(a, "feedback", "E", "SE")
   },
   {
     id: "squadFeedback",
     label: "Squad feedback",
     description: "Latest feedback for a squad from the head coach and other coaches",
+    scope: "club",
     available: a => levelIn(a, "feedback", "E", "SE", "R")
   }
 ];

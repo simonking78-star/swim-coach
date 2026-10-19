@@ -35,7 +35,7 @@ export function SystemPanel() {
   const q = useHomeStats(null);
   const s = q.data;
   return (
-    <PanelShell title="System totals" subtitle="Everything you have access to">
+    <PanelShell title="System totals" subtitle="All clubs you have access to">
       <StatusLine loading={q.isLoading} error={q.error} />
       {s && (
         <div className="stat-row">
@@ -55,7 +55,7 @@ export function SquadsPanel() {
   const q = useHomeStats(club);
   const squads = q.data?.squads ?? [];
   return (
-    <PanelShell title="Squads at a glance" subtitle={club ?? undefined}>
+    <PanelShell title="Squads at a glance">
       <StatusLine loading={q.isLoading} error={q.error} />
       {q.data && squads.length === 0 && <p className="dim">No squads you can see in this club.</p>}
       {squads.length > 0 && (
@@ -66,9 +66,9 @@ export function SquadsPanel() {
               <tr>
                 <th scope="col">Squad</th>
                 <th scope="col" className="num">Swimmers</th>
-                <th scope="col" className="num">Swimmer feedback</th>
-                <th scope="col" className="num">Squad feedback</th>
-                <th scope="col" className="num">Last 30 days</th>
+                <th scope="col" className="num">Swimmer f/b</th>
+                <th scope="col" className="num">Squad f/b</th>
+                <th scope="col" className="num"><abbr title="Feedback in the last 30 days">30 days</abbr></th>
               </tr>
             </thead>
             <tbody>

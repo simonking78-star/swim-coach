@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
-import { useClub } from "../club/ClubProvider";
 import { ROLE_LABEL, roleSummary, sectionLevel } from "../lib/access";
 import { SECTIONS } from "../sections";
 
 export function Layout() {
   const { access, session, signOut } = useAuth();
-  const { clubs, club, setClub } = useClub();
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -29,11 +27,6 @@ export function Layout() {
           <span className="bars" aria-hidden="true" />
         </button>
         <NavLink to="/" className="brand">Coach Tools <span className="badge">v2 preview</span></NavLink>
-        {clubs.length > 0 && (
-          <select className="club-select" aria-label="Club" value={club ?? ""} onChange={e => setClub(e.target.value)} disabled={clubs.length < 2}>
-            {clubs.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        )}
       </header>
 
       <div className={"access-bar" + (testing ? " testing" : "")}>
