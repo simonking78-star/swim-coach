@@ -111,7 +111,9 @@ export default function SquadReview() {
           <summary>How each figure is worked out</summary>
           <dl>
             <dt>Swimmers</dt><dd>Squad members during the month (squad history where recorded, otherwise current squad).</dd>
-            <dt>Attendance %</dt><dd>Present marks ÷ all register marks for squad members that month. Sessions = distinct date + time registers.</dd>
+            <dt>Sessions attended</dt><dd>In = 1, Partial = minutes attended ÷ session length, Out = 0. Excused is left out. Session length comes from the weekly timetable, or the start and finish entered for a session that isn't timetabled.</dd>
+            <dt>Attendance %</dt><dd>Sessions attended ÷ sessions that count (In, Out and Partial marks) for squad members that month. Sessions = distinct registers.</dd>
+            <dt>Hours trained</dt><dd>In = the whole session, Partial = the minutes attended, Out = 0, Excused left out. Shown as the squad total and per swimmer who attended.</dd>
             <dt>PBs</dt><dd>Swims flagged PB, or faster than the swimmer's previous best in that event and course.</dd>
             <dt>Median time gain %</dt><dd>For swims with an earlier best in the same event and course: (previous best − time) ÷ previous best. Negative = slower than best. Shown with the number of swims (n); treat n &lt; 5 with caution.</dd>
             <dt>Skill score</dt><dd>Average of status entries (swimmer and squad feedback) that month: Not discussed 0, Started 1, Developing 2, Embedded 3.</dd>
@@ -167,12 +169,13 @@ function BySquad({ rows, month, metricKey, club }: { rows: ReviewRow[]; month: s
         <p className="dim small">Arrows compare with {monthLabel(pk)}</p>
         <div className="table-wrap">
           <table className="data review">
-            <thead><tr><th scope="col">Squad</th><th scope="col" className="num">Attend.</th><th scope="col" className="num">PBs</th><th scope="col" className="num">Time gain</th><th scope="col" className="num">Skill</th><th scope="col" className="num">Feedback</th></tr></thead>
+            <thead><tr><th scope="col">Squad</th><th scope="col" className="num">Attend.</th><th scope="col" className="num">Hours</th><th scope="col" className="num">PBs</th><th scope="col" className="num">Time gain</th><th scope="col" className="num">Skill</th><th scope="col" className="num">Feedback</th></tr></thead>
             <tbody>
               {shown.map(r => (
                 <tr key={r.squad_id}>
-                  <th scope="row">{r.squad_name}<span className="cell-sub">{r.members} swimmers · {r.sessions} sessions</span></th>
-                  {cell(r, "attendance_pct", "pct1", r.marks || null)}
+                  <th scope="row">{r.squad_name}<span className="cell-sub">{r.members} swimmers · {r.sessions} sessions{r.excused ? ` · ${r.excused} excused` : ""}</span></th>
+                  <td className="num">{fmt(r.attendance_pct, "pct1")}{r.marks ? <span className="cell-sub">{fmt(r.present, "dec1")} of {r.marks}</span> : null}<Delta cur={r} prev={prev(r)} k="attendance_pct" f="pct1" /></td>
+                  <td className="num">{fmt(r.hours_trained, "dec1")}{r.hours_per_swimmer != null && <span className="cell-sub">{fmt(r.hours_per_swimmer, "dec1")} each</span>}<Delta cur={r} prev={prev(r)} k="hours_trained" f="dec1" /></td>
                   {cell(r, "pbs", "int")}
                   {cell(r, "median_improvement_pct", "pct2", r.swims ? `${r.improved_swims}/${r.swims}` : null)}
                   {cell(r, "skill_score", "dec2", r.status_entries || null)}
@@ -221,12 +224,12 @@ function Trend({ rows, squadId, metricKey, club }: { rows: ReviewRow[]; squadId:
         <h2 className="card-title">{name} by month</h2>
         <div className="table-wrap">
           <table className="data review">
-            <thead><tr><th scope="col">Month</th><th className="num">Swimmers</th><th className="num">Attend.</th><th className="num">Swims</th><th className="num">PBs</th><th className="num">Time gain</th><th className="num">Skill</th><th className="num">Steps ↑/↓</th><th className="num">Dev/Emb</th><th className="num">Feedback</th><th className="num">Drills</th></tr></thead>
+            <thead><tr><th scope="col">Month</th><th className="num">Swimmers</th><th className="num">Attend.</th><th className="num">Sessions</th><th className="num">Hours</th><th className="num">Swims</th><th className="num">PBs</th><th className="num">Time gain</th><th className="num">Skill</th><th className="num">Steps ↑/↓</th><th className="num">Dev/Emb</th><th className="num">Feedback</th><th className="num">Drills</th></tr></thead>
             <tbody>
               {shown.slice().reverse().map(r => (
                 <tr key={r.mk}>
                   <th scope="row" className="nowrap">{monthLabel(r.mk)}<span className="cell-sub">{r.source}</span></th>
-                  <td className="num">{r.members}</td><td className="num">{fmt(r.attendance_pct, "pct1")}</td><td className="num">{r.swims}</td><td className="num">{r.pbs}</td>
+                  <td className="num">{r.members}</td><td className="num">{fmt(r.attendance_pct, "pct1")}</td><td className="num">{fmt(r.present, "dec1")}</td><td className="num">{fmt(r.hours_trained, "dec1")}</td><td className="num">{r.swims}</td><td className="num">{r.pbs}</td>
                   <td className="num">{fmt(r.median_improvement_pct, "pct2")}</td><td className="num">{fmt(r.skill_score, "dec2")}</td>
                   <td className="num">{r.skill_moves_up}/{r.skill_moves_down}</td><td className="num">{fmt(r.positive_feedback_pct, "pct1")}</td>
                   <td className="num">{r.feedback_entries}</td><td className="num">{r.drills_worked}</td>
@@ -244,17 +247,17 @@ function Trend({ rows, squadId, metricKey, club }: { rows: ReviewRow[]; squadId:
 function PrintSheet({ club, rows, trend, month }: { club: string; rows: ReviewRow[]; trend: boolean; month: string | null }) {
   if (!rows.length) return null;
   const sum = (k: keyof ReviewRow) => rows.reduce((a, r) => a + ((r[k] as number) ?? 0), 0);
-  const mk = sum("marks"), pr = sum("present");
+  const mk = sum("marks"), pr = sum("present"), hrs = sum("hours_trained");
   const title = trend ? `${rows[0].squad_name} — month on month` : `All squads — ${month ? monthLabel(month) : ""}`;
   return (
     <div className="print-sheet" aria-hidden="true">
       <h2>{club} · Monthly Squad Review</h2>
       <p>{title} · printed {fmtDate(todayLocal().date)}</p>
-      <p>{trend ? "Across these months" : "This month"}: attendance {mk ? ((100 * pr) / mk).toFixed(1) + "%" : "–"} over {mk} register marks; {sum("pbs")} PBs from {sum("swims")} race swims.</p>
+      <p>{trend ? "Across these months" : "This month"}: attendance {mk ? ((100 * pr) / mk).toFixed(1) + "%" : "–"} ({pr.toFixed(1)} sessions attended of {mk}), {hrs.toFixed(1)} hours trained; {sum("pbs")} PBs from {sum("swims")} race swims.</p>
       <table>
-        <thead><tr><th>{trend ? "Month" : "Squad"}</th><th>Swimmers</th><th>Attendance</th><th>Swims</th><th>PBs</th><th>Median time gain</th><th>Skill score</th><th>Dev/Emb</th><th>Feedback</th></tr></thead>
+        <thead><tr><th>{trend ? "Month" : "Squad"}</th><th>Swimmers</th><th>Attendance</th><th>Sessions attended</th><th>Hours trained</th><th>Swims</th><th>PBs</th><th>Median time gain</th><th>Skill score</th><th>Dev/Emb</th><th>Feedback</th></tr></thead>
         <tbody>{rows.filter(hasData).map(r => (
-          <tr key={r.squad_id + r.mk}><td>{trend ? monthLabel(r.mk) : r.squad_name}</td><td>{r.members}</td><td>{fmt(r.attendance_pct, "pct1")}</td><td>{r.swims}</td><td>{r.pbs}</td>
+          <tr key={r.squad_id + r.mk}><td>{trend ? monthLabel(r.mk) : r.squad_name}</td><td>{r.members}</td><td>{fmt(r.attendance_pct, "pct1")}</td><td>{fmt(r.present, "dec1")}</td><td>{fmt(r.hours_trained, "dec1")}</td><td>{r.swims}</td><td>{r.pbs}</td>
             <td>{fmt(r.median_improvement_pct, "pct2")}</td><td>{fmt(r.skill_score, "dec2")}</td><td>{fmt(r.positive_feedback_pct, "pct1")}</td><td>{r.feedback_entries}</td></tr>
         ))}</tbody>
       </table>

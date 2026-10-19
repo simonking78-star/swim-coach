@@ -2,6 +2,8 @@ import { CATEGORY_LABEL, type FbEntry } from "./feedback";
 import { pdfGroups, pdfSafe } from "./feedbackPdf";
 import { PB_EVENTS, bestTimes, type ResultRow } from "./results";
 import { fmtDate, isoAdd, todayLocal } from "./util";
+import { fmtSessions, summarise } from "./attendance";
+import type { AttRow } from "./swimmers";
 
 // Swimmer report PDF — same layout as the current app's buildSwimmerPdf():
 // 1. Attendance (30 / 90 days / all, then by month), 2. Personal best times
@@ -10,7 +12,7 @@ import { fmtDate, isoAdd, todayLocal } from "./util";
 type RGB = [number, number, number];
 interface Who { full_name: string; squad: string | null; date_of_birth: string | null; }
 
-export async function buildSwimmerPdf(sw: Who, club: string, att: { session_date: string; present: boolean }[], results: ResultRow[], feedback: FbEntry[]) {
+export async function buildSwimmerPdf(sw: Who, club: string, att: AttRow[], results: ResultRow[], feedback: FbEntry[]) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
@@ -76,24 +78,22 @@ export async function buildSwimmerPdf(sw: Who, club: string, att: { session_date
   sectionHead("1. Attendance");
   const now = todayLocal().date;
   const since30 = isoAdd(now, -30), since90 = isoAdd(now, -90);
-  const pct = (rows: typeof att) => rows.length ? Math.round((100 * rows.filter(r => r.present).length) / rows.length) + "%" : "-";
+  // The one rule: hours (In = whole session, Partial = minutes attended) and
+  // sessions attended (In 1, Partial = minutes ÷ session length). Excused not counted.
+  type Col5 = Col;
+  const cols5 = (first: string): Col5[] => [{ h: first, w: W * 0.32 }, { h: "Hours trained", w: W * 0.17, align: "right" }, { h: "Sessions attended", w: W * 0.19, align: "right" }, { h: "Sessions counted", w: W * 0.17, align: "right" }, { h: "Attendance", w: W * 0.15, align: "right" }];
+  const row = (label: string, rows: AttRow[]) => { const t = summarise(rows); return [label, fmtSessions(t.hours), fmtSessions(t.attended), t.counted, t.pct == null ? "-" : t.pct + "%"]; };
   const in30 = att.filter(r => r.session_date >= since30), in90 = att.filter(r => r.session_date >= since90);
-  const cols4 = (first: string, a: string, b: string): Col[] => [{ h: first, w: W * 0.4 }, { h: a, w: W * 0.2, align: "right" }, { h: b, w: W * 0.2, align: "right" }, { h: "Attendance", w: W * 0.2, align: "right" }];
-  table(cols4("Period", "Sessions attended", "Sessions marked"), [
-    ["Last 30 days", in30.filter(r => r.present).length, in30.length, pct(in30)],
-    ["Last 90 days", in90.filter(r => r.present).length, in90.length, pct(in90)],
-    ["All records", att.filter(r => r.present).length, att.length, pct(att)]
-  ]);
+  table(cols5("Period"), [row("Last 30 days", in30), row("Last 90 days", in90), row("All records", att)]);
   if (att.length) {
-    const byMonth: Record<string, typeof att> = {};
+    const byMonth: Record<string, AttRow[]> = {};
     for (const r of att) (byMonth[r.session_date.slice(0, 7)] ||= []).push(r);
     const months = Object.keys(byMonth).sort().reverse().slice(0, 12);
     para("By month (most recent first)", { size: 9, color: DIM, gap: 2 });
     y += 4;
-    table(cols4("Month", "Attended", "Missed"), months.map(m => {
-      const rows = byMonth[m], a = rows.filter(r => r.present).length;
-      return [new Date(m + "-01T00:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }), a, rows.length - a, pct(rows)];
-    }));
+    table(cols5("Month"), months.map(m => row(new Date(m + "-01T00:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }), byMonth[m])));
+    const exc = summarise(att).excused;
+    para(`Hours: a whole session for In, the minutes attended for Partial. Sessions: a partial counts as the part attended (minutes ÷ session length, from the timetable). Excused sessions${exc ? ` (${exc} on record)` : ""} are left out.`, { size: 8.5, color: DIM, gap: 2 });
   } else {
     para("No attendance has been recorded for this swimmer yet.", { color: DIM });
   }
@@ -145,7 +145,7 @@ export async function buildSwimmerPdf(sw: Who, club: string, att: { session_date
   return doc;
 }
 
-export async function shareSwimmerPdf(sw: Who, club: string, data: { attendance: { session_date: string; present: boolean }[]; results: ResultRow[]; feedback: FbEntry[] }) {
+export async function shareSwimmerPdf(sw: Who, club: string, data: { attendance: AttRow[]; results: ResultRow[]; feedback: FbEntry[] }) {
   const doc = await buildSwimmerPdf(sw, club, data.attendance, data.results, data.feedback);
   const slug = pdfSafe(sw.full_name || "swimmer").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   const filename = `swimmer-report-${slug || "swimmer"}-${todayLocal().date}.pdf`;

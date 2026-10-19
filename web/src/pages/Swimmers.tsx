@@ -8,12 +8,13 @@ import { LEVEL_NOTE, sectionLevel } from "../lib/access";
 import { loadSquadNames } from "../lib/attendance";
 import { loadLastFeedback, loadRecentSessions, loadRoster, type RosterSwimmer } from "../lib/swimmers";
 import { fmtDate } from "../lib/util";
+import { fmtSessions } from "../lib/attendance";
 
 // Roster: search, squad and age filters, live count, a table whose columns the
 // coach chooses (remembered on this device, same key as the current app).
 // Tapping a swimmer opens their profile.
 
-type Extra = { att?: Record<string, number>; fb?: Record<string, string> };
+type Extra = { att?: Record<string, { sessions: number; hours: number }>; fb?: Record<string, string> };
 interface Col { key: string; label: string; fixed?: boolean; lazy?: "att" | "fb"; nowrap?: boolean; get: (s: RosterSwimmer, x: Extra) => string | number; }
 
 const COLS: Col[] = [
@@ -24,7 +25,8 @@ const COLS: Col[] = [
   { key: "gender", label: "Gender", get: s => s.gender || "—" },
   { key: "seid", label: "Swim England ID", get: s => s.swim_england_id || "—" },
   { key: "joined", label: "Joined club", nowrap: true, get: s => (s.joined_club_on ? fmtDate(s.joined_club_on) : "—") },
-  { key: "att30", label: "Sessions (30 days)", lazy: "att", get: (s, x) => (x.att ? x.att[s.id] ?? 0 : "…") },
+  { key: "att30", label: "Sessions (30 days)", lazy: "att", get: (s, x) => (x.att ? fmtSessions(x.att[s.id]?.sessions ?? 0) : "…") },
+  { key: "hrs30", label: "Hours (30 days)", lazy: "att", get: (s, x) => (x.att ? fmtSessions(x.att[s.id]?.hours ?? 0) : "…") },
   { key: "lastfb", label: "Last feedback", lazy: "fb", nowrap: true, get: (s, x) => (x.fb ? (x.fb[s.id] ? fmtDate(x.fb[s.id]) : "—") : "…") },
   { key: "parent", label: "Parent", get: s => s.parent_name || "—" },
   { key: "phone", label: "Parent phone", nowrap: true, get: s => s.parent_phone || "—" },
@@ -54,8 +56,8 @@ export function Swimmers() {
 
   const roster = useQuery({ queryKey: ["roster", club], enabled: !!club, queryFn: () => loadRoster(club!) });
   const squads = useQuery({ queryKey: ["fb_squads", club], enabled: !!club, queryFn: () => loadSquadNames(club!) });
-  const needAtt = cols.includes("att30"), needFb = cols.includes("lastfb");
-  const att = useQuery({ queryKey: ["roster_att30"], enabled: needAtt, staleTime: 5 * 60 * 1000, queryFn: loadRecentSessions });
+  const needAtt = cols.includes("att30") || cols.includes("hrs30"), needFb = cols.includes("lastfb");
+  const att = useQuery({ queryKey: ["roster_att30_v2"], enabled: needAtt, staleTime: 5 * 60 * 1000, queryFn: loadRecentSessions });
   const fb = useQuery({ queryKey: ["roster_lastfb"], enabled: needFb, staleTime: 5 * 60 * 1000, queryFn: loadLastFeedback });
   const extra: Extra = { att: att.data, fb: fb.data };
 

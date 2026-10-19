@@ -8,6 +8,9 @@ import { fmtDate } from "./util";
 
 export const METRICS = [
   { k: "attendance_pct", label: "Attendance %", fmt: "pct1" },
+  { k: "hours_trained", label: "Hours trained (squad total)", fmt: "dec1" },
+  { k: "hours_per_swimmer", label: "Hours trained per swimmer", fmt: "dec1" },
+  { k: "present", label: "Sessions attended", fmt: "dec1" },
   { k: "members", label: "Swimmers", fmt: "int" },
   { k: "sessions", label: "Sessions", fmt: "int" },
   { k: "swims", label: "Race swims", fmt: "int" },
@@ -20,12 +23,12 @@ export const METRICS = [
   { k: "drills_worked", label: "Squad drills", fmt: "int" }
 ] as const;
 export type MetricKey = (typeof METRICS)[number]["k"];
-export type Fmt = "pct1" | "pct2" | "dec2" | "int";
+export type Fmt = "pct1" | "pct2" | "dec1" | "dec2" | "int";
 
 export const NUM = ["members", "sessions", "marks", "present", "attendance_pct", "swimmers_attending", "swims", "swimmers_raced",
   "pbs", "improved_swims", "avg_improvement_pct", "median_improvement_pct", "status_entries", "st_not_discussed", "st_started",
   "st_developing", "st_embedded", "skill_score", "skill_moves_up", "skill_moves_down", "feedback_entries", "feedback_notes",
-  "positive_feedback_pct", "squad_entries", "drills_worked"] as const;
+  "positive_feedback_pct", "squad_entries", "drills_worked", "excused", "hours_trained", "hours_per_swimmer"] as const;
 
 export type ReviewRow = { squad_id: string; squad_name: string; month: string; mk: string; source: string } & Record<(typeof NUM)[number], number | null>;
 
@@ -45,6 +48,7 @@ export function fmt(v: number | null | undefined, f: Fmt | string): string {
   if (f === "pct1") return v.toFixed(1) + "%";
   if (f === "pct2") return (v > 0 ? "+" : "") + v.toFixed(2) + "%";
   if (f === "dec2") return v.toFixed(2);
+  if (f === "dec1") return v.toFixed(1);
   return String(Math.round(v));
 }
 export const hasData = (r: ReviewRow | undefined) => !!r && ((r.marks ?? 0) > 0 || (r.swims ?? 0) > 0 || (r.feedback_entries ?? 0) > 0);
@@ -69,11 +73,11 @@ export async function loadReview(club: string): Promise<ReviewRow[]> {
   const curKey = iso(now).slice(0, 7);
   const rpc = sb.rpc.bind(sb) as unknown as (fn: string, a: object) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
   const [live, snap] = await Promise.all([
-    rpc("squad_month_review", { p_club: club, p_from: iso(from), p_to: iso(now) }),
+    rpc("squad_month_figures", { p_club: club, p_from: iso(from), p_to: iso(now) }),
     sb.from("squad_month_snapshots").select("squad_id,month,metrics,generated_at").eq("club", club).gte("month", iso(from))
   ]);
   if (live.error) {
-    if (/squad_month_review|function/i.test(live.error.message || "")) throw new ReviewNotInstalled("The monthly review isn't installed in the database yet.");
+    if (/squad_month_figures|function/i.test(live.error.message || "")) throw new ReviewNotInstalled("The monthly review isn't installed in the database yet.");
     throw new Error(live.error.message);
   }
   const frozen = new Map<string, { metrics: Record<string, unknown>; generated_at: string }>();

@@ -1,5 +1,5 @@
 import { sb } from "./supabase";
-import { attWeight, type AttStatus } from "./attendance";
+import { summarise, type AttMark } from "./attendance";
 import { calcAge, type ResultRow } from "./results";
 import { isoAdd, todayLocal } from "./util";
 import type { FbEntry } from "./feedback";
@@ -31,13 +31,15 @@ export async function loadSwimmer(id: string): Promise<RosterSwimmer | null> {
   return data ? { ...(data as unknown as Omit<RosterSwimmer, "age">), age: calcAge((data as { date_of_birth: string | null }).date_of_birth) } : null;
 }
 
-/** Sessions present in the last 30 days, per swimmer (only fetched when that column is on). */
-export async function loadRecentSessions(): Promise<Record<string, number>> {
+/** Last 30 days per swimmer: sessions attended (fractions) and hours trained (only fetched when a column needs it). */
+export async function loadRecentSessions(): Promise<Record<string, { sessions: number; hours: number }>> {
   const since = isoAdd(todayLocal().date, -30);
-  const { data, error } = await sb.from("attendance_records").select("swimmer_id").gte("session_date", since).eq("present", true).limit(20000);
+  const { data, error } = await sb.from("attendance_records").select("swimmer_id, status, present, minutes_attended, session_minutes").gte("session_date", since).limit(20000);
   if (error) throw error;
-  const m: Record<string, number> = {};
-  for (const r of data ?? []) m[r.swimmer_id] = (m[r.swimmer_id] ?? 0) + 1;
+  const by: Record<string, AttMark[]> = {};
+  for (const r of (data ?? []) as (AttMark & { swimmer_id: string })[]) (by[r.swimmer_id] ||= []).push(r);
+  const m: Record<string, { sessions: number; hours: number }> = {};
+  for (const [id, rows] of Object.entries(by)) { const t = summarise(rows); m[id] = { sessions: t.attended, hours: t.hours }; }
   return m;
 }
 
@@ -53,25 +55,29 @@ export async function loadLastFeedback(): Promise<Record<string, string>> {
 // ---------------------------------------------------------------------------
 // Profile
 // ---------------------------------------------------------------------------
-interface AttRow { session_date: string; status: string | null; present: boolean; minutes_attended: number | null; session_minutes: number | null; }
+export type AttRow = AttMark & { session_date: string };
 
-/**
- * Weighted sessions attended in the last 30 and 90 days: a partial session
- * counts as its fraction of the session; rows from before status existed use
- * the present flag.
- */
-export async function loadAttendanceSummary(swimmerId: string): Promise<{ d30: number; d90: number }> {
-  const today = todayLocal().date;
-  const since90 = isoAdd(today, -90), since30 = isoAdd(today, -30);
+export interface AttMonth { month: string; hours: number; sessions: number; counted: number; pct: number | null; excused: number; }
+
+/** The swimmer's last 6 months (this month first): hours trained and sessions attended, by the one rule. */
+export async function loadAttendanceMonths(swimmerId: string): Promise<AttMonth[]> {
+  const t = new Date();
+  const first = new Date(t.getFullYear(), t.getMonth() - 5, 1);
+  const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   const { data, error } = await sb.from("attendance_records")
     .select("session_date, status, present, minutes_attended, session_minutes")
-    .eq("swimmer_id", swimmerId).gte("session_date", since90);
+    .eq("swimmer_id", swimmerId).gte("session_date", iso(first) + "-01");
   if (error) throw error;
   const rows = (data ?? []) as AttRow[];
-  const w = (r: AttRow) => r.status ? (attWeight(r.status as AttStatus, r.minutes_attended, r.session_minutes ?? 60) ?? 0) : (r.present ? 1 : 0);
-  const sum = (rs: AttRow[]) => Math.round(rs.reduce((a, r) => a + w(r), 0) * 10) / 10;
-  return { d90: sum(rows), d30: sum(rows.filter(r => r.session_date >= since30)) };
+  const out: AttMonth[] = [];
+  for (let i = 0; i < 6; i++) {
+    const m = iso(new Date(t.getFullYear(), t.getMonth() - i, 1));
+    const s = summarise(rows.filter(r => r.session_date.startsWith(m)));
+    out.push({ month: m, hours: s.hours, sessions: s.attended, counted: s.counted, pct: s.pct, excused: s.excused });
+  }
+  return out;
 }
+export const monthName = (m: string) => new Date(m + "-01T00:00:00").toLocaleDateString("en-GB", { month: "short", year: "numeric" });
 
 export async function loadResults(swimmerId: string): Promise<ResultRow[]> {
   const { data, error } = await sb.from("swim_results")
@@ -112,13 +118,13 @@ export function swTimeLabel(r: SwTime): string {
 /** Everything the swimmer-report PDF needs (all attendance, all results, all feedback). */
 export async function loadReportData(swimmerId: string) {
   const [at, rs, fb] = await Promise.all([
-    sb.from("attendance_records").select("session_date, present").eq("swimmer_id", swimmerId).limit(10000),
+    sb.from("attendance_records").select("session_date, status, present, minutes_attended, session_minutes").eq("swimmer_id", swimmerId).limit(10000),
     sb.from("swim_results").select("event, course, swim_time_display, meet_date").eq("swimmer_id", swimmerId).limit(10000),
     sb.from("swimmer_feedback").select("id, thread_id, entry_type, category, criterion, status, observation, remedial_action, note, media, session_date, created_at").eq("swimmer_id", swimmerId)
   ]);
   for (const r of [at, rs, fb]) if (r.error) throw r.error;
   return {
-    attendance: (at.data ?? []) as { session_date: string; present: boolean }[],
+    attendance: (at.data ?? []) as AttRow[],
     results: (rs.data ?? []) as ResultRow[],
     feedback: (fb.data ?? []) as unknown as FbEntry[]
   };

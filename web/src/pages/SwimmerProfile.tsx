@@ -7,10 +7,11 @@ import { canEdit, sectionLevel } from "../lib/access";
 import { loadFbSwimmers } from "../lib/feedback";
 import { parseTimeStr, type ResultRow } from "../lib/results";
 import {
-  deleteStopwatchTime, loadAttendanceSummary, loadFeedbackArchive, loadReportData, loadResults, loadStopwatchTimes, loadSwimmer, swTimeLabel
+  deleteStopwatchTime, loadAttendanceMonths, monthName, loadFeedbackArchive, loadReportData, loadResults, loadStopwatchTimes, loadSwimmer, swTimeLabel
 } from "../lib/swimmers";
 import { shareSwimmerPdf } from "../lib/swimmerPdf";
 import { fmtDate } from "../lib/util";
+import { fmtSessions } from "../lib/attendance";
 import { EntryBody } from "../components/feedbackParts";
 
 const EventChart = lazy(() => import("../components/EventChart"));
@@ -24,7 +25,7 @@ export function SwimmerProfile() {
   const [pdf, setPdf] = useState<{ busy: boolean; msg?: string }>({ busy: false });
 
   const swimmer = useQuery({ queryKey: ["swimmer", id], enabled: !!id, queryFn: () => loadSwimmer(id!) });
-  const att = useQuery({ queryKey: ["swp_att", id], enabled: !!id, queryFn: () => loadAttendanceSummary(id!) });
+  const att = useQuery({ queryKey: ["swp_att", id], enabled: !!id, queryFn: () => loadAttendanceMonths(id!) });
   const results = useQuery({ queryKey: ["swp_results", id], enabled: !!id, queryFn: () => loadResults(id!) });
   const sw = swimmer.data;
 
@@ -66,11 +67,33 @@ export function SwimmerProfile() {
         <div className="profile-grid">
           <section className="card">
             <h2 className="card-title">Attendance</h2>
-            <div className="stat-row">
-              <div className="stat"><span className="stat-label">Last 30 days</span><span className="stat-value">{att.data ? att.data.d30 : att.error ? "–" : "…"}</span><span className="stat-note">sessions</span></div>
-              <div className="stat"><span className="stat-label">Last 90 days</span><span className="stat-value">{att.data ? att.data.d90 : att.error ? "–" : "…"}</span><span className="stat-note">sessions</span></div>
-            </div>
-            <p className="hint">A partial session counts as the part attended.</p>
+            {att.error && <p className="msg error">Couldn't load attendance.</p>}
+            {!att.data && !att.error && <p className="dim">Loading…</p>}
+            {att.data && (
+              <>
+                <div className="stat-row">
+                  <div className="stat"><span className="stat-label">Hours trained · {monthName(att.data[0].month)}</span><span className="stat-value">{fmtSessions(att.data[0].hours)}</span><span className="stat-note">{fmtSessions(att.data[1].hours)} last month</span></div>
+                  <div className="stat"><span className="stat-label">Sessions attended · {monthName(att.data[0].month)}</span><span className="stat-value">{fmtSessions(att.data[0].sessions)}</span><span className="stat-note">{att.data[0].pct != null ? `${att.data[0].pct}% of ${att.data[0].counted}` : "none marked"}</span></div>
+                </div>
+                <div className="table-wrap">
+                  <table className="data">
+                    <caption className="sr-only">Attendance by month</caption>
+                    <thead><tr><th scope="col">Month</th><th scope="col" className="num">Hours</th><th scope="col" className="num">Sessions</th><th scope="col" className="num">%</th></tr></thead>
+                    <tbody>
+                      {att.data.map(m => (
+                        <tr key={m.month}>
+                          <th scope="row">{monthName(m.month)}</th>
+                          <td className="num">{fmtSessions(m.hours)}</td>
+                          <td className="num">{fmtSessions(m.sessions)}{m.counted ? <span className="cell-sub">of {m.counted}</span> : null}</td>
+                          <td className="num">{m.pct == null ? "–" : `${m.pct}%`}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+            <p className="hint">Hours: In = the whole session, Partial = the minutes attended. Sessions: a partial counts as the part attended. Excused isn't counted.</p>
           </section>
 
           <section className="card">

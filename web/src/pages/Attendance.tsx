@@ -7,8 +7,8 @@ import { ClubPicker } from "../club/ClubPicker";
 import { LEVEL_NOTE, sectionLevel } from "../lib/access";
 import {
   POOLS, WHOLE_CLUB, coachName, fmtDay, loadPlanOptions, loadRegister, loadSquadNames, logEvent,
-  markLabel, nextTickStatus, resolveSessionMinutes, saveMark, tally, todayLocal,
-  type AttSession, type AttStatus, type AttSwimmer, type Pool, type SaveResult
+  loadSlots, markLabel, minutesBetween, nextTickStatus, saveMark, tally, todayLocal,
+  type AttSession, type AttStatus, type AttSwimmer, type Pool, type SaveResult, type Slot
 } from "../lib/attendance";
 import { legacyUrl } from "../sections";
 
@@ -76,7 +76,10 @@ function Setup({ onStart }: { onStart: (s: AttSession, list: AttSwimmer[]) => vo
   const now = useMemo(todayLocal, []);
   const [squad, setSquad] = useState(WHOLE_CLUB);
   const [date, setDate] = useState(now.date);
-  const [time, setTime] = useState(now.time);
+  // A timetabled slot (its id), or OFF for a session that isn't on the timetable.
+  const [slotId, setSlotId] = useState<string | null>(null);
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
   const [pool, setPool] = useState<Pool | null>(null);
   const [planId, setPlanId] = useState("");
   const [mode, setMode] = useState<"swipe" | "tick">("swipe");
@@ -85,22 +88,36 @@ function Setup({ onStart }: { onStart: (s: AttSession, list: AttSwimmer[]) => vo
 
   const squads = useQuery({ queryKey: ["att_squads", club], enabled: !!club, queryFn: () => loadSquadNames(club!) });
   const plans = useQuery({ queryKey: ["att_plans", club], enabled: !!club, queryFn: () => loadPlanOptions(club!) });
+  const slots = useQuery({ queryKey: ["att_slots", club, squad, date], enabled: !!club && !!date, queryFn: () => loadSlots(club!, squad, date) });
   useEffect(() => { setSquad(WHOLE_CLUB); setPlanId(""); }, [club]);
+  // A different day or squad means different timetabled sessions.
+  useEffect(() => { setSlotId(null); setMsg(null); }, [club, squad, date]);
+
+  const OFF = "off";
+  const slot: Slot | undefined = slots.data?.find(x => x.id === slotId);
+  const pickSlot = (s: Slot) => { setSlotId(s.id); setStart(s.start); setEnd(s.end); if (s.pool) setPool(s.pool); setMsg(null); };
+  const pickOff = () => { setSlotId(OFF); setStart(""); setEnd(""); setMsg(null); };
+  const offMinutes = start && end ? minutesBetween(start, end) : 0;
 
   const startMarking = async () => {
     setMsg(null);
     if (!club) return setMsg({ text: "Choose a club.", error: true });
-    if (!date) return setMsg({ text: "Set a date.", error: true });
-    if (!time) return setMsg({ text: "Set a time.", error: true });
+    if (!date) return setMsg({ text: "Set the date.", error: true });
+    if (!slotId) return setMsg({ text: "Choose the session — or “Not on the timetable” and enter its start and finish.", error: true });
+    if (slotId === OFF) {
+      if (!start || !end) return setMsg({ text: "Enter the session's start and finish time.", error: true });
+      if (offMinutes <= 0) return setMsg({ text: "The finish time must be after the start time.", error: true });
+    }
     if (!pool) return setMsg({ text: "Choose a pool size.", error: true });
+    const sessionMinutes = slot ? slot.minutes : offMinutes;
     setBusy(true);
     setMsg({ text: "Loading swimmers…" });
     try {
-      const [sessionMinutes, coach] = await Promise.all([
-        resolveSessionMinutes(date, time, squad, club),
-        coachName(auth!.user.id, auth!.user.email)
-      ]);
-      const s: AttSession = { club, squad, date, time, pool, planId: planId || null, sessionMinutes, mode, coach };
+      const coach = await coachName(auth!.user.id, auth!.user.email);
+      const s: AttSession = {
+        club, squad, date, time: slot ? slot.start : start, endTime: slot ? slot.end : end,
+        timetableSessionId: slot ? slot.id : null, pool, planId: planId || null, sessionMinutes, mode, coach
+      };
       const list = await loadRegister(s);
       if (list.length === 0) { setMsg({ text: "No active swimmers found for that squad.", error: true }); return; }
       onStart(s, list);
@@ -115,22 +132,55 @@ function Setup({ onStart }: { onStart: (s: AttSession, list: AttSwimmer[]) => vo
     <div className="card att-setup">
       <ClubPicker />
 
-      <label htmlFor="att-squad">Squad</label>
-      <select id="att-squad" value={squad} onChange={e => setSquad(e.target.value)}>
-        <option value={WHOLE_CLUB}>Whole club</option>
-        {(squads.data ?? []).map(n => <option key={n} value={n}>{n}</option>)}
-      </select>
-
       <div className="field-pair">
         <div>
           <label htmlFor="att-date">Date</label>
           <input id="att-date" type="date" value={date} onChange={e => setDate(e.target.value)} />
         </div>
         <div>
-          <label htmlFor="att-time">Time</label>
-          <input id="att-time" type="time" value={time} onChange={e => setTime(e.target.value)} />
+          <label htmlFor="att-squad">Squad</label>
+          <select id="att-squad" value={squad} onChange={e => setSquad(e.target.value)}>
+            <option value={WHOLE_CLUB}>Whole club</option>
+            {(squads.data ?? []).map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
         </div>
       </div>
+
+      <fieldset className="choice-set">
+        <legend>Session</legend>
+        {slots.isLoading && <p className="dim">Checking the timetable…</p>}
+        {slots.error && <p className="msg error">Couldn't read the timetable — use “Not on the timetable”.</p>}
+        {slots.data && slots.data.length === 0 && (
+          <p className="hint top">No timetabled sessions {squad === WHOLE_CLUB ? "for any squad" : `for ${squad}`} on {fmtDay(date)}. If you trained, choose “Not on the timetable”.</p>
+        )}
+        <div className="slot-list">
+          {(slots.data ?? []).map(s => (
+            <button key={s.id} type="button" className={"slot" + (slotId === s.id ? " on" : "")} aria-pressed={slotId === s.id} onClick={() => pickSlot(s)}>
+              <strong>{s.start}–{s.end}</strong>
+              <span>{s.minutes} min{s.pool ? ` · ${s.pool}` : ""}{squad === WHOLE_CLUB ? ` · ${s.squad}` : ""}</span>
+            </button>
+          ))}
+          <button type="button" className={"slot off" + (slotId === OFF ? " on" : "")} aria-pressed={slotId === OFF} onClick={pickOff}>
+            <strong>Not on the timetable</strong>
+            <span>Enter the start and finish</span>
+          </button>
+        </div>
+        {slotId === OFF && (
+          <>
+            <div className="field-pair">
+              <div>
+                <label htmlFor="att-start">Start</label>
+                <input id="att-start" type="time" value={start} onChange={e => setStart(e.target.value)} required />
+              </div>
+              <div>
+                <label htmlFor="att-end">Finish</label>
+                <input id="att-end" type="time" value={end} onChange={e => setEnd(e.target.value)} required />
+              </div>
+            </div>
+            {start && end && <p className={"hint" + (offMinutes <= 0 ? " warn-text" : "")}>{offMinutes > 0 ? `${offMinutes} minute session on ${fmtDay(date)}.` : "The finish must be after the start."}</p>}
+          </>
+        )}
+      </fieldset>
 
       <fieldset className="choice-set">
         <legend>Pool</legend>
@@ -225,6 +275,7 @@ function Register({ session, swimmers, setSwimmers, setSession, onFinish }: Regi
           {counts.unmarked > 0 && <> · <b>{counts.unmarked}</b> unmarked</>}
         </p>
         <span className="att-pct" title="Attendance for this session (Excused not counted)">{counts.pct === null ? "—" : `${counts.pct}%`}</span>
+        <span className="att-hours" title="Swimmer-hours trained so far in this session">{counts.hours} h</span>
         <button type="button" className="btn small" onClick={allIn} disabled={counts.unmarked === 0}>All In</button>
       </div>
 
@@ -237,8 +288,8 @@ function Register({ session, swimmers, setSwimmers, setSession, onFinish }: Regi
       {saveNote === "failed" && <p className="notice warn" role="alert">A mark couldn't be saved. Check your connection and that you can mark this squad, then mark that swimmer again.</p>}
 
       {session.mode === "swipe"
-        ? <SwipeMode swimmers={swimmers} index={index} setIndex={setIndex} onMark={mark} />
-        : <TickMode swimmers={swimmers} onMark={mark} />}
+        ? <SwipeMode swimmers={swimmers} index={index} setIndex={setIndex} onMark={mark} max={session.sessionMinutes} />
+        : <TickMode swimmers={swimmers} onMark={mark} max={session.sessionMinutes} />}
 
       <button className="btn primary wide finish" onClick={finish} disabled={finishing}>{finishing ? "Saving…" : "Finish session"}</button>
     </div>
@@ -246,15 +297,15 @@ function Register({ session, swimmers, setSwimmers, setSession, onFinish }: Regi
 }
 
 function sessionLine(s: AttSession) {
-  return [fmtDay(s.date), s.time, s.pool, s.squad === WHOLE_CLUB ? "Whole club" : s.squad, s.club, `${s.sessionMinutes} min session`].join(" · ");
+  return [fmtDay(s.date), `${s.time}–${s.endTime ?? "?"}`, `${s.sessionMinutes} min`, s.pool, s.squad === WHOLE_CLUB ? "Whole club" : s.squad, s.club, s.timetableSessionId ? "timetabled" : "not on the timetable"].join(" · ");
 }
 
 // ---------------------------------------------------------------------------
 // Swipe mode
 // ---------------------------------------------------------------------------
-function SwipeMode({ swimmers, index, setIndex, onMark }: {
+function SwipeMode({ swimmers, index, setIndex, onMark, max }: {
   swimmers: AttSwimmer[]; index: number; setIndex: (i: number) => void;
-  onMark: (id: string, status: AttStatus, minutes?: number | null) => void;
+  onMark: (id: string, status: AttStatus, minutes?: number | null) => void; max: number;
 }) {
   const [dx, setDx] = useState(0);
   const [leaving, setLeaving] = useState<0 | 1 | -1>(0);
@@ -320,7 +371,7 @@ function SwipeMode({ swimmers, index, setIndex, onMark }: {
         <button type="button" className="tap excused" disabled={!current} onClick={() => commit("excused")}>Excused</button>
         <button type="button" className="tap partial" disabled={!current} ref={partialBtn} aria-expanded={partialOpen} onClick={() => setPartialOpen(o => !o)}>Partial (mins)</button>
       </div>
-      {partialOpen && <MinutesPicker onPick={m => { setPartialOpen(false); commit("partial", m); }} onClose={() => setPartialOpen(false)} />}
+      {partialOpen && <MinutesPicker onPick={m => { setPartialOpen(false); commit("partial", m); }} onClose={() => setPartialOpen(false)} max={max} />}
     </div>
   );
 }
@@ -328,7 +379,7 @@ function SwipeMode({ swimmers, index, setIndex, onMark }: {
 // ---------------------------------------------------------------------------
 // Tick list mode
 // ---------------------------------------------------------------------------
-function TickMode({ swimmers, onMark }: { swimmers: AttSwimmer[]; onMark: (id: string, status: AttStatus, minutes?: number | null) => void }) {
+function TickMode({ swimmers, onMark, max }: { swimmers: AttSwimmer[]; onMark: (id: string, status: AttStatus, minutes?: number | null) => void; max: number }) {
   const [minsFor, setMinsFor] = useState<string | null>(null);
   return (
     <ul className="tick-list">
@@ -349,7 +400,7 @@ function TickMode({ swimmers, onMark }: { swimmers: AttSwimmer[]; onMark: (id: s
             onClick={() => setMinsFor(minsFor === s.id ? null : s.id)}
           >mins</button>
           {minsFor === s.id && (
-            <MinutesPicker onPick={m => { setMinsFor(null); onMark(s.id, "partial", m); }} onClose={() => setMinsFor(null)} />
+            <MinutesPicker onPick={m => { setMinsFor(null); onMark(s.id, "partial", m); }} onClose={() => setMinsFor(null)} max={max} />
           )}
         </li>
       ))}
@@ -363,7 +414,7 @@ const statusWord = (s: AttSwimmer) =>
 // ---------------------------------------------------------------------------
 // 15 / 30 / 45 / other minutes — a plain tap, never a long-press
 // ---------------------------------------------------------------------------
-function MinutesPicker({ onPick, onClose }: { onPick: (m: number) => void; onClose: () => void }) {
+function MinutesPicker({ onPick, onClose, max }: { onPick: (m: number) => void; onClose: () => void; max: number }) {
   const [other, setOther] = useState("");
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -376,10 +427,10 @@ function MinutesPicker({ onPick, onClose }: { onPick: (m: number) => void; onClo
   const otherN = parseInt(other, 10);
   return (
     <div className="mins-picker" ref={box} role="group" aria-label="Minutes attended">
-      {[15, 30, 45].map(m => <button key={m} type="button" className="btn small" onClick={() => onPick(m)}>{m}m</button>)}
-      <form className="mins-other" onSubmit={e => { e.preventDefault(); if (Number.isFinite(otherN) && otherN >= 0) onPick(otherN); }}>
-        <input type="number" inputMode="numeric" min={0} max={300} placeholder="Other" aria-label="Other minutes" value={other} onChange={e => setOther(e.target.value)} />
-        <button type="submit" className="btn small" disabled={!Number.isFinite(otherN) || otherN < 0}>Set</button>
+      {[15, 30, 45, 60, 75, 90].filter(m => m < max).slice(0, 4).map(m => <button key={m} type="button" className="btn small" onClick={() => onPick(m)}>{m}m</button>)}
+      <form className="mins-other" onSubmit={e => { e.preventDefault(); if (Number.isFinite(otherN) && otherN >= 0) onPick(Math.min(max, otherN)); }}>
+        <input type="number" inputMode="numeric" min={0} max={max} placeholder={`Other (≤${max})`} aria-label="Other minutes" value={other} onChange={e => setOther(e.target.value)} />
+        <button type="submit" className="btn small" disabled={!Number.isFinite(otherN) || otherN < 0 || otherN > max}>Set</button>
       </form>
     </div>
   );
@@ -400,7 +451,7 @@ function Done({ session, swimmers, onNew }: { session: AttSession; swimmers: Att
         <div className="done-stat out"><span className="n">{t.out}</span><span>Out</span></div>
         <div className="done-stat"><span className="n">{t.excused}</span><span>Excused</span></div>
       </div>
-      {t.pct !== null && <p className="done-pct">Session attendance: <strong>{t.pct}%</strong></p>}
+      {t.pct !== null && <p className="done-pct">Session attendance: <strong>{t.pct}%</strong> · <strong>{t.sessions}</strong> sessions attended · <strong>{t.hours}</strong> swimmer-hours trained ({session.sessionMinutes} min session)</p>}
       <p className="dim">What next?</p>
       <div className="next-row">
         <Link className="tile" to={session.planId ? `/feedback?plan=${session.planId}` : "/feedback"}><span className="tile-icon" aria-hidden="true">📝</span><span className="tile-text"><strong>Feedback</strong><span className="dim">{session.planId ? "Linked to this session's plan" : "Swimmer and squad feedback"}</span></span></Link>
