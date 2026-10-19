@@ -1,5 +1,7 @@
 import { sb } from "./supabase";
 import { looksOffline, queueWrite } from "./offline";
+import { fmtDay } from "./util";
+export { coachName, fmtDay, logEvent, todayLocal } from "./util";
 
 // Attendance register — same behaviour and data as the current app's
 // viewAttendanceSetup / viewAttendanceMark / viewAttendanceDone.
@@ -176,26 +178,6 @@ export async function saveMark(session: AttSession, swimmerId: string, status: A
   return "saved";
 }
 
-/** Usage log, same table and event names as the current app. Never blocks. */
-export function logEvent(userId: string | undefined, club: string | null, type: string, name: string, detail?: object) {
-  if (!userId) return;
-  sb.from("app_events").insert({ user_id: userId, club, event_type: type, event_name: name, detail: (detail ?? null) as never } as never)
-    .then(({ error }) => { if (error) console.error("logEvent:", error); });
-}
 
-/** Name recorded against each mark: the user's own name, else their email. */
-export async function coachName(userId: string, email: string | undefined): Promise<string> {
-  const { data } = await sb.from("app_users").select("full_name").eq("user_id", userId).maybeSingle();
-  const n = (data?.full_name as string | null)?.trim();
-  return n || email?.split("@")[0] || "Coach";
-}
 
-export function fmtDay(iso: string): string {
-  return new Date(iso + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-}
 
-export function todayLocal(): { date: string; time: string } {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return { date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, time: `${pad(d.getHours())}:${pad(d.getMinutes())}` };
-}

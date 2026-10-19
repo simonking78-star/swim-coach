@@ -403,7 +403,7 @@ function Done({ session, swimmers, onNew }: { session: AttSession; swimmers: Att
       {t.pct !== null && <p className="done-pct">Session attendance: <strong>{t.pct}%</strong></p>}
       <p className="dim">What next?</p>
       <div className="next-row">
-        <a className="tile" href={legacyUrl("feedback")}><span className="tile-icon" aria-hidden="true">📝</span><span className="tile-text"><strong>Feedback</strong><span className="dim">Opens in the current app</span></span></a>
+        <Link className="tile" to={session.planId ? `/feedback?plan=${session.planId}` : "/feedback"}><span className="tile-icon" aria-hidden="true">📝</span><span className="tile-text"><strong>Feedback</strong><span className="dim">{session.planId ? "Linked to this session's plan" : "Swimmer and squad feedback"}</span></span></Link>
         <a className="tile" href={legacyUrl("session")}><span className="tile-icon" aria-hidden="true">🗓️</span><span className="tile-text"><strong>Session plans</strong><span className="dim">Opens in the current app</span></span></a>
       </div>
       <div className="done-actions">
