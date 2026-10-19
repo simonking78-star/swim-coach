@@ -463,3 +463,43 @@ table.roster th[scope=row] a { text-decoration: none; color: var(--navy); }
 .swt-del { font-size: .8rem; color: var(--red); padding: 0; }
 .swt-confirm { display: flex; gap: 6px; }
 .archive-item + .archive-item { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+
+/* ---------- Statistics ---------- */
+.small { font-size: .85rem; }
+p.small { margin: 2px 0 8px; }
+.chart-wrap.tall { height: 300px; }
+@media (min-width: 900px) { .chart-wrap.tall { height: 380px; } }
+.choice-set.tight { margin-top: 12px; }
+.choice-set.tight legend { margin-bottom: 6px; }
+.seg-btn.small-text { font-size: .82rem; padding: 6px; line-height: 1.2; }
+.seg-btn:disabled { opacity: .4; cursor: default; }
+.gap-top { margin-top: 14px; }
+.forecast { font-size: .8rem; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: #e3f3e4; color: var(--green); }
+.headline { margin: 8px 0 2px; padding: 8px 12px; border-radius: 10px; background: #e8f4fb; color: var(--navy); font-weight: 600; }
+.flags { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.flags li { font-size: .84rem; padding: 6px 10px; border-radius: 8px; background: #fdf3e1; color: #7a4a00; }
+.flags li::before { content: "⚠ "; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.cell-sub { display: block; font-size: .72rem; font-weight: 400; color: var(--text-dim); }
+.delta { display: block; font-size: .7rem; font-weight: 700; white-space: nowrap; }
+.delta.up { color: var(--green); }
+.delta.down { color: var(--red); }
+.delta.flat { color: var(--text-dim); }
+table.review th[scope=row] { min-width: 120px; }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.defs { margin-top: 10px; }
+.defs summary { font-weight: 700; color: var(--navy); font-size: .88rem; cursor: pointer; min-height: 32px; }
+.defs dt { font-weight: 700; margin-top: 8px; font-size: .88rem; }
+.defs dd { margin: 2px 0 0; font-size: .85rem; color: var(--text-dim); }
+
+/* Print: only the squad-review summary sheet */
+.print-sheet { display: none; }
+@media print {
+  body.print-review .topbar, body.print-review .access-bar, body.print-review .sidenav, body.print-review .scrim,
+  body.print-review .content > *:not(.print-sheet) { display: none !important; }
+  body.print-review .print-sheet { display: block; font-size: 10pt; color: #000; }
+  body.print-review .frame, body.print-review .content { display: block; padding: 0; margin: 0; }
+  .print-sheet table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+  .print-sheet th, .print-sheet td { border: 1px solid #999; padding: 4px 6px; text-align: left; }
+  .print-sheet th { background: #eee; }
+}
