@@ -54,6 +54,7 @@ export function Layout() {
             </NavLink>
           ))}
           <div className="nav-foot">
+            <NavLink to="/settings" className="nav-item"><span aria-hidden="true">🔧</span>Settings</NavLink>
             <a className="nav-item" href="/"><span aria-hidden="true">↩︎</span>Open current app</a>
           </div>
         </nav>
