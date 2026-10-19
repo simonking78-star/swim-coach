@@ -5,6 +5,7 @@ import { SetPassword, SignIn } from "./auth/SignIn";
 import { ClubProvider } from "./club/ClubProvider";
 import { Layout } from "./components/Layout";
 import { Attendance } from "./pages/Attendance";
+import { Drills } from "./pages/Drills";
 import { Feedback } from "./pages/Feedback";
 import { Home } from "./pages/Home";
 import { SectionPage } from "./pages/SectionPage";
@@ -13,6 +14,9 @@ import { Stopwatch } from "./pages/Stopwatch";
 import { SwimmerProfile } from "./pages/SwimmerProfile";
 import { Swimmers } from "./pages/Swimmers";
 import { SquadReviewGate, StatsHub } from "./pages/stats/StatsHub";
+import { PlanList } from "./pages/plans/PlanList";
+import { PlanView } from "./pages/plans/PlanView";
+import { PlanEditor } from "./pages/plans/PlanEditor";
 
 // Statistics screens carry Chart.js, so they load only when opened.
 const Regression = lazy(() => import("./pages/stats/Regression"));
@@ -37,6 +41,11 @@ function Gate() {
           <Route path="stopwatch" element={<Stopwatch />} />
           <Route path="swimmers" element={<Swimmers />} />
           <Route path="swimmers/:id" element={<SwimmerProfile />} />
+          <Route path="sessions" element={<PlanList />} />
+          <Route path="sessions/new" element={<PlanEditor key="new" />} />
+          <Route path="sessions/:id" element={<PlanView />} />
+          <Route path="sessions/:id/edit" element={<PlanEditor />} />
+          <Route path="drills" element={<Drills />} />
           <Route path="statistics" element={<StatsHub />} />
           <Route path="statistics/regression" element={wait(<Regression />)} />
           <Route path="statistics/compare" element={wait(<Compare />)} />
