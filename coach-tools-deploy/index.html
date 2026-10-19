@@ -2946,6 +2946,40 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
 
 // ===================================================================
+// A-042: lightweight client telemetry (errors, page views, core-task
+// events) into app_events. Fire-and-forget -- a failed log must never
+// break the app. Nothing is logged until the user is signed in, since
+// the insert policy requires an authenticated writer (accessUserId set
+// by accessRefresh() below).
+// ===================================================================
+let accessUserId = null;
+function logEvent(eventType, eventName, detail){
+  if (!accessUserId) return;
+  try {
+    sb.from("app_events").insert({
+      user_id: accessUserId,
+      club: (typeof currentClub !== "undefined" && currentClub) || null,
+      event_type: eventType,
+      event_name: eventName,
+      detail: detail || null
+    }).then(({ error }) => { if (error) console.error("logEvent:", error); });
+  } catch (e) { console.error("logEvent:", e); }
+}
+window.addEventListener("error", (e) => {
+  logEvent("error", "window.onerror", {
+    message: e.message, source: e.filename, line: e.lineno, col: e.colno,
+    stack: e.error && e.error.stack ? String(e.error.stack).slice(0, 2000) : null
+  });
+});
+window.addEventListener("unhandledrejection", (e) => {
+  const reason = e.reason;
+  logEvent("error", "unhandledrejection", {
+    message: reason && reason.message ? reason.message : String(reason),
+    stack: reason && reason.stack ? String(reason.stack).slice(0, 2000) : null
+  });
+});
+
+// ===================================================================
 // TOP-LEVEL CLUB FILTER
 // Every swimmer/squad/session-plan query in the app — including the
 // Management Information regression tool — is scoped to currentClub.
@@ -2996,6 +3030,7 @@ function showView(id){
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   $(id).classList.add("active");
   window.scrollTo(0, 0);
+  logEvent("page_view", id);
 }
 
 // Shared navigation actions — used by both the home tiles and the hamburger menu.
@@ -3429,6 +3464,7 @@ $("sqfSubmitBtn").addEventListener("click", async () => {
     const nWeeks = sqf.drill ? sqf.weeks.size : 0;
     snMsg(msg, "ok", (sqf.threadId ? "Update added to the string" : "Saved") + " — dated " + fmtDate(date) +
       (nWeeks ? ` · ${sqf.drill.drill_name} linked to ${nWeeks} week${nWeeks === 1 ? "" : "s"}.` : "."));
+    logEvent("core_task", "squad_feedback_save", { squad_id: sqf.squad.id, is_update: !!sqf.threadId });
     sqfResetForm();
     await sqfLoadHistory();
     sqfLoadRecent(); sqfLoadSquads();
@@ -3868,6 +3904,7 @@ $("savePlanBtn").addEventListener("click", async () => {
 
   if (error){ msg.textContent = "Save failed — " + error.message; msg.className = "msg err"; console.error(error); return; }
   msg.textContent = "Plan saved."; msg.className = "msg ok";
+  logEvent("core_task", "session_plan_save", { plan_id: savedId, is_update: !!editingPlanId });
   if (savedId) archiveSetLineDrafts(savedId, content).catch(err => console.error("archive drafts:", err));
   setTimeout(() => spGoBack(), 500);
 });
@@ -4796,6 +4833,7 @@ $("finishAttendanceBtn").addEventListener("click", async () => {
 
   $("finishAttendanceBtn").disabled = false;
   $("finishAttendanceBtn").textContent = "Finish session";
+  logEvent("core_task", "attendance_finish", { in: inCount, partial: partialCount, out: outCount, excused: excusedCount });
   showView("viewAttendanceDone");
 });
 
@@ -5557,6 +5595,7 @@ $("submitBtn").addEventListener("click", async () => {
     ? `Update added to the string — dated ${fmtDate(sessionDate)}.`
     : `Saved — dated ${fmtDate(sessionDate)}.`;
   msg.className = "msg ok";
+  logEvent("core_task", "swimmer_feedback_save", { swimmer_id: selectedSwimmer ? selectedSwimmer.id : null, is_update: !!activeThreadId });
 
   $("criterion").value = "";
   $("observation").value = "";
@@ -11078,6 +11117,7 @@ function applyClubScope(){
 async function accessRefresh(){
   const { data: { session } } = await sb.auth.getSession();
   accessUser = session ? { email: session.user.email } : null;
+  accessUserId = session ? session.user.id : null;
   ACCESS = null;
   if (session){
     const { data, error } = await sb.rpc("my_access");
