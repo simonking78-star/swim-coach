@@ -1310,6 +1310,9 @@
     <span class="nav-icon">🛠️</span> App dev
   </div>
   <div class="nav-divider"></div>
+  <div class="nav-item" id="navSendFeedback" data-nav="sendfeedback">
+    <span class="nav-icon">💬</span> Send feedback
+  </div>
   <div class="nav-item" id="navDevAuth" data-nav="devauth">
     <span class="nav-icon">🔑</span> <span id="navDevAuthLabel">Sign in</span>
   </div>
@@ -1953,6 +1956,18 @@
       <h2>Add a drill</h2>
       <input type="text" id="drillPickSearch" placeholder="Search drills…" autocomplete="off">
       <div class="drill-pick-list" id="drillPickList"></div>
+    </div>
+  </div>
+
+  <!-- A-043: send-feedback modal, reachable from anywhere via the menu -->
+  <div class="modal-overlay" id="feedbackModal">
+    <div class="modal-card">
+      <button class="modal-close" id="feedbackModalClose">✕</button>
+      <h2>Send feedback</h2>
+      <div class="hint" style="margin-bottom:10px;">Bugs, confusing bits, anything you'd change — goes straight to Simon, not to other coaches.</div>
+      <textarea id="fbMessage" rows="5" placeholder="What's on your mind?" style="width:100%;resize:vertical;"></textarea>
+      <button type="button" class="submit-btn" id="fbSendBtn">Send</button>
+      <div class="msg" id="fbModalMsg"></div>
     </div>
   </div>
 
@@ -3086,7 +3101,8 @@ const navActions = {
   mi: goMI,
   admin: goAdmin,
   swimmer: goSwimmers,
-  stopwatch: goStopwatch
+  stopwatch: goStopwatch,
+  sendfeedback: openFeedbackModal
 };
 document.querySelectorAll("#navDrawer .nav-item").forEach(item => {
   item.addEventListener("click", () => {
@@ -8102,6 +8118,35 @@ document.querySelectorAll(".modal-close").forEach(btn => {
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
   document.querySelectorAll(".modal-overlay.active").forEach(ov => closeModal(ov.id));
+});
+
+// --- A-043: send-feedback modal, reachable from the menu on any screen ---
+function openFeedbackModal(){
+  if (!accessUserId){ alert("Sign in first to send feedback."); return; }
+  $("fbMessage").value = "";
+  $("fbModalMsg").textContent = ""; $("fbModalMsg").className = "msg";
+  $("fbSendBtn").disabled = false; $("fbSendBtn").textContent = "Send";
+  openModal("feedbackModal");
+}
+$("fbSendBtn").addEventListener("click", async () => {
+  const message = $("fbMessage").value.trim();
+  const msg = $("fbModalMsg");
+  if (!message){ msg.textContent = "Say a bit about what's on your mind."; msg.className = "msg err"; return; }
+  $("fbSendBtn").disabled = true; $("fbSendBtn").textContent = "Sending…";
+  const activeView = document.querySelector(".view.active");
+  const { error } = await sb.from("app_feedback").insert({
+    user_id: accessUserId, club: currentClub || null,
+    page: activeView ? activeView.id : null, message
+  });
+  if (error){
+    $("fbSendBtn").disabled = false; $("fbSendBtn").textContent = "Send";
+    msg.textContent = "Could not send — " + error.message; msg.className = "msg err";
+    console.error(error);
+    return;
+  }
+  logEvent("core_task", "feedback_submitted", { page: activeView ? activeView.id : null });
+  msg.textContent = "Sent — thanks."; msg.className = "msg ok";
+  setTimeout(() => closeModal("feedbackModal"), 900);
 });
 
 // --- load + index ---
