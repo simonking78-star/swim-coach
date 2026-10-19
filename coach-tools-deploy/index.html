@@ -1258,6 +1258,12 @@ if ("serviceWorker" in navigator){
   body.signed-out .club-switcher, body.signed-out #navDrawer, body.signed-out #navOverlay,
   body.signed-out #backHomeAd, body.signed-out #accessBar, body.signed-out #roNote{display:none !important;}
   body.signed-out .view:not(#viewAppDev){display:none !important;}
+  .att-slots { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 4px; }
+  .att-slot { padding:8px 12px; border-radius:10px; border:1.5px solid var(--border, #dde3ea); background:#fff; font:inherit; font-weight:700; cursor:pointer; text-align:left; }
+  .att-slot small { display:block; font-weight:500; color:#5b6b7f; }
+  .att-slot.active { background:#0b2545; border-color:#0b2545; color:#fff; }
+  .att-slot.active small { color:#cfe3f5; }
+  .att-time-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 </style>
 </head>
 <body class="signed-out">
@@ -1413,8 +1419,13 @@ if ("serviceWorker" in navigator){
       <h2 style="margin-top:6px;">Session</h2>
       <label for="attDate">Date</label>
       <input type="date" id="attDate">
-      <label for="attTime">Time</label>
-      <input type="time" id="attTime">
+      <label>Timetabled sessions <span class="opt">(tap one, or enter the times below)</span></label>
+      <div class="att-slots" id="attSlots"><div class="hint">Choose a date and squad.</div></div>
+      <div class="att-time-row">
+        <div><label for="attTime">Start</label><input type="time" id="attTime"></div>
+        <div><label for="attEnd">Finish</label><input type="time" id="attEnd"></div>
+      </div>
+      <p class="hint" id="attTimeHint">A session that isn't on the timetable needs its start and finish entered. The length is used for hours trained and partial attendance.</p>
       <label>Pool</label>
       <div class="pool-grid" id="poolGrid">
         <div class="pool-btn" data-pool="17m">17m</div>
@@ -2176,7 +2187,9 @@ if ("serviceWorker" in navigator){
         <summary style="font-weight:700;color:var(--navy);font-size:.85rem;cursor:pointer;">How each figure is worked out</summary>
         <dl class="sqr-dict">
           <dt>Swimmers</dt><dd>Squad members during the month (squad history where recorded, otherwise current squad).</dd>
-          <dt>Attendance %</dt><dd>Present marks ÷ all register marks for squad members that month. Sessions = distinct date + time registers.</dd>
+          <dt>Sessions attended</dt><dd>In = 1, Partial = minutes attended ÷ session length (from the timetable, or the times entered), Out = 0; Excused left out.</dd>
+          <dt>Attendance %</dt><dd>Sessions attended ÷ sessions that count (In, Out and Partial marks) for squad members that month.</dd>
+          <dt>Hours trained</dt><dd>In = the whole session, Partial = the minutes attended, Out = 0; Excused left out. Squad total and per swimmer who attended.</dd>
           <dt>PBs</dt><dd>Swims flagged PB, or faster than the swimmer's previous best in that event and course.</dd>
           <dt>Median time gain %</dt><dd>For swims with an earlier best in the same event and course: (previous best − time) ÷ previous best. Negative = slower than best. Shown with the number of swims (n); treat n&nbsp;&lt;&nbsp;5 with caution.</dd>
           <dt>Skill score</dt><dd>Average of status entries (swimmer and squad feedback) that month: Not discussed 0, Started 1, Developing 2, Embedded 3.</dd>
@@ -4559,11 +4572,53 @@ let attSwimmers = [];      // [{id, full_name, present}]
 let attIndex = 0;
 let attMode = "swipe";
 let attSession = { date: "", time: "", pool: "", plan_id: null };
+let attSlotId = null;   // the timetable slot chosen for this register, if any
+
+// Timetabled sessions on the chosen date (the squad's, or every squad's for a
+// whole-club register). Tapping one fills start, finish and pool.
+async function loadAttSlots(){
+  const box = $("attSlots");
+  const date = $("attDate").value;
+  attSlotId = null;
+  if (!date){ box.innerHTML = '<div class="hint">Choose a date.</div>'; return; }
+  let q = sb.from("timetables")
+    .select("season_start, season_end, squads!inner(name, club), timetable_sessions(id, day_of_week, start_time, end_time, pool_size, is_active)")
+    .eq("is_active", true).eq("squads.club", currentClub).lte("season_start", date).gte("season_end", date);
+  if (attScope !== "ALL") q = q.eq("squads.name", attScope);
+  const { data, error } = await q;
+  if (error){ console.error(error); box.innerHTML = '<div class="hint">Could not read the timetable — enter the start and finish.</div>'; return; }
+  const dow = isoDow(date), slots = [];
+  (data || []).forEach(t => (t.timetable_sessions || []).forEach(x => {
+    if (x.is_active === false || x.day_of_week !== dow || !x.end_time) return;
+    slots.push({ id: x.id, squad: t.squads.name, start: x.start_time.slice(0,5), end: x.end_time.slice(0,5), pool: x.pool_size });
+  }));
+  slots.sort((a, b) => a.start.localeCompare(b.start));
+  box.innerHTML = slots.length
+    ? slots.map(x => `<button type="button" class="att-slot" data-id="${x.id}" data-start="${x.start}" data-end="${x.end}" data-pool="${escapeAttr(x.pool || "")}">${x.start}–${x.end}<small>${escapeHtml(x.squad)}${x.pool ? " · " + escapeHtml(x.pool) : ""}</small></button>`).join("")
+    : `<div class="hint">No timetabled sessions ${attScope === "ALL" ? "for any squad" : "for " + escapeHtml(attScope)} on this day — enter the start and finish.</div>`;
+  box.querySelectorAll(".att-slot").forEach(b => b.addEventListener("click", () => {
+    box.querySelectorAll(".att-slot").forEach(x => x.classList.toggle("active", x === b));
+    attSlotId = b.dataset.id;
+    $("attTime").value = b.dataset.start;
+    $("attEnd").value = b.dataset.end;
+    const pb = document.querySelector(`#poolGrid .pool-btn[data-pool="${b.dataset.pool}"]`);
+    if (pb){ document.querySelectorAll("#poolGrid .pool-btn").forEach(x => x.classList.remove("active")); pb.classList.add("active"); }
+  }));
+}
+function attTimesChanged(){
+  // Typing a different time means it's no longer that timetable slot.
+  const on = document.querySelector("#attSlots .att-slot.active");
+  if (on && (on.dataset.start !== $("attTime").value || on.dataset.end !== $("attEnd").value)){ on.classList.remove("active"); attSlotId = null; }
+}
 
 function resetAttendanceSetup(){
   const now = new Date();
   $("attDate").value = now.toISOString().slice(0,10);
-  $("attTime").value = now.toTimeString().slice(0,5);
+  // No pre-filled time: the session's start and finish come from the
+  // timetable, or are entered by the coach (19 Oct 2026).
+  $("attTime").value = "";
+  $("attEnd").value = "";
+  attSlotId = null;
   $("attSetupMsg").textContent = "";
   $("attSetupMsg").className = "msg";
   populateAttPlanSelect();
@@ -4591,7 +4646,11 @@ async function populateAttPlanSelect(){
 
 $("attSquadSelect").addEventListener("change", () => {
   attScope = $("attSquadSelect").value;
+  loadAttSlots();
 });
+$("attDate").addEventListener("change", loadAttSlots);
+$("attTime").addEventListener("change", attTimesChanged);
+$("attEnd").addEventListener("change", attTimesChanged);
 // Populate the attendance squad dropdown from the squads table, scoped to currentClub.
 async function loadAttSquadOptions(){
   const sel = $("attSquadSelect");
@@ -4602,6 +4661,7 @@ async function loadAttSquadOptions(){
   sel.innerHTML = opts.join("");
   attScope = "ALL";
   sel.value = "ALL";
+  loadAttSlots();
 }
 
 document.querySelectorAll("#poolGrid .pool-btn").forEach(btn => {
@@ -4625,21 +4685,22 @@ $("startAttendanceBtn").addEventListener("click", async () => {
 
   const date = $("attDate").value;
   const time = $("attTime").value;
+  const endTime = $("attEnd").value;
   const poolBtn = document.querySelector("#poolGrid .pool-btn.active");
 
   if (!date){ msg.textContent = "Set a date."; msg.className = "msg err"; return; }
-  if (!time){ msg.textContent = "Set a time."; msg.className = "msg err"; return; }
+  if (!time || !endTime){ msg.textContent = "Tap a timetabled session, or enter the session's start and finish."; msg.className = "msg err"; return; }
+  const toMin = t => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+  const sessionMinutes = toMin(endTime) - toMin(time);
+  if (sessionMinutes <= 0){ msg.textContent = "The finish time must be after the start time."; msg.className = "msg err"; return; }
   if (!poolBtn){ msg.textContent = "Choose a pool size."; msg.className = "msg err"; return; }
 
-  attSession = { date, time, pool: poolBtn.dataset.pool, plan_id: $("attPlanSelect").value || null, sessionMinutes: 60 };
+  attSession = { date, time, endTime, timetableSessionId: attSlotId, pool: poolBtn.dataset.pool, plan_id: $("attPlanSelect").value || null, sessionMinutes };
 
   $("startAttendanceBtn").disabled = true;
   msg.textContent = "Loading swimmers…"; msg.className = "msg";
 
-  // Resolve the planned session length from the weekly timetable (A-093
-  // partial-attendance minutes need this). Only possible for a single-squad
-  // register with a matching timetable slot; falls back to 60.
-  attSession.sessionMinutes = await resolveSessionMinutes(date, time, attScope, currentClub);
+  // Session length = finish − start (from the timetable slot, or as entered).
 
   // Swimmers in scope
   let sq = sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club", currentClub).order("full_name");
@@ -4673,7 +4734,7 @@ $("startAttendanceBtn").addEventListener("click", async () => {
   });
   attIndex = 0;
 
-  const sessionLabel = `${fmtDate(date)} · ${time} · ${attSession.pool} · ${attScope === "ALL" ? "Whole club" : attScope} · ${currentClub} · ${attSession.sessionMinutes} min session`;
+  const sessionLabel = `${fmtDate(date)} · ${time}–${endTime} · ${attSession.pool} · ${attScope === "ALL" ? "Whole club" : attScope} · ${currentClub} · ${attSession.sessionMinutes} min session`;
   $("sessionInfoLine").textContent = sessionLabel;
 
   if (attMode === "swipe"){
@@ -4699,6 +4760,29 @@ function attWeight(status, minutesAttended, sessionMinutes){
   if (status === "partial") return Math.min(1, Math.max(0, (minutesAttended || 0) / (sessionMinutes || 60)));
   return null; // excused / unmarked
 }
+// Minutes trained for one mark (mirrors public.attendance_minutes): In = whole
+// session, Partial = minutes attended, Out = 0, Excused not counted.
+function attMinutes(status, minutesAttended, sessionMinutes){
+  if (status === "in") return sessionMinutes || 60;
+  if (status === "out") return 0;
+  if (status === "partial") return Math.min(sessionMinutes || 60, Math.max(0, minutesAttended || 0));
+  return null;
+}
+// The one attendance rule for a set of stored marks: hours trained and
+// sessions attended (fractions); Excused left out of both and of "counted".
+function attSummary(rows){
+  let attended = 0, counted = 0, mins = 0;
+  rows.forEach(r => {
+    const w = r.status ? attWeight(r.status, r.minutes_attended, r.session_minutes) : (r.present ? 1 : 0);
+    if (w === null) return;
+    attended += w; counted++;
+    mins += r.status ? (attMinutes(r.status, r.minutes_attended, r.session_minutes) || 0) : w * (r.session_minutes || 60);
+  });
+  const r1 = v => Math.round(v * 10) / 10;
+  return { attended: r1(attended), counted, hours: r1(mins / 60), pct: counted ? Math.round(100 * attended / counted) : null };
+}
+const fmtN1 = v => Number.isInteger(v) ? String(v) : v.toFixed(1);
+
 function attChip(s){
   if (!s.status) return "";
   if (s.status === "in") return "✓";
@@ -4735,8 +4819,10 @@ async function upsertAttendance(swimmerId, status, minutesAttended){
     session_time: attSession.time + ":00",
     pool_size: attSession.pool,
     status: status,
-    minutes_attended: status === "partial" ? minutesAttended : null,
-    session_minutes: status === "partial" ? attSession.sessionMinutes : null,
+    minutes_attended: status === "partial" ? Math.min(attSession.sessionMinutes, Math.max(0, minutesAttended || 0)) : null,
+    session_minutes: attSession.sessionMinutes,
+    session_end_time: attSession.endTime + ":00",
+    timetable_session_id: attSession.timetableSessionId || null,
     present: status === "in" || status === "partial",
     session_plan_id: attSession.plan_id,
     marked_at: new Date().toISOString(),
@@ -4802,7 +4888,7 @@ function openPartialMenu(anchorEl, onPick){
     cleanup();
     if (!m) return;
     if (m === "other"){
-      const v = parseInt(window.prompt("Minutes attended:", ""), 10);
+      const v = Math.min(attSession.sessionMinutes || 600, parseInt(window.prompt(`Minutes attended (session is ${attSession.sessionMinutes} min):`, ""), 10));
       if (Number.isFinite(v) && v >= 0) onPick(v);
     } else {
       onPick(parseInt(m, 10));
@@ -5231,11 +5317,13 @@ async function rosterEnsureExtras(){
   const jobs = [];
   if (need.has("att") && !rosterExtra.att){
     const since = isoAdd(ttToday(), -30);
-    jobs.push(sb.from("attendance_records").select("swimmer_id, session_date, present")
-      .gte("session_date", since).eq("present", true).limit(20000).then(({ data, error }) => {
+    jobs.push(sb.from("attendance_records").select("swimmer_id, session_date, status, present, minutes_attended, session_minutes")
+      .gte("session_date", since).limit(20000).then(({ data, error }) => {
         if (error){ console.error(error); return; }
+        const by = {};
+        (data || []).forEach(r => { if (ids.has(r.swimmer_id)) (by[r.swimmer_id] = by[r.swimmer_id] || []).push(r); });
         const m = {};
-        (data || []).forEach(r => { if (ids.has(r.swimmer_id)) m[r.swimmer_id] = (m[r.swimmer_id] || 0) + 1; });
+        Object.keys(by).forEach(id => { m[id] = fmtN1(attSummary(by[id]).attended); });
         rosterExtra.att = m;
       }));
   }
@@ -7528,6 +7616,9 @@ function cmpRender(){
 // ===================================================================
 const SQR_METRICS = [
   { k:"attendance_pct", label:"Attendance %", fmt:"pct1" },
+  { k:"hours_trained", label:"Hours trained (squad total)", fmt:"dec1" },
+  { k:"hours_per_swimmer", label:"Hours trained per swimmer", fmt:"dec1" },
+  { k:"present", label:"Sessions attended", fmt:"dec1" },
   { k:"members", label:"Swimmers", fmt:"int" },
   { k:"sessions", label:"Sessions", fmt:"int" },
   { k:"swims", label:"Race swims", fmt:"int" },
@@ -7542,7 +7633,7 @@ const SQR_METRICS = [
 const SQR_NUM = ["members","sessions","marks","present","attendance_pct","swimmers_attending","swims","swimmers_raced",
   "pbs","improved_swims","avg_improvement_pct","median_improvement_pct","status_entries","st_not_discussed","st_started",
   "st_developing","st_embedded","skill_score","skill_moves_up","skill_moves_down","feedback_entries","feedback_notes",
-  "positive_feedback_pct","squad_entries","drills_worked"];
+  "positive_feedback_pct","squad_entries","drills_worked","excused","hours_trained","hours_per_swimmer"];
 const sqr = { club:null, rows:[], month:null, mode:"squads", squadId:null, metric:"attendance_pct", chart:null, error:null };
 
 function sqrMonthKey(d){ return String(d).slice(0, 7); }
@@ -7555,6 +7646,7 @@ function sqrFmt(v, f){
   if (f === "pct1") return v.toFixed(1) + "%";
   if (f === "pct2") return (v > 0 ? "+" : "") + v.toFixed(2) + "%";
   if (f === "dec2") return v.toFixed(2);
+  if (f === "dec1") return v.toFixed(1);
   return String(Math.round(v));
 }
 function sqrTick(v, m){ const n = +Number(v).toFixed(2); return m.fmt.startsWith("pct") ? n + "%" : n; }
@@ -7588,12 +7680,12 @@ async function sqrLoad(){
   const curKey = iso(now).slice(0, 7);
   sqr.error = null;
   const [live, snap] = await Promise.all([
-    sb.rpc("squad_month_review", { p_club: currentClub, p_from: iso(from), p_to: iso(now) }),
+    sb.rpc("squad_month_figures", { p_club: currentClub, p_from: iso(from), p_to: iso(now) }),
     sb.from("squad_month_snapshots").select("squad_id,month,metrics,generated_at").eq("club", currentClub).gte("month", iso(from))
   ]);
   if (live.error){
     sqr.rows = [];
-    sqr.error = /squad_month_review|function/i.test(live.error.message || "")
+    sqr.error = /squad_month_figures|function/i.test(live.error.message || "")
       ? "The monthly review isn't installed in the database yet."
       : "Could not load the review: " + live.error.message;
     return;
@@ -8122,33 +8214,21 @@ function buildSwimmerPdf(sw, att, results, feedback){
     }));
   }
 
-  // ---- 1. Attendance ----
+  // ---- 1. Attendance ---- (the one rule: hours trained + sessions attended in fractions; Excused left out)
   sectionHead("1. Attendance");
   const iso = d => d.toISOString().slice(0, 10);
   const since30 = iso(new Date(Date.now() - 30 * 86400000)), since90 = iso(new Date(Date.now() - 90 * 86400000));
-  const present = att.filter(r => r.present);
-  const pct = rows => rows.length ? Math.round(100 * rows.filter(r => r.present).length / rows.length) + "%" : "-";
-  const in30 = att.filter(r => r.session_date >= since30), in90 = att.filter(r => r.session_date >= since90);
-  table(
-    [{ h: "Period", w: W * 0.4 }, { h: "Sessions attended", w: W * 0.2, align: "right" }, { h: "Sessions marked", w: W * 0.2, align: "right" }, { h: "Attendance", w: W * 0.2, align: "right" }],
-    [["Last 30 days", in30.filter(r => r.present).length, in30.length, pct(in30)],
-     ["Last 90 days", in90.filter(r => r.present).length, in90.length, pct(in90)],
-     ["All records", present.length, att.length, pct(att)]]
-  );
+  const attRow = (label, rows) => { const t = attSummary(rows); return [label, fmtN1(t.hours), fmtN1(t.attended), t.counted, t.pct == null ? "-" : t.pct + "%"]; };
+  const attCols = first => [{ h: first, w: W * 0.32 }, { h: "Hours trained", w: W * 0.17, align: "right" }, { h: "Sessions attended", w: W * 0.19, align: "right" }, { h: "Sessions counted", w: W * 0.17, align: "right" }, { h: "Attendance", w: W * 0.15, align: "right" }];
+  table(attCols("Period"), [attRow("Last 30 days", att.filter(r => r.session_date >= since30)), attRow("Last 90 days", att.filter(r => r.session_date >= since90)), attRow("All records", att)]);
   if (att.length){
     const byMonth = {};
     att.forEach(r => { const m = r.session_date.slice(0, 7); (byMonth[m] = byMonth[m] || []).push(r); });
     const months = Object.keys(byMonth).sort().reverse().slice(0, 12);
     para("By month (most recent first)", { size: 9, color: DIM, gap: 2 });
     y += 4;
-    table(
-      [{ h: "Month", w: W * 0.4 }, { h: "Attended", w: W * 0.2, align: "right" }, { h: "Missed", w: W * 0.2, align: "right" }, { h: "Attendance", w: W * 0.2, align: "right" }],
-      months.map(m => {
-        const rows = byMonth[m], a = rows.filter(r => r.present).length;
-        const label = new Date(m + "-01T00:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" });
-        return [label, a, rows.length - a, pct(rows)];
-      })
-    );
+    table(attCols("Month"), months.map(m => attRow(new Date(m + "-01T00:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }), byMonth[m])));
+    para("Hours: a whole session for In, the minutes attended for Partial. Sessions: a partial counts as the part attended. Excused sessions are left out.", { size: 8.5, color: DIM, gap: 2 });
   } else {
     para("No attendance has been recorded for this swimmer yet.", { color: DIM });
   }
@@ -8209,7 +8289,7 @@ async function shareSwimmerPdf(){
   btn.disabled = true; btn.textContent = "Building PDF…";
   try {
     const [at, rs, fb, pr] = await Promise.all([
-      sb.from("attendance_records").select("session_date, present").eq("swimmer_id", sw.id).limit(10000),
+      sb.from("attendance_records").select("session_date, status, present, minutes_attended, session_minutes").eq("swimmer_id", sw.id).limit(10000),
       sb.from("swim_results").select("event, course, swim_time_display, meet_date").eq("swimmer_id", sw.id).limit(10000),
       sb.from("swimmer_feedback").select("category, criterion, status, observation, remedial_action, note, session_date, created_at").eq("swimmer_id", sw.id),
       sw.date_of_birth === undefined ? sb.from("swimmers").select("date_of_birth").eq("id", sw.id).single() : Promise.resolve({ data: null })
