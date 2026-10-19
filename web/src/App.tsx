@@ -6,6 +6,14 @@ import { ClubProvider } from "./club/ClubProvider";
 import { Layout } from "./components/Layout";
 import { Attendance } from "./pages/Attendance";
 import { Drills } from "./pages/Drills";
+import { Competitions } from "./pages/Competitions";
+import { Timetables } from "./pages/timetables/Timetables";
+import { TimetableForm } from "./pages/timetables/TimetableForm";
+import { Season } from "./pages/season/Season";
+import { Planning } from "./pages/season/Planning";
+import { CompForm } from "./pages/season/CompForm";
+import { MacroForm } from "./pages/season/MacroForm";
+import { Micros } from "./pages/season/Micros";
 import { Feedback } from "./pages/Feedback";
 import { Home } from "./pages/Home";
 import { SectionPage } from "./pages/SectionPage";
@@ -46,6 +54,17 @@ function Gate() {
           <Route path="sessions/:id" element={<PlanView />} />
           <Route path="sessions/:id/edit" element={<PlanEditor />} />
           <Route path="drills" element={<Drills />} />
+          <Route path="timetables" element={<Timetables />} />
+          <Route path="timetables/new" element={<TimetableForm key="new" />} />
+          <Route path="timetables/:id/edit" element={<TimetableForm />} />
+          <Route path="competitions" element={<Competitions />} />
+          <Route path="season" element={<Season />} />
+          <Route path="season/plan" element={<Planning />} />
+          <Route path="season/competition/new" element={<CompForm key="new" />} />
+          <Route path="season/competition/:id" element={<CompForm />} />
+          <Route path="season/macro/new" element={<MacroForm key="new" />} />
+          <Route path="season/macro/:id" element={<MacroForm />} />
+          <Route path="season/macro/:id/weeks" element={<Micros />} />
           <Route path="statistics" element={<StatsHub />} />
           <Route path="statistics/regression" element={wait(<Regression />)} />
           <Route path="statistics/compare" element={wait(<Compare />)} />

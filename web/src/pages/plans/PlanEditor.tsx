@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/AuthProvider";
 import { useClub } from "../../club/ClubProvider";
@@ -14,6 +14,7 @@ import { logEvent, uuid, useCoachName } from "../../lib/util";
 import { MicroTags, SetLineInput } from "../../components/planParts";
 import { DrillPickModal, useDrills } from "../../components/drillParts";
 import { NoPlanAccess, usePlanSquads, useSeasonCtx } from "./PlanList";
+import { backLink } from "./PlanView";
 
 // Session plan editor — new (/sessions/new?squad=&date=&session=) or edit (/sessions/:id/edit).
 // Same blocks, micro-cycle panel, focus pre-fill and save rules as the current app.
@@ -32,6 +33,7 @@ export function PlanEditor() {
   const coach = useCoachName();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const from = (useLocation().state as { from?: string } | null)?.from;
 
   const existing = useQuery({ queryKey: ["plan", id], enabled: !!id, queryFn: () => loadPlan(id!) });
   const planClub = id ? existing.data?.club ?? null : club;
@@ -92,8 +94,10 @@ export function PlanEditor() {
   }, [ctx]);
 
   if (level === "N") return <NoPlanAccess />;
-  const back = id ? `/sessions/${id}` : "/sessions";
-  const crumb = <p className="crumb"><Link to={back}>‹ {id ? "Plan" : "Session plans"}</Link></p>;
+  const origin = backLink(from);
+  const crumb = id
+    ? <p className="crumb"><Link to={`/sessions/${id}`} state={{ from }}>‹ Plan</Link></p>
+    : <p className="crumb"><Link to={origin.to}>‹ {origin.label}</Link></p>;
   if (!canEdit(level)) return <>{crumb}<p className="notice warn">Session plans are read only for your role.</p></>;
   if (id && existing.isLoading) return <>{crumb}<p className="dim">Loading…</p></>;
   if (id && !existing.data) return <>{crumb}<p className="msg error">Couldn't find that plan.</p></>;
@@ -126,7 +130,7 @@ export function PlanEditor() {
       qc.invalidateQueries({ queryKey: ["plans", planClub] });
       qc.invalidateQueries({ queryKey: ["plan", savedId] });
       setMsg({ text: "Plan saved." });
-      setTimeout(() => navigate(`/sessions/${savedId}`, { replace: true }), 500);
+      setTimeout(() => navigate(`/sessions/${savedId}`, { replace: true, state: { from } }), 500);
     } catch (e) {
       console.error(e);
       setMsg({ text: "Save failed — " + ((e as Error).message || "please try again."), error: true });

@@ -184,9 +184,9 @@ export interface MicroSession { id: string; micro_id: string; squad_id: string; 
 export interface SeasonCtx {
   macros: { id: string; title: string; season_id: string; macro_squads: { squad_id: string; is_active: boolean }[]; micros: Micro[] }[];
   sessions: MicroSession[];
-  comps: { id: string; name: string; date_from: string; date_to: string | null }[];
+  comps: { id: string; season_id: string; competition_id: string | null; name: string; date_from: string; date_to: string | null; course: string; level: number | null }[];
   breaks: { season_id: string; break_start: string; break_end: string }[];
-  seasons: { id: string; title: string }[];
+  seasons: { id: string; title: string; start_date: string; finish_date: string }[];
 }
 export interface MicroCtx {
   micro: Micro & { macroTitle: string; seasonId: string };
@@ -205,7 +205,7 @@ export async function loadSeasonCtx(club: string): Promise<SeasonCtx> {
   if (!ids.length) return out;
   const [mq, cq, bq] = await Promise.all([
     sb.from("macros").select("id, title, season_id, macro_squads(squad_id, is_active), micros(id, week_no, week_commencing, meso, qes_focus, technical_focus, break_days, is_active)").in("season_id", ids).eq("is_active", true),
-    sb.from("season_competitions").select("id, name, date_from, date_to").in("season_id", ids).eq("is_active", true),
+    sb.from("season_competitions").select("id, season_id, competition_id, name, date_from, date_to, course, level").in("season_id", ids).eq("is_active", true),
     sb.from("season_breaks").select("season_id, break_start, break_end").in("season_id", ids).eq("is_active", true)
   ]);
   if (mq.error) throw mq.error; if (cq.error) throw cq.error; if (bq.error) throw bq.error;

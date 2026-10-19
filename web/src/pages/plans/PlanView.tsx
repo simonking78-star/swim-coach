@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../auth/AuthProvider";
 import { canEdit, sectionLevel } from "../../lib/access";
@@ -9,6 +9,10 @@ import { fmtDate } from "../../lib/util";
 import { FocusTags, MicroLine, PlanBody } from "../../components/planParts";
 import { DrillInfoModal } from "../../components/drillParts";
 import { NoPlanAccess, usePlanSquads, useSeasonCtx } from "./PlanList";
+
+const BACK: Record<string, string> = { "/timetables": "Timetables", "/season": "Season planner" };
+/** Where a plan was opened from (Timetables week plan, Season planner), else the plan list. */
+export const backLink = (from?: string) => (from && BACK[from] ? { to: from, label: BACK[from] } : { to: "/sessions", label: "Session plans" });
 
 export function PlanView() {
   const { id } = useParams();
@@ -20,9 +24,10 @@ export function PlanView() {
   const season = useSeasonCtx(club);
   const [drillId, setDrillId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const back = backLink((useLocation().state as { from?: string } | null)?.from);
 
   if (level === "N") return <NoPlanAccess />;
-  const crumb = <p className="crumb"><Link to="/sessions">‹ Session plans</Link></p>;
+  const crumb = <p className="crumb"><Link to={back.to}>‹ {back.label}</Link></p>;
   if (plan.isLoading) return <>{crumb}<p className="dim">Loading…</p></>;
   if (plan.error || !plan.data) return <>{crumb}<p className="msg error">Couldn't find that plan.</p></>;
 
@@ -44,7 +49,7 @@ export function PlanView() {
           <h1 className="plan-title">{p.title}</h1>
           <div className="btn-row nowrap">
             <button type="button" className="btn small" onClick={pdf} disabled={busy}>{busy ? "Making PDF…" : "PDF"}</button>
-            {canEdit(level) && <Link className="btn small" to={`/sessions/${p.id}/edit`}>Edit</Link>}
+            {canEdit(level) && <Link className="btn small" to={`/sessions/${p.id}/edit`} state={{ from: back.to === "/sessions" ? undefined : back.to }}>Edit</Link>}
           </div>
         </div>
         {meta && <p className="dim plan-meta">{meta}</p>}

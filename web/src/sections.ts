@@ -16,9 +16,9 @@ export interface NavSection {
 export const SECTIONS: NavSection[] = [
   { key: "attendance",   label: "Attendance",       icon: "✅", blurb: "Mark a session register",              section: "attendance", legacyGo: "attendance",   migrated: true  },
   { key: "feedback",     label: "Feedback",         icon: "💬", blurb: "Swimmer and squad feedback",           section: "feedback",   legacyGo: "feedback",     migrated: true  },
-  { key: "season",       label: "Season planner",   icon: "🗓️", blurb: "Seasons, macro and micro cycles",       section: "season",     legacyGo: "season",       migrated: false },
-  { key: "timetables",   label: "Timetables",       icon: "🕒", blurb: "Weekly sessions per squad",            section: "timetables", legacyGo: "timetables",   migrated: false },
-  { key: "competitions", label: "Competitions",     icon: "🏆", blurb: "Licensed meets and files",             section: "timetables", legacyGo: "competitions", migrated: false },
+  { key: "season",       label: "Season planner",   icon: "🗓️", blurb: "Seasons, macro and micro cycles",       section: "season",     legacyGo: "season",       migrated: true  },
+  { key: "timetables",   label: "Timetables",       icon: "🕒", blurb: "Weekly sessions per squad",            section: "timetables", legacyGo: "timetables",   migrated: true  },
+  { key: "competitions", label: "Competitions",     icon: "🏆", blurb: "Licensed meets and files",             section: "timetables", legacyGo: "competitions", migrated: true  },
   { key: "sessions",     label: "Session plans",    icon: "📋", blurb: "Plan and archive sessions",            section: "plans",      legacyGo: "session",      migrated: true  },
   { key: "drills",       label: "Drills & Skills",  icon: "🧩", blurb: "Drills library",                       section: "plans",      legacyGo: "drills",       migrated: true  },
   { key: "statistics",   label: "Statistics",       icon: "📈", blurb: "Comparison, regression, squad review", section: "stats",      legacyGo: "mi",           migrated: true  },
