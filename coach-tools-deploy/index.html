@@ -18,6 +18,16 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<!-- A-040: offline app-shell cache. Registering early so the shell is
+     cached from the very first visit, not just after the user signs in. -->
+<script>
+if ("serviceWorker" in navigator){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch((err) => console.error("SW register failed:", err));
+  });
+}
+</script>
 <style>
   :root{
     --navy:#0b2545;
@@ -1155,6 +1165,7 @@
   .access-bar.testing{background:#fff4e0;color:#8a5a00;}
   .access-bar button{background:none;border:1.5px solid currentColor;border-radius:8px;color:inherit;font-weight:700;font-size:.78rem;padding:5px 10px;cursor:pointer;white-space:nowrap;}
   .ro-note{position:relative;z-index:2;margin:10px 16px 18px;padding:9px 12px;border-radius:10px;background:#fff4e0;color:#8a5a00;font-size:.82rem;font-weight:600;}
+  .offline-badge{position:relative;z-index:2;margin:10px 16px 18px;padding:9px 12px;border-radius:10px;background:#e8eef7;color:var(--navy-light);font-size:.82rem;font-weight:600;}
 
   /* ============ USERS & ROLES ============ */
   .ua-link{margin-top:12px;padding:12px;border-radius:10px;background:#e6f4e8;}
@@ -1262,6 +1273,7 @@
 </header>
 <div id="accessBar" class="access-bar" style="display:none;"></div>
 <div id="roNote" class="ro-note" style="display:none;"></div>
+<div id="offlineBadge" class="offline-badge" style="display:none;"></div>
 
 <div class="nav-overlay" id="navOverlay"></div>
 <nav class="nav-drawer" id="navDrawer">
@@ -2995,6 +3007,125 @@ window.addEventListener("unhandledrejection", (e) => {
 });
 
 // ===================================================================
+// A-040: offline write queue for attendance marks and text-only
+// swimmer-feedback entries -- the two writes a coach is most likely to
+// make poolside with a weak signal. Scope is deliberately narrow: not
+// every write in the app, just these two, and feedback entries with a
+// photo attached are excluded (the upload has to happen live before the
+// insert, so it can't be queued the same way).
+//
+// Queued in IndexedDB (survives a reload) rather than relying on the
+// service worker's Background Sync API, which iOS Safari does not
+// support at all -- most coaches here are on iPhones, so Background
+// Sync would silently never fire for them. Flushed on reconnect, on a
+// periodic timer while anything is pending, and once at app load.
+// ===================================================================
+const OFFLINE_DB_NAME = "coachToolsOffline", OFFLINE_STORE = "pendingWrites";
+
+function offlineDb(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(OFFLINE_DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      req.result.createObjectStore(OFFLINE_STORE, { keyPath: "id", autoIncrement: true });
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function queueOfflineWrite(table, payload, opts){
+  const db = await offlineDb();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(OFFLINE_STORE, "readwrite");
+    tx.objectStore(OFFLINE_STORE).add({
+      table, payload, opts: opts || null, attempts: 0, queued_at: new Date().toISOString()
+    });
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+  updateOfflineBadge();
+}
+
+async function offlinePendingCount(){
+  try {
+    const db = await offlineDb();
+    return await new Promise((resolve) => {
+      const req = db.transaction(OFFLINE_STORE, "readonly").objectStore(OFFLINE_STORE).count();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(0);
+    });
+  } catch (e) { return 0; }
+}
+
+// A failed write only counts as "offline" (worth retrying later) when it
+// looks like a connectivity problem, not a real rejection from the server
+// (bad data, a permissions check) -- those are shown as errors today and
+// must stay that way rather than vanishing into a silent retry loop.
+function looksOffline(error){
+  return !navigator.onLine || (!!error && /fetch|network|load failed/i.test(error.message || ""));
+}
+
+const OFFLINE_MAX_ATTEMPTS = 5;
+
+async function flushOfflineQueue(){
+  if (flushOfflineQueue._busy || !navigator.onLine) return;
+  flushOfflineQueue._busy = true;
+  try {
+    const db = await offlineDb();
+    const items = await new Promise((resolve) => {
+      const req = db.transaction(OFFLINE_STORE, "readonly").objectStore(OFFLINE_STORE).getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    });
+    for (const item of items){
+      let q = sb.from(item.table);
+      q = (item.opts && item.opts.onConflict) ? q.upsert(item.payload, { onConflict: item.opts.onConflict }) : q.insert(item.payload);
+      const { error } = await q;
+      if (error && looksOffline(error)){
+        break; // still offline -- leave this and everything after it queued, try again later
+      }
+      const db2 = await offlineDb();
+      if (error && item.attempts + 1 < OFFLINE_MAX_ATTEMPTS){
+        // Reached the server but it was rejected -- bump the attempt count and
+        // keep it queued rather than silently dropping the coach's entry.
+        console.error("Queued write rejected, will retry:", item, error);
+        await new Promise((resolve) => {
+          const tx = db2.transaction(OFFLINE_STORE, "readwrite");
+          tx.objectStore(OFFLINE_STORE).put({ ...item, attempts: item.attempts + 1 });
+          tx.oncomplete = resolve; tx.onerror = resolve;
+        });
+        continue;
+      }
+      if (error){
+        console.error("Queued write dropped after repeated rejection:", item, error);
+      }
+      await new Promise((resolve) => {
+        const tx = db2.transaction(OFFLINE_STORE, "readwrite");
+        tx.objectStore(OFFLINE_STORE).delete(item.id);
+        tx.oncomplete = resolve; tx.onerror = resolve;
+      });
+    }
+  } catch (e) { console.error("flushOfflineQueue:", e); }
+  flushOfflineQueue._busy = false;
+  updateOfflineBadge();
+}
+
+async function updateOfflineBadge(){
+  const n = await offlinePendingCount();
+  const el = $("offlineBadge");
+  if (!el) return;
+  if (n > 0){
+    el.textContent = n === 1 ? "1 save queued — will sync" : `${n} saves queued — will sync`;
+    el.style.display = "";
+  } else {
+    el.style.display = "none";
+  }
+}
+
+window.addEventListener("online", flushOfflineQueue);
+setInterval(flushOfflineQueue, 25000);
+
+// ===================================================================
 // TOP-LEVEL CLUB FILTER
 // Every swimmer/squad/session-plan query in the app — including the
 // Management Information regression tool — is scoped to currentClub.
@@ -3027,6 +3158,7 @@ accessRefresh().then(async () => {
   await loadClubOptions();
   applyClubScope(); loadSwimmers(); loadRecent(); bootData(); authLinkLanding();
   loadDrills(); // pre-load the drills index so set-line prediction works even before the coach opens the library tab
+  updateOfflineBadge(); flushOfflineQueue(); // A-040: pick up anything queued from a previous offline session
 });
 
 function fmtDate(d){
@@ -4610,9 +4742,14 @@ async function upsertAttendance(swimmerId, status, minutesAttended){
     marked_at: new Date().toISOString(),
     coach: "Simon"
   };
-  const { error } = await sb.from("attendance_records").upsert(payload, {
-    onConflict: "swimmer_id,session_date,session_time,pool_size"
-  });
+  const onConflict = "swimmer_id,session_date,session_time,pool_size";
+  const { error } = await sb.from("attendance_records").upsert(payload, { onConflict });
+  if (error && looksOffline(error)){
+    // A-040: connectivity failure -- queue it. It's a natural-key upsert,
+    // so replaying it later from the queue can never create a duplicate row.
+    await queueOfflineWrite("attendance_records", payload, { onConflict });
+    return true;
+  }
   if (error) console.error("Attendance save failed:", error);
   return !error;
 }
@@ -5600,16 +5737,25 @@ $("submitBtn").addEventListener("click", async () => {
   const { error } = await sb.from("swimmer_feedback").insert(row);
   $("submitBtn").disabled = false;
 
-  if (error){
+  let queued = false;
+  if (error && looksOffline(error) && !pendingFiles.length){
+    // A-040: connectivity failure and no photo attached (a photo needs a
+    // live upload before the insert, so entries with one can't be queued
+    // this way) -- queue the entry instead of losing it.
+    await queueOfflineWrite("swimmer_feedback", row, null);
+    queued = true;
+  } else if (error){
     msg.textContent = "Save failed — " + error.message;
     msg.className = "msg err";
     console.error(error);
     return;
   }
 
-  msg.textContent = activeThreadId
-    ? `Update added to the string — dated ${fmtDate(sessionDate)}.`
-    : `Saved — dated ${fmtDate(sessionDate)}.`;
+  msg.textContent = queued
+    ? `Saved offline — will sync when you're back online (dated ${fmtDate(sessionDate)}).`
+    : activeThreadId
+      ? `Update added to the string — dated ${fmtDate(sessionDate)}.`
+      : `Saved — dated ${fmtDate(sessionDate)}.`;
   msg.className = "msg ok";
   logEvent("core_task", "swimmer_feedback_save", { swimmer_id: selectedSwimmer ? selectedSwimmer.id : null, is_update: !!activeThreadId });
 
