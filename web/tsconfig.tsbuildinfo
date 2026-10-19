@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/sections.ts","./src/auth/AuthProvider.tsx","./src/auth/SignIn.tsx","./src/club/ClubProvider.tsx","./src/components/Layout.tsx","./src/lib/access.ts","./src/lib/database.types.ts","./src/lib/supabase.ts","./src/pages/Home.tsx","./src/pages/SectionPage.tsx"],"version":"5.6.3"}

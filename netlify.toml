@@ -1,16 +1,30 @@
-# coach-tools-deploy is a static site with no app-level build step. The
-# [build] command below is a no-op for production; deploy-preview and
-# branch-deploy contexts run scripts/swap-staging-env.sh first, which
-# points the app at the staging Supabase project (A-018) instead of
-# production. See that script for details.
+# coach-tools-deploy holds the current app: a static index.html with no
+# build step of its own. scripts/build-web.sh builds the React rewrite in
+# web/ and copies it to coach-tools-deploy/v2, so one site serves both:
+#   /     current app
+#   /v2/  React app (built section by section, see
+#         claude/specs/react-rewrite-scope.md)
+# Deploy-preview and branch-deploy contexts first run
+# scripts/swap-staging-env.sh, which points the current app at the
+# staging Supabase project (A-018); build-web.sh does the same for the
+# React app in those contexts.
 
 [build]
   base = "/"
   publish = "coach-tools-deploy"
-  command = "true"
+  command = "bash scripts/build-web.sh"
+
+[build.environment]
+  NODE_VERSION = "22"
 
 [context.deploy-preview]
-  command = "bash scripts/swap-staging-env.sh"
+  command = "bash scripts/swap-staging-env.sh && bash scripts/build-web.sh"
 
 [context.branch-deploy]
-  command = "bash scripts/swap-staging-env.sh"
+  command = "bash scripts/swap-staging-env.sh && bash scripts/build-web.sh"
+
+# React Router: any /v2 path that isn't a real file loads the React app.
+[[redirects]]
+  from = "/v2/*"
+  to = "/v2/index.html"
+  status = 200

@@ -3159,6 +3159,12 @@ accessRefresh().then(async () => {
   applyClubScope(); loadSwimmers(); loadRecent(); bootData(); authLinkLanding();
   loadDrills(); // pre-load the drills index so set-line prediction works even before the coach opens the library tab
   updateOfflineBadge(); flushOfflineQueue(); // A-040: pick up anything queued from a previous offline session
+  // Deep link from the React app at /v2 (?go=attendance etc.) for sections not yet moved across.
+  const go = new URLSearchParams(location.search).get("go");
+  if (go && typeof navActions[go] === "function"){
+    history.replaceState(null, "", location.pathname);
+    navActions[go]();
+  }
 });
 
 function fmtDate(d){
