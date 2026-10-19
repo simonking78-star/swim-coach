@@ -4,10 +4,12 @@ import { useAuth } from "../auth/AuthProvider";
 import { ROLE_LABEL, roleSummary, sectionLevel } from "../lib/access";
 import { SECTIONS } from "../sections";
 import { usePendingWrites } from "../lib/offline";
+import { stopRoleTest } from "../lib/admin";
 
 export function Layout() {
   const { access, session, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const pending = usePendingWrites();
   const location = useLocation();
 
@@ -34,11 +36,19 @@ export function Layout() {
       <div className={"access-bar" + (testing ? " testing" : "")}>
         <span>
           {testing
-            ? <>🧪 Testing as <strong>{ROLE_LABEL[testing.role] ?? testing.role} · {testing.club ?? "all clubs"}</strong></>
+            ? <>🧪 Testing as <strong>{[ROLE_LABEL[testing.role] ?? testing.role, testing.club ?? "all clubs",
+                ...((testing.squad_ids || []).length ? [`${testing.squad_ids!.length} squad${testing.squad_ids!.length === 1 ? "" : "s"}`] : []),
+                ...((testing.swimmer_ids || []).length ? ["linked swimmer"] : [])].join(" · ")}</strong></>
             : <>{session?.user.email} · <strong>{roleSummary(access)}</strong></>}
         </span>
         {pending > 0 && <span className="queued-badge" role="status">{pending === 1 ? "1 save queued" : `${pending} saves queued`} — will sync</span>}
-        <button className="link-btn light" onClick={signOut}>Sign out</button>
+        {testing
+          ? <button className="link-btn light" disabled={stopping} onClick={async () => {
+              setStopping(true);
+              try { await stopRoleTest(session!.user.id); } catch (e) { console.error(e); }
+              window.location.assign(import.meta.env.BASE_URL);
+            }}>{stopping ? "Stopping…" : "Stop test"}</button>
+          : <button className="link-btn light" onClick={signOut}>Sign out</button>}
       </div>
 
       <div className="frame">

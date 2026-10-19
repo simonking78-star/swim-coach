@@ -749,3 +749,54 @@ details.mi-outs > summary { font-size: .85rem; }
 .pl-list .btn-row.nowrap, .tt-card .btn-row.nowrap { flex-wrap: wrap; justify-content: flex-end; }
 .wk-plan .plan-tag { line-height: 1.3; }
 .wk-noplan .btn { white-space: nowrap; flex: 0 0 auto; }
+
+/* ---------- Admin, Users & roles, App dev ---------- */
+.ok-text { color: var(--green); }
+.inline-add { display: flex; gap: 8px; align-items: stretch; }
+.inline-add input { margin: 0; flex: 1 1 auto; min-width: 0; }
+.inline-add .btn { flex: 0 0 auto; }
+.rename-list, .arch-list, .people, .kid-list, .task-list, .tick-results { list-style: none; margin: 0; padding: 0; }
+.rename-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0; }
+.rename-list input { flex: 1 1 160px; margin: 0; min-width: 0; }
+.rename-list .full, .arch-list .full { flex-basis: 100%; margin: 0; }
+.detail-list { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 12px 0 0; font-size: .92rem; }
+.detail-list > div { display: contents; }
+.detail-list dt { font-weight: 700; color: var(--text-dim); }
+.detail-list dd { margin: 0; overflow-wrap: anywhere; }
+.arch-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 10px 0; border-top: 1px solid var(--border); }
+.arch-list li:first-child { border-top: 0; }
+.arch-list li > div:first-child { flex: 1 1 180px; min-width: 0; }
+.arch-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.arch-actions select { width: auto; max-width: 200px; margin: 0; }
+.tick-results { border: 1px solid var(--border); border-radius: 10px; margin-top: 6px; padding: 4px 8px; }
+.tick-results li { padding: 2px 0; }
+.tick-results label { display: flex; align-items: center; gap: 10px; margin: 0; min-height: 44px; font-weight: 500; cursor: pointer; }
+.tick-results input { width: 20px; height: 20px; margin: 0; min-height: 0; flex: 0 0 auto; }
+.chip-x { border: 0; background: none; color: inherit; font: inherit; font-weight: 800; padding: 0 2px 0 6px; cursor: pointer; min-height: 24px; }
+.person { padding: 12px 0; border-top: 1px solid var(--border); }
+.person:first-child { border-top: 0; }
+.person-name { font-weight: 800; color: var(--navy); }
+.person-role { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: var(--grey-bg); }
+.person-role-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.kid-list { margin-top: 4px; }
+.kid-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: .9rem; min-height: 36px; }
+.link-box input { margin-top: 8px; font-size: .85rem; }
+.ms-grid { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 6px; }
+.ms-grid li { border: 1.5px solid var(--border); border-radius: 10px; padding: 6px; text-align: center; font-size: .8rem; font-weight: 700; color: var(--text-dim); }
+.ms-grid li b { display: block; font-size: 1rem; color: var(--text); }
+.ms-grid li.current { border-color: var(--accent); background: #e8f4fb; }
+.ms-grid li.met { border-color: var(--green); background: #e6f4ea; }
+.task { padding: 10px 0; border-top: 1px solid var(--border); }
+.task:first-child { border-top: 0; }
+.task-row { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
+.task-main { flex: 1 1 auto; min-width: 0; }
+.task-title { display: block; text-align: left; border: 0; background: none; padding: 4px 0; font: inherit; font-weight: 700; color: var(--navy); cursor: pointer; min-height: 32px; }
+.task-title:hover { text-decoration: underline; }
+.task-id { font-size: .75rem; font-weight: 800; color: var(--text-dim); margin-right: 8px; }
+.chip.must { background: #fdecea; color: #9b1c1c; }
+.chip.gate { background: #fff4e0; color: #7a4d00; }
+.task-note { margin: 4px 0 0; white-space: pre-wrap; }
+.task-status { width: auto; flex: 0 0 auto; margin: 0; font-size: .9rem; }
+.task-edit { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--grey-bg); }
+.task-edit label.inline input { width: auto; min-height: 0; margin: 0; }
+label.inline input[type=checkbox] { width: auto; min-height: 0; margin: 0; }

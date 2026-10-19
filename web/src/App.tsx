@@ -14,6 +14,9 @@ import { Planning } from "./pages/season/Planning";
 import { CompForm } from "./pages/season/CompForm";
 import { MacroForm } from "./pages/season/MacroForm";
 import { Micros } from "./pages/season/Micros";
+import { AddMember, Admin, Deactivate, ManageSquads, MoveClub, MoveSquad } from "./pages/admin/Admin";
+import { Users } from "./pages/admin/Users";
+import { AppDev } from "./pages/AppDev";
 import { Feedback } from "./pages/Feedback";
 import { Home } from "./pages/Home";
 import { SectionPage } from "./pages/SectionPage";
@@ -65,6 +68,14 @@ function Gate() {
           <Route path="season/macro/new" element={<MacroForm key="new" />} />
           <Route path="season/macro/:id" element={<MacroForm />} />
           <Route path="season/macro/:id/weeks" element={<Micros />} />
+          <Route path="admin" element={<Admin />} />
+          <Route path="admin/squads" element={<ManageSquads />} />
+          <Route path="admin/add-member" element={<AddMember />} />
+          <Route path="admin/move-squad" element={<MoveSquad />} />
+          <Route path="admin/move-club" element={<MoveClub />} />
+          <Route path="admin/deactivate" element={<Deactivate />} />
+          <Route path="admin/users" element={<Users />} />
+          <Route path="appdev" element={<AppDev />} />
           <Route path="statistics" element={<StatsHub />} />
           <Route path="statistics/regression" element={wait(<Regression />)} />
           <Route path="statistics/compare" element={wait(<Compare />)} />
