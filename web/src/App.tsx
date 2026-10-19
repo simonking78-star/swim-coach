@@ -8,6 +8,7 @@ import { Feedback } from "./pages/Feedback";
 import { Home } from "./pages/Home";
 import { SectionPage } from "./pages/SectionPage";
 import { Settings } from "./pages/Settings";
+import { Stopwatch } from "./pages/Stopwatch";
 
 function Gate() {
   const { ready, session, recovery, accessLoading } = useAuth();
@@ -23,6 +24,7 @@ function Gate() {
           <Route path="settings" element={<Settings />} />
           <Route path="attendance" element={<Attendance />} />
           <Route path="feedback" element={<Feedback />} />
+          <Route path="stopwatch" element={<Stopwatch />} />
           <Route path=":key" element={<SectionPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
