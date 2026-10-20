@@ -98,9 +98,10 @@ export function PlanEditor() {
   const crumb = id
     ? <p className="crumb"><Link to={`/sessions/${id}`} state={{ from }}>‹ Plan</Link></p>
     : <p className="crumb"><Link to={origin.to}>‹ {origin.label}</Link></p>;
-  if (!canEdit(level)) return <>{crumb}<p className="notice warn">Session plans are read only for your role.</p></>;
-  if (id && existing.isLoading) return <>{crumb}<p className="dim">Loading…</p></>;
-  if (id && !existing.data) return <>{crumb}<p className="msg error">Couldn't find that plan.</p></>;
+  const h1 = <h1>{id ? "Edit plan" : "New plan"}</h1>;
+  if (!canEdit(level)) return <>{crumb}{h1}<p className="notice warn">Session plans are read only for your role.</p></>;
+  if (id && existing.isLoading) return <>{crumb}{h1}<p className="dim">Loading…</p></>;
+  if (id && !existing.data) return <>{crumb}{h1}<p className="msg error">Couldn't find that plan.</p></>;
 
   const blocks = items.map(i => i.b);
   const total = planDistance(blocks);

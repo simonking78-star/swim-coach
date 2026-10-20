@@ -1,7 +1,7 @@
 import type { Section } from "./lib/access";
 
 export interface NavSection {
-  key: string;            // route segment under /v2
+  key: string;            // route segment
   label: string;
   icon: string;
   blurb: string;
@@ -28,5 +28,6 @@ export const SECTIONS: NavSection[] = [
   { key: "appdev",       label: "App dev",          icon: "🛠️", blurb: "Development actions and milestones",   section: "appdev",     legacyGo: "appdev",       migrated: true  }
 ];
 
-/** Link into the current app at the site root, opening the given section. */
-export const legacyUrl = (go: string) => `/?go=${encodeURIComponent(go)}`;
+/** The classic (pre-React) app, kept at /classic/ as a fallback after the switchover. */
+export const CLASSIC_URL = "/classic/";
+export const legacyUrl = (go: string) => `${CLASSIC_URL}?go=${encodeURIComponent(go)}`;

@@ -39,7 +39,7 @@ export function PlanBody({ content, onDrill }: { content: Block[]; onDrill: (id:
   return (
     <div className="pv-body">
       {content.map((b, i) => {
-        if (b.type === "heading") return <h3 key={i} className={"pv-heading" + (b.underline ? " underline" : "") + (b.bold ? "" : " light")}>{b.text}</h3>;
+        if (b.type === "heading") return <h2 key={i} className={"pv-heading" + (b.underline ? " underline" : "") + (b.bold ? "" : " light")}>{b.text}</h2>;
         if (b.type === "set") return <p key={i} className="pv-set">{b.text}{dist(b.text)}</p>;
         if (b.type === "repeat_group") return (
           <div key={i} className="pv-repeat">

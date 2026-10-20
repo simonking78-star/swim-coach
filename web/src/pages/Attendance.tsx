@@ -10,7 +10,6 @@ import {
   loadSlots, markLabel, minutesBetween, nextTickStatus, saveMark, tally, todayLocal,
   type AttSession, type AttStatus, type AttSwimmer, type Pool, type SaveResult, type Slot
 } from "../lib/attendance";
-import { legacyUrl } from "../sections";
 
 // Survives a reload mid-register; the marks themselves are re-read from the database.
 const STORE_KEY = "coachToolsAttSession";
@@ -455,7 +454,7 @@ function Done({ session, swimmers, onNew }: { session: AttSession; swimmers: Att
       <p className="dim">What next?</p>
       <div className="next-row">
         <Link className="tile" to={session.planId ? `/feedback?plan=${session.planId}` : "/feedback"}><span className="tile-icon" aria-hidden="true">📝</span><span className="tile-text"><strong>Feedback</strong><span className="dim">{session.planId ? "Linked to this session's plan" : "Swimmer and squad feedback"}</span></span></Link>
-        <a className="tile" href={legacyUrl("session")}><span className="tile-icon" aria-hidden="true">🗓️</span><span className="tile-text"><strong>Session plans</strong><span className="dim">Opens in the current app</span></span></a>
+        <Link className="tile" to={session.planId ? `/sessions/${session.planId}` : "/sessions"}><span className="tile-icon" aria-hidden="true">🗓️</span><span className="tile-text"><strong>Session plans</strong><span className="dim">{session.planId ? "This session's plan" : "Plan and archive sessions"}</span></span></Link>
       </div>
       <div className="done-actions">
         <button className="btn" onClick={onNew}>Mark another register</button>

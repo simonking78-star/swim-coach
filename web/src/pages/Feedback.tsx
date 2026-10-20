@@ -150,7 +150,7 @@ function SwimmerSearch({ swimmers, loading, onPick }: { swimmers: SwimmerLite[];
     <div className="search-box">
       <label htmlFor="fb-search">Find a swimmer</label>
       <input id="fb-search" type="search" placeholder={loading ? "Loading swimmers…" : "Start typing a name…"} autoComplete="off"
-        value={q} onChange={e => setQ(e.target.value)} aria-controls="fb-search-results" />
+        value={q} onChange={e => setQ(e.target.value)} aria-controls={t ? "fb-search-results" : undefined} />
       {t && (
         <ul className="search-results" id="fb-search-results">
           {hits.length === 0 && <li className="dim">No matches</li>}

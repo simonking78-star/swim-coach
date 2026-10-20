@@ -46,10 +46,12 @@ export function CompForm() {
   }, [id, existing, events.data, source.data]);
 
   const crumb = <p className="crumb"><Link to="/season/plan">‹ Planning</Link></p>;
-  if (!canEdit(level)) return <>{crumb}<p className="notice warn">Season planning is read only for your role.</p></>;
-  if (isLoading || (id && (lists.isLoading || events.isLoading))) return <>{crumb}<p className="dim">Loading…</p></>;
-  if (!season) return <>{crumb}<p className="notice warn">Save a season under Planning first.</p></>;
-  if (id && !existing) return <>{crumb}<p className="msg error">Couldn't find that competition.</p></>;
+
+  const stateH1 = <h1>{id ? "Edit competition" : "Add competition"}</h1>;
+  if (!canEdit(level)) return <>{crumb}{stateH1}<p className="notice warn">Season planning is read only for your role.</p></>;
+  if (isLoading || (id && (lists.isLoading || events.isLoading))) return <>{crumb}{stateH1}<p className="dim">Loading…</p></>;
+  if (!season) return <>{crumb}{stateH1}<p className="notice warn">Save a season under Planning first.</p></>;
+  if (id && !existing) return <>{crumb}{stateH1}<p className="msg error">Couldn't find that competition.</p></>;
 
   const set = <K extends keyof CompDraft>(k: K, v: CompDraft[K]) => setD(x => ({ ...x, [k]: v }));
   const choose = (v: string) => {

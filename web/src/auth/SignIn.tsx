@@ -3,12 +3,14 @@ import { sb } from "../lib/supabase";
 import { useAuth } from "./AuthProvider";
 
 type Msg = { text: string; error?: boolean } | null;
+const LINK_ERROR = new URLSearchParams(location.hash.replace(/^#/, "")).get("error_description") || new URLSearchParams(location.search).get("error_description");
 
 export function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<Msg>(null);
+  // Arrived from an invite / sign-in / reset link that had expired or was already used.
+  const [msg, setMsg] = useState<Msg>(LINK_ERROR ? { text: "That sign-in link has expired or was already used. Ask your club admin for a new one, or use “Forgotten your password?” below.", error: true } : null);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -22,7 +24,7 @@ export function SignIn() {
 
   async function forgot() {
     if (!email.trim()) { setMsg({ text: "Enter your email first, then tap the reset link.", error: true }); return; }
-    const { error } = await sb.auth.resetPasswordForEmail(email.trim(), { redirectTo: location.origin + "/v2/" });
+    const { error } = await sb.auth.resetPasswordForEmail(email.trim(), { redirectTo: location.origin + import.meta.env.BASE_URL });
     setMsg(error
       ? { text: "Could not send reset email: " + error.message, error: true }
       : { text: "If that email has an account, a reset link is on its way. Open it on this device." });

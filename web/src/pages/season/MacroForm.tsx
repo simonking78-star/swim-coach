@@ -39,10 +39,12 @@ export function MacroForm() {
   }, [existing]);
 
   const crumb = <p className="crumb"><Link to="/season/plan">‹ Planning</Link></p>;
-  if (!canEdit(level)) return <>{crumb}<p className="notice warn">Season planning is read only for your role.</p></>;
-  if (isLoading || lists.isLoading) return <>{crumb}<p className="dim">Loading…</p></>;
-  if (!season) return <>{crumb}<p className="notice warn">Save a season under Planning first.</p></>;
-  if (id && !existing) return <>{crumb}<p className="msg error">Couldn't find that macro-cycle.</p></>;
+
+  const stateH1 = <h1>{id ? "Edit macro" : "Add macro"}</h1>;
+  if (!canEdit(level)) return <>{crumb}{stateH1}<p className="notice warn">Season planning is read only for your role.</p></>;
+  if (isLoading || lists.isLoading) return <>{crumb}{stateH1}<p className="dim">Loading…</p></>;
+  if (!season) return <>{crumb}{stateH1}<p className="notice warn">Save a season under Planning first.</p></>;
+  if (id && !existing) return <>{crumb}{stateH1}<p className="msg error">Couldn't find that macro-cycle.</p></>;
 
   const save = async () => {
     setMsg(null);

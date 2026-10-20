@@ -56,9 +56,11 @@ export function TimetableForm() {
   }, [data.data, existing, id]);
 
   const crumb = <p className="crumb"><Link to="/timetables?tab=list">‹ Timetables</Link></p>;
-  if (!canEdit(level)) return <>{crumb}<p className="notice warn">Timetables are read only for your role.</p></>;
-  if (data.isLoading) return <>{crumb}<p className="dim">Loading…</p></>;
-  if (id && data.data && !existing) return <>{crumb}<p className="msg error">Couldn't find that timetable.</p></>;
+
+  const stateH1 = <h1>{id ? "Edit timetable" : "Add timetable"}</h1>;
+  if (!canEdit(level)) return <>{crumb}{stateH1}<p className="notice warn">Timetables are read only for your role.</p></>;
+  if (data.isLoading) return <>{crumb}{stateH1}<p className="dim">Loading…</p></>;
+  if (id && data.data && !existing) return <>{crumb}{stateH1}<p className="msg error">Couldn't find that timetable.</p></>;
 
   const seasons = data.data?.seasons ?? [];
   const season = seasons.find(s => s.id === seasonId);

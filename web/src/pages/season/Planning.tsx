@@ -61,9 +61,11 @@ export function Planning() {
   }, [active.data, season, breaksQ.data]);
 
   const crumb = <p className="crumb"><Link to="/season">‹ Season planner</Link></p>;
-  if (!canEdit(level)) return <>{crumb}<p className="notice warn">Season planning is read only for your role.</p></>;
-  if (active.isLoading || (season && breaksQ.isLoading)) return <>{crumb}<p className="dim">Loading…</p></>;
-  if (active.error) return <>{crumb}<p className="msg error">Couldn't load the season.</p></>;
+
+  const stateH1 = <h1>{"Planning"}</h1>;
+  if (!canEdit(level)) return <>{crumb}{stateH1}<p className="notice warn">Season planning is read only for your role.</p></>;
+  if (active.isLoading || (season && breaksQ.isLoading)) return <>{crumb}{stateH1}<p className="dim">Loading…</p></>;
+  if (active.error) return <>{crumb}{stateH1}<p className="msg error">Couldn't load the season.</p></>;
 
   const save = async (): Promise<string | null> => {
     setMsg(null);

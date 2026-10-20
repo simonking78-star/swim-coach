@@ -35,9 +35,11 @@ export function Micros() {
   useEffect(() => { if (q.data && !data) setData(q.data); }, [q.data, data]);
 
   const crumb = <p className="crumb"><Link to="/season/plan">‹ Planning</Link></p>;
-  if (!canEdit(level)) return <>{crumb}<p className="notice warn">Season planning is read only for your role.</p></>;
-  if (q.isLoading || seasonLoading || (!data && !q.error)) return <>{crumb}<p className="dim">Loading weeks…</p></>;
-  if (q.error || !data) return <>{crumb}<p className="msg error">Couldn't load the micro-cycles. <button type="button" className="link-btn" onClick={() => q.refetch()}>Try again</button></p></>;
+
+  const stateH1 = <h1>{"Micro-cycles"}</h1>;
+  if (!canEdit(level)) return <>{crumb}{stateH1}<p className="notice warn">Season planning is read only for your role.</p></>;
+  if (q.isLoading || seasonLoading || (!data && !q.error)) return <>{crumb}{stateH1}<p className="dim">Loading weeks…</p></>;
+  if (q.error || !data) return <>{crumb}{stateH1}<p className="msg error">Couldn't load the micro-cycles. <button type="button" className="link-btn" onClick={() => q.refetch()}>Try again</button></p></>;
 
   const setWeek = (no: number, f: (w: MiWeek) => MiWeek) => { setMsg(null); setData(d => d && ({ ...d, weeks: d.weeks.map(w => (w.no === no ? f(w) : w)) })); };
   const sqName = (sid: string) => data.squads.find(s => s.id === sid)?.name || "";

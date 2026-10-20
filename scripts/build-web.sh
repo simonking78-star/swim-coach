@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
-# Builds the React app in web/ and places it at coach-tools-deploy/v2, so
-# the site serves the current app at / and the React rewrite at /v2 until
-# every section has moved across (claude/specs/react-rewrite-scope.md).
+# Builds the site Netlify publishes, in site/:
+#   /           the React app (web/), built here
+#   /classic/   the classic app (coach-tools-deploy/), copied as-is, kept
+#               as a fallback after the switchover
+# Old /v2/ links redirect to the root (netlify.toml).
 #
 # Deploy previews and branch deploys point the React app at the staging
-# Supabase project (A-018), the same as swap-staging-env.sh does for the
-# current app. Production builds always use the production defaults
-# baked into web/src/lib/supabase.ts.
+# Supabase project (A-018); swap-staging-env.sh does the same for the
+# classic app before this runs. Production builds always use the
+# production defaults baked into web/src/lib/supabase.ts.
 
 set -euo pipefail
 
-cd "$(dirname "$0")/../web"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT/web"
 
 if [ "${CONTEXT:-}" != "production" ] && [ -n "${STAGING_SUPABASE_URL:-}" ] && [ -n "${STAGING_SUPABASE_ANON_KEY:-}" ]; then
   export VITE_SUPABASE_URL="$STAGING_SUPABASE_URL"
@@ -23,6 +26,9 @@ fi
 npm ci --no-audit --no-fund
 npm run build
 
-rm -rf ../coach-tools-deploy/v2
-cp -R dist ../coach-tools-deploy/v2
-echo "build-web: React app copied to coach-tools-deploy/v2."
+SITE="$ROOT/site"
+rm -rf "$SITE"
+mkdir -p "$SITE/classic"
+cp -R dist/. "$SITE/"
+cp "$ROOT"/coach-tools-deploy/{index.html,sw.js,manifest.json,icon-192.png,icon-512.png} "$SITE/classic/"
+echo "build-web: site/ assembled — React app at /, classic app at /classic/."

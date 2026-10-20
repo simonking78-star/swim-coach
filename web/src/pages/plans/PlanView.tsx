@@ -28,8 +28,8 @@ export function PlanView() {
 
   if (level === "N") return <NoPlanAccess />;
   const crumb = <p className="crumb"><Link to={back.to}>‹ {back.label}</Link></p>;
-  if (plan.isLoading) return <>{crumb}<p className="dim">Loading…</p></>;
-  if (plan.error || !plan.data) return <>{crumb}<p className="msg error">Couldn't find that plan.</p></>;
+  if (plan.isLoading) return <>{crumb}<h1 className="sr-only">Session plan</h1><p className="dim">Loading…</p></>;
+  if (plan.error || !plan.data) return <>{crumb}<h1>Session plan</h1><p className="msg error">Couldn't find that plan.</p></>;
 
   const p = plan.data;
   const sq = (squads.data ?? []).find(s => s.id === p.squad_id)?.name;
