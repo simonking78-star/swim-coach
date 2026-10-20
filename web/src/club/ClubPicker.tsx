@@ -6,7 +6,9 @@ import { useClub } from "./ClubProvider";
  * clear which figures the club choice changes. One club → just its name.
  */
 export function ClubPicker({ label = "Club", hideLabel = false }: { label?: string; hideLabel?: boolean }) {
-  const { clubs, club, setClub } = useClub();
+  const { clubs, coachingClubs, club, setClub } = useClub();
+  const other = clubs.filter(c => !coachingClubs.includes(c));
+  const coaching = clubs.filter(c => coachingClubs.includes(c));
   const id = useId();
   if (clubs.length === 0) return null;
 
@@ -17,7 +19,12 @@ export function ClubPicker({ label = "Club", hideLabel = false }: { label?: stri
         ? <strong id={id} className="club-picker-name">{club}</strong>
         : (
           <select id={id} value={club ?? ""} onChange={e => setClub(e.target.value)}>
-            {clubs.map(c => <option key={c} value={c}>{c}</option>)}
+            {other.length && coaching.length
+              ? <>
+                  <optgroup label="Coaching clubs">{coaching.map(c => <option key={c} value={c}>{c}</option>)}</optgroup>
+                  <optgroup label="Other clubs (results on file)">{other.map(c => <option key={c} value={c}>{c}</option>)}</optgroup>
+                </>
+              : clubs.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         )}
     </div>
