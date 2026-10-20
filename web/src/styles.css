@@ -612,6 +612,17 @@ dialog.modal::backdrop { background: rgba(11, 37, 69, .45); }
 .modal-head h2 { font-size: 1.15rem; margin: 6px 0 0; color: var(--navy); overflow-wrap: anywhere; }
 .search-results.tall { max-height: 50vh; }
 
+/* ---------- Spec viewer (App dev) ---------- */
+.spec-content { max-height: calc(100dvh - 140px); overflow-y: auto; }
+.spec-content h2, .spec-content h3, .spec-content h4, .spec-content h5 { color: var(--navy); margin: 18px 0 6px; }
+.spec-content h2:first-child, .spec-content h3:first-child { margin-top: 0; }
+.spec-content p { margin: 0 0 10px; }
+.spec-content ul, .spec-content ol { margin: 0 0 10px 20px; padding: 0; }
+.spec-content li { margin-bottom: 4px; }
+.spec-content table.data { display: block; overflow-x: auto; margin: 10px 0; white-space: nowrap; }
+.spec-content code { background: var(--grey-bg); padding: 1px 5px; border-radius: 4px; font-size: .85em; }
+.spec-content hr { border: 0; border-top: 1px solid var(--border); margin: 14px 0; }
+
 /* ---------- Drills library ---------- */
 .drill-section { margin-top: 16px; }
 .drill-grid { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; grid-template-columns: 1fr; }

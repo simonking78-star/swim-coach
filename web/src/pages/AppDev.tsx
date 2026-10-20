@@ -7,8 +7,11 @@ import {
   AD_AREAS, AD_MILESTONES, AD_PRIORITIES, AD_STATUS_LABEL, AD_STATUSES, addTask, currentMilestone, gateScores, loadDevTasks, needsSquads,
   needsSwimmers, nextTaskId, saveTask, searchSwimmers, setTaskStatus, startRoleTest, validateTask, type DevTask
 } from "../lib/admin";
+import { loadDevSpecs, type DevSpec } from "../lib/specs";
+import { renderMarkdown } from "../lib/md";
 import { fmtDate } from "../lib/util";
 import { StatusMsg } from "../components/seasonParts";
+import { Modal } from "../components/Modal";
 import { usePlanSquads } from "./plans/PlanList";
 
 // App dev (superadmin only): the development action list scored against
@@ -23,6 +26,8 @@ export function AppDev() {
   const ok = sectionLevel(access, "appdev") === "E";
   const qc = useQueryClient();
   const tasks = useQuery({ queryKey: ["dev_tasks"], enabled: ok, queryFn: loadDevTasks });
+  const specs = useQuery({ queryKey: ["dev_specs"], enabled: ok, queryFn: loadDevSpecs });
+  const [openSpec, setOpenSpec] = useState<DevSpec | null>(null);
   const [fs, setFs] = useState("");
   const [fa, setFa] = useState("");
   const [q, setQ] = useState("");
@@ -75,6 +80,31 @@ export function AppDev() {
         )}
         <p className="hint">Gate score = exit-gate actions done ÷ gate actions (dropped excluded). A ring opens only at 100%.</p>
       </section>
+
+      <section className="card">
+        <h2 className="card-title">Specs</h2>
+        <p className="hint top">The project's own spec documents, pushed in for review here — not a live sync; updated whenever a spec changes.</p>
+        {specs.isLoading && <p className="dim">Loading…</p>}
+        {specs.error && <p className="msg error">Could not load specs: {(specs.error as Error).message}</p>}
+        {specs.data && !specs.data.length && <p className="dim">No specs pushed yet.</p>}
+        {specs.data && specs.data.length > 0 && (
+          <ul className="task-list">
+            {specs.data.map(s => (
+              <li key={s.id} className="task">
+                <div className="task-row">
+                  <div className="task-main">
+                    <button type="button" className="task-title" onClick={() => setOpenSpec(s)}>{s.title}</button>
+                    <p className="dim small task-note">Updated {fmtDate(s.updated_at.slice(0, 10))}</p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+      <Modal open={!!openSpec} onClose={() => setOpenSpec(null)} title={openSpec?.title ?? ""}>
+        {openSpec && <div className="spec-content">{renderMarkdown(openSpec.content)}</div>}
+      </Modal>
 
       <section className="card">
         <div className="field-pair">

@@ -1,4 +1,3 @@
-// Generated from the live Supabase schema (nxlgeykipnvswyeshrbl). Regenerate after migrations.
 export type Json =
   | string
   | number
@@ -15,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_dev_specs: {
+        Row: {
+          content: string
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_dev_tasks: {
         Row: {
           area: string
@@ -193,11 +213,13 @@ export type Database = {
           pool_size: string
           present: boolean
           session_date: string
+          session_end_time: string | null
           session_minutes: number | null
           session_plan_id: string | null
           session_time: string
           status: string | null
           swimmer_id: string
+          timetable_session_id: string | null
           updated_at: string | null
           updated_by: string | null
         }
@@ -210,11 +232,13 @@ export type Database = {
           pool_size: string
           present?: boolean
           session_date: string
+          session_end_time?: string | null
           session_minutes?: number | null
           session_plan_id?: string | null
           session_time: string
           status?: string | null
           swimmer_id: string
+          timetable_session_id?: string | null
           updated_at?: string | null
           updated_by?: string | null
         }
@@ -227,11 +251,13 @@ export type Database = {
           pool_size?: string
           present?: boolean
           session_date?: string
+          session_end_time?: string | null
           session_minutes?: number | null
           session_plan_id?: string | null
           session_time?: string
           status?: string | null
           swimmer_id?: string
+          timetable_session_id?: string | null
           updated_at?: string | null
           updated_by?: string | null
         }
@@ -255,6 +281,13 @@ export type Database = {
             columns: ["swimmer_id"]
             isOneToOne: false
             referencedRelation: "swimmers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_records_timetable_session_id_fkey"
+            columns: ["timetable_session_id"]
+            isOneToOne: false
+            referencedRelation: "timetable_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -2117,6 +2150,24 @@ export type Database = {
           },
         ]
       }
+      user_home_layout: {
+        Row: {
+          layout: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          layout?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          layout?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           club: string | null
@@ -2263,6 +2314,14 @@ export type Database = {
       }
     }
     Functions: {
+      attendance_minutes: {
+        Args: {
+          p_minutes_attended: number
+          p_session_minutes: number
+          p_status: string
+        }
+        Returns: number
+      }
       attendance_weight:
         | { Args: { p_status: string }; Returns: number }
         | {
@@ -2282,6 +2341,7 @@ export type Database = {
         Args: { p_reason?: string; p_swimmer: string }
         Returns: Json
       }
+      home_stats: { Args: { p_club?: string }; Returns: Json }
       is_superadmin: { Args: never; Returns: boolean }
       list_deactivated_swimmers: {
         Args: { p_club: string }
@@ -2303,6 +2363,42 @@ export type Database = {
         Returns: Json
       }
       snapshot_squad_month: { Args: { p_month?: string }; Returns: number }
+      squad_month_figures: {
+        Args: { p_club: string; p_from: string; p_to: string }
+        Returns: {
+          attendance_pct: number
+          avg_improvement_pct: number
+          drills_worked: number
+          excused: number
+          feedback_entries: number
+          feedback_notes: number
+          hours_per_swimmer: number
+          hours_trained: number
+          improved_swims: number
+          marks: number
+          median_improvement_pct: number
+          members: number
+          month: string
+          pbs: number
+          positive_feedback_pct: number
+          present: number
+          sessions: number
+          skill_moves_down: number
+          skill_moves_up: number
+          skill_score: number
+          squad_entries: number
+          squad_id: string
+          squad_name: string
+          st_developing: number
+          st_embedded: number
+          st_not_discussed: number
+          st_started: number
+          status_entries: number
+          swimmers_attending: number
+          swimmers_raced: number
+          swims: number
+        }[]
+      }
       squad_month_review: {
         Args: { p_club: string; p_from: string; p_to: string }
         Returns: {
