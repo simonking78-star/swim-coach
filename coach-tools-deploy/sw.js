@@ -42,6 +42,10 @@ self.addEventListener("fetch", (event) => {
   // above. Everything else -- every Supabase REST/Auth/Storage call,
   // any other API, any CDN script not in the shell list -- goes straight
   // to the network untouched.
+  // The React app at /v2 has its own service worker; never serve or cache
+  // its pages here, or this worker would show the old app at /v2 and
+  // overwrite its own cached index.html with the React page.
+  if (new URL(req.url).pathname.startsWith("/v2")) return;
   const isNav = req.mode === "navigate";
   const isShellUrl = SHELL_URLS.includes(req.url);
   if (!isNav && !isShellUrl) return;
