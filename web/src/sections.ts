@@ -21,6 +21,7 @@ export const SECTIONS: NavSection[] = [
   { key: "competitions", label: "Competitions",     icon: "🏆", blurb: "Licensed meets and files",             section: "timetables", legacyGo: "competitions", migrated: true  },
   { key: "sessions",     label: "Session plans",    icon: "📋", blurb: "Plan and archive sessions",            section: "plans",      legacyGo: "session",      migrated: true  },
   { key: "drills",       label: "Drills & Skills",  icon: "🧩", blurb: "Drills library",                       section: "plans",      legacyGo: "drills",       migrated: true  },
+  { key: "tests",        label: "Test & Assess",    icon: "🎯", blurb: "Test set templates, live tests, results", section: "stopwatch",  legacyGo: "stopwatch",    migrated: true  },
   { key: "statistics",   label: "Statistics",       icon: "📈", blurb: "Comparison, regression, squad review", section: "stats",      legacyGo: "mi",           migrated: true  },
   { key: "swimmers",     label: "Swimmers",         icon: "🏊", blurb: "Roster and swimmer profiles",          section: "roster",     legacyGo: "swimmer",      migrated: true  },
   { key: "stopwatch",    label: "Stopwatch",        icon: "⏱️", blurb: "Time reps and post to profiles",        section: "stopwatch",  legacyGo: "stopwatch",    migrated: true  },

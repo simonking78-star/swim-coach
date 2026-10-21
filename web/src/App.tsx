@@ -18,6 +18,7 @@ import { SquadReviewGate, StatsHub } from "./pages/stats/StatsHub";
 const Regression = lazy(() => import("./pages/stats/Regression"));
 const Compare = lazy(() => import("./pages/stats/Compare"));
 const SquadReview = lazy(() => import("./pages/stats/SquadReview"));
+const TestResults = lazy(() => import("./pages/stats/TestResults"));
 // Less-used sections load when first opened, keeping the first download small.
 const Drills = lazy(() => import("./pages/Drills").then(x => ({ default: x.Drills })));
 const Competitions = lazy(() => import("./pages/Competitions").then(x => ({ default: x.Competitions })));
@@ -31,6 +32,11 @@ const Micros = lazy(() => import("./pages/season/Micros").then(x => ({ default: 
 const PlanList = lazy(() => import("./pages/plans/PlanList").then(x => ({ default: x.PlanList })));
 const PlanView = lazy(() => import("./pages/plans/PlanView").then(x => ({ default: x.PlanView })));
 const PlanEditor = lazy(() => import("./pages/plans/PlanEditor").then(x => ({ default: x.PlanEditor })));
+const TestsHub = lazy(() => import("./pages/tests/Tests").then(x => ({ default: x.TestsHub })));
+const TemplatePick = lazy(() => import("./pages/tests/Tests").then(x => ({ default: x.TemplatePick })));
+const TemplateEditor = lazy(() => import("./pages/tests/TemplateEditor").then(x => ({ default: x.TemplateEditor })));
+const StartTest = lazy(() => import("./pages/tests/StartTest").then(x => ({ default: x.StartTest })));
+const RunTest = lazy(() => import("./pages/tests/RunTest").then(x => ({ default: x.RunTest })));
 const Users = lazy(() => import("./pages/admin/Users").then(x => ({ default: x.Users })));
 const AppDev = lazy(() => import("./pages/AppDev").then(x => ({ default: x.AppDev })));
 const Admin = lazy(() => import("./pages/admin/Admin").then(x => ({ default: x.Admin })));
@@ -89,7 +95,15 @@ function Gate() {
           <Route path="admin/deactivate" element={wait(<Deactivate />)} />
           <Route path="admin/users" element={wait(<Users />)} />
           <Route path="appdev" element={wait(<AppDev />)} />
+          <Route path="tests" element={wait(<TestsHub />)} />
+          <Route path="tests/create" element={wait(<TemplateEditor key="new" />)} />
+          <Route path="tests/select" element={wait(<TemplatePick key="select" mode="select" />)} />
+          <Route path="tests/edit" element={wait(<TemplatePick key="edit" mode="edit" />)} />
+          <Route path="tests/templates/:id" element={wait(<TemplateEditor />)} />
+          <Route path="tests/start/:id" element={wait(<StartTest />)} />
+          <Route path="tests/run/:id" element={wait(<RunTest />)} />
           <Route path="statistics" element={<StatsHub />} />
+          <Route path="statistics/tests" element={wait(<TestResults />)} />
           <Route path="statistics/regression" element={wait(<Regression />)} />
           <Route path="statistics/compare" element={wait(<Compare />)} />
           <Route path="statistics/squad-review" element={<SquadReviewGate>{wait(<SquadReview />)}</SquadReviewGate>} />
