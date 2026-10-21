@@ -30,9 +30,24 @@ function TimeInput({ value, onChange, label, allowBlank = true, id }: { value: n
       }} />
   );
 }
-function NumInput({ value, onChange, label, min = 0, id }: { value: number; onChange: (v: number) => void; label: string; min?: number; id?: string }) {
-  return <input id={id} aria-label={label} className="n-in" type="number" inputMode="numeric" min={min} value={Number.isFinite(value) ? value : ""}
-    onChange={e => { const n = Number(e.target.value); if (e.target.value !== "" && Number.isFinite(n)) onChange(Math.max(min, Math.round(n))); }} />;
+/** Whole-number box: can be cleared and retyped (an empty or too-small value isn't saved
+ *  until it is valid, and snaps back to the last good value when the box loses focus). */
+function NumInput({ value, onChange, label, min = 0, signed = false, id }: { value: number; onChange: (v: number) => void; label: string; min?: number; signed?: boolean; id?: string }) {
+  const [text, setText] = useState(Number.isFinite(value) ? String(value) : "");
+  const [focused, setFocused] = useState(false);
+  useEffect(() => { if (!focused) setText(Number.isFinite(value) ? String(value) : ""); }, [value, focused]);
+  const valid = (t: string) => (signed ? /^-?\d+$/ : /^\d+$/).test(t) && (signed || Number(t) >= min);
+  return (
+    <input id={id} aria-label={label} className="n-in" type="text" inputMode={signed ? "text" : "numeric"} pattern={signed ? "-?[0-9]*" : "[0-9]*"}
+      autoComplete="off" value={text}
+      onFocus={e => { setFocused(true); e.currentTarget.select(); }}
+      onChange={e => {
+        const t = e.target.value.replace(signed ? /[^\d-]/g : /\D/g, "").replace(/(?!^)-/g, "");
+        setText(t);
+        if (valid(t)) onChange(Number(t));
+      }}
+      onBlur={() => { setFocused(false); if (!valid(text)) setText(String(value)); }} />
+  );
 }
 
 function genFrom(m: TestModel, r: Round): RoundGen {
@@ -177,9 +192,9 @@ export function TemplateEditor() {
                   <summary>Fill the table from a progression</summary>
                   <div className="gen-grid">
                     <span /><span className="dim">At age {model.minAge}</span><span className="dim">Change per year</span>
-                    <span>Repetitions</span><NumInput label="Repetitions at youngest age" min={1} value={g.reps} onChange={v => setGen({ reps: v })} /><input aria-label="Repetitions added per year" type="number" className="n-in" value={g.repStep} onChange={e => setGen({ repStep: Number(e.target.value) || 0 })} />
-                    <span>Distance (m)</span><NumInput label="Distance at youngest age" min={1} value={g.distance} onChange={v => setGen({ distance: v })} /><input aria-label="Distance added per year" type="number" className="n-in" value={g.distanceStep} onChange={e => setGen({ distanceStep: Number(e.target.value) || 0 })} />
-                    <span>Interval</span><TimeInput label="Interval at youngest age" value={g.interval} onChange={v => setGen({ interval: v })} /><input aria-label="Seconds taken off the interval per year" type="number" className="n-in" value={g.intervalStep} onChange={e => setGen({ intervalStep: Number(e.target.value) || 0 })} />
+                    <span>Repetitions</span><NumInput label="Repetitions at youngest age" min={1} value={g.reps} onChange={v => setGen({ reps: v })} /><NumInput label="Repetitions added per year" signed value={g.repStep} onChange={v => setGen({ repStep: v })} />
+                    <span>Distance (m)</span><NumInput label="Distance at youngest age" min={1} value={g.distance} onChange={v => setGen({ distance: v })} /><NumInput label="Distance added per year" signed value={g.distanceStep} onChange={v => setGen({ distanceStep: v })} />
+                    <span>Interval</span><TimeInput label="Interval at youngest age" value={g.interval} onChange={v => setGen({ interval: v })} /><NumInput label="Seconds taken off the interval per year" signed value={g.intervalStep} onChange={v => setGen({ intervalStep: v })} />
                   </div>
                   <p className="hint">Interval change is seconds taken off per year older.</p>
                   <button type="button" className="btn small" onClick={() => setRound(i, (rr, m) => { rr.gen = g; rr.values = genValues(g, m.minAge, m.maxAge); })}>Fill table</button>
