@@ -2004,6 +2004,7 @@ export type Database = {
           squad_id: string | null
           swim_england_id: string | null
           updated_at: string | null
+          year_of_birth: number | null
         }
         Insert: {
           active?: boolean | null
@@ -2021,6 +2022,7 @@ export type Database = {
           squad_id?: string | null
           swim_england_id?: string | null
           updated_at?: string | null
+          year_of_birth?: number | null
         }
         Update: {
           active?: boolean | null
@@ -2038,6 +2040,7 @@ export type Database = {
           squad_id?: string | null
           swim_england_id?: string | null
           updated_at?: string | null
+          year_of_birth?: number | null
         }
         Relationships: [
           {
@@ -2092,6 +2095,174 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      test_results: {
+        Row: {
+          age: number | null
+          club: string
+          club_id: string | null
+          created_at: string
+          id: string
+          level: number | null
+          note: string | null
+          recorded_by: string | null
+          reps_done: number | null
+          reps_total: number | null
+          rounds: Json
+          score: number | null
+          session_date: string
+          session_id: string
+          swimmer_id: string
+          template_id: string
+          template_name: string
+          updated_at: string
+          year_of_birth: number | null
+        }
+        Insert: {
+          age?: number | null
+          club?: string
+          club_id?: string | null
+          created_at?: string
+          id?: string
+          level?: number | null
+          note?: string | null
+          recorded_by?: string | null
+          reps_done?: number | null
+          reps_total?: number | null
+          rounds?: Json
+          score?: number | null
+          session_date?: string
+          session_id: string
+          swimmer_id: string
+          template_id?: string
+          template_name?: string
+          updated_at?: string
+          year_of_birth?: number | null
+        }
+        Update: {
+          age?: number | null
+          club?: string
+          club_id?: string | null
+          created_at?: string
+          id?: string
+          level?: number | null
+          note?: string | null
+          recorded_by?: string | null
+          reps_done?: number | null
+          reps_total?: number | null
+          rounds?: Json
+          score?: number | null
+          session_date?: string
+          session_id?: string
+          swimmer_id?: string
+          template_id?: string
+          template_name?: string
+          updated_at?: string
+          year_of_birth?: number | null
+        }
+        Relationships: []
+      }
+      test_sessions: {
+        Row: {
+          clock_started_at: string | null
+          closed_at: string | null
+          club: string
+          club_id: string | null
+          created_at: string
+          created_by: string | null
+          group_type: string
+          id: string
+          model: Json
+          session_date: string
+          squad_id: string | null
+          squad_name: string | null
+          status: string
+          template_id: string
+          template_name: string
+          swimmer_ids: string[]
+        }
+        Insert: {
+          clock_started_at?: string | null
+          closed_at?: string | null
+          club: string
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          group_type: string
+          id?: string
+          model: Json
+          session_date?: string
+          squad_id?: string | null
+          squad_name?: string | null
+          status?: string
+          template_id: string
+          template_name: string
+          swimmer_ids?: string[]
+        }
+        Update: {
+          clock_started_at?: string | null
+          closed_at?: string | null
+          club?: string
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          group_type?: string
+          id?: string
+          model?: Json
+          session_date?: string
+          squad_id?: string | null
+          squad_name?: string | null
+          status?: string
+          template_id?: string
+          template_name?: string
+          swimmer_ids?: string[]
+        }
+        Relationships: []
+      }
+      test_set_templates: {
+        Row: {
+          active: boolean
+          club: string
+          club_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          model: Json
+          name: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          active?: boolean
+          club: string
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          model: Json
+          name: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          active?: boolean
+          club?: string
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          model?: Json
+          name?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: []
       }
       timetables: {
         Row: {
@@ -2342,6 +2513,7 @@ export type Database = {
         Returns: Json
       }
       home_stats: { Args: { p_club?: string }; Returns: Json }
+      set_swimmer_birth_year: { Args: { p_swimmer: string; p_year: number }; Returns: number }
       is_superadmin: { Args: never; Returns: boolean }
       list_deactivated_swimmers: {
         Args: { p_club: string }
