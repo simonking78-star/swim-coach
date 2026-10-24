@@ -3,6 +3,7 @@ import { summarise, type AttMark } from "./attendance";
 import { calcAge, type ResultRow } from "./results";
 import { isoAdd, todayLocal } from "./util";
 import type { FbEntry } from "./feedback";
+import { clubIdOf } from "./clubs";
 
 // Swimmers roster and profile — same data and rules as the current app's
 // viewSwimmers / viewSwimmerProfile. RLS decides which swimmers a role sees
@@ -18,7 +19,7 @@ export interface RosterSwimmer {
 export async function loadRoster(club: string): Promise<RosterSwimmer[]> {
   const { data, error } = await sb.from("swimmers")
     .select("id, full_name, squad, date_of_birth, gender, swim_england_id, joined_club_on, parent_name, parent_phone, parent_email")
-    .eq("club", club).eq("active", true).order("full_name");
+    .eq("club_id", clubIdOf(club)).eq("active", true).order("full_name");
   if (error) throw error;
   return ((data ?? []) as unknown as Omit<RosterSwimmer, "age">[]).map(s => ({ ...s, age: calcAge(s.date_of_birth) }));
 }

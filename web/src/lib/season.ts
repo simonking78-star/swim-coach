@@ -1,6 +1,7 @@
 import { sb } from "./supabase";
 import { isoAdd, fmtDate } from "./util";
 import type { Micro, MicroSession, SeasonCtx } from "./plans";
+import { clubIdOf, clubCols } from "./clubs";
 
 // Timetables, Season planner and Competitions — same tables and rules as the
 // current app. Nothing is ever erased: "delete"/"remove" sets is_active=false.
@@ -36,7 +37,7 @@ const now = () => new Date().toISOString();
 export interface Season { id: string; title: string; start_date: string; finish_date: string; }
 
 export async function loadSeasons(club: string): Promise<Season[]> {
-  const { data, error } = await sb.from("seasons").select("id, title, start_date, finish_date").eq("club", club).eq("is_active", true).order("start_date");
+  const { data, error } = await sb.from("seasons").select("id, title, start_date, finish_date").eq("club_id", clubIdOf(club)).eq("is_active", true).order("start_date");
   if (error) throw error;
   return (data ?? []) as Season[];
 }
@@ -65,7 +66,7 @@ export async function loadTimetablesData(club: string): Promise<TimetablesData> 
   const [tt, gl, seasons] = await Promise.all([
     sb.from("timetables")
       .select("id, squad_id, season_id, season_start, season_end, weekly_focus, squads!inner(name, club), timetable_sessions(id, day_of_week, start_time, end_time, pool_size, is_active)")
-      .eq("is_active", true).eq("squads.club", club).eq("timetable_sessions.is_active", true),
+      .eq("is_active", true).eq("squads.club_id", clubIdOf(club)).eq("timetable_sessions.is_active", true),
     sb.from("galas").select("id, name, date_start, date_end, entries_open, entries_close"),
     loadSeasons(club)
   ]);
@@ -188,7 +189,7 @@ export async function saveTimetable(d: TtDraft): Promise<string> {
 export interface WeekPlan { id: string; title: string; squad_id: string | null; intended_date: string; micro_session_id: string | null; total_distance_m: number | null; stroke_skills: string[] | null; training_zone: string | null; }
 export async function loadWeekPlans(club: string, from: string, to: string): Promise<WeekPlan[]> {
   const { data, error } = await sb.from("session_plans").select("id, title, squad_id, intended_date, micro_session_id, total_distance_m, stroke_skills, training_zone")
-    .eq("club", club).gte("intended_date", from).lte("intended_date", to);
+    .eq("club_id", clubIdOf(club)).gte("intended_date", from).lte("intended_date", to);
   if (error) throw error;
   return (data ?? []) as WeekPlan[];
 }
@@ -262,7 +263,7 @@ export function pickMicros(ctx: SeasonCtx, seasonId: string, squads: { id: strin
   return out;
 }
 export async function loadPlansBetween(club: string, from: string, to: string) {
-  const { data, error } = await sb.from("session_plans").select("id, squad_id, intended_date").eq("club", club).gte("intended_date", from).lte("intended_date", to).not("squad_id", "is", null);
+  const { data, error } = await sb.from("session_plans").select("id, squad_id, intended_date").eq("club_id", clubIdOf(club)).gte("intended_date", from).lte("intended_date", to).not("squad_id", "is", null);
   if (error) throw error;
   return (data ?? []) as { id: string; squad_id: string; intended_date: string }[];
 }
@@ -309,8 +310,8 @@ export function validateSeason(title: string, start: string, finish: string, bre
 
 /** One active season per club at a time. Returns the season id. */
 export async function saveSeason(club: string, seasonId: string | null, title: string, start: string, finish: string, breaks: BreakRow[], removedBreakIds: string[]): Promise<string> {
-  const row = { club, title: title.trim(), start_date: start, finish_date: finish, updated_at: now() };
-  const { data: others, error: oe } = await sb.from("seasons").select("id, title").eq("club", club).eq("is_active", true).lte("start_date", finish).gte("finish_date", start);
+  const row = { ...clubCols(club), title: title.trim(), start_date: start, finish_date: finish, updated_at: now() };
+  const { data: others, error: oe } = await sb.from("seasons").select("id, title").eq("club_id", clubIdOf(club)).eq("is_active", true).lte("start_date", finish).gte("finish_date", start);
   if (oe) throw oe;
   const clash = ((others ?? []) as { id: string; title: string }[]).find(o => o.id !== seasonId);
   if (clash) throw new Error(`These dates overlap “${clash.title}”. Change the dates.`);

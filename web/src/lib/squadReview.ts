@@ -1,5 +1,6 @@
 import { sb } from "./supabase";
 import { fmtDate } from "./util";
+import { clubIdOf } from "./clubs";
 
 // Monthly Squad Review — one row per squad per month from
 // public.squad_month_review (live) and public.squad_month_snapshots (frozen at
@@ -73,8 +74,8 @@ export async function loadReview(club: string): Promise<ReviewRow[]> {
   const curKey = iso(now).slice(0, 7);
   const rpc = sb.rpc.bind(sb) as unknown as (fn: string, a: object) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
   const [live, snap] = await Promise.all([
-    rpc("squad_month_figures", { p_club: club, p_from: iso(from), p_to: iso(now) }),
-    sb.from("squad_month_snapshots").select("squad_id,month,metrics,generated_at").eq("club", club).gte("month", iso(from))
+    rpc("squad_month_figures", { p_club_id: clubIdOf(club), p_from: iso(from), p_to: iso(now) }),
+    sb.from("squad_month_snapshots").select("squad_id,month,metrics,generated_at").eq("club_id", clubIdOf(club)).gte("month", iso(from))
   ]);
   if (live.error) {
     if (/squad_month_figures|function/i.test(live.error.message || "")) throw new ReviewNotInstalled("The monthly review isn't installed in the database yet.");

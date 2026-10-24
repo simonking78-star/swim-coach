@@ -40,7 +40,7 @@ export function YobPrompt({ s, onSaved }: { s: TestSwimmer; onSaved: (year: numb
 
 export function StartTest() {
   const { id } = useParams();
-  const { canRun } = useTestAccess();
+  const { canRun, squadOnly, mySquads } = useTestAccess();
   const { session } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -110,7 +110,7 @@ export function StartTest() {
         <fieldset className="choice-set">
           <legend>Who is this test for?</legend>
           <div className="seg seg-3">
-            {([["club", "Whole club"], ["squad", "A squad"], ["swimmers", "Chosen swimmers"]] as [Group, string][]).map(([g, l]) => (
+            {(([["club", "Whole club"], ["squad", "A squad"], ["swimmers", "Chosen swimmers"]] as [Group, string][]).filter(([g]) => !squadOnly || g === "squad")).map(([g, l]) => (
               <button key={g} type="button" className={"seg-btn" + (group === g ? " on" : "")} aria-pressed={group === g} onClick={() => setGroup(g)}>{l}</button>
             ))}
           </div>
@@ -118,7 +118,7 @@ export function StartTest() {
         {group === "squad" && (
           <label>Squad<select value={squadId} onChange={e => setSquadId(e.target.value)}>
             <option value="">— choose squad —</option>
-            {(squads.data ?? []).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            {(squads.data ?? []).filter(s => !squadOnly || mySquads.has(s.id)).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select></label>
         )}
         {group === "swimmers" && (

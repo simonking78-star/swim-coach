@@ -1,28 +1,30 @@
 import { sb } from "./supabase";
 import type { Role } from "./access";
 import { todayLocal } from "./util";
+import { clubIdOf, clubCols, forgetSquadIds } from "./clubs";
 
 // Admin: squads, members, squad and club moves, deactivate/reactivate, users & roles.
 // Same tables, RPCs and rules as the current app.
 
 export interface SquadRow { id: string; name: string; n: number; }
 export async function loadSquadCounts(club: string): Promise<SquadRow[]> {
-  const { data, error } = await sb.from("squads").select("id, name, swimmers(count)").eq("club", club).order("name");
+  const { data, error } = await sb.from("squads").select("id, name, swimmers(count)").eq("club_id", clubIdOf(club)).order("name");
   if (error) throw error;
   return ((data ?? []) as unknown as { id: string; name: string; swimmers: { count: number }[] }[]).map(q => ({ id: q.id, name: q.name, n: q.swimmers?.[0]?.count ?? 0 }));
 }
 export async function addSquad(club: string, name: string) {
-  const { error } = await sb.from("squads").insert({ name, club } as never);
+  const { error } = await sb.from("squads").insert({ name, ...clubCols(club) } as never);
   if (error) throw new Error(error.message.includes("duplicate") ? "That squad already exists." : "Add failed — " + error.message);
 }
 export async function renameSquad(id: string, name: string) {
   const { error } = await sb.from("squads").update({ name } as never).eq("id", id);
   if (error) throw error;
+  forgetSquadIds();
 }
 
 export interface PickSwimmer { id: string; full_name: string; squad: string | null; squad_id: string | null; club: string; }
 export async function loadActiveSwimmers(club: string): Promise<PickSwimmer[]> {
-  const { data, error } = await sb.from("swimmers").select("id, full_name, squad, squad_id, club").eq("active", true).eq("club", club).order("full_name");
+  const { data, error } = await sb.from("swimmers").select("id, full_name, squad, squad_id, club").eq("active", true).eq("club_id", clubIdOf(club)).order("full_name");
   if (error) throw error;
   return (data ?? []) as PickSwimmer[];
 }
@@ -40,7 +42,7 @@ export function validateMember(m: MemberDraft): string | null {
 /** Inserts the swimmer (a trigger fills the squad name) and opens a squad membership from today. */
 export async function addMember(club: string, m: MemberDraft): Promise<string> {
   const { data, error } = await sb.from("swimmers").insert({
-    full_name: m.full_name.trim(), date_of_birth: m.dob, squad_id: m.squadId, club, swim_england_id: m.seId.trim() || null,
+    full_name: m.full_name.trim(), date_of_birth: m.dob, squad_id: m.squadId, ...clubCols(club), swim_england_id: m.seId.trim() || null,
     joined_club_on: m.joined, parent_name: m.parentName.trim() || null, parent_phone: m.parentPhone.trim() || null,
     parent_email: m.parentEmail.trim() || null, active: true
   } as never).select("id").single();
@@ -68,7 +70,7 @@ export async function moveToClub(swimmerId: string, club: string, squadId: strin
     const { error } = await sb.from("squad_memberships").insert({ swimmer_id: swimmerId, squad_id: squadId, joined_squad_on: onDate } as never);
     if (error) throw error;
   }
-  const { error } = await sb.from("swimmers").update({ club, squad_id: squadId } as never).eq("id", swimmerId);
+  const { error } = await sb.from("swimmers").update({ ...clubCols(club), squad_id: squadId } as never).eq("id", swimmerId);
   if (error) throw error;
 }
 
@@ -89,21 +91,21 @@ export function timeIn(since: string | null, today = todayLocal().date): string 
 }
 
 export async function loadUnassigned(club: string) {
-  const { data, error } = await sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club", club).is("squad_id", null).order("full_name");
+  const { data, error } = await sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club_id", clubIdOf(club)).is("squad_id", null).order("full_name");
   if (error) throw error;
   return (data ?? []) as { id: string; full_name: string; squad: string | null }[];
 }
 /** Every club on file (the results archive holds other clubs too). */
 export async function loadAllClubs(): Promise<string[]> {
-  const { data, error } = await sb.from("swimmers").select("club");
+  const { data, error } = await sb.from("clubs").select("name").order("name");
   if (error) throw error;
-  return [...new Set(((data ?? []) as { club: string | null }[]).map(r => r.club).filter(Boolean) as string[])].sort();
+  return (data ?? []).map(r => r.name as string);
 }
 
 // ---- Deactivate / reactivate (admin-only RPCs; the archive table itself is never read) ----
 export interface ArchivedSwimmer { swimmer_id: string; full_name: string; anon_name: string; squad: string | null; squad_id: string | null; deactivated_on: string; reason: string | null; result_count: number; }
 export async function loadDeactivated(club: string): Promise<ArchivedSwimmer[]> {
-  const { data, error } = await sb.rpc("list_deactivated_swimmers", { p_club: club });
+  const { data, error } = await (sb.rpc as unknown as (f: string, a: object) => ReturnType<typeof sb.rpc>)("list_deactivated_swimmers", { p_club_id: clubIdOf(club) });
   if (error) throw error;
   return (data ?? []) as ArchivedSwimmer[];
 }
@@ -172,7 +174,7 @@ export async function callInvite(payload: InvitePayload): Promise<{ link: string
 /** Remove one role (for that club only), then tidy that club's squad / swimmer links if no other role there still needs them. */
 export async function removeRole(p: Person, role: string, club: string | null) {
   let q = sb.from("user_roles").delete().eq("user_id", p.user_id).eq("role", role);
-  q = club ? q.eq("club", club) : q.is("club", null);
+  q = club ? q.eq("club_id", clubIdOf(club)) : q.is("club_id", null);
   const { error } = await q;
   if (error) throw error;
   const stillInClub = p.roles.some(x => !(x.role === role && x.club === club) && x.club === club);
@@ -189,7 +191,7 @@ export async function unlinkSwimmer(userId: string, swimmerId: string) {
 }
 export async function searchSwimmers(club: string | null, q: string, activeOnly: boolean) {
   let query = sb.from("swimmers").select("id, full_name, squad").ilike("full_name", `%${q}%`).order("full_name").limit(8);
-  if (club) query = query.eq("club", club);
+  if (club) query = query.eq("club_id", clubIdOf(club));
   if (activeOnly) query = query.eq("active", true);
   const { data, error } = await query;
   if (error) throw error;

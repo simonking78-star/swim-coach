@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { sb } from "./supabase";
+import { clubIdOf } from "./clubs";
 
 /** Shape returned by public.home_stats(p_club) — counts run under the caller's RLS. */
 export interface SquadStats {
@@ -25,9 +26,9 @@ export function useHomeStats(club: string | null) {
     queryKey: ["home_stats", club],
     staleTime: 60 * 1000,
     queryFn: async () => {
-      // home_stats is newer than the generated types (migration 20261019140000).
+      // The club-id version (p_club_id) is newer than the generated types (migration 20261024120000).
       const rpc = sb.rpc.bind(sb) as unknown as (fn: string, args: object) => ReturnType<typeof sb.rpc>;
-      const { data, error } = await rpc("home_stats", { p_club: club });
+      const { data, error } = await rpc("home_stats", club ? { p_club_id: clubIdOf(club) } : { p_club: null });
       if (error) throw error;
       return data as unknown as HomeStats;
     }

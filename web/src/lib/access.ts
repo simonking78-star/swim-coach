@@ -17,7 +17,7 @@ export const ACCESS_MATRIX: Record<Section, Partial<Record<Role, Level>>> = {
   season:     { superadmin: "E", club_admin: "E", head_coach: "E", coach: "R" },
   roster:     { superadmin: "E", club_admin: "E", head_coach: "R", coach: "SR", helper: "SR", parent: "CR" },
   stats:      { superadmin: "E", club_admin: "R", head_coach: "R", coach: "R", parent: "CR", swimmer: "CR" },
-  stopwatch:  { superadmin: "E", club_admin: "E", head_coach: "E", coach: "E", helper: "E" },
+  stopwatch:  { superadmin: "E", club_admin: "E", head_coach: "E", coach: "E", helper: "SE" },
   admin:      { superadmin: "E", club_admin: "E" },
   appdev:     { superadmin: "E" }
 };
@@ -40,7 +40,7 @@ export const LEVEL_NOTE: Partial<Record<Level, string>> = {
 export interface Access {
   real_superadmin?: boolean;
   testing?: { role: Role; club: string | null; squad_ids?: string[]; swimmer_ids?: string[]; expires_at: string } | null;
-  roles: { role: Role; club: string | null }[];
+  roles: { role: Role; club: string | null; club_id?: string | null }[];
   squads?: unknown[];
   swimmers?: unknown[];
 }

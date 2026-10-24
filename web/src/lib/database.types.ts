@@ -89,6 +89,7 @@ export type Database = {
       app_events: {
         Row: {
           club: string | null
+          club_id: string | null
           created_at: string
           detail: Json | null
           event_name: string
@@ -98,6 +99,7 @@ export type Database = {
         }
         Insert: {
           club?: string | null
+          club_id?: string | null
           created_at?: string
           detail?: Json | null
           event_name: string
@@ -107,6 +109,7 @@ export type Database = {
         }
         Update: {
           club?: string | null
+          club_id?: string | null
           created_at?: string
           detail?: Json | null
           event_name?: string
@@ -114,11 +117,20 @@ export type Database = {
           id?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "app_events_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       app_feedback: {
         Row: {
           club: string | null
+          club_id: string | null
           created_at: string
           id: string
           message: string
@@ -127,6 +139,7 @@ export type Database = {
         }
         Insert: {
           club?: string | null
+          club_id?: string | null
           created_at?: string
           id?: string
           message: string
@@ -135,13 +148,22 @@ export type Database = {
         }
         Update: {
           club?: string | null
+          club_id?: string | null
           created_at?: string
           id?: string
           message?: string
           page?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "app_feedback_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       app_users: {
         Row: {
@@ -327,21 +349,38 @@ export type Database = {
       }
       clubs: {
         Row: {
+          club_code: string | null
           created_at: string
           id: string
+          is_coaching: boolean
           name: string
+          short_name: string | null
         }
         Insert: {
+          club_code?: string | null
           created_at?: string
           id?: string
+          is_coaching?: boolean
           name: string
+          short_name?: string | null
         }
         Update: {
+          club_code?: string | null
           created_at?: string
           id?: string
+          is_coaching?: boolean
           name?: string
+          short_name?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clubs_club_code_fkey"
+            columns: ["club_code"]
+            isOneToOne: true
+            referencedRelation: "club_codes"
+            referencedColumns: ["club_code"]
+          },
+        ]
       }
       coaches: {
         Row: {
@@ -711,6 +750,7 @@ export type Database = {
           biomechanical: string | null
           blabt: string | null
           club: string | null
+          club_id: string | null
           coach: string | null
           created_at: string
           drill_name: string
@@ -727,6 +767,7 @@ export type Database = {
           biomechanical?: string | null
           blabt?: string | null
           club?: string | null
+          club_id?: string | null
           coach?: string | null
           created_at?: string
           drill_name: string
@@ -743,6 +784,7 @@ export type Database = {
           biomechanical?: string | null
           blabt?: string | null
           club?: string | null
+          club_id?: string | null
           coach?: string | null
           created_at?: string
           drill_name?: string
@@ -755,7 +797,15 @@ export type Database = {
           stroke?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "drills_library_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       galas: {
         Row: {
@@ -1157,6 +1207,7 @@ export type Database = {
       role_test_mode: {
         Row: {
           club: string | null
+          club_id: string | null
           expires_at: string
           role: string
           squad_ids: string[]
@@ -1166,6 +1217,7 @@ export type Database = {
         }
         Insert: {
           club?: string | null
+          club_id?: string | null
           expires_at?: string
           role: string
           squad_ids?: string[]
@@ -1175,6 +1227,7 @@ export type Database = {
         }
         Update: {
           club?: string | null
+          club_id?: string | null
           expires_at?: string
           role?: string
           squad_ids?: string[]
@@ -1182,7 +1235,15 @@ export type Database = {
           swimmer_ids?: string[]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "role_test_mode_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       season_breaks: {
         Row: {
@@ -1301,6 +1362,7 @@ export type Database = {
       seasons: {
         Row: {
           club: string
+          club_id: string | null
           created_at: string
           disabled_at: string | null
           finish_date: string
@@ -1312,6 +1374,7 @@ export type Database = {
         }
         Insert: {
           club: string
+          club_id?: string | null
           created_at?: string
           disabled_at?: string | null
           finish_date: string
@@ -1323,6 +1386,7 @@ export type Database = {
         }
         Update: {
           club?: string
+          club_id?: string | null
           created_at?: string
           disabled_at?: string | null
           finish_date?: string
@@ -1332,12 +1396,21 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "seasons_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       session_plans: {
         Row: {
           block_model: string | null
           club: string
+          club_id: string | null
           coach: string | null
           content: Json
           created_at: string
@@ -1360,6 +1433,7 @@ export type Database = {
         Insert: {
           block_model?: string | null
           club?: string
+          club_id?: string | null
           coach?: string | null
           content?: Json
           created_at?: string
@@ -1382,6 +1456,7 @@ export type Database = {
         Update: {
           block_model?: string | null
           club?: string
+          club_id?: string | null
           coach?: string | null
           content?: Json
           created_at?: string
@@ -1402,6 +1477,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "session_plans_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "session_plans_micro_id_fkey"
             columns: ["micro_id"]
@@ -1428,6 +1510,7 @@ export type Database = {
       squad_drill_weeks: {
         Row: {
           club: string
+          club_id: string | null
           created_at: string
           drill_id: string
           id: string
@@ -1438,6 +1521,7 @@ export type Database = {
         }
         Insert: {
           club: string
+          club_id?: string | null
           created_at?: string
           drill_id: string
           id?: string
@@ -1448,6 +1532,7 @@ export type Database = {
         }
         Update: {
           club?: string
+          club_id?: string | null
           created_at?: string
           drill_id?: string
           id?: string
@@ -1457,6 +1542,13 @@ export type Database = {
           squad_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "squad_drill_weeks_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "squad_drill_weeks_drill_id_fkey"
             columns: ["drill_id"]
@@ -1491,6 +1583,7 @@ export type Database = {
         Row: {
           category: string
           club: string
+          club_id: string | null
           coach: string | null
           created_at: string
           criterion: string | null
@@ -1510,6 +1603,7 @@ export type Database = {
         Insert: {
           category: string
           club: string
+          club_id?: string | null
           coach?: string | null
           created_at?: string
           criterion?: string | null
@@ -1529,6 +1623,7 @@ export type Database = {
         Update: {
           category?: string
           club?: string
+          club_id?: string | null
           coach?: string | null
           created_at?: string
           criterion?: string | null
@@ -1546,6 +1641,13 @@ export type Database = {
           thread_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "squad_feedback_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "squad_feedback_drill_id_fkey"
             columns: ["drill_id"]
@@ -1627,6 +1729,7 @@ export type Database = {
       squad_month_snapshots: {
         Row: {
           club: string
+          club_id: string | null
           generated_at: string
           metrics: Json
           month: string
@@ -1634,6 +1737,7 @@ export type Database = {
         }
         Insert: {
           club: string
+          club_id?: string | null
           generated_at?: string
           metrics: Json
           month: string
@@ -1641,12 +1745,20 @@ export type Database = {
         }
         Update: {
           club?: string
+          club_id?: string | null
           generated_at?: string
           metrics?: Json
           month?: string
           squad_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "squad_month_snapshots_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "squad_month_snapshots_squad_id_fkey"
             columns: ["squad_id"]
@@ -1770,6 +1882,7 @@ export type Database = {
         Row: {
           age_at_swim: number | null
           club: string | null
+          club_id: string | null
           converted_time: string | null
           converted_time_display: string | null
           course: string
@@ -1791,6 +1904,7 @@ export type Database = {
         Insert: {
           age_at_swim?: number | null
           club?: string | null
+          club_id?: string | null
           converted_time?: string | null
           converted_time_display?: string | null
           course: string
@@ -1812,6 +1926,7 @@ export type Database = {
         Update: {
           age_at_swim?: number | null
           club?: string | null
+          club_id?: string | null
           converted_time?: string | null
           converted_time_display?: string | null
           course?: string
@@ -1832,6 +1947,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "swim_results_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "swim_results_swimmer_id_fkey"
             columns: ["swimmer_id"]
             isOneToOne: false
@@ -1844,6 +1966,7 @@ export type Database = {
         Row: {
           account_links: Json
           club: string | null
+          club_id: string | null
           date_of_birth: string | null
           deactivated_at: string
           deactivated_by: string | null
@@ -1863,6 +1986,7 @@ export type Database = {
         Insert: {
           account_links?: Json
           club?: string | null
+          club_id?: string | null
           date_of_birth?: string | null
           deactivated_at?: string
           deactivated_by?: string | null
@@ -1882,6 +2006,7 @@ export type Database = {
         Update: {
           account_links?: Json
           club?: string | null
+          club_id?: string | null
           date_of_birth?: string | null
           deactivated_at?: string
           deactivated_by?: string | null
@@ -1899,6 +2024,13 @@ export type Database = {
           swimmer_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "swimmer_archive_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "swimmer_archive_swimmer_id_fkey"
             columns: ["swimmer_id"]
@@ -1991,6 +2123,7 @@ export type Database = {
         Row: {
           active: boolean | null
           club: string | null
+          club_id: string | null
           created_at: string | null
           date_of_birth: string | null
           full_name: string
@@ -2009,6 +2142,7 @@ export type Database = {
         Insert: {
           active?: boolean | null
           club?: string | null
+          club_id?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           full_name: string
@@ -2027,6 +2161,7 @@ export type Database = {
         Update: {
           active?: boolean | null
           club?: string | null
+          club_id?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           full_name?: string
@@ -2044,10 +2179,244 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "swimmers_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "swimmers_squad_id_fkey"
             columns: ["squad_id"]
             isOneToOne: false
             referencedRelation: "squads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_results: {
+        Row: {
+          age: number | null
+          club: string
+          club_id: string | null
+          created_at: string
+          id: string
+          level: number | null
+          note: string | null
+          recorded_by: string | null
+          reps_done: number | null
+          reps_total: number | null
+          rounds: Json
+          score: number | null
+          session_date: string
+          session_id: string
+          swimmer_id: string
+          template_id: string
+          template_name: string
+          updated_at: string
+          year_of_birth: number | null
+        }
+        Insert: {
+          age?: number | null
+          club: string
+          club_id?: string | null
+          created_at?: string
+          id?: string
+          level?: number | null
+          note?: string | null
+          recorded_by?: string | null
+          reps_done?: number | null
+          reps_total?: number | null
+          rounds?: Json
+          score?: number | null
+          session_date: string
+          session_id: string
+          swimmer_id: string
+          template_id: string
+          template_name: string
+          updated_at?: string
+          year_of_birth?: number | null
+        }
+        Update: {
+          age?: number | null
+          club?: string
+          club_id?: string | null
+          created_at?: string
+          id?: string
+          level?: number | null
+          note?: string | null
+          recorded_by?: string | null
+          reps_done?: number | null
+          reps_total?: number | null
+          rounds?: Json
+          score?: number | null
+          session_date?: string
+          session_id?: string
+          swimmer_id?: string
+          template_id?: string
+          template_name?: string
+          updated_at?: string
+          year_of_birth?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_results_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "test_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_results_swimmer_id_fkey"
+            columns: ["swimmer_id"]
+            isOneToOne: false
+            referencedRelation: "swimmers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_results_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "test_set_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_sessions: {
+        Row: {
+          clock_started_at: string | null
+          closed_at: string | null
+          club: string
+          club_id: string | null
+          created_at: string
+          created_by: string | null
+          group_type: string
+          id: string
+          model: Json
+          session_date: string
+          squad_id: string | null
+          squad_name: string | null
+          status: string
+          swimmer_ids: string[]
+          template_id: string
+          template_name: string
+        }
+        Insert: {
+          clock_started_at?: string | null
+          closed_at?: string | null
+          club: string
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          group_type: string
+          id?: string
+          model: Json
+          session_date?: string
+          squad_id?: string | null
+          squad_name?: string | null
+          status?: string
+          swimmer_ids?: string[]
+          template_id: string
+          template_name: string
+        }
+        Update: {
+          clock_started_at?: string | null
+          closed_at?: string | null
+          club?: string
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          group_type?: string
+          id?: string
+          model?: Json
+          session_date?: string
+          squad_id?: string | null
+          squad_name?: string | null
+          status?: string
+          swimmer_ids?: string[]
+          template_id?: string
+          template_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_sessions_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_sessions_squad_id_fkey"
+            columns: ["squad_id"]
+            isOneToOne: false
+            referencedRelation: "squads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_sessions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "test_set_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_set_templates: {
+        Row: {
+          active: boolean
+          club: string
+          club_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          model: Json
+          name: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          active?: boolean
+          club: string
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          model: Json
+          name: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          active?: boolean
+          club?: string
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          model?: Json
+          name?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_set_templates_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
             referencedColumns: ["id"]
           },
         ]
@@ -2095,174 +2464,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      test_results: {
-        Row: {
-          age: number | null
-          club: string
-          club_id: string | null
-          created_at: string
-          id: string
-          level: number | null
-          note: string | null
-          recorded_by: string | null
-          reps_done: number | null
-          reps_total: number | null
-          rounds: Json
-          score: number | null
-          session_date: string
-          session_id: string
-          swimmer_id: string
-          template_id: string
-          template_name: string
-          updated_at: string
-          year_of_birth: number | null
-        }
-        Insert: {
-          age?: number | null
-          club?: string
-          club_id?: string | null
-          created_at?: string
-          id?: string
-          level?: number | null
-          note?: string | null
-          recorded_by?: string | null
-          reps_done?: number | null
-          reps_total?: number | null
-          rounds?: Json
-          score?: number | null
-          session_date?: string
-          session_id: string
-          swimmer_id: string
-          template_id?: string
-          template_name?: string
-          updated_at?: string
-          year_of_birth?: number | null
-        }
-        Update: {
-          age?: number | null
-          club?: string
-          club_id?: string | null
-          created_at?: string
-          id?: string
-          level?: number | null
-          note?: string | null
-          recorded_by?: string | null
-          reps_done?: number | null
-          reps_total?: number | null
-          rounds?: Json
-          score?: number | null
-          session_date?: string
-          session_id?: string
-          swimmer_id?: string
-          template_id?: string
-          template_name?: string
-          updated_at?: string
-          year_of_birth?: number | null
-        }
-        Relationships: []
-      }
-      test_sessions: {
-        Row: {
-          clock_started_at: string | null
-          closed_at: string | null
-          club: string
-          club_id: string | null
-          created_at: string
-          created_by: string | null
-          group_type: string
-          id: string
-          model: Json
-          session_date: string
-          squad_id: string | null
-          squad_name: string | null
-          status: string
-          template_id: string
-          template_name: string
-          swimmer_ids: string[]
-        }
-        Insert: {
-          clock_started_at?: string | null
-          closed_at?: string | null
-          club: string
-          club_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          group_type: string
-          id?: string
-          model: Json
-          session_date?: string
-          squad_id?: string | null
-          squad_name?: string | null
-          status?: string
-          template_id: string
-          template_name: string
-          swimmer_ids?: string[]
-        }
-        Update: {
-          clock_started_at?: string | null
-          closed_at?: string | null
-          club?: string
-          club_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          group_type?: string
-          id?: string
-          model?: Json
-          session_date?: string
-          squad_id?: string | null
-          squad_name?: string | null
-          status?: string
-          template_id?: string
-          template_name?: string
-          swimmer_ids?: string[]
-        }
-        Relationships: []
-      }
-      test_set_templates: {
-        Row: {
-          active: boolean
-          club: string
-          club_id: string | null
-          created_at: string
-          created_by: string | null
-          description: string | null
-          id: string
-          model: Json
-          name: string
-          updated_at: string
-          updated_by: string | null
-          version: number
-        }
-        Insert: {
-          active?: boolean
-          club: string
-          club_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          model: Json
-          name: string
-          updated_at?: string
-          updated_by?: string | null
-          version?: number
-        }
-        Update: {
-          active?: boolean
-          club?: string
-          club_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          model?: Json
-          name?: string
-          updated_at?: string
-          updated_by?: string | null
-          version?: number
-        }
-        Relationships: []
       }
       timetables: {
         Row: {
@@ -2342,23 +2543,34 @@ export type Database = {
       user_roles: {
         Row: {
           club: string | null
+          club_id: string | null
           created_at: string
           role: string
           user_id: string
         }
         Insert: {
           club?: string | null
+          club_id?: string | null
           created_at?: string
           role: string
           user_id: string
         }
         Update: {
           club?: string | null
+          club_id?: string | null
           created_at?: string
           role?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_squads: {
         Row: {
@@ -2513,7 +2725,6 @@ export type Database = {
         Returns: Json
       }
       home_stats: { Args: { p_club?: string }; Returns: Json }
-      set_swimmer_birth_year: { Args: { p_swimmer: string; p_year: number }; Returns: number }
       is_superadmin: { Args: never; Returns: boolean }
       list_deactivated_swimmers: {
         Args: { p_club: string }
@@ -2533,6 +2744,10 @@ export type Database = {
       reactivate_swimmer: {
         Args: { p_squad?: string; p_swimmer: string }
         Returns: Json
+      }
+      set_swimmer_birth_year: {
+        Args: { p_swimmer: string; p_year: number }
+        Returns: number
       }
       snapshot_squad_month: { Args: { p_month?: string }; Returns: number }
       squad_month_figures: {
