@@ -5208,14 +5208,17 @@ async function loadSwimmers(){
 // ===================================================================
 let rosterSwimmers = [];
 
-function calcAge(dobStr){
-  if (!dobStr) return null;
-  const dob = new Date(dobStr + "T00:00:00");
-  const today = new Date();
-  let age = today.getFullYear() - dob.getFullYear();
-  const m = today.getMonth() - dob.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
-  return age;
+// Year of birth: the stored year_of_birth, else the year of a full date of birth.
+function swimmerBirthYear(s){
+  if (!s) return null;
+  if (s.year_of_birth) return +s.year_of_birth;
+  if (s.date_of_birth) return +String(s.date_of_birth).slice(0, 4);
+  return null;
+}
+// Age as at 31 December of the current year (Swim England competition age).
+function calcAge(s){
+  const y = swimmerBirthYear(s);
+  return y ? new Date().getFullYear() - y : null;
 }
 
 async function goSwimmers(){
@@ -5237,7 +5240,7 @@ async function loadRosterSquadOptions(){
 
 async function loadRosterSwimmers(){
   const { data, error } = await sb.from("swimmers")
-    .select("id, full_name, squad, date_of_birth, gender, swim_england_id, joined_club_on, parent_name, parent_phone, parent_email")
+    .select("id, full_name, squad, date_of_birth, year_of_birth, gender, swim_england_id, joined_club_on, parent_name, parent_phone, parent_email")
     .eq("club", currentClub)
     .eq("active", true)
     .order("full_name");
@@ -5248,7 +5251,7 @@ async function loadRosterSwimmers(){
     $("rosterTbody").innerHTML = `<tr><td colspan="${rosterCols.length}" class="empty">Could not load swimmers.</td></tr>`;
     return;
   }
-  rosterSwimmers = (data || []).map(s => ({ ...s, age: calcAge(s.date_of_birth) }));
+  rosterSwimmers = (data || []).map(s => ({ ...s, age: calcAge(s) }));
   renderRosterAgeOptions();
   renderRosterTable();
   rosterEnsureExtras();
@@ -5266,8 +5269,8 @@ function renderRosterAgeOptions(){
 const ROSTER_COLS = [
   { key: "name",     label: "Name",           fixed: true, get: s => s.full_name },
   { key: "squad",    label: "Squad",          get: s => s.squad || "—" },
-  { key: "age",      label: "Age",            get: s => s.age != null ? s.age : "—" },
-  { key: "yob",      label: "Year of birth",  get: s => s.date_of_birth ? s.date_of_birth.slice(0, 4) : "—" },
+  { key: "age",      label: "Age (31 Dec)",   get: s => s.age != null ? s.age : "—" },
+  { key: "yob",      label: "Year of birth",  get: s => swimmerBirthYear(s) || "—" },
   { key: "gender",   label: "Gender",         get: s => s.gender || "—" },
   { key: "seid",     label: "Swim England ID", get: s => s.swim_england_id || "—" },
   { key: "joined",   label: "Joined club",    get: s => s.joined_club_on ? fmtDate(s.joined_club_on) : "—", nowrap: true },
@@ -6289,7 +6292,7 @@ async function showSwimmerDetail(swimmerId){
   info.innerHTML = "Loading…";
   const { data, error } = await sb
     .from("swimmers")
-    .select("full_name, date_of_birth, swim_england_id, squad, joined_club_on, parent_name, parent_phone, parent_email")
+    .select("full_name, date_of_birth, year_of_birth, swim_england_id, squad, joined_club_on, parent_name, parent_phone, parent_email")
     .eq("id", swimmerId).single();
   if (error){ info.textContent = moveSelected.squad ? `Currently in: ${moveSelected.squad}` : "Not currently assigned to a squad"; return; }
 
@@ -6308,6 +6311,8 @@ async function showSwimmerDetail(swimmerId){
   const rows = [];
   rows.push(`<strong>Currently in:</strong> ${data.squad ? escapeHtml(data.squad) : "no squad"}${timeInSquad ? ` (${timeInSquad})` : ""}`);
   if (data.date_of_birth) rows.push(`<strong>DOB:</strong> ${fmtDate(data.date_of_birth)}`);
+  else if (swimmerBirthYear(data)) rows.push(`<strong>Year of birth:</strong> ${swimmerBirthYear(data)}`);
+  if (calcAge(data) != null) rows.push(`<strong>Age (31 Dec):</strong> ${calcAge(data)}`);
   if (data.swim_england_id) rows.push(`<strong>Swim England ID:</strong> ${escapeHtml(data.swim_england_id)}`);
   if (data.joined_club_on) rows.push(`<strong>Joined club:</strong> ${fmtDate(data.joined_club_on)}`);
   if (data.parent_name) rows.push(`<strong>Parent:</strong> ${escapeHtml(data.parent_name)}`);
@@ -6841,7 +6846,7 @@ async function resetMIRegression(){
   await loadMISwimmers();  // always fresh — the selected club may have changed
 }
 async function loadMISwimmers(){
-  const { data, error } = await sb.from("swimmers").select("id, full_name, squad, date_of_birth").eq("active", true).eq("club", currentClub).order("full_name");
+  const { data, error } = await sb.from("swimmers").select("id, full_name, squad, date_of_birth, year_of_birth").eq("active", true).eq("club", currentClub).order("full_name");
   if (error){ console.error(error); return; }
   miAllSwimmers = data || [];
 }
@@ -6880,7 +6885,7 @@ async function miSelectSwimmer(s){
   miSearchInput.value = "";
   miSearchInput.style.display = "none";
   miAcResults.style.display = "none";
-  $("miDobHint").textContent = s.date_of_birth ? "" : "No date of birth on file for this swimmer — county-standard lines and forecasts need one (add it via Administrator).";
+  $("miDobHint").textContent = swimmerBirthYear(s) ? "" : "No year of birth on file for this swimmer — county-standard lines and forecasts need one (add it via Administrator).";
   $("miControls").style.display = "block";
   $("miResultArea").innerHTML = '<div class="mi-empty">Loading results…</div>';
 
@@ -6937,7 +6942,7 @@ function renderMIChart(){
     return;
   }
 
-  const birthYear = miSwimmer.date_of_birth ? new Date(miSwimmer.date_of_birth + "T00:00:00").getFullYear() : null;
+  const birthYear = swimmerBirthYear(miSwimmer);
   const scReg = scPoints.length >= 2 ? linreg(scPoints) : null;
   const lcReg = lcPoints.length >= 2 ? linreg(lcPoints) : null;
   const allPts = scPoints.concat(lcPoints);
@@ -7025,7 +7030,7 @@ function renderMIChart(){
       ${forecasts.length ? `<div class="mi-forecast-badges">${forecasts.map(f => `<span class="mi-forecast-badge">${escapeHtml(f)}</span>`).join("")}</div>` : ""}
       <div class="mi-canvas-wrap"><canvas id="miCanvas"></canvas></div>
       ${(flags.length || !birthYear) ? `<div class="mi-flags">
-        ${!birthYear ? '<div class="mi-flag">⚠ No date of birth on file — county-standard lines and forecasts are unavailable for this swimmer.</div>' : ""}
+        ${!birthYear ? '<div class="mi-flag">⚠ No year of birth on file — county-standard lines and forecasts are unavailable for this swimmer.</div>' : ""}
         ${flags.map(f => `<div class="mi-flag">⚠ ${escapeHtml(f)}</div>`).join("")}
       </div>` : ""}
     </div>
@@ -7128,7 +7133,7 @@ async function cmpOpen(){
   if (!cmpB) cmpClubPref.B = currentClub;
   $("cmpResultArea").innerHTML = '<div class="mi-empty">Loading swimmers…</div>';
   try {
-    const sw = await cmpFetchAll(() => sb.from("swimmers").select("id, full_name, club, squad, date_of_birth, active").order("id"));
+    const sw = await cmpFetchAll(() => sb.from("swimmers").select("id, full_name, club, squad, date_of_birth, year_of_birth, active").order("id"));
     cmpSwimmersById = new Map(sw.map(s => [s.id, s]));
   } catch (e){
     console.error(e);
@@ -7174,8 +7179,8 @@ function cmpYob(id){
   if (cmpYobCache.has(id)) return cmpYobCache.get(id);
   const s = cmpSwimmersById.get(id);
   let res = null;
-  if (s && s.date_of_birth){
-    res = { year: +s.date_of_birth.slice(0, 4), est: false };
+  if (swimmerBirthYear(s)){
+    res = { year: swimmerBirthYear(s), est: false };
   } else {
     const counts = new Map();
     (cmpRowsBySwimmer.get(id) || []).forEach(r => {
@@ -8177,7 +8182,7 @@ function buildSwimmerPdf(sw, att, results, feedback){
   font(16, true, [255, 255, 255]); doc.text(name, mL, 36);
   const bits = ["Swimmer report"];
   if (sw.squad) bits.push(fbPdfSafe(sw.squad));
-  if (sw.date_of_birth) bits.push("Born " + sw.date_of_birth.slice(0, 4));
+  if (swimmerBirthYear(sw)) bits.push("Born " + swimmerBirthYear(sw));
   bits.push(fbPdfSafe(currentClub), today);
   font(9.5, false, [255, 255, 255]); doc.text(bits.join("   ·   "), mL, 58);
 
@@ -8298,10 +8303,10 @@ async function shareSwimmerPdf(){
       sb.from("attendance_records").select("session_date, status, present, minutes_attended, session_minutes").eq("swimmer_id", sw.id).limit(10000),
       sb.from("swim_results").select("event, course, swim_time_display, meet_date").eq("swimmer_id", sw.id).limit(10000),
       sb.from("swimmer_feedback").select("category, criterion, status, observation, remedial_action, note, session_date, created_at").eq("swimmer_id", sw.id),
-      sw.date_of_birth === undefined ? sb.from("swimmers").select("date_of_birth").eq("id", sw.id).single() : Promise.resolve({ data: null })
+      sw.date_of_birth === undefined ? sb.from("swimmers").select("date_of_birth, year_of_birth").eq("id", sw.id).single() : Promise.resolve({ data: null })
     ]);
     for (const r of [at, rs, fb]) if (r.error) throw r.error;
-    const full = { ...sw, date_of_birth: sw.date_of_birth !== undefined ? sw.date_of_birth : (pr.data && pr.data.date_of_birth) };
+    const full = { ...sw, date_of_birth: sw.date_of_birth !== undefined ? sw.date_of_birth : (pr.data && pr.data.date_of_birth), year_of_birth: sw.year_of_birth || (pr.data && pr.data.year_of_birth) };
     const doc = buildSwimmerPdf(full, at.data || [], rs.data || [], fb.data || []);
     const slug = fbPdfSafe(sw.full_name || "swimmer").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
     const filename = `swimmer-report-${slug || "swimmer"}-${new Date().toISOString().slice(0, 10)}.pdf`;
