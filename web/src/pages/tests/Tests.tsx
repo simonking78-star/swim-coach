@@ -16,7 +16,9 @@ export function useTestAccess() {
   const { access } = useAuth();
   const run = sectionLevel(access, "stopwatch");   // who runs tests poolside (incl. helpers)
   const plans = sectionLevel(access, "plans");     // who writes templates
-  return { canRun: canEdit(run), canBuild: canEdit(plans), any: run !== "N" || plans !== "N" };
+  // Squad-level runners (helpers) can only run a test for one of their own squads.
+  const mySquads = new Set((access?.squads ?? []) as string[]);
+  return { canRun: canEdit(run), squadOnly: run === "SE", mySquads, canBuild: canEdit(plans), any: run !== "N" || plans !== "N" };
 }
 
 export function TestsBack({ to = "/tests", label = "Test & Assess" }: { to?: string; label?: string }) {

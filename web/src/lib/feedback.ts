@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { sb } from "./supabase";
 import { looksOffline, queueWrite } from "./offline";
 import { isoAdd, uuid } from "./util";
+import { clubIdOf, clubCols, squadIdOf } from "./clubs";
 
 // Feedback — swimmer and squad. Same tables, values and rules as the current
 // app's viewFeedback (fbSwimmerMode / fbSquadMode).
@@ -60,8 +61,8 @@ export function toThreads<T extends FbEntry>(rows: T[], stroke: string | null): 
 // Swimmer feedback
 // ---------------------------------------------------------------------------
 export async function loadFbSwimmers(club: string, squad: string | null): Promise<SwimmerLite[]> {
-  let q = sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club", club).order("full_name");
-  if (squad) q = q.eq("squad", squad);
+  let q = sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club_id", clubIdOf(club)).order("full_name");
+  if (squad) q = q.eq("squad_id", await squadIdOf(club, squad));
   const { data, error } = await q;
   if (error) throw error;
   return (data ?? []) as SwimmerLite[];
@@ -82,7 +83,7 @@ export interface RecentEntry extends FbEntry { swimmer_id: string; swimmer_name:
 export async function loadRecentSwimmerFeedback(club: string): Promise<RecentEntry[]> {
   const { data, error } = await sb.from("swimmer_feedback")
     .select(FB_COLS + ", swimmer_id, swimmers!inner(full_name, club)")
-    .eq("swimmers.club", club)
+    .eq("swimmers.club_id", clubIdOf(club))
     .order("created_at", { ascending: false })
     .limit(15);
   if (error) throw error;
@@ -210,8 +211,8 @@ export interface SquadLite { id: string; name: string; entries: number; }
 
 export async function loadFbSquads(club: string): Promise<SquadLite[]> {
   const [sq, fb] = await Promise.all([
-    sb.from("squads").select("id, name").eq("club", club).order("name"),
-    sb.from("squad_feedback").select("squad_id").eq("club", club).eq("is_active", true)
+    sb.from("squads").select("id, name").eq("club_id", clubIdOf(club)).order("name"),
+    sb.from("squad_feedback").select("squad_id").eq("club_id", clubIdOf(club)).eq("is_active", true)
   ]);
   if (sq.error) throw sq.error;
   const counts = new Map<string, number>();
@@ -239,7 +240,7 @@ export interface RecentSquadEntry { id: string; squad_id: string; squad_name: st
 export async function loadRecentSquadFeedback(club: string): Promise<RecentSquadEntry[]> {
   const { data, error } = await sb.from("squad_feedback")
     .select("id, squad_id, category, criterion, status, observation, session_date, squads(name), drills_library(drill_name)")
-    .eq("club", club).eq("is_active", true)
+    .eq("club_id", clubIdOf(club)).eq("is_active", true)
     .order("created_at", { ascending: false }).limit(12);
   if (error) throw error;
   type Raw = Omit<RecentSquadEntry, "squad_name" | "drill_name"> & { squads: { name: string } | null; drills_library: { drill_name: string } | null };
@@ -247,7 +248,7 @@ export async function loadRecentSquadFeedback(club: string): Promise<RecentSquad
 }
 
 export async function loadDrills(club: string): Promise<Drill[]> {
-  const { data, error } = await sb.from("drills_library").select("id, drill_name, stroke, pseudonyms").eq("club", club).order("stroke").order("drill_name");
+  const { data, error } = await sb.from("drills_library").select("id, drill_name, stroke, pseudonyms").eq("club_id", clubIdOf(club)).order("stroke").order("drill_name");
   if (error) throw error;
   return (data ?? []) as unknown as Drill[];
 }
@@ -264,7 +265,7 @@ export interface SeasonWeek { id: string; week_no: number; week_commencing: stri
 export const QES: Record<string, string> = { quality: "Quality", endurance: "Endurance", sprint: "Sprint" };
 
 export async function loadSquadWeeks(club: string, squadId: string): Promise<SeasonWeek[]> {
-  const { data: seasons, error: se } = await sb.from("seasons").select("id").eq("club", club).eq("is_active", true);
+  const { data: seasons, error: se } = await sb.from("seasons").select("id").eq("club_id", clubIdOf(club)).eq("is_active", true);
   if (se) throw se;
   const ids = (seasons ?? []).map(s => s.id as string);
   if (!ids.length) return [];
@@ -319,7 +320,7 @@ export function validateSquadDraft(d: SquadFbDraft): string | null {
 /** Adds a dated entry; only the newest entry in a string drives the season weeks. */
 export async function saveSquadFeedback(d: SquadFbDraft): Promise<{ weeksLinked: number }> {
   const row: Record<string, unknown> = {
-    club: d.club, squad_id: d.squadId, entry_type: d.entryType, category: d.category,
+    ...clubCols(d.club), squad_id: d.squadId, entry_type: d.entryType, category: d.category,
     observation: d.observation.trim(),
     remedial_action: d.remedial.trim() || null,
     note: d.notes.trim() || null,
@@ -340,7 +341,7 @@ export async function saveSquadFeedback(d: SquadFbDraft): Promise<{ weeksLinked:
   const weeks = d.drill ? d.weeks : [];
   if (weeks.length) {
     const { error: we } = await sb.from("squad_drill_weeks").insert(weeks.map(mid => ({
-      squad_feedback_id: (saved as { id: string }).id, squad_id: d.squadId, drill_id: d.drill!.id, micro_id: mid, club: d.club
+      squad_feedback_id: (saved as { id: string }).id, squad_id: d.squadId, drill_id: d.drill!.id, micro_id: mid, ...clubCols(d.club)
     })) as never);
     if (we) throw we;
   }

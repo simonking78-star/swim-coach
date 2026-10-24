@@ -1,5 +1,6 @@
 import { sb } from "./supabase";
 import { looksOffline, queueWrite } from "./offline";
+import { clubIdOf, clubCols } from "./clubs";
 
 // Test & Assess (claude/specs/test-and-assess.md).
 // A template is a model of one or more rounds. Each round has distance,
@@ -180,7 +181,7 @@ export const roundLabel = (r: Round, v: RoundValues) => `${v.reps} × ${v.distan
 const TPL_COLS = "id, club, name, description, model, active, version, updated_at";
 
 export async function loadTemplates(club: string, includeOff = false): Promise<Template[]> {
-  let q = sb.from("test_set_templates").select(TPL_COLS).eq("club", club).order("name");
+  let q = sb.from("test_set_templates").select(TPL_COLS).eq("club_id", clubIdOf(club)).order("name");
   if (!includeOff) q = q.eq("active", true);
   const { data, error } = await q;
   if (error) throw error;
@@ -192,7 +193,7 @@ export async function loadTemplate(id: string): Promise<Template | null> {
   return data ? { ...(data as unknown as Template), model: normaliseModel(data.model) } : null;
 }
 export async function saveTemplate(t: { id?: string; club: string; name: string; description: string | null; model: TestModel; active?: boolean; version?: number }): Promise<string> {
-  const row = { club: t.club, name: t.name.trim(), description: t.description?.trim() || null, model: t.model as never, active: t.active ?? true };
+  const row = { ...clubCols(t.club), name: t.name.trim(), description: t.description?.trim() || null, model: t.model as never, active: t.active ?? true };
   if (t.id) {
     const { error } = await sb.from("test_set_templates").update({ ...row, version: (t.version ?? 1) + 1 }).eq("id", t.id);
     if (error) throw friendly(error);
@@ -213,7 +214,7 @@ function friendly(e: { message: string; code?: string }) {
 
 const SW_COLS = "id, full_name, squad, squad_id, year_of_birth, date_of_birth";
 export async function loadClubSwimmers(club: string): Promise<TestSwimmer[]> {
-  const { data, error } = await sb.from("swimmers").select(SW_COLS).eq("club", club).eq("active", true).order("full_name");
+  const { data, error } = await sb.from("swimmers").select(SW_COLS).eq("club_id", clubIdOf(club)).eq("active", true).order("full_name");
   if (error) throw error;
   return (data ?? []) as TestSwimmer[];
 }
@@ -228,7 +229,7 @@ export async function loadSwimmersByIds(ids: string[]): Promise<TestSwimmer[]> {
   return out.sort((a, b) => a.full_name.localeCompare(b.full_name));
 }
 export async function loadSquads(club: string): Promise<{ id: string; name: string }[]> {
-  const { data, error } = await sb.from("squads").select("id, name").eq("club", club).order("name");
+  const { data, error } = await sb.from("squads").select("id, name").eq("club_id", clubIdOf(club)).order("name");
   if (error) throw error;
   return data ?? [];
 }
@@ -244,7 +245,7 @@ const SES_COLS = "id, template_id, template_name, model, club, session_date, gro
 const toSession = (d: unknown) => { const s = d as TestSession; return { ...s, model: normaliseModel(s.model), swimmer_ids: s.swimmer_ids ?? [] }; };
 
 export async function loadSessions(club: string, opts: { status?: "live" | "closed"; templateId?: string; limit?: number } = {}): Promise<TestSession[]> {
-  let q = sb.from("test_sessions").select(SES_COLS).eq("club", club).order("session_date", { ascending: false }).order("created_at", { ascending: false });
+  let q = sb.from("test_sessions").select(SES_COLS).eq("club_id", clubIdOf(club)).order("session_date", { ascending: false }).order("created_at", { ascending: false });
   if (opts.status) q = q.eq("status", opts.status);
   if (opts.templateId) q = q.eq("template_id", opts.templateId);
   const { data, error } = await q.limit(opts.limit ?? 200);
@@ -258,7 +259,7 @@ export async function loadSession(id: string): Promise<TestSession | null> {
 }
 export async function createSession(s: { template: Template; club: string; date: string; group_type: TestSession["group_type"]; squad_id: string | null; squad_name: string | null; swimmer_ids: string[] }): Promise<string> {
   const { data, error } = await sb.from("test_sessions").insert({
-    template_id: s.template.id, template_name: s.template.name, model: s.template.model as never, club: s.club,
+    template_id: s.template.id, template_name: s.template.name, model: s.template.model as never, ...clubCols(s.club),
     session_date: s.date, group_type: s.group_type, squad_id: s.squad_id, squad_name: s.squad_name, swimmer_ids: s.swimmer_ids
   }).select("id").single();
   if (error) throw error;
@@ -278,7 +279,7 @@ export async function loadSessionResults(sessionId: string): Promise<TestResult[
 export async function loadResults(club: string, templateId: string): Promise<TestResult[]> {
   const out: TestResult[] = [];
   for (let from = 0; ; from += 1000) {
-    const { data, error } = await sb.from("test_results").select(RES_COLS).eq("club", club).eq("template_id", templateId)
+    const { data, error } = await sb.from("test_results").select(RES_COLS).eq("club_id", clubIdOf(club)).eq("template_id", templateId)
       .order("session_date").range(from, from + 999);
     if (error) throw error;
     out.push(...((data ?? []) as unknown as TestResult[]));
@@ -288,7 +289,7 @@ export async function loadResults(club: string, templateId: string): Promise<Tes
 }
 /** Templates that have results in this club (including switched-off ones), for Statistics. */
 export async function loadTemplatesWithResults(club: string): Promise<{ id: string; name: string }[]> {
-  const { data, error } = await sb.from("test_results").select("template_id, template_name").eq("club", club).limit(5000);
+  const { data, error } = await sb.from("test_results").select("template_id, template_name").eq("club_id", clubIdOf(club)).limit(5000);
   if (error) throw error;
   const m = new Map<string, string>();
   for (const r of data ?? []) m.set(r.template_id, r.template_name);

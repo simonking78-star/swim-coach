@@ -1,6 +1,7 @@
 import { sb } from "./supabase";
 import { looksOffline, queueWrite } from "./offline";
 import { fmtDay } from "./util";
+import { clubIdOf, squadIdOf } from "./clubs";
 export { coachName, fmtDay, logEvent, todayLocal } from "./util";
 
 // Attendance register — same behaviour and data as the current app's
@@ -121,7 +122,7 @@ export function nextTickStatus(cur: AttStatus | null): AttStatus {
 // Loading
 // ---------------------------------------------------------------------------
 export async function loadSquadNames(club: string): Promise<string[]> {
-  const { data, error } = await sb.from("squads").select("name").eq("club", club).order("name");
+  const { data, error } = await sb.from("squads").select("name").eq("club_id", clubIdOf(club)).order("name");
   if (error) throw error;
   return [...new Set((data ?? []).map(r => r.name as string))];
 }
@@ -130,7 +131,7 @@ export interface PlanOption { id: string; label: string; }
 export async function loadPlanOptions(club: string): Promise<PlanOption[]> {
   const { data, error } = await sb.from("session_plans")
     .select("id, title, intended_date, total_distance_m")
-    .eq("club", club)
+    .eq("club_id", clubIdOf(club))
     .order("updated_at", { ascending: false })
     .limit(100);
   if (error) throw error;
@@ -162,7 +163,7 @@ export async function loadSlots(club: string, squad: string, date: string): Prom
     timetable_sessions: { id: string; day_of_week: number; start_time: string; end_time: string | null; pool_size: string | null; is_active: boolean | null }[] };
   let q = sb.from("timetables")
     .select("season_start, season_end, squads!inner(name, club), timetable_sessions(id, day_of_week, start_time, end_time, pool_size, is_active)")
-    .eq("is_active", true).eq("squads.club", club).lte("season_start", date).gte("season_end", date);
+    .eq("is_active", true).eq("squads.club_id", clubIdOf(club)).lte("season_start", date).gte("season_end", date);
   if (squad !== WHOLE_CLUB) q = q.eq("squads.name", squad);
   const { data, error } = await q;
   if (error) throw error;
@@ -180,8 +181,8 @@ export async function loadSlots(club: string, squad: string, date: string): Prom
 
 /** Active swimmers in scope, with any mark already saved for this exact session. */
 export async function loadRegister(s: Pick<AttSession, "club" | "squad" | "date" | "time" | "pool">): Promise<AttSwimmer[]> {
-  let q = sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club", s.club).order("full_name");
-  if (s.squad !== WHOLE_CLUB) q = q.eq("squad", s.squad);
+  let q = sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club_id", clubIdOf(s.club)).order("full_name");
+  if (s.squad !== WHOLE_CLUB) q = q.eq("squad_id", await squadIdOf(s.club, s.squad));
   const { data: swimmers, error } = await q;
   if (error) throw error;
 

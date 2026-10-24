@@ -1,4 +1,5 @@
 import { sb } from "./supabase";
+import { clubIdOf, clubCols } from "./clubs";
 
 // Drills & Skills library — same data and rules as the current app's
 // viewDrillsLibrary (drills_library + drill_periodisation).
@@ -14,7 +15,7 @@ export const MESOS = ["Meso 1", "Meso 2", "Meso 3"];
 export const PHASES = ["Quality", "Endurance", "Sprint"];
 
 export async function loadAllDrills(club: string): Promise<FullDrill[]> {
-  const { data, error } = await sb.from("drills_library").select("*").eq("club", club).order("stroke").order("drill_name");
+  const { data, error } = await sb.from("drills_library").select("*").eq("club_id", clubIdOf(club)).order("stroke").order("drill_name");
   if (error) throw error;
   return (data ?? []) as unknown as FullDrill[];
 }
@@ -71,7 +72,7 @@ export async function saveDrill(club: string, id: string | null, d: DrillDraft, 
     const { error } = await sb.from("drills_library").update(payload as never).eq("id", id);
     if (error) throw error;
   } else {
-    const { data, error } = await sb.from("drills_library").insert({ ...payload, club, coach } as never).select("id").single();
+    const { data, error } = await sb.from("drills_library").insert({ ...payload, ...clubCols(club), coach } as never).select("id").single();
     if (error) throw error;
     drillId = (data as { id: string }).id;
   }

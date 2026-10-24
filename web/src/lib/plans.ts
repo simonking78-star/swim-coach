@@ -1,6 +1,7 @@
 import { sb } from "./supabase";
 import { QES } from "./feedback";
 import { isoAdd } from "./util";
+import { clubIdOf, clubCols } from "./clubs";
 
 // Session plans — same data, parser and rules as the current app's
 // viewSession / viewPlanEditor / viewPlanView.
@@ -98,7 +99,7 @@ export interface Plan {
 const LIST_COLS = "id, title, total_distance_m, squad_scope, squad_id, micro_id, micro_session_id, pool_size, intended_date, updated_at, content, stroke_skills, training_zone";
 
 export async function loadPlans(club: string): Promise<Plan[]> {
-  const { data, error } = await sb.from("session_plans").select(LIST_COLS).eq("club", club).order("intended_date", { ascending: true, nullsFirst: false });
+  const { data, error } = await sb.from("session_plans").select(LIST_COLS).eq("club_id", clubIdOf(club)).order("intended_date", { ascending: true, nullsFirst: false });
   if (error) throw error;
   return (data ?? []) as unknown as Plan[];
 }
@@ -136,7 +137,7 @@ export async function savePlan(club: string, id: string | null, d: PlanDraft): P
     const { error } = await sb.from("session_plans").update(payload as never).eq("id", id);
     if (error) throw error;
   } else {
-    const { data, error } = await sb.from("session_plans").insert({ ...payload, club, coach: d.coach } as never).select("id").single();
+    const { data, error } = await sb.from("session_plans").insert({ ...payload, ...clubCols(club), coach: d.coach } as never).select("id").single();
     if (error) throw error;
     planId = (data as { id: string }).id;
   }
@@ -171,7 +172,7 @@ export async function appendDrillsToPlan(planId: string, blocks: DrillBlock[]) {
   if (e2) throw e2;
 }
 export async function createPlanWithDrills(club: string, title: string, date: string | null, blocks: DrillBlock[], coach: string): Promise<string> {
-  const { data, error } = await sb.from("session_plans").insert({ title, content: blocks, total_distance_m: 0, intended_date: date, club, coach } as never).select("id").single();
+  const { data, error } = await sb.from("session_plans").insert({ title, content: blocks, total_distance_m: 0, intended_date: date, ...clubCols(club), coach } as never).select("id").single();
   if (error) throw error;
   return (data as { id: string }).id;
 }
@@ -198,7 +199,7 @@ export interface MicroCtx {
 }
 
 export async function loadSeasonCtx(club: string): Promise<SeasonCtx> {
-  const { data: seasons, error: se } = await sb.from("seasons").select("id, title, start_date, finish_date").eq("club", club).eq("is_active", true);
+  const { data: seasons, error: se } = await sb.from("seasons").select("id, title, start_date, finish_date").eq("club_id", clubIdOf(club)).eq("is_active", true);
   if (se) throw se;
   const ids = (seasons ?? []).map(s => s.id as string);
   const out: SeasonCtx = { macros: [], sessions: [], comps: [], breaks: [], seasons: (seasons ?? []) as SeasonCtx["seasons"] };
@@ -279,7 +280,7 @@ export async function loadWeekDrills(microId: string, squadId: string): Promise<
 }
 
 export async function loadSquadsWithIds(club: string): Promise<{ id: string; name: string }[]> {
-  const { data, error } = await sb.from("squads").select("id, name").eq("club", club).order("name");
+  const { data, error } = await sb.from("squads").select("id, name").eq("club_id", clubIdOf(club)).order("name");
   if (error) throw error;
   return (data ?? []) as { id: string; name: string }[];
 }
