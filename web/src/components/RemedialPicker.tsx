@@ -7,8 +7,8 @@ import { DrillEditModal } from "./DrillEditModal";
 
 // Remedial action picker: choose drills and skills from the club's Drills &
 // Skills library (Supabase drills_library), or create a new one there and
-// pick it straight away. Used by swimmer feedback (several) and squad
-// feedback (one, because that drill is linked to season weeks).
+// pick it straight away. Several can be chosen; multiple={false} limits it
+// to one. Used by swimmer and squad feedback.
 
 /** Library stroke values that fit a feedback stroke/skill, for "suggested" drills. */
 const CATEGORY_MATCH: Record<string, string[]> = {

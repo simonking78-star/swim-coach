@@ -1594,6 +1594,7 @@ export type Database = {
           note: string | null
           observation: string
           remedial_action: string | null
+          remedial_drill_ids: string[]
           session_date: string
           session_plan_id: string | null
           squad_id: string
@@ -1614,6 +1615,7 @@ export type Database = {
           note?: string | null
           observation: string
           remedial_action?: string | null
+          remedial_drill_ids?: string[]
           session_date?: string
           session_plan_id?: string | null
           squad_id: string
@@ -1634,6 +1636,7 @@ export type Database = {
           note?: string | null
           observation?: string
           remedial_action?: string | null
+          remedial_drill_ids?: string[]
           session_date?: string
           session_plan_id?: string | null
           squad_id?: string
