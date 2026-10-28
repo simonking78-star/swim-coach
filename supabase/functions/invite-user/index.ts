@@ -3,6 +3,8 @@
 // Role rows are written with the CALLER's session, so the database's own
 // permission rules decide what they may grant (club admins: own club only;
 // only a real superadmin can grant superadmin).
+// Club by id (club-and-squad-normalisation, Phase 5b): send `club_id`. A club name in
+// `club` is still accepted from older app versions until Phase 6.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const APP_URL = "https://swimmers-gb.netlify.app/";
@@ -34,7 +36,8 @@ Deno.serve(async (req) => {
   const email = String(body.email ?? "").trim().toLowerCase();
   const fullName = String(body.full_name ?? "").trim().slice(0, 120) || null;
   const role = String(body.role ?? "");
-  const club = body.club ? String(body.club) : null;
+  let clubId = body.club_id ? String(body.club_id) : null;
+  const clubName = body.club ? String(body.club) : null;
   const squadIds = Array.isArray(body.squad_ids) ? body.squad_ids.map(String) : [];
   const swimmerIds = Array.isArray(body.swimmer_ids) ? body.swimmer_ids.map(String) : [];
   const redirectTo = typeof body.redirect_to === "string" &&
@@ -43,11 +46,17 @@ Deno.serve(async (req) => {
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return reply(400, { error: "Enter a valid email address." });
   if (!ROLES.includes(role)) return reply(400, { error: "Choose a role." });
-  if (role !== "superadmin" && !club) return reply(400, { error: "Choose a club." });
+  if (!clubId && clubName) {
+    const { data: c } = await caller.from("clubs").select("id").eq("name", clubName).maybeSingle();
+    if (!c) return reply(400, { error: "That club isn't on file." });
+    clubId = c.id as string;
+  }
+  if (role === "superadmin") clubId = null;
+  if (role !== "superadmin" && !clubId) return reply(400, { error: "Choose a club." });
   if ((role === "coach" || role === "helper") && !squadIds.length) return reply(400, { error: "Tick at least one squad." });
   if ((role === "parent" || role === "swimmer") && !swimmerIds.length) return reply(400, { error: "Pick the linked swimmer." });
 
-  const { data: allowed, error: grantErr } = await caller.rpc("can_grant_role", { p_role: role, p_club: club });
+  const { data: allowed, error: grantErr } = await caller.rpc("can_grant_role", { p_role: role, p_club_id: clubId });
   if (grantErr) return reply(500, { error: grantErr.message });
   if (allowed !== true) return reply(403, { error: "You can't give that role in that club." });
 
@@ -89,7 +98,8 @@ Deno.serve(async (req) => {
   }, { onConflict: "user_id" });
 
   // Role + links, written as the caller so the database enforces what they may grant.
-  const r1 = await caller.from("user_roles").upsert({ user_id: userId, role, club }, { onConflict: "user_id,role" });
+  // Club by id only; the database fills the name copy until Phase 6.
+  const r1 = await caller.from("user_roles").upsert({ user_id: userId, role, club_id: clubId }, { onConflict: "user_id,role" });
   if (r1.error) return reply(403, { error: "Account ready, but the role was refused: " + r1.error.message, user_id: userId, link });
   if (squadIds.length) {
     const r2 = await caller.from("user_squads").upsert(

@@ -1,6 +1,6 @@
 import { sb } from "./supabase";
 import { looksOffline, queueWrite } from "./offline";
-import { clubIdOf, clubCols } from "./clubs";
+import { clubIdOf, clubCols, clubNameOf, SWIMMER_SQUAD, flatSquad } from "./clubs";
 
 // Test & Assess (claude/specs/test-and-assess.md).
 // A template is a model of one or more rounds. Each round has distance,
@@ -178,19 +178,24 @@ export const roundLabel = (r: Round, v: RoundValues) => `${v.reps} × ${v.distan
 // ---------------------------------------------------------------------------
 // Data
 // ---------------------------------------------------------------------------
-const TPL_COLS = "id, club, name, description, model, active, version, updated_at";
+// Club names come from the club list (clubNameOf), squad names through squad_id — never from copied text columns.
+const TPL_COLS = "id, club_id, name, description, model, active, version, updated_at";
+const toTemplate = (t: unknown): Template => {
+  const r = t as Omit<Template, "club"> & { club_id: string };
+  return { ...r, club: clubNameOf(r.club_id) ?? "", model: normaliseModel(r.model) };
+};
 
 export async function loadTemplates(club: string, includeOff = false): Promise<Template[]> {
   let q = sb.from("test_set_templates").select(TPL_COLS).eq("club_id", clubIdOf(club)).order("name");
   if (!includeOff) q = q.eq("active", true);
   const { data, error } = await q;
   if (error) throw error;
-  return (data ?? []).map(t => ({ ...(t as unknown as Template), model: normaliseModel(t.model) }));
+  return (data ?? []).map(toTemplate);
 }
 export async function loadTemplate(id: string): Promise<Template | null> {
   const { data, error } = await sb.from("test_set_templates").select(TPL_COLS).eq("id", id).maybeSingle();
   if (error) throw error;
-  return data ? { ...(data as unknown as Template), model: normaliseModel(data.model) } : null;
+  return data ? toTemplate(data) : null;
 }
 export async function saveTemplate(t: { id?: string; club: string; name: string; description: string | null; model: TestModel; active?: boolean; version?: number }): Promise<string> {
   const row = { ...clubCols(t.club), name: t.name.trim(), description: t.description?.trim() || null, model: t.model as never, active: t.active ?? true };
@@ -199,7 +204,7 @@ export async function saveTemplate(t: { id?: string; club: string; name: string;
     if (error) throw friendly(error);
     return t.id;
   }
-  const { data, error } = await sb.from("test_set_templates").insert(row).select("id").single();
+  const { data, error } = await sb.from("test_set_templates").insert(row as never).select("id").single();
   if (error) throw friendly(error);
   return data.id;
 }
@@ -212,11 +217,13 @@ function friendly(e: { message: string; code?: string }) {
   return new Error(e.message);
 }
 
-const SW_COLS = "id, full_name, squad, squad_id, year_of_birth, date_of_birth";
+const SW_COLS = `id, full_name, squad_id, year_of_birth, date_of_birth, ${SWIMMER_SQUAD}`;
+type RawSw = Omit<TestSwimmer, "squad"> & { sq: { name: string } | null };
+const toSwimmers = (d: unknown) => flatSquad((d ?? []) as RawSw[]) as TestSwimmer[];
 export async function loadClubSwimmers(club: string): Promise<TestSwimmer[]> {
   const { data, error } = await sb.from("swimmers").select(SW_COLS).eq("club_id", clubIdOf(club)).eq("active", true).order("full_name");
   if (error) throw error;
-  return (data ?? []) as TestSwimmer[];
+  return toSwimmers(data);
 }
 export async function loadSwimmersByIds(ids: string[]): Promise<TestSwimmer[]> {
   if (!ids.length) return [];
@@ -224,7 +231,7 @@ export async function loadSwimmersByIds(ids: string[]): Promise<TestSwimmer[]> {
   for (let i = 0; i < ids.length; i += 150) {
     const { data, error } = await sb.from("swimmers").select(SW_COLS).in("id", ids.slice(i, i + 150));
     if (error) throw error;
-    out.push(...((data ?? []) as TestSwimmer[]));
+    out.push(...toSwimmers(data));
   }
   return out.sort((a, b) => a.full_name.localeCompare(b.full_name));
 }
@@ -241,8 +248,11 @@ export async function setBirthYear(swimmerId: string, year: number): Promise<num
   return (data as number | null) ?? null;
 }
 
-const SES_COLS = "id, template_id, template_name, model, club, session_date, group_type, squad_id, squad_name, swimmer_ids, status, clock_started_at, created_at, closed_at";
-const toSession = (d: unknown) => { const s = d as TestSession; return { ...s, model: normaliseModel(s.model), swimmer_ids: s.swimmer_ids ?? [] }; };
+const SES_COLS = "id, template_id, template_name, model, club_id, session_date, group_type, squad_id, sq:squads!test_sessions_squad_id_fkey(name), swimmer_ids, status, clock_started_at, created_at, closed_at";
+const toSession = (d: unknown): TestSession => {
+  const { sq, club_id, ...s } = d as Omit<TestSession, "club" | "squad_name"> & { club_id: string; sq: { name: string } | null };
+  return { ...s, club: clubNameOf(club_id) ?? "", squad_name: sq?.name ?? null, model: normaliseModel(s.model), swimmer_ids: s.swimmer_ids ?? [] };
+};
 
 export async function loadSessions(club: string, opts: { status?: "live" | "closed"; templateId?: string; limit?: number } = {}): Promise<TestSession[]> {
   let q = sb.from("test_sessions").select(SES_COLS).eq("club_id", clubIdOf(club)).order("session_date", { ascending: false }).order("created_at", { ascending: false });
@@ -257,11 +267,12 @@ export async function loadSession(id: string): Promise<TestSession | null> {
   if (error) throw error;
   return data ? toSession(data) : null;
 }
-export async function createSession(s: { template: Template; club: string; date: string; group_type: TestSession["group_type"]; squad_id: string | null; squad_name: string | null; swimmer_ids: string[] }): Promise<string> {
+/** The squad is stored by id only; its name is read through squad_id. */
+export async function createSession(s: { template: Template; club: string; date: string; group_type: TestSession["group_type"]; squad_id: string | null; swimmer_ids: string[] }): Promise<string> {
   const { data, error } = await sb.from("test_sessions").insert({
     template_id: s.template.id, template_name: s.template.name, model: s.template.model as never, ...clubCols(s.club),
-    session_date: s.date, group_type: s.group_type, squad_id: s.squad_id, squad_name: s.squad_name, swimmer_ids: s.swimmer_ids
-  }).select("id").single();
+    session_date: s.date, group_type: s.group_type, squad_id: s.squad_id, swimmer_ids: s.swimmer_ids
+  } as never).select("id").single();
   if (error) throw error;
   return data.id;
 }
@@ -270,7 +281,7 @@ export async function updateSession(id: string, patch: Partial<Pick<TestSession,
   if (error) throw error;
 }
 
-const RES_COLS = "id, session_id, swimmer_id, template_id, template_name, club, session_date, year_of_birth, age, level, rounds, reps_done, reps_total, score, note, recorded_by, updated_at";
+const RES_COLS = "id, session_id, swimmer_id, template_id, template_name, club_id, session_date, year_of_birth, age, level, rounds, reps_done, reps_total, score, note, recorded_by, updated_at";
 export async function loadSessionResults(sessionId: string): Promise<TestResult[]> {
   const { data, error } = await sb.from("test_results").select(RES_COLS).eq("session_id", sessionId);
   if (error) throw error;

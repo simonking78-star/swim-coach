@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { sb } from "./supabase";
 import { looksOffline, queueWrite } from "./offline";
 import { isoAdd, uuid } from "./util";
-import { clubIdOf, clubCols, squadIdOf } from "./clubs";
+import { clubIdOf, clubCols, squadIdOf, SWIMMER_SQUAD, flatSquad } from "./clubs";
 
 // Feedback — swimmer and squad. Same tables, values and rules as the current
 // app's viewFeedback (fbSwimmerMode / fbSquadMode).
@@ -24,7 +24,7 @@ const BUCKET = "feedback-media";
 // ---------------------------------------------------------------------------
 export interface Media { path?: string; url?: string; type: "image" | "video"; name?: string; }
 
-export interface SwimmerLite { id: string; full_name: string; squad: string | null; }
+export interface SwimmerLite { id: string; full_name: string; squad: string | null; squad_id: string | null; }
 
 export interface FbEntry {
   id: string;
@@ -61,11 +61,11 @@ export function toThreads<T extends FbEntry>(rows: T[], stroke: string | null): 
 // Swimmer feedback
 // ---------------------------------------------------------------------------
 export async function loadFbSwimmers(club: string, squad: string | null): Promise<SwimmerLite[]> {
-  let q = sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club_id", clubIdOf(club)).order("full_name");
+  let q = sb.from("swimmers").select(`id, full_name, squad_id, ${SWIMMER_SQUAD}`).eq("active", true).eq("club_id", clubIdOf(club)).order("full_name");
   if (squad) q = q.eq("squad_id", await squadIdOf(club, squad));
   const { data, error } = await q;
   if (error) throw error;
-  return (data ?? []) as SwimmerLite[];
+  return flatSquad((data ?? []) as unknown as { id: string; full_name: string; squad_id: string | null; sq: { name: string } | null }[]);
 }
 
 const FB_COLS = "id, thread_id, entry_type, category, criterion, status, observation, remedial_action, note, media, session_date, created_at, coach";
@@ -82,7 +82,7 @@ export async function loadSwimmerHistory(swimmerId: string): Promise<FbEntry[]> 
 export interface RecentEntry extends FbEntry { swimmer_id: string; swimmer_name: string; }
 export async function loadRecentSwimmerFeedback(club: string): Promise<RecentEntry[]> {
   const { data, error } = await sb.from("swimmer_feedback")
-    .select(FB_COLS + ", swimmer_id, swimmers!inner(full_name, club)")
+    .select(FB_COLS + ", swimmer_id, swimmers!inner(full_name, club_id)")
     .eq("swimmers.club_id", clubIdOf(club))
     .order("created_at", { ascending: false })
     .limit(15);

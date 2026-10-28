@@ -1,5 +1,6 @@
 import { sb } from "./supabase";
 import { parseTimeStr } from "./results";
+import { clubNameOf, SWIMMER_SQUAD, flatSquad } from "./clubs";
 
 // Swimmer Comparison — same method as the current app:
 // one swimmer, one event and course, inside a date window, against another
@@ -38,8 +39,11 @@ async function fetchAll<T>(build: () => { range: (a: number, b: number) => Promi
   return out;
 }
 
-export function loadAllSwimmers(): Promise<CmpSwimmer[]> {
-  return fetchAll<CmpSwimmer>(() => sb.from("swimmers").select("id, full_name, club, squad, date_of_birth, active").order("id"));
+export async function loadAllSwimmers(): Promise<CmpSwimmer[]> {
+  // Every swimmer on file, across clubs: club names from the club list, squad names through squad_id.
+  type Raw = { id: string; full_name: string; club_id: string | null; date_of_birth: string | null; active: boolean | null; sq: { name: string } | null };
+  const rows = await fetchAll<Raw>(() => sb.from("swimmers").select(`id, full_name, club_id, date_of_birth, active, ${SWIMMER_SQUAD}`).order("id"));
+  return flatSquad(rows).map(({ club_id, ...r }) => ({ ...r, club: clubNameOf(club_id) }));
 }
 
 export async function loadEventRows(event: string, course: string): Promise<CmpRow[]> {

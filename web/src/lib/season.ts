@@ -52,7 +52,7 @@ export function pickSeason(rows: Season[], today: string): Season | null {
 export interface TtSession { id: string; day_of_week: number; start_time: string; end_time: string | null; pool_size: string | null; is_active: boolean; }
 export interface Timetable {
   id: string; squad_id: string; season_id: string | null; season_start: string; season_end: string; weekly_focus: string | null;
-  squads: { name: string; club: string }; timetable_sessions: TtSession[];
+  squads: { name: string; club_id: string }; timetable_sessions: TtSession[];
 }
 export interface SeasonComp {
   id: string; season_id: string; competition_id: string | null; name: string; date_from: string; date_to: string | null;
@@ -65,7 +65,7 @@ export interface TimetablesData { timetables: Timetable[]; galas: Gala[]; season
 export async function loadTimetablesData(club: string): Promise<TimetablesData> {
   const [tt, gl, seasons] = await Promise.all([
     sb.from("timetables")
-      .select("id, squad_id, season_id, season_start, season_end, weekly_focus, squads!inner(name, club), timetable_sessions(id, day_of_week, start_time, end_time, pool_size, is_active)")
+      .select("id, squad_id, season_id, season_start, season_end, weekly_focus, squads!inner(name, club_id), timetable_sessions(id, day_of_week, start_time, end_time, pool_size, is_active)")
       .eq("is_active", true).eq("squads.club_id", clubIdOf(club)).eq("timetable_sessions.is_active", true),
     sb.from("galas").select("id, name, date_start, date_end, entries_open, entries_close"),
     loadSeasons(club)

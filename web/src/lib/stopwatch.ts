@@ -87,12 +87,12 @@ export const DISTANCES = [15, 25, 50, 75, 100, 150, 200, 400, 800, 1500];
 
 export interface PostRow {
   key: string;
-  swimmer_id: string; club: string; squad: string | null; stroke: string; distance_m: number; course: "SC" | "LC";
+  swimmer_id: string; club_id: string; squad_id: string | null; stroke: string; distance_m: number; course: "SC" | "LC";
   time_ms: number; time_display: string; time_type: "lap" | "elapsed" | "total";
   rep_number: number | null; rep_count: number; note: string | null; session_date: string;
 }
 
-/** club_id is filled by the database (trigger) from the club name. */
+/** Club and squad are sent by id; the database fills their names until Phase 6 drops the copies. */
 export async function postTimes(rows: PostRow[]) {
   const { error } = await sb.from("stopwatch_times").insert(rows.map(({ key: _k, ...r }) => r) as never);
   if (error) throw error;

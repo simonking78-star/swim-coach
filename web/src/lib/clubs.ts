@@ -1,8 +1,10 @@
 import { sb } from "./supabase";
 
-// Club and squad ids (club-and-squad-normalisation, Phase 5).
+// Club and squad ids (club-and-squad-normalisation, Phases 5 and 5b).
 // Screens still choose clubs and squads by name, which are unique; these helpers
 // turn a name into its id so every query filters, and every insert writes, by id.
+// Names are never read from the copied text columns (swimmers.club, swimmers.squad, …):
+// a club's name comes from the club list, a squad's from the squads table.
 // ClubProvider loads the club list once at sign-in and calls rememberClubs().
 
 export interface Club { id: string; name: string; is_coaching: boolean; club_code: string | null; }
@@ -28,13 +30,29 @@ export function clubIdOf(name: string): string {
   return c.id;
 }
 
+/** Id for a club name, or null when the name is empty or unknown. Never throws: for logs and other best-effort writes. */
+export const clubIdSafe = (name: string | null | undefined): string | null => (name ? byName.get(name)?.id ?? null : null);
+
 /** Id for a club name, or null when there is no club (e.g. an all-clubs role). */
 export const clubIdOrNull = (name: string | null | undefined): string | null => (name ? clubIdOf(name) : null);
 
-/** Club name and id together, for inserts: `{ ...clubCols(club), … }`. */
-export const clubCols = (name: string) => ({ club: name, club_id: clubIdOf(name) });
+/** Club for inserts and updates: `{ ...clubCols(club), … }`. Only the id is written; the database fills the name. */
+export const clubCols = (name: string) => ({ club_id: clubIdOf(name) });
 
 export const clubNameOf = (id: string | null | undefined): string | null => (id ? byId.get(id)?.name ?? null : null);
+
+/** Adds `club` (the name, from the club list) to rows that carry `club_id`. */
+export function withClubName<T extends { club_id: string | null }>(rows: T[]): (T & { club: string | null })[] {
+  return rows.map(r => ({ ...r, club: clubNameOf(r.club_id) }));
+}
+
+/** Select fragment for a swimmer's current squad name, read through swimmers.squad_id. Flatten with flatSquad(). */
+export const SWIMMER_SQUAD = "sq:squads!swimmers_squad_id_fkey(name)";
+type WithSq = { sq?: { name: string } | null };
+/** Turns the SWIMMER_SQUAD embed into a plain `squad` name (null when the swimmer has no squad). */
+export function flatSquad<T extends WithSq>(rows: T[]): (Omit<T, "sq"> & { squad: string | null })[] {
+  return rows.map(({ sq, ...r }) => ({ ...r, squad: sq?.name ?? null }));
+}
 
 const squadIds = new Map<string, string>();
 

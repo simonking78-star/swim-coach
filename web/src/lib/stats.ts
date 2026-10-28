@@ -28,7 +28,7 @@ export function useHomeStats(club: string | null) {
     queryFn: async () => {
       // The club-id version (p_club_id) is newer than the generated types (migration 20261024120000).
       const rpc = sb.rpc.bind(sb) as unknown as (fn: string, args: object) => ReturnType<typeof sb.rpc>;
-      const { data, error } = await rpc("home_stats", club ? { p_club_id: clubIdOf(club) } : { p_club: null });
+      const { data, error } = await rpc("home_stats", { p_club_id: club ? clubIdOf(club) : null });
       if (error) throw error;
       return data as unknown as HomeStats;
     }

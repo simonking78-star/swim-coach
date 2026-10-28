@@ -82,10 +82,9 @@ export function StartTest() {
     if (!chosen.length) { setMsg("No swimmers are in this group."); return; }
     setStarting(true);
     try {
-      const sq = (squads.data ?? []).find(s => s.id === squadId);
       const sid = await createSession({
         template: t, club: t.club, date, group_type: group, squad_id: group === "squad" ? squadId : null,
-        squad_name: group === "squad" ? sq?.name ?? null : null, swimmer_ids: chosen.map(s => s.id)
+        swimmer_ids: chosen.map(s => s.id)
       });
       logEvent(session?.user.id, t.club, "core_task", "test_start", { template: t.id, swimmers: chosen.length });
       qc.invalidateQueries({ queryKey: ["test_sessions"] });

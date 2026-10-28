@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { sb } from "./supabase";
 import { useAuth } from "../auth/AuthProvider";
+import { clubIdSafe } from "./clubs";
 
 /** Usage log, same table and event names as the current app. Never blocks. */
 export function logEvent(userId: string | undefined, club: string | null, type: string, name: string, detail?: object) {
   if (!userId) return;
-  sb.from("app_events").insert({ user_id: userId, club, event_type: type, event_name: name, detail: (detail ?? null) as never } as never)
+  // The club is logged by id; the database records the name alongside it (app_events keeps the name as a log).
+  sb.from("app_events").insert({ user_id: userId, club_id: clubIdSafe(club), event_type: type, event_name: name, detail: (detail ?? null) as never } as never)
     .then(({ error }) => { if (error) console.error("logEvent:", error); });
 }
 

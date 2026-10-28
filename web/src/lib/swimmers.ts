@@ -3,7 +3,7 @@ import { summarise, type AttMark } from "./attendance";
 import { calcAge, type ResultRow } from "./results";
 import { isoAdd, todayLocal } from "./util";
 import type { FbEntry } from "./feedback";
-import { clubIdOf } from "./clubs";
+import { clubIdOf, SWIMMER_SQUAD, flatSquad } from "./clubs";
 
 // Swimmers roster and profile — same data and rules as the current app's
 // viewSwimmers / viewSwimmerProfile. RLS decides which swimmers a role sees
@@ -16,20 +16,25 @@ export interface RosterSwimmer {
   age: number | null;
 }
 
+const ROSTER_COLS = `id, full_name, date_of_birth, gender, swim_england_id, joined_club_on, parent_name, parent_phone, parent_email, ${SWIMMER_SQUAD}`;
+type RawRoster = Omit<RosterSwimmer, "age" | "squad"> & { sq: { name: string } | null };
+
 export async function loadRoster(club: string): Promise<RosterSwimmer[]> {
   const { data, error } = await sb.from("swimmers")
-    .select("id, full_name, squad, date_of_birth, gender, swim_england_id, joined_club_on, parent_name, parent_phone, parent_email")
+    .select(ROSTER_COLS)
     .eq("club_id", clubIdOf(club)).eq("active", true).order("full_name");
   if (error) throw error;
-  return ((data ?? []) as unknown as Omit<RosterSwimmer, "age">[]).map(s => ({ ...s, age: calcAge(s.date_of_birth) }));
+  return flatSquad((data ?? []) as unknown as RawRoster[]).map(s => ({ ...s, age: calcAge(s.date_of_birth) }));
 }
 
 export async function loadSwimmer(id: string): Promise<RosterSwimmer | null> {
   const { data, error } = await sb.from("swimmers")
-    .select("id, full_name, squad, date_of_birth, gender, swim_england_id, joined_club_on, parent_name, parent_phone, parent_email")
+    .select(ROSTER_COLS)
     .eq("id", id).maybeSingle();
   if (error) throw error;
-  return data ? { ...(data as unknown as Omit<RosterSwimmer, "age">), age: calcAge((data as { date_of_birth: string | null }).date_of_birth) } : null;
+  if (!data) return null;
+  const [s] = flatSquad([data as unknown as RawRoster]);
+  return { ...s, age: calcAge(s.date_of_birth) };
 }
 
 /** Last 30 days per swimmer: sessions attended (fractions) and hours trained (only fetched when a column needs it). */
