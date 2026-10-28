@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthProvider";
 import { useClub } from "../club/ClubProvider";
 import { ClubPicker } from "../club/ClubPicker";
 import { loadPlanOptions } from "../lib/attendance";
 import {
-  CATEGORIES, QES, catLabel, loadDrills, loadFbSquads, loadRecentSquadFeedback, loadSquadHistory, loadSquadWeeks,
-  saveSquadFeedback, searchDrills, toThreads, validateSquadDraft, weekIsNow, weekIsPast,
+  CATEGORIES, QES, catLabel, loadFbSquads, loadRecentSquadFeedback, loadSquadHistory, loadSquadWeeks,
+  saveSquadFeedback, toThreads, validateSquadDraft, weekIsNow, weekIsPast,
   type Drill, type EntryType, type SeasonWeek, type SquadFbEntry, type SquadLite, type Thread
 } from "../lib/feedback";
 import { fmtDate, fmtDdMm, logEvent, todayLocal, useCoachName } from "../lib/util";
+import { RemedialPicker } from "../components/RemedialPicker";
 import { StatusPicker, StepTabs, StrokeChips, ThreadCard, TypeToggle } from "../components/feedbackParts";
 
 // Feedback on a squad as a whole. An entry can name a drill and the season
@@ -240,7 +240,9 @@ function SquadForm({ squad, history, weeks, weeksLoading, updating, onCancelUpda
 
       <div className="link-box">
         <p className="link-box-title">🔗 Drill → season plan</p>
-        <DrillPicker club={club!} drill={drill} onChange={d => { setDrill(d); if (!d) setPicked(new Set()); }} />
+        <p className="dim">Remedial drill or skill from the Drills &amp; Skills library — pick one, or create a new one.</p>
+        <RemedialPicker club={club!} category={category} idPrefix="sqf-drill" multiple={false} value={drill ? [drill] : []}
+          onChange={ds => { const d = ds[0] ?? null; setDrill(d); if (!d) setPicked(new Set()); }} />
         {drill && (
           <div className="weeks">
             <p className="weeks-label">Weeks to work it <span className="dim">(micro-cycles in {squad.name}'s season plan)</span></p>
@@ -277,34 +279,6 @@ function SquadForm({ squad, history, weeks, weeksLoading, updating, onCancelUpda
       <p className="hint">Saving always adds a new dated entry. The drill weeks of the latest entry in a string are the ones used in micro-cycles and session planning.</p>
       <button type="button" className="btn primary wide" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save squad entry"}</button>
       {msg && <p className={"msg" + (msg.error ? " error" : "")} role={msg.error ? "alert" : "status"}>{msg.text}</p>}
-    </div>
-  );
-}
-
-function DrillPicker({ club, drill, onChange }: { club: string; drill: Drill | null; onChange: (d: Drill | null) => void }) {
-  const [q, setQ] = useState("");
-  const drills = useQuery({ queryKey: ["drills", club], queryFn: () => loadDrills(club), staleTime: 5 * 60 * 1000 });
-  const hits = searchDrills(drills.data ?? [], q);
-  if (drill) {
-    return (
-      <div className="selected-pill">
-        <span><strong>{drill.drill_name}</strong>{drill.stroke && <span className="dim"> · {drill.stroke}</span>}</span>
-        <button type="button" className="link-btn" onClick={() => onChange(null)}>Change</button>
-      </div>
-    );
-  }
-  return (
-    <div className="search-box">
-      <label htmlFor="sqf-drill">Drill <span className="dim">(from the Drills &amp; Skills library)</span></label>
-      <input id="sqf-drill" type="search" autoComplete="off" placeholder="Search drills…" value={q} onChange={e => setQ(e.target.value)} />
-      {q.trim() && (
-        <ul className="search-results">
-          {hits.length === 0 && <li className="dim">No drill matches — add it under <Link to="/drills">Drills &amp; Skills</Link> first.</li>}
-          {hits.map(d => (
-            <li key={d.id}><button type="button" onClick={() => { onChange(d); setQ(""); }}><span>{d.drill_name}</span>{d.stroke && <span className="chip">{d.stroke}</span>}</button></li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }

@@ -35,6 +35,8 @@ export interface FbEntry {
   status: string | null;
   observation: string | null;
   remedial_action: string | null;
+  /** Drills & skills chosen as the remedial action (swimmer feedback only). */
+  remedial_drill_ids?: string[] | null;
   note: string | null;
   media: Media[] | null;
   session_date: string;
@@ -68,7 +70,7 @@ export async function loadFbSwimmers(club: string, squad: string | null): Promis
   return flatSquad((data ?? []) as unknown as { id: string; full_name: string; squad_id: string | null; sq: { name: string } | null }[]);
 }
 
-const FB_COLS = "id, thread_id, entry_type, category, criterion, status, observation, remedial_action, note, media, session_date, created_at, coach";
+const FB_COLS = "id, thread_id, entry_type, category, criterion, status, observation, remedial_action, remedial_drill_ids, note, media, session_date, created_at, coach";
 
 export async function loadSwimmerHistory(swimmerId: string): Promise<FbEntry[]> {
   const { data, error } = await sb.from("swimmer_feedback").select(FB_COLS)
@@ -106,7 +108,9 @@ export interface SwimmerFbDraft {
   criterion: string;
   status: string | null;
   observation: string;
+  /** Readable remedial action: chosen drill names plus any cue. */
   remedial: string;
+  remedialDrillIds: string[];
   notes: string;
   date: string;
   planId: string;
@@ -149,6 +153,7 @@ export async function saveSwimmerFeedback(d: SwimmerFbDraft, onProgress?: (i: nu
     category: d.category,
     observation: d.observation.trim(),
     remedial_action: d.remedial.trim() || null,
+    remedial_drill_ids: d.remedialDrillIds,
     note: d.notes.trim() || null,
     session_plan_id: d.planId || null,
     session_date: d.date,
