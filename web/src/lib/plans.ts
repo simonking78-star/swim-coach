@@ -1,7 +1,7 @@
 import { sb } from "./supabase";
 import { QES } from "./feedback";
 import { isoAdd } from "./util";
-import { clubIdOf, clubCols } from "./clubs";
+import { clubIdOf, clubCols, clubNameOf } from "./clubs";
 
 // Session plans — same data, parser and rules as the current app's
 // viewSession / viewPlanEditor / viewPlanView.
@@ -106,7 +106,10 @@ export async function loadPlans(club: string): Promise<Plan[]> {
 export async function loadPlan(id: string): Promise<Plan | null> {
   const { data, error } = await sb.from("session_plans").select("*").eq("id", id).maybeSingle();
   if (error) throw error;
-  return data as unknown as Plan | null;
+  if (!data) return null;
+  // The club name comes from the club list, not the plan's copied club text.
+  const p = data as unknown as Plan & { club_id: string | null };
+  return { ...p, club: clubNameOf(p.club_id) };
 }
 
 export interface PlanDraft {

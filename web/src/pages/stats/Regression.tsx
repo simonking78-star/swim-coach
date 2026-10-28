@@ -11,7 +11,7 @@ import { secToTime } from "../../lib/results";
 import { LAST_STANDARD_YEAR, forecastCrossing, projection, steppedStandard, toPoints, trend, trendFlags, type RegRow } from "../../lib/regression";
 import { fmtDate } from "../../lib/util";
 import { StatsBack } from "./StatsHub";
-import { clubIdOf } from "../../lib/clubs";
+import { clubIdOf, SWIMMER_SQUAD, flatSquad } from "../../lib/clubs";
 
 interface Sw { id: string; full_name: string; squad: string | null; date_of_birth: string | null; gender: string | null; }
 
@@ -25,9 +25,9 @@ export default function Regression() {
   const swimmers = useQuery({
     queryKey: ["reg_swimmers", club], enabled: !!club,
     queryFn: async () => {
-      const { data, error } = await sb.from("swimmers").select("id, full_name, squad, date_of_birth, gender").eq("active", true).eq("club_id", clubIdOf(club!)).order("full_name");
+      const { data, error } = await sb.from("swimmers").select(`id, full_name, date_of_birth, gender, ${SWIMMER_SQUAD}`).eq("active", true).eq("club_id", clubIdOf(club!)).order("full_name");
       if (error) throw error;
-      return (data ?? []) as Sw[];
+      return flatSquad((data ?? []) as unknown as (Omit<Sw, "squad"> & { sq: { name: string } | null })[]) as Sw[];
     }
   });
   const rows = useQuery({

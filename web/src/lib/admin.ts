@@ -1,7 +1,7 @@
 import { sb } from "./supabase";
 import type { Role } from "./access";
 import { todayLocal } from "./util";
-import { clubIdOf, clubCols, forgetSquadIds } from "./clubs";
+import { clubIdOf, clubIdOrNull, clubCols, clubNameOf, forgetSquadIds, SWIMMER_SQUAD, flatSquad } from "./clubs";
 
 // Admin: squads, members, squad and club moves, deactivate/reactivate, users & roles.
 // Same tables, RPCs and rules as the current app.
@@ -24,9 +24,10 @@ export async function renameSquad(id: string, name: string) {
 
 export interface PickSwimmer { id: string; full_name: string; squad: string | null; squad_id: string | null; club: string; }
 export async function loadActiveSwimmers(club: string): Promise<PickSwimmer[]> {
-  const { data, error } = await sb.from("swimmers").select("id, full_name, squad, squad_id, club").eq("active", true).eq("club_id", clubIdOf(club)).order("full_name");
+  const { data, error } = await sb.from("swimmers").select(`id, full_name, squad_id, club_id, ${SWIMMER_SQUAD}`).eq("active", true).eq("club_id", clubIdOf(club)).order("full_name");
   if (error) throw error;
-  return (data ?? []) as PickSwimmer[];
+  type Raw = Omit<PickSwimmer, "squad" | "club"> & { club_id: string; sq: { name: string } | null };
+  return flatSquad((data ?? []) as unknown as Raw[]).map(({ club_id, ...r }) => ({ ...r, club: clubNameOf(club_id) ?? club }));
 }
 
 export const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
@@ -77,11 +78,12 @@ export async function moveToClub(swimmerId: string, club: string, squadId: strin
 export interface SwimmerDetail { full_name: string; date_of_birth: string | null; swim_england_id: string | null; squad: string | null; joined_club_on: string | null; parent_name: string | null; parent_phone: string | null; parent_email: string | null; since: string | null; }
 export async function loadSwimmerDetail(id: string): Promise<SwimmerDetail> {
   const [s, m] = await Promise.all([
-    sb.from("swimmers").select("full_name, date_of_birth, swim_england_id, squad, joined_club_on, parent_name, parent_phone, parent_email").eq("id", id).single(),
+    sb.from("swimmers").select(`full_name, date_of_birth, swim_england_id, joined_club_on, parent_name, parent_phone, parent_email, ${SWIMMER_SQUAD}`).eq("id", id).single(),
     sb.from("squad_memberships").select("joined_squad_on").eq("swimmer_id", id).is("ended_on", null).order("joined_squad_on", { ascending: false }).limit(1)
   ]);
   if (s.error) throw s.error;
-  return { ...(s.data as Omit<SwimmerDetail, "since">), since: ((m.data ?? []) as { joined_squad_on: string }[])[0]?.joined_squad_on ?? null };
+  const [d] = flatSquad([s.data as unknown as Omit<SwimmerDetail, "since" | "squad"> & { sq: { name: string } | null }]);
+  return { ...d, since: ((m.data ?? []) as { joined_squad_on: string }[])[0]?.joined_squad_on ?? null };
 }
 export function timeIn(since: string | null, today = todayLocal().date): string {
   if (!since) return "";
@@ -91,9 +93,10 @@ export function timeIn(since: string | null, today = todayLocal().date): string 
 }
 
 export async function loadUnassigned(club: string) {
-  const { data, error } = await sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club_id", clubIdOf(club)).is("squad_id", null).order("full_name");
+  // No squad, by definition, so no squad name to read.
+  const { data, error } = await sb.from("swimmers").select("id, full_name").eq("active", true).eq("club_id", clubIdOf(club)).is("squad_id", null).order("full_name");
   if (error) throw error;
-  return (data ?? []) as { id: string; full_name: string; squad: string | null }[];
+  return ((data ?? []) as { id: string; full_name: string }[]).map(r => ({ ...r, squad: null as string | null }));
 }
 /** Every club on file (the results archive holds other clubs too). */
 export async function loadAllClubs(): Promise<string[]> {
@@ -140,30 +143,37 @@ export interface Person {
 export async function loadPeople(me: string | undefined): Promise<Person[]> {
   const [u, r, s, w] = await Promise.all([
     sb.from("app_users").select("user_id, email, full_name, invited_at, last_link_at"),
-    sb.from("user_roles").select("user_id, role, club"),
-    sb.from("user_squads").select("user_id, squad_id, squads(name, club)"),
-    sb.from("user_swimmers").select("user_id, swimmer_id, relationship, swimmers(full_name, club)")
+    sb.from("user_roles").select("user_id, role, club_id"),
+    sb.from("user_squads").select("user_id, squad_id, squads(name, club_id)"),
+    sb.from("user_swimmers").select("user_id, swimmer_id, relationship, swimmers(full_name, club_id)")
   ]);
   const err = u.error || r.error || s.error || w.error;
   if (err) throw err;
   type U = { user_id: string; email: string; full_name: string | null };
-  type R = { user_id: string; role: Role; club: string | null };
-  type S = Person["squads"][number] & { user_id: string };
-  type W = Person["kids"][number] & { user_id: string };
+  type R = { user_id: string; role: Role; club_id: string | null };
+  type S = { user_id: string; squad_id: string; squads: { name: string; club_id: string } | null };
+  type W = { user_id: string; swimmer_id: string; swimmers: { full_name: string; club_id: string | null } | null };
+  // Club names come from the club list, not from copied text columns.
   return ((u.data ?? []) as U[]).map(p => ({
     ...p,
-    roles: ((r.data ?? []) as R[]).filter(x => x.user_id === p.user_id).map(({ role, club }) => ({ role, club })),
-    squads: ((s.data ?? []) as unknown as S[]).filter(x => x.user_id === p.user_id),
+    roles: ((r.data ?? []) as R[]).filter(x => x.user_id === p.user_id).map(({ role, club_id }) => ({ role, club: clubNameOf(club_id) })),
+    squads: ((s.data ?? []) as unknown as S[]).filter(x => x.user_id === p.user_id)
+      .map(x => ({ squad_id: x.squad_id, squads: x.squads ? { name: x.squads.name, club: clubNameOf(x.squads.club_id) ?? "" } : null })),
     kids: ((w.data ?? []) as unknown as W[]).filter(x => x.user_id === p.user_id)
+      .map(x => ({ swimmer_id: x.swimmer_id, swimmers: x.swimmers ? { full_name: x.swimmers.full_name, club: clubNameOf(x.swimmers.club_id) ?? "" } : null }))
   })).filter(p => p.roles.length || p.user_id === me)
     .sort((a, b) => (a.full_name || a.email).localeCompare(b.full_name || b.email));
 }
 
 export interface InvitePayload { full_name: string; email: string; role: string; club: string | null; squad_ids: string[]; swimmer_ids: string[]; redirect_to: string; }
+/** What the invite-user function receives: the club by id (it still accepts a name from older app versions until Phase 6). */
+type InviteBody = Omit<InvitePayload, "club"> & { club_id: string | null };
 export class InviteError extends Error { link?: string; }
 /** invite-user edge function (it holds the secret key). Returns a one-time sign-in link, or none for someone who has signed in before. */
 export async function callInvite(payload: InvitePayload): Promise<{ link: string | null; existing?: boolean }> {
-  const { data, error } = await sb.functions.invoke("invite-user", { body: payload });
+  const { club, ...rest } = payload;
+  const body: InviteBody = { ...rest, club_id: clubIdOrNull(club) };
+  const { data, error } = await sb.functions.invoke("invite-user", { body });
   if (!error) return data as { link: string | null; existing?: boolean };
   let msg = error.message, extra: { error?: string; link?: string } = {};
   try { extra = await (error as unknown as { context: Response }).context.json(); msg = extra.error || msg; } catch { /* not JSON */ }
@@ -190,17 +200,17 @@ export async function unlinkSwimmer(userId: string, swimmerId: string) {
   if (error) throw error;
 }
 export async function searchSwimmers(club: string | null, q: string, activeOnly: boolean) {
-  let query = sb.from("swimmers").select("id, full_name, squad").ilike("full_name", `%${q}%`).order("full_name").limit(8);
+  let query = sb.from("swimmers").select(`id, full_name, ${SWIMMER_SQUAD}`).ilike("full_name", `%${q}%`).order("full_name").limit(8);
   if (club) query = query.eq("club_id", clubIdOf(club));
   if (activeOnly) query = query.eq("active", true);
   const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []) as { id: string; full_name: string; squad: string | null }[];
+  return flatSquad((data ?? []) as unknown as { id: string; full_name: string; sq: { name: string } | null }[]);
 }
 
 // ---- Role test mode (real superadmin only) ----
 export async function startRoleTest(userId: string, role: string, club: string | null, squadIds: string[], swimmerIds: string[]) {
-  const row = { user_id: userId, role, club, squad_ids: squadIds, swimmer_ids: swimmerIds, started_at: new Date().toISOString(), expires_at: new Date(Date.now() + 8 * 3600e3).toISOString() };
+  const row = { user_id: userId, role, club_id: clubIdOrNull(club), squad_ids: squadIds, swimmer_ids: swimmerIds, started_at: new Date().toISOString(), expires_at: new Date(Date.now() + 8 * 3600e3).toISOString() };
   const { error } = await sb.from("role_test_mode").upsert(row as never);
   if (error) throw error;
 }

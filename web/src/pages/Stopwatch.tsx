@@ -11,6 +11,7 @@ import {
   saveState, start, stop, truncMs, type PostRow, type SwState
 } from "../lib/stopwatch";
 import { logEvent, todayLocal } from "../lib/util";
+import { clubIdOf } from "../lib/clubs";
 
 export function Stopwatch() {
   const { access, session } = useAuth();
@@ -111,7 +112,7 @@ export function Stopwatch() {
     for (const key of keys) {
       const s = byId.get(rowPick(key));
       if (!s) { setMsg({ text: "Choose a swimmer for every ticked time.", error: true }); return; }
-      const base = { key, swimmer_id: s.id, club: club!, squad: s.squad, stroke, course, note: note.trim() || null, session_date: date, rep_count: list.length };
+      const base = { key, swimmer_id: s.id, club_id: clubIdOf(club!), squad_id: s.squad_id, stroke, course, note: note.trim() || null, session_date: date, rep_count: list.length };
       if (key === "total") {
         const ms = truncMs(sw.stopAt!);
         rows.push({ ...base, distance_m: dist * list.length, time_ms: ms, time_display: fmtSwim(ms), time_type: "total", rep_number: null });

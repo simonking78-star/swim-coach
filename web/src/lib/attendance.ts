@@ -159,10 +159,10 @@ export interface Slot { id: string; squad: string; start: string; end: string; p
  */
 export async function loadSlots(club: string, squad: string, date: string): Promise<Slot[]> {
   if (!date) return [];
-  type Row = { season_start: string; season_end: string; squads: { name: string; club: string };
+  type Row = { season_start: string; season_end: string; squads: { name: string; club_id: string };
     timetable_sessions: { id: string; day_of_week: number; start_time: string; end_time: string | null; pool_size: string | null; is_active: boolean | null }[] };
   let q = sb.from("timetables")
-    .select("season_start, season_end, squads!inner(name, club), timetable_sessions(id, day_of_week, start_time, end_time, pool_size, is_active)")
+    .select("season_start, season_end, squads!inner(name, club_id), timetable_sessions(id, day_of_week, start_time, end_time, pool_size, is_active)")
     .eq("is_active", true).eq("squads.club_id", clubIdOf(club)).lte("season_start", date).gte("season_end", date);
   if (squad !== WHOLE_CLUB) q = q.eq("squads.name", squad);
   const { data, error } = await q;
@@ -181,7 +181,7 @@ export async function loadSlots(club: string, squad: string, date: string): Prom
 
 /** Active swimmers in scope, with any mark already saved for this exact session. */
 export async function loadRegister(s: Pick<AttSession, "club" | "squad" | "date" | "time" | "pool">): Promise<AttSwimmer[]> {
-  let q = sb.from("swimmers").select("id, full_name, squad").eq("active", true).eq("club_id", clubIdOf(s.club)).order("full_name");
+  let q = sb.from("swimmers").select("id, full_name").eq("active", true).eq("club_id", clubIdOf(s.club)).order("full_name");
   if (s.squad !== WHOLE_CLUB) q = q.eq("squad_id", await squadIdOf(s.club, s.squad));
   const { data: swimmers, error } = await q;
   if (error) throw error;

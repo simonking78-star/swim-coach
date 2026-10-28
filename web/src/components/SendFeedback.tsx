@@ -4,6 +4,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { useClub } from "../club/ClubProvider";
 import { sb } from "../lib/supabase";
 import { logEvent } from "../lib/util";
+import { clubIdSafe } from "../lib/clubs";
 import { Modal } from "./Modal";
 
 // A-043: send feedback about the app from any screen. Goes to app_feedback (Simon), not to other coaches.
@@ -20,7 +21,7 @@ export function SendFeedback({ open, onClose }: { open: boolean; onClose: () => 
     const message = text.trim();
     if (!message) { setMsg({ text: "Say a bit about what's on your mind.", error: true }); return; }
     setBusy(true); setMsg(null);
-    const { error } = await sb.from("app_feedback").insert({ user_id: session!.user.id, club: club || null, page: pathname, message } as never);
+    const { error } = await sb.from("app_feedback").insert({ user_id: session!.user.id, club_id: clubIdSafe(club), page: pathname, message } as never);
     setBusy(false);
     if (error) { setMsg({ text: "Could not send — " + error.message, error: true }); return; }
     logEvent(session?.user.id, club, "core_task", "feedback_submitted", { page: pathname });
