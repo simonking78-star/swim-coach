@@ -2053,6 +2053,7 @@ export type Database = {
           note: string | null
           observation: string | null
           remedial_action: string | null
+          remedial_drill_ids: string[]
           session_date: string
           session_plan_id: string | null
           status: string | null
@@ -2071,6 +2072,7 @@ export type Database = {
           note?: string | null
           observation?: string | null
           remedial_action?: string | null
+          remedial_drill_ids?: string[]
           session_date: string
           session_plan_id?: string | null
           status?: string | null
@@ -2089,6 +2091,7 @@ export type Database = {
           note?: string | null
           observation?: string | null
           remedial_action?: string | null
+          remedial_drill_ids?: string[]
           session_date?: string
           session_plan_id?: string | null
           status?: string | null
