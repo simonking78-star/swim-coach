@@ -6,15 +6,15 @@ import { useClub } from "../club/ClubProvider";
 import { ClubPicker } from "../club/ClubPicker";
 import { LEVEL_NOTE, sectionLevel } from "../lib/access";
 import {
-  POOLS, WHOLE_CLUB, coachName, fmtDay, loadPlanOptions, loadRegister, loadSquadNames, logEvent,
+  POOLS, WHOLE_CLUB, applyMark, coachName, loadPlanDistance, totalDistance, fmtDay, loadPlanOptions, loadRegister, loadSquadNames, logEvent,
   loadSlots, markLabel, minutesBetween, nextTickStatus, saveMark, tally, todayLocal,
-  type AttSession, type AttStatus, type AttSwimmer, type Pool, type SaveResult, type Slot
+  type AttSession, type MarkExtras, type AttStatus, type AttSwimmer, type Pool, type SaveResult, type Slot
 } from "../lib/attendance";
 
 // Survives a reload mid-register; the marks themselves are re-read from the database.
 const STORE_KEY = "coachToolsAttSession";
 const readStored = (): { session: AttSession; stage: "mark" | "done" } | null => {
-  try { const v = sessionStorage.getItem(STORE_KEY); return v ? JSON.parse(v) : null; } catch { return null; }
+  try { const v = sessionStorage.getItem(STORE_KEY); const o = v ? JSON.parse(v) : null; if (o?.session && o.session.plannedDistance === undefined) o.session.plannedDistance = null; return o; } catch { return null; }
 };
 const writeStored = (v: { session: AttSession; stage: "mark" | "done" } | null) => {
   try { v ? sessionStorage.setItem(STORE_KEY, JSON.stringify(v)) : sessionStorage.removeItem(STORE_KEY); } catch { /* unavailable */ }
@@ -113,9 +113,10 @@ function Setup({ onStart }: { onStart: (s: AttSession, list: AttSwimmer[]) => vo
     setMsg({ text: "Loading swimmers…" });
     try {
       const coach = await coachName(auth!.user.id, auth!.user.email);
+      const plannedDistance = await loadPlanDistance(planId || null);
       const s: AttSession = {
         club, squad, date, time: slot ? slot.start : start, endTime: slot ? slot.end : end,
-        timetableSessionId: slot ? slot.id : null, pool, planId: planId || null, sessionMinutes, mode, coach
+        timetableSessionId: slot ? slot.id : null, pool, planId: planId || null, plannedDistance, sessionMinutes, mode, coach
       };
       const list = await loadRegister(s);
       if (list.length === 0) { setMsg({ text: "No active swimmers found for that squad.", error: true }); return; }
@@ -231,17 +232,31 @@ function Register({ session, swimmers, setSwimmers, setSession, onFinish }: Regi
 
   const counts = tally(swimmers, session.sessionMinutes);
 
+  const extrasOf = (s: AttSwimmer): MarkExtras => ({ note: s.note, lane: s.lane, distance_m: s.distance_m });
+
   const mark = (id: string, status: AttStatus, minutes: number | null = null) => {
-    setSwimmers(list => list.map(s => s.id === id ? { ...s, status, minutes_attended: status === "partial" ? minutes : null } : s));
-    saveMark(session, id, status, minutes).then(r => { if (r !== "saved") setSaveNote(r); });
+    const cur = swimmers.find(s => s.id === id);
+    if (!cur) return;
+    const next = applyMark(cur, status, minutes, session);
+    setSwimmers(list => list.map(s => s.id === id ? next : s));
+    saveMark(session, id, status, minutes, extrasOf(next)).then(r => { if (r !== "saved") setSaveNote(r); });
+  };
+
+  /** Edit lane / distance / note on an already-marked swimmer. */
+  const detail = (id: string, patch: Partial<Pick<AttSwimmer, "note" | "lane" | "distance_m">>) => {
+    const cur = swimmers.find(s => s.id === id);
+    if (!cur || !cur.status) return;
+    const next = { ...cur, ...patch };
+    setSwimmers(list => list.map(s => s.id === id ? next : s));
+    saveMark(session, id, cur.status, cur.minutes_attended, extrasOf(next)).then(r => { if (r !== "saved") setSaveNote(r); });
   };
 
   const allIn = async () => {
-    const todo = swimmers.filter(s => s.status === null);
-    setSwimmers(list => list.map(s => s.status === null ? { ...s, status: "in" } : s));
+    const todo = swimmers.filter(s => s.status === null).map(s => applyMark(s, "in", null, session));
+    setSwimmers(list => list.map(s => todo.find(t => t.id === s.id) ?? s));
     if (session.mode === "swipe") setIndex(swimmers.length);
     for (const s of todo) {
-      const r = await saveMark(session, s.id, "in");
+      const r = await saveMark(session, s.id, "in", null, extrasOf(s));
       if (r !== "saved") setSaveNote(r);
     }
   };
@@ -249,12 +264,12 @@ function Register({ session, swimmers, setSwimmers, setSession, onFinish }: Regi
   const finish = async () => {
     setFinishing(true);
     // Anyone never marked this session counts as Out.
-    const todo = swimmers.filter(s => s.status === null);
-    setSwimmers(list => list.map(s => s.status === null ? { ...s, status: "out" } : s));
-    for (const s of todo) await saveMark(session, s.id, "out");
-    const final = swimmers.map(s => s.status === null ? { ...s, status: "out" as AttStatus } : s);
+    const todo = swimmers.filter(s => s.status === null).map(s => applyMark(s, "out", null, session));
+    setSwimmers(list => list.map(s => todo.find(t => t.id === s.id) ?? s));
+    for (const s of todo) await saveMark(session, s.id, "out", null, extrasOf(s));
+    const final = swimmers.map(s => todo.find(t => t.id === s.id) ?? s);
     const t = tally(final, session.sessionMinutes);
-    logEvent(auth?.user.id, session.club, "core_task", "attendance_finish", { in: t.in, partial: t.partial, out: t.out, excused: t.excused });
+    logEvent(auth?.user.id, session.club, "core_task", "attendance_finish", { in: t.in, partial: t.partial, out: t.out, excused: t.excused, distance_m: totalDistance(final) });
     setFinishing(false);
     onFinish();
   };
@@ -277,6 +292,12 @@ function Register({ session, swimmers, setSwimmers, setSession, onFinish }: Regi
         <span className="att-hours" title="Swimmer-hours trained so far in this session">{counts.hours} h</span>
         <button type="button" className="btn small" onClick={allIn} disabled={counts.unmarked === 0}>All In</button>
       </div>
+      <p className="att-dist" aria-live="polite">
+        Distance: <b>{totalDistance(swimmers).toLocaleString()} m</b> swum in total
+        {session.plannedDistance != null
+          ? <> · plan {session.plannedDistance.toLocaleString()} m each</>
+          : <> · <span className="dim">no plan linked — enter distances by hand</span></>}
+      </p>
 
       <div className="seg seg-2 mode-switch" role="group" aria-label="Marking method">
         <button type="button" className={"seg-btn" + (session.mode === "swipe" ? " on" : "")} aria-pressed={session.mode === "swipe"} onClick={() => switchMode("swipe")}>Card swipe</button>
@@ -287,8 +308,8 @@ function Register({ session, swimmers, setSwimmers, setSession, onFinish }: Regi
       {saveNote === "failed" && <p className="notice warn" role="alert">A mark couldn't be saved. Check your connection and that you can mark this squad, then mark that swimmer again.</p>}
 
       {session.mode === "swipe"
-        ? <SwipeMode swimmers={swimmers} index={index} setIndex={setIndex} onMark={mark} max={session.sessionMinutes} />
-        : <TickMode swimmers={swimmers} onMark={mark} max={session.sessionMinutes} />}
+        ? <SwipeMode swimmers={swimmers} index={index} setIndex={setIndex} onMark={mark} onDetail={detail} max={session.sessionMinutes} />
+        : <TickMode swimmers={swimmers} onMark={mark} onDetail={detail} max={session.sessionMinutes} />}
 
       <button className="btn primary wide finish" onClick={finish} disabled={finishing}>{finishing ? "Saving…" : "Finish session"}</button>
     </div>
@@ -302,9 +323,9 @@ function sessionLine(s: AttSession) {
 // ---------------------------------------------------------------------------
 // Swipe mode
 // ---------------------------------------------------------------------------
-function SwipeMode({ swimmers, index, setIndex, onMark, max }: {
+function SwipeMode({ swimmers, index, setIndex, onMark, onDetail, max }: {
   swimmers: AttSwimmer[]; index: number; setIndex: (i: number) => void;
-  onMark: (id: string, status: AttStatus, minutes?: number | null) => void; max: number;
+  onMark: (id: string, status: AttStatus, minutes?: number | null) => void; onDetail: DetailFn; max: number;
 }) {
   const [dx, setDx] = useState(0);
   const [leaving, setLeaving] = useState<0 | 1 | -1>(0);
@@ -371,6 +392,7 @@ function SwipeMode({ swimmers, index, setIndex, onMark, max }: {
         <button type="button" className="tap partial" disabled={!current} ref={partialBtn} aria-expanded={partialOpen} onClick={() => setPartialOpen(o => !o)}>Partial (mins)</button>
       </div>
       {partialOpen && <MinutesPicker onPick={m => { setPartialOpen(false); commit("partial", m); }} onClose={() => setPartialOpen(false)} max={max} />}
+      {current?.status && <Details key={current.id} s={current} onDetail={onDetail} />}
     </div>
   );
 }
@@ -378,8 +400,9 @@ function SwipeMode({ swimmers, index, setIndex, onMark, max }: {
 // ---------------------------------------------------------------------------
 // Tick list mode
 // ---------------------------------------------------------------------------
-function TickMode({ swimmers, onMark, max }: { swimmers: AttSwimmer[]; onMark: (id: string, status: AttStatus, minutes?: number | null) => void; max: number }) {
+function TickMode({ swimmers, onMark, onDetail, max }: { swimmers: AttSwimmer[]; onMark: (id: string, status: AttStatus, minutes?: number | null) => void; onDetail: DetailFn; max: number }) {
   const [minsFor, setMinsFor] = useState<string | null>(null);
+  const [detailFor, setDetailFor] = useState<string | null>(null);
   return (
     <ul className="tick-list">
       {swimmers.map(s => (
@@ -398,12 +421,55 @@ function TickMode({ swimmers, onMark, max }: { swimmers: AttSwimmer[]; onMark: (
             aria-label={`Partial minutes for ${s.full_name}`}
             onClick={() => setMinsFor(minsFor === s.id ? null : s.id)}
           >mins</button>
+          <button
+            type="button"
+            className={"tick-mins" + (s.note || s.lane || (s.distance_m && s.status !== "out") ? " set" : "")}
+            aria-expanded={detailFor === s.id}
+            aria-label={`Lane, distance and note for ${s.full_name}`}
+            disabled={!s.status}
+            onClick={() => setDetailFor(detailFor === s.id ? null : s.id)}
+          >{s.status && s.distance_m ? `${s.distance_m}m` : "more"}</button>
+          {detailFor === s.id && s.status && <Details s={s} onDetail={onDetail} />}
           {minsFor === s.id && (
             <MinutesPicker onPick={m => { setMinsFor(null); onMark(s.id, "partial", m); }} onClose={() => setMinsFor(null)} max={max} />
           )}
         </li>
       ))}
     </ul>
+  );
+}
+
+type DetailFn = (id: string, patch: Partial<Pick<AttSwimmer, "note" | "lane" | "distance_m">>) => void;
+
+// Lane, distance swum and a free-text note for one swimmer. Saved on leaving each box.
+function Details({ s, onDetail }: { s: AttSwimmer; onDetail: DetailFn }) {
+  const [dist, setDist] = useState(s.distance_m == null ? "" : String(s.distance_m));
+  const [note, setNote] = useState(s.note ?? "");
+  // Follow the register when the status change recomputes the default distance.
+  useEffect(() => { setDist(s.distance_m == null ? "" : String(s.distance_m)); }, [s.distance_m]);
+  const commitDist = () => {
+    const n = dist.trim() === "" ? null : Math.round(Number(dist));
+    if (n !== null && (!Number.isFinite(n) || n < 0 || n > 30000)) { setDist(s.distance_m == null ? "" : String(s.distance_m)); return; }
+    if (n !== s.distance_m) onDetail(s.id, { distance_m: n });
+  };
+  const commitNote = () => { const v = note.trim() || null; if (v !== s.note) onDetail(s.id, { note: v }); };
+  return (
+    <div className="att-details">
+      <label>Lane
+        <select value={s.lane ?? ""} onChange={e => onDetail(s.id, { lane: e.target.value ? Number(e.target.value) : null })}>
+          <option value="">—</option>
+          {Array.from({ length: 10 }, (_, i) => i + 1).map(n => <option key={n} value={n}>{n}</option>)}
+        </select>
+      </label>
+      <label>Distance (m)
+        <input type="number" inputMode="numeric" min={0} max={30000} step={50} value={dist}
+          onChange={e => setDist(e.target.value)} onBlur={commitDist} />
+      </label>
+      <label className="att-note">Note
+        <input type="text" maxLength={300} value={note} placeholder="e.g. left early, shoulder niggle"
+          onChange={e => setNote(e.target.value)} onBlur={commitNote} />
+      </label>
+    </div>
   );
 }
 
@@ -451,6 +517,7 @@ function Done({ session, swimmers, onNew }: { session: AttSession; swimmers: Att
         <div className="done-stat"><span className="n">{t.excused}</span><span>Excused</span></div>
       </div>
       {t.pct !== null && <p className="done-pct">Session attendance: <strong>{t.pct}%</strong> · <strong>{t.sessions}</strong> sessions attended · <strong>{t.hours}</strong> swimmer-hours trained ({session.sessionMinutes} min session)</p>}
+      <p className="done-pct">Distance swum: <strong>{totalDistance(swimmers).toLocaleString()} m</strong> in total{session.plannedDistance != null && <> (plan {session.plannedDistance.toLocaleString()} m per swimmer)</>}. Absent swimmers count as 0.</p>
       <p className="dim">What next?</p>
       <div className="next-row">
         <Link className="tile" to={session.planId ? `/feedback?plan=${session.planId}` : "/feedback"}><span className="tile-icon" aria-hidden="true">📝</span><span className="tile-text"><strong>Feedback</strong><span className="dim">{session.planId ? "Linked to this session's plan" : "Swimmer and squad feedback"}</span></span></Link>
