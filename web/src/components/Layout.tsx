@@ -84,6 +84,7 @@ export function Layout() {
         <div className="scrim" onClick={() => setMenuOpen(false)} aria-hidden="true" />
         <main className="content">
           <Outlet />
+          <footer className="app-foot">Coach Tools v{__APP_VERSION__} · built {__APP_BUILD__} · {__APP_COMMIT__}</footer>
         </main>
         <SendFeedback open={fbOpen} onClose={() => setFbOpen(false)} />
       </div>
