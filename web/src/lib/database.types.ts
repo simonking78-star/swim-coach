@@ -2446,35 +2446,103 @@ export type Database = {
           },
         ]
       }
+      timetable_session_overrides: {
+        Row: {
+          cancelled: boolean
+          coaches: string | null
+          course: string | null
+          created_at: string
+          end_time: string | null
+          id: string
+          location: string | null
+          note: string | null
+          pool_size: string | null
+          session_date: string
+          start_time: string | null
+          timetable_session_id: string
+          updated_at: string
+        }
+        Insert: {
+          cancelled?: boolean
+          coaches?: string | null
+          course?: string | null
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          note?: string | null
+          pool_size?: string | null
+          session_date: string
+          start_time?: string | null
+          timetable_session_id: string
+          updated_at?: string
+        }
+        Update: {
+          cancelled?: boolean
+          coaches?: string | null
+          course?: string | null
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          note?: string | null
+          pool_size?: string | null
+          session_date?: string
+          start_time?: string | null
+          timetable_session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timetable_session_overrides_timetable_session_id_fkey"
+            columns: ["timetable_session_id"]
+            isOneToOne: false
+            referencedRelation: "timetable_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timetable_sessions: {
         Row: {
+          coaches: string | null
+          course: string | null
           created_at: string
           day_of_week: number
           end_time: string | null
           id: string
           is_active: boolean
+          location: string | null
+          note: string | null
           pool_size: string | null
           start_time: string
           timetable_id: string
           updated_at: string
         }
         Insert: {
+          coaches?: string | null
+          course?: string | null
           created_at?: string
           day_of_week: number
           end_time?: string | null
           id?: string
           is_active?: boolean
+          location?: string | null
+          note?: string | null
           pool_size?: string | null
           start_time: string
           timetable_id: string
           updated_at?: string
         }
         Update: {
+          coaches?: string | null
+          course?: string | null
           created_at?: string
           day_of_week?: number
           end_time?: string | null
           id?: string
           is_active?: boolean
+          location?: string | null
+          note?: string | null
           pool_size?: string | null
           start_time?: string
           timetable_id?: string

@@ -2,6 +2,7 @@ import { sb } from "./supabase";
 import { looksOffline, queueWrite } from "./offline";
 import { fmtDay } from "./util";
 import { clubIdOf, squadIdOf } from "./clubs";
+import { effectiveSession, loadOverrides } from "./season";
 export { coachName, fmtDay, logEvent, todayLocal } from "./util";
 
 // Attendance register — same behaviour and data as the current app's
@@ -224,9 +225,14 @@ export async function loadSlots(club: string, squad: string, date: string): Prom
   if (error) throw error;
   const dow = isoDow(date);
   const out: Slot[] = [];
-  for (const t of (data ?? []) as unknown as Row[]) {
-    for (const s of t.timetable_sessions || []) {
-      if (s.is_active === false || s.day_of_week !== dow || !s.end_time) continue;
+  const rows = (data ?? []) as unknown as Row[];
+  const ids = rows.flatMap(t => (t.timetable_sessions || []).filter(s => s.day_of_week === dow).map(s => s.id));
+  const ovs = await loadOverrides(ids, date, date).catch(() => []);
+  for (const t of rows) {
+    for (const base of t.timetable_sessions || []) {
+      if (base.is_active === false || base.day_of_week !== dow) continue;
+      const s = effectiveSession({ ...base, is_active: true, end_time: base.end_time } as never, ovs.find(o => o.timetable_session_id === base.id));
+      if (s.cancelled || !s.end_time) continue;
       const start = s.start_time.slice(0, 5), end = s.end_time.slice(0, 5);
       out.push({ id: s.id, squad: t.squads.name, start, end, pool: (POOLS as string[]).includes(s.pool_size ?? "") ? (s.pool_size as Pool) : null, minutes: minutesBetween(start, end) });
     }
