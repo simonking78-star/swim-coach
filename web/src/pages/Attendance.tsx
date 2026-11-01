@@ -6,7 +6,7 @@ import { useClub } from "../club/ClubProvider";
 import { ClubPicker } from "../club/ClubPicker";
 import { LEVEL_NOTE, sectionLevel } from "../lib/access";
 import {
-  POOLS, WHOLE_CLUB, applyMark, coachName, loadPlanDistance, totalDistance, fmtDay, loadPlanOptions, loadRegister, loadSquadNames, logEvent,
+  POOLS, WHOLE_CLUB, applyMark, searchGuests, type GuestCandidate, coachName, loadPlanDistance, totalDistance, fmtDay, loadPlanOptions, loadRegister, loadSquadNames, logEvent,
   loadSlots, markLabel, minutesBetween, nextTickStatus, saveMark, tally, todayLocal,
   type AttSession, type MarkExtras, type AttStatus, type AttSwimmer, type Pool, type SaveResult, type Slot
 } from "../lib/attendance";
@@ -251,6 +251,15 @@ function Register({ session, swimmers, setSwimmers, setSession, onFinish }: Regi
     saveMark(session, id, cur.status, cur.minutes_attended, extrasOf(next)).then(r => { if (r !== "saved") setSaveNote(r); });
   };
 
+  const [addOpen, setAddOpen] = useState(false);
+  const addGuests = (picked: GuestCandidate[]) => {
+    setSwimmers(list => [...list, ...picked.filter(p => !list.some(s => s.id === p.id)).map(p => ({
+      id: p.id, full_name: p.full_name, status: null, minutes_attended: null, note: null, lane: null, distance_m: 0,
+      guest: true, squadName: p.squadName
+    }))]);
+    setAddOpen(false);
+  };
+
   const allIn = async () => {
     const todo = swimmers.filter(s => s.status === null).map(s => applyMark(s, "in", null, session));
     setSwimmers(list => list.map(s => todo.find(t => t.id === s.id) ?? s));
@@ -298,6 +307,11 @@ function Register({ session, swimmers, setSwimmers, setSession, onFinish }: Regi
           ? <> · plan {session.plannedDistance.toLocaleString()} m each</>
           : <> · <span className="dim">no plan linked — enter distances by hand</span></>}
       </p>
+
+      <div className="att-add">
+        <button type="button" className="btn small" aria-expanded={addOpen} onClick={() => setAddOpen(o => !o)}>+ Add swimmer from another squad</button>
+        {addOpen && <AddGuests club={session.club} present={swimmers.map(s => s.id)} onAdd={addGuests} onClose={() => setAddOpen(false)} />}
+      </div>
 
       <div className="seg seg-2 mode-switch" role="group" aria-label="Marking method">
         <button type="button" className={"seg-btn" + (session.mode === "swipe" ? " on" : "")} aria-pressed={session.mode === "swipe"} onClick={() => switchMode("swipe")}>Card swipe</button>
@@ -374,6 +388,7 @@ function SwipeMode({ swimmers, index, setIndex, onMark, onDetail, max }: {
             <span className="swipe-ov out" style={{ opacity: dx < 0 ? amt : 0 }}>OUT</span>
             <span className="swipe-ov in" style={{ opacity: dx > 0 ? amt : 0 }}>IN</span>
             <span className="swipe-name">{current.full_name}</span>
+            {current.guest && <span className="swipe-sub">Guest{current.squadName ? ` · ${current.squadName}` : ""}</span>}
             {current.status
               ? <span className="swipe-sub">Already marked {markLabel(current)} — swipe or tap to change</span>
               : <span className="swipe-sub">Swipe right = In · Swipe left = Out</span>}
@@ -407,7 +422,7 @@ function TickMode({ swimmers, onMark, onDetail, max }: { swimmers: AttSwimmer[];
     <ul className="tick-list">
       {swimmers.map(s => (
         <li key={s.id} className="tick-row">
-          <span className="tick-name">{s.full_name}</span>
+          <span className="tick-name">{s.full_name}{s.guest && <span className="dim"> · guest{s.squadName ? ` (${s.squadName})` : ""}</span>}</span>
           <button
             type="button"
             className={"tick-box" + (s.status ? " st-" + s.status : "")}
@@ -436,6 +451,30 @@ function TickMode({ swimmers, onMark, onDetail, max }: { swimmers: AttSwimmer[];
         </li>
       ))}
     </ul>
+  );
+}
+
+function AddGuests({ club, present, onAdd, onClose }: { club: string; present: string[]; onAdd: (p: GuestCandidate[]) => void; onClose: () => void }) {
+  const [text, setText] = useState("");
+  const [picked, setPicked] = useState<Map<string, GuestCandidate>>(new Map());
+  const found = useQuery({ queryKey: ["att_guests", club, text, present.length], queryFn: () => searchGuests(club, text, present) });
+  const toggle = (g: GuestCandidate) => setPicked(m => { const n = new Map(m); n.has(g.id) ? n.delete(g.id) : n.set(g.id, g); return n; });
+  return (
+    <div className="att-guests" role="group" aria-label="Add swimmers">
+      <input type="search" value={text} onChange={e => setText(e.target.value)} placeholder="Search by name" aria-label="Search swimmers" />
+      {found.isLoading && <p className="dim">Searching…</p>}
+      {found.error && <p className="msg error">Couldn't search — check your connection.</p>}
+      {found.data && found.data.length === 0 && <p className="dim">No other swimmers match.</p>}
+      <ul className="guest-list">
+        {(found.data ?? []).map(g => (
+          <li key={g.id}><label><input type="checkbox" checked={picked.has(g.id)} onChange={() => toggle(g)} /> {g.full_name} <span className="dim">{g.squadName ?? ""}</span></label></li>
+        ))}
+      </ul>
+      <div className="done-actions">
+        <button type="button" className="btn primary small" disabled={picked.size === 0} onClick={() => onAdd([...picked.values()])}>Add {picked.size || ""} to register</button>
+        <button type="button" className="btn small" onClick={onClose}>Cancel</button>
+      </div>
+    </div>
   );
 }
 

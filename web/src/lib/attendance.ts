@@ -35,6 +35,8 @@ export interface AttSwimmer {
   note: string | null;
   lane: number | null;
   distance_m: number | null;       // metres swum this session
+  guest?: boolean;                 // from another squad, added to this register
+  squadName?: string | null;       // shown on guests
 }
 
 /**
@@ -159,6 +161,20 @@ export async function loadSquadNames(club: string): Promise<string[]> {
 }
 
 export interface PlanOption { id: string; label: string; }
+export interface GuestCandidate { id: string; full_name: string; squadName: string | null; }
+
+/** Active swimmers in the club (any squad) matching a name search, for adding to a register. */
+export async function searchGuests(club: string, text: string, exclude: string[]): Promise<GuestCandidate[]> {
+  let q = sb.from("swimmers").select("id, full_name, squads(name)").eq("active", true).eq("club_id", clubIdOf(club)).order("full_name").limit(30);
+  const t = text.trim().replace(/[%,()]/g, " ");
+  if (t) q = q.ilike("full_name", `%${t}%`);
+  const { data, error } = await q;
+  if (error) throw error;
+  const skip = new Set(exclude);
+  return ((data ?? []) as unknown as { id: string; full_name: string; squads: { name: string } | null }[])
+    .filter(r => !skip.has(r.id)).map(r => ({ id: r.id, full_name: r.full_name, squadName: r.squads?.name ?? null }));
+}
+
 /** The linked plan's total distance (m), or null. */
 export async function loadPlanDistance(planId: string | null): Promise<number | null> {
   if (!planId) return null;
@@ -231,11 +247,22 @@ export async function loadRegister(s: Pick<AttSession, "club" | "squad" | "date"
   if (eErr) console.error(eErr);
   const byId = new Map((existing ?? []).map(r => [r.swimmer_id, r]));
 
-  return (swimmers ?? []).map(sw => {
+  // Guests: anyone already marked for this session who isn't in the squad list (added earlier, then reloaded).
+  const have = new Set((swimmers ?? []).map(sw => sw.id as string));
+  const guestIds = (existing ?? []).map(r => r.swimmer_id as string).filter(id => !have.has(id));
+  let guests: { id: string; full_name: string; squads: { name: string } | null }[] = [];
+  if (guestIds.length && s.squad !== WHOLE_CLUB) {
+    const { data: g } = await sb.from("swimmers").select("id, full_name, squads(name)").in("id", guestIds).eq("club_id", clubIdOf(s.club)).eq("active", true);
+    guests = (g ?? []) as unknown as typeof guests;
+  }
+  const guestRows = guests.map(g => ({ id: g.id, full_name: g.full_name, guest: true, squadName: g.squads?.name ?? null }));
+
+  return [...(swimmers ?? []).map(sw => ({ ...sw, guest: false, squadName: null as string | null })), ...guestRows].map(sw => {
     const ex = byId.get(sw.id);
     return {
       id: sw.id,
       full_name: sw.full_name as string,
+      guest: sw.guest, squadName: sw.squadName,
       status: (ex?.status as AttStatus | null) ?? null,
       minutes_attended: ex?.minutes_attended ?? null,
       note: (ex as { note?: string | null } | undefined)?.note ?? null,
