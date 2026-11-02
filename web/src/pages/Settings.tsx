@@ -69,6 +69,7 @@ export function Settings() {
             onMove={(i, d) => move("buttons", allowed.buttons, i, d)}
             empty="No sections are available for your role."
           />
+          <InstallHelp />
           <div className="settings-foot">
             <button className="btn" onClick={() => apply(defaultLayout())} disabled={save.isPending}>Reset to default</button>
             <span className={"save-status" + (save.isError ? " error" : "")} role="status" aria-live="polite">{status}</span>
@@ -111,6 +112,40 @@ function ItemList(props: {
           })}
         </ol>
       )}
+    </section>
+  );
+}
+
+// How to put the app on a phone's home screen. iPhones have no install button,
+// so the steps are spelled out; Android and desktop Chrome offer one in the menu.
+function InstallHelp() {
+  const installed = typeof matchMedia === "function" && (matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true);
+  const ua = typeof navigator === "undefined" ? "" : navigator.userAgent;
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  return (
+    <section className="card settings-card" id="install">
+      <h2>Put Coach Tools on your home screen</h2>
+      {installed ? <p className="dim">✓ You're already using it from the home screen.</p> : (
+        <p className="dim">It then opens full screen like an app, and keeps working on poolside signal.</p>
+      )}
+      <details open={ios && !installed}>
+        <summary><strong>iPhone or iPad (Safari)</strong></summary>
+        <ol className="help-steps">
+          <li>Open this site in <strong>Safari</strong>. Other browsers on iPhone can't add it.</li>
+          <li>Tap the <strong>Share</strong> button (a square with an arrow pointing up) at the bottom of the screen.</li>
+          <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+          <li>Tap <strong>Add</strong>. Coach Tools appears on your home screen.</li>
+        </ol>
+        <p className="hint">Open it from that icon each time. Signing in again is normal the first time.</p>
+      </details>
+      <details open={!ios && !installed}>
+        <summary><strong>Android (Chrome)</strong></summary>
+        <ol className="help-steps">
+          <li>Open this site in <strong>Chrome</strong>.</li>
+          <li>Tap the <strong>⋮ menu</strong> at the top right.</li>
+          <li>Tap <strong>Install app</strong> (or <strong>Add to Home screen</strong>), then <strong>Install</strong>.</li>
+        </ol>
+      </details>
     </section>
   );
 }

@@ -892,6 +892,11 @@ textarea { font: inherit; font-size: 16px; width: 100%; margin-top: 6px; padding
 .chart-card { margin-top: 14px; }
 .pdf-cell { display: flex; align-items: flex-end; }
 
+/* App footer + install help */
+.app-foot { margin: 2rem 0 1rem; text-align: center; font-size: .75rem; color: var(--text-dim); }
+.help-steps { margin: .5rem 0 .5rem 1.25rem; padding: 0; display: grid; gap: .4rem; }
+details summary { cursor: pointer; min-height: 2.5rem; display: flex; align-items: center; }
+
 /* Attendance register: distance, lane, note */
 .att-dist { margin: .25rem 0 .5rem; font-size: .95rem; }
 .att-details { display: grid; grid-template-columns: 5rem 8rem 1fr; gap: .5rem; width: 100%; margin: .25rem 0 .5rem; }
