@@ -35,6 +35,8 @@ export interface FbEntry {
   status: string | null;
   observation: string | null;
   remedial_action: string | null;
+  /** Drills & skills chosen as the remedial action (swimmer feedback only). */
+  remedial_drill_ids?: string[] | null;
   note: string | null;
   media: Media[] | null;
   session_date: string;
@@ -68,7 +70,7 @@ export async function loadFbSwimmers(club: string, squad: string | null): Promis
   return flatSquad((data ?? []) as unknown as { id: string; full_name: string; squad_id: string | null; sq: { name: string } | null }[]);
 }
 
-const FB_COLS = "id, thread_id, entry_type, category, criterion, status, observation, remedial_action, note, media, session_date, created_at, coach";
+const FB_COLS = "id, thread_id, entry_type, category, criterion, status, observation, remedial_action, remedial_drill_ids, note, media, session_date, created_at, coach";
 
 export async function loadSwimmerHistory(swimmerId: string): Promise<FbEntry[]> {
   const { data, error } = await sb.from("swimmer_feedback").select(FB_COLS)
@@ -106,7 +108,9 @@ export interface SwimmerFbDraft {
   criterion: string;
   status: string | null;
   observation: string;
+  /** Readable remedial action: chosen drill names plus any cue. */
   remedial: string;
+  remedialDrillIds: string[];
   notes: string;
   date: string;
   planId: string;
@@ -149,6 +153,7 @@ export async function saveSwimmerFeedback(d: SwimmerFbDraft, onProgress?: (i: nu
     category: d.category,
     observation: d.observation.trim(),
     remedial_action: d.remedial.trim() || null,
+    remedial_drill_ids: d.remedialDrillIds,
     note: d.notes.trim() || null,
     session_plan_id: d.planId || null,
     session_date: d.date,
@@ -224,27 +229,30 @@ export interface Drill { id: string; drill_name: string; stroke: string | null; 
 export interface SquadFbEntry extends FbEntry {
   drill_id: string | null;
   drills_library: Drill | null;
-  squad_drill_weeks: { micro_id: string; is_active: boolean }[] | null;
+  squad_drill_weeks: { micro_id: string; drill_id: string; is_active: boolean }[] | null;
 }
 
 export async function loadSquadHistory(squadId: string): Promise<SquadFbEntry[]> {
   const { data, error } = await sb.from("squad_feedback")
-    .select("id, thread_id, entry_type, category, criterion, status, observation, remedial_action, note, session_date, created_at, coach, drill_id, drills_library(id, drill_name, stroke), squad_drill_weeks(micro_id, is_active)")
+    .select("id, thread_id, entry_type, category, criterion, status, observation, remedial_action, remedial_drill_ids, note, session_date, created_at, coach, drill_id, drills_library(id, drill_name, stroke), squad_drill_weeks(micro_id, drill_id, is_active)")
     .eq("squad_id", squadId).eq("is_active", true)
     .order("session_date", { ascending: false }).order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map(r => ({ ...(r as unknown as SquadFbEntry), media: [] }));
 }
 
-export interface RecentSquadEntry { id: string; squad_id: string; squad_name: string; category: string; criterion: string | null; status: string | null; observation: string; session_date: string; drill_name: string | null; }
+export interface RecentSquadEntry { id: string; squad_id: string; squad_name: string; category: string; criterion: string | null; status: string | null; observation: string; session_date: string; drill_name: string | null; drill_count: number; }
 export async function loadRecentSquadFeedback(club: string): Promise<RecentSquadEntry[]> {
   const { data, error } = await sb.from("squad_feedback")
-    .select("id, squad_id, category, criterion, status, observation, session_date, squads(name), drills_library(drill_name)")
+    .select("id, squad_id, category, criterion, status, observation, session_date, remedial_drill_ids, squads(name), drills_library(drill_name)")
     .eq("club_id", clubIdOf(club)).eq("is_active", true)
     .order("created_at", { ascending: false }).limit(12);
   if (error) throw error;
-  type Raw = Omit<RecentSquadEntry, "squad_name" | "drill_name"> & { squads: { name: string } | null; drills_library: { drill_name: string } | null };
-  return ((data ?? []) as unknown as Raw[]).map(r => ({ ...r, squad_name: r.squads?.name ?? "Squad", drill_name: r.drills_library?.drill_name ?? null }));
+  type Raw = Omit<RecentSquadEntry, "squad_name" | "drill_name" | "drill_count"> & { remedial_drill_ids: string[] | null; squads: { name: string } | null; drills_library: { drill_name: string } | null };
+  return ((data ?? []) as unknown as Raw[]).map(r => ({
+    ...r, squad_name: r.squads?.name ?? "Squad", drill_name: r.drills_library?.drill_name ?? null,
+    drill_count: Math.max(r.remedial_drill_ids?.length ?? 0, r.drills_library ? 1 : 0)
+  }));
 }
 
 export async function loadDrills(club: string): Promise<Drill[]> {
@@ -295,10 +303,11 @@ export interface SquadFbDraft {
   criterion: string;
   status: string | null;
   observation: string;
+  /** Readable remedial action: chosen drill names plus any cue. */
   remedial: string;
   notes: string;
-  drill: Drill | null;
-  weeks: string[];          // micro ids
+  drills: Drill[];
+  weeks: string[];          // micro ids — every chosen drill is linked to each
   date: string;
   planId: string;
   coach: string;
@@ -324,7 +333,8 @@ export async function saveSquadFeedback(d: SquadFbDraft): Promise<{ weeksLinked:
     observation: d.observation.trim(),
     remedial_action: d.remedial.trim() || null,
     note: d.notes.trim() || null,
-    drill_id: d.drill?.id ?? null,
+    drill_id: d.drills[0]?.id ?? null,   // first drill, for older readers
+    remedial_drill_ids: d.drills.map(x => x.id),
     session_plan_id: d.planId || null,
     session_date: d.date,
     coach: d.coach
@@ -338,11 +348,12 @@ export async function saveSquadFeedback(d: SquadFbDraft): Promise<{ weeksLinked:
     const { error: ue } = await sb.from("squad_drill_weeks").update({ is_active: false } as never).in("squad_feedback_id", d.previousIds).eq("is_active", true);
     if (ue) throw ue;
   }
-  const weeks = d.drill ? d.weeks : [];
-  if (weeks.length) {
-    const { error: we } = await sb.from("squad_drill_weeks").insert(weeks.map(mid => ({
-      squad_feedback_id: (saved as { id: string }).id, squad_id: d.squadId, drill_id: d.drill!.id, micro_id: mid, ...clubCols(d.club)
-    })) as never);
+  const weeks = d.drills.length ? d.weeks : [];
+  const links = weeks.flatMap(mid => d.drills.map(dr => ({
+    squad_feedback_id: (saved as { id: string }).id, squad_id: d.squadId, drill_id: dr.id, micro_id: mid, ...clubCols(d.club)
+  })));
+  if (links.length) {
+    const { error: we } = await sb.from("squad_drill_weeks").insert(links as never);
     if (we) throw we;
   }
   return { weeksLinked: weeks.length };
