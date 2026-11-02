@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/AuthProvider";
 import { useClub } from "../../club/ClubProvider";
 import { canEdit, sectionLevel } from "../../lib/access";
-import { DAYS_LONG, POOLS, pickSeason, saveTimetable, seasonOf, validateTimetable, type TtDraft, type TtRow } from "../../lib/season";
+import { COURSES, DAYS_LONG, POOLS, pickSeason, saveTimetable, seasonOf, validateTimetable, type TtDraft, type TtRow } from "../../lib/season";
 import { fmtDate, todayLocal, uuid } from "../../lib/util";
 import { StatusMsg, useTimetablesData } from "../../components/seasonParts";
 import { usePlanSquads } from "../plans/PlanList";
@@ -47,7 +47,7 @@ export function TimetableForm() {
       setSeasonId(seasonOf(existing, data.data.seasons)?.id ?? "");
       setStart(existing.season_start); setEnd(existing.season_end);
       const r = (existing.timetable_sessions || []).slice().sort((a, b) => a.day_of_week - b.day_of_week || a.start_time.localeCompare(b.start_time))
-        .map(s => ({ k: uuid(), id: s.id, day: String(s.day_of_week), start: s.start_time.slice(0, 5), end: s.end_time?.slice(0, 5) ?? "", pool: s.pool_size || "" }));
+        .map(s => ({ k: uuid(), id: s.id, day: String(s.day_of_week), start: s.start_time.slice(0, 5), end: s.end_time?.slice(0, 5) ?? "", pool: s.pool_size || "", course: s.course || "", location: s.location || "", coaches: s.coaches || "", note: s.note || "" }));
       setRows(r.length ? r : [blank()]);
     } else {
       const s = pickSeason(data.data.seasons, today);
@@ -107,7 +107,7 @@ export function TimetableForm() {
         <p className="hint">One squad per timetable.</p>
 
         <fieldset className="plain-fieldset">
-          <legend>Sessions <span className="dim">(day, start and finish time, pool)</span></legend>
+          <legend>Sessions <span className="dim">(repeat every week in the band: day, times, pool, course, location, coaches, note)</span></legend>
           <p className="hint top">The finish time sets the session length, which attendance is measured against.</p>
           {rows.map((r, i) => (
             <div key={r.k} className="tt-row" role="group" aria-label={`Session ${i + 1}`}>
@@ -128,6 +128,17 @@ export function TimetableForm() {
                   </select>
                 </label>
               </div>
+              <div className="tt-row-times">
+                <label>Course
+                  <select value={r.course || ""} onChange={e => setRow(r.k, "course", e.target.value)} aria-label={`Session ${i + 1} course`}>
+                    <option value="">Optional</option>
+                    {COURSES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </label>
+                <label>Location<input type="text" maxLength={120} value={r.location || ""} onChange={e => setRow(r.k, "location", e.target.value)} aria-label={`Session ${i + 1} location`} /></label>
+                <label>Coaches<input type="text" maxLength={120} value={r.coaches || ""} onChange={e => setRow(r.k, "coaches", e.target.value)} aria-label={`Session ${i + 1} coaches`} /></label>
+              </div>
+              <label className="tt-note">Note<input type="text" maxLength={300} value={r.note || ""} onChange={e => setRow(r.k, "note", e.target.value)} aria-label={`Session ${i + 1} note`} /></label>
             </div>
           ))}
           <button type="button" className="link-btn" onClick={() => setRows(rs => [...rs, blank()])}>+ Add another</button>

@@ -49,7 +49,40 @@ export function pickSeason(rows: Season[], today: string): Season | null {
 // ---------------------------------------------------------------------------
 // Timetables
 // ---------------------------------------------------------------------------
-export interface TtSession { id: string; day_of_week: number; start_time: string; end_time: string | null; pool_size: string | null; is_active: boolean; }
+export const COURSES = ["LCM", "SCM", "SCY"] as const;
+export interface TtSession { id: string; day_of_week: number; start_time: string; end_time: string | null; pool_size: string | null; is_active: boolean;
+  course?: string | null; location?: string | null; coaches?: string | null; note?: string | null; }
+
+/** One date of a series changed on its own. null fields mean "as the series says". */
+export interface TtOverride { id: string; timetable_session_id: string; session_date: string; cancelled: boolean;
+  start_time: string | null; end_time: string | null; pool_size: string | null; course: string | null; location: string | null; coaches: string | null; note: string | null; }
+export type OverrideDraft = Partial<Omit<TtOverride, "id" | "timetable_session_id" | "session_date">>;
+const OV_COLS = "id, timetable_session_id, session_date, cancelled, start_time, end_time, pool_size, course, location, coaches, note";
+
+/** The session as it runs on one date: series values, then any override on top. */
+export function effectiveSession(ts: TtSession, ov: TtOverride | undefined): TtSession & { cancelled: boolean } {
+  if (!ov) return { ...ts, cancelled: false };
+  return { ...ts, cancelled: ov.cancelled, start_time: ov.start_time ?? ts.start_time, end_time: ov.end_time ?? ts.end_time, pool_size: ov.pool_size ?? ts.pool_size,
+    course: ov.course ?? ts.course, location: ov.location ?? ts.location, coaches: ov.coaches ?? ts.coaches, note: ov.note ?? ts.note };
+}
+
+export async function loadOverrides(sessionIds: string[], from: string, to: string): Promise<TtOverride[]> {
+  if (!sessionIds.length) return [];
+  const { data, error } = await sb.from("timetable_session_overrides" as never).select(OV_COLS).in("timetable_session_id", sessionIds).gte("session_date", from).lte("session_date", to);
+  if (error) throw error;
+  return (data ?? []) as unknown as TtOverride[];
+}
+
+/** Save (or replace) the override for one date of one session. */
+export async function saveOverride(sessionId: string, date: string, d: OverrideDraft): Promise<void> {
+  const row = { timetable_session_id: sessionId, session_date: date, cancelled: false, ...d, updated_at: new Date().toISOString() };
+  const { error } = await sb.from("timetable_session_overrides" as never).upsert(row as never, { onConflict: "timetable_session_id,session_date" });
+  if (error) throw error;
+}
+export async function clearOverride(sessionId: string, date: string): Promise<void> {
+  const { error } = await sb.from("timetable_session_overrides" as never).delete().eq("timetable_session_id", sessionId).eq("session_date", date);
+  if (error) throw error;
+}
 export interface Timetable {
   id: string; squad_id: string; season_id: string | null; season_start: string; season_end: string; weekly_focus: string | null;
   squads: { name: string; club_id: string }; timetable_sessions: TtSession[];
@@ -65,7 +98,7 @@ export interface TimetablesData { timetables: Timetable[]; galas: Gala[]; season
 export async function loadTimetablesData(club: string): Promise<TimetablesData> {
   const [tt, gl, seasons] = await Promise.all([
     sb.from("timetables")
-      .select("id, squad_id, season_id, season_start, season_end, weekly_focus, squads!inner(name, club_id), timetable_sessions(id, day_of_week, start_time, end_time, pool_size, is_active)")
+      .select("id, squad_id, season_id, season_start, season_end, weekly_focus, squads!inner(name, club_id), timetable_sessions(id, day_of_week, start_time, end_time, pool_size, is_active, course, location, coaches, note)")
       .eq("is_active", true).eq("squads.club_id", clubIdOf(club)).eq("timetable_sessions.is_active", true),
     sb.from("galas").select("id, name, date_start, date_end, entries_open, entries_close"),
     loadSeasons(club)
@@ -128,7 +161,7 @@ export async function disableTimetable(id: string) {
   if (error) throw error;
 }
 
-export interface TtRow { id: string | null; day: string; start: string; end: string; pool: string; }
+export interface TtRow { id: string | null; day: string; start: string; end: string; pool: string; course?: string; location?: string; coaches?: string; note?: string; }
 export interface TtDraft { id: string | null; squadId: string; squadName: string; seasonId: string; start: string; end: string; rows: TtRow[]; removedIds: string[]; }
 const hhmmss = (t: string) => (t.length === 5 ? t + ":00" : t);
 
@@ -164,7 +197,7 @@ export async function saveTimetable(d: TtDraft): Promise<string> {
     if (error) throw error;
     d.id = (data as { id: string }).id;
   }
-  const payload = (r: TtRow) => ({ day_of_week: parseInt(r.day, 10), start_time: hhmmss(r.start), end_time: hhmmss(r.end), pool_size: r.pool || null });
+  const payload = (r: TtRow) => ({ day_of_week: parseInt(r.day, 10), start_time: hhmmss(r.start), end_time: hhmmss(r.end), pool_size: r.pool || null, course: r.course || null, location: r.location?.trim() || null, coaches: r.coaches?.trim() || null, note: r.note?.trim() || null });
   for (const r of d.rows.filter(r => r.id)) {
     const { error } = await sb.from("timetable_sessions").update(payload(r) as never).eq("id", r.id!);
     if (error) throw error;
@@ -442,7 +475,7 @@ export async function loadMicroWeeks(macroId: string, season: Season | null, tod
       .eq("macro_id", macroId).eq("is_active", true).order("week_no"),
     sb.from("season_competitions").select("id, name, date_from, date_to").eq("season_id", m.season_id).eq("is_active", true),
     sqIds.length
-      ? sb.from("timetables").select("id, squad_id, season_start, season_end, timetable_sessions(id, day_of_week, start_time, end_time, pool_size, is_active)").in("squad_id", sqIds).eq("is_active", true)
+      ? sb.from("timetables").select("id, squad_id, season_start, season_end, timetable_sessions(id, day_of_week, start_time, end_time, pool_size, is_active, course, location, coaches, note)").in("squad_id", sqIds).eq("is_active", true)
       : Promise.resolve({ data: [], error: null }),
     sb.from("season_breaks").select("break_start, break_end").eq("season_id", m.season_id).eq("is_active", true)
   ]);

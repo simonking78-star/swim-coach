@@ -2,6 +2,7 @@ import { sb } from "./supabase";
 import { looksOffline, queueWrite } from "./offline";
 import { fmtDay } from "./util";
 import { clubIdOf, squadIdOf } from "./clubs";
+import { effectiveSession, loadOverrides } from "./season";
 export { coachName, fmtDay, logEvent, todayLocal } from "./util";
 
 // Attendance register — same behaviour and data as the current app's
@@ -21,6 +22,7 @@ export interface AttSession {
   timetableSessionId: string | null; // the weekly timetable slot; null = not timetabled (times confirmed by the coach)
   pool: Pool;
   planId: string | null;
+  plannedDistance: number | null; // the linked plan's total_distance_m, if a plan is linked
   sessionMinutes: number; // finish − start: the base for hours trained and fractional attendance
   mode: "swipe" | "tick";
   coach: string;
@@ -31,6 +33,38 @@ export interface AttSwimmer {
   full_name: string;
   status: AttStatus | null;        // null = not marked this session
   minutes_attended: number | null;
+  note: string | null;
+  lane: number | null;
+  distance_m: number | null;       // metres swum this session
+  guest?: boolean;                 // from another squad, added to this register
+  squadName?: string | null;       // shown on guests
+}
+
+/**
+ * Default distance for a mark: absent (Out/Excused/unmarked) = 0, In = the plan's total,
+ * Partial = plan total pro rata to minutes attended. No linked plan → unknown (null) for present swimmers.
+ */
+export function defaultDistance(status: AttStatus | null, minutes: number | null, session: Pick<AttSession, "plannedDistance" | "sessionMinutes">): number | null {
+  if (status === null || status === "out" || status === "excused") return 0;
+  const plan = session.plannedDistance;
+  if (plan == null) return null;
+  if (status === "in") return plan;
+  const frac = Math.min(1, Math.max(0, (minutes || 0) / (session.sessionMinutes || 60)));
+  return Math.round(plan * frac);
+}
+
+/** Total metres swum by everyone in the register. */
+export const totalDistance = (list: AttSwimmer[]) => list.reduce((n, s) => n + (s.distance_m ?? 0), 0);
+
+/**
+ * Apply a new mark to a swimmer. Distance follows the status default unless the coach
+ * has typed their own figure (anything that differs from the old default is kept).
+ */
+export function applyMark(sw: AttSwimmer, status: AttStatus, minutes: number | null, session: AttSession): AttSwimmer {
+  const oldDefault = defaultDistance(sw.status, sw.minutes_attended, session);
+  const keep = sw.distance_m != null && sw.distance_m !== oldDefault;
+  const mins = status === "partial" ? minutes : null;
+  return { ...sw, status, minutes_attended: mins, distance_m: keep ? sw.distance_m : defaultDistance(status, mins, session) };
 }
 
 /**
@@ -128,6 +162,28 @@ export async function loadSquadNames(club: string): Promise<string[]> {
 }
 
 export interface PlanOption { id: string; label: string; }
+export interface GuestCandidate { id: string; full_name: string; squadName: string | null; }
+
+/** Active swimmers in the club (any squad) matching a name search, for adding to a register. */
+export async function searchGuests(club: string, text: string, exclude: string[]): Promise<GuestCandidate[]> {
+  let q = sb.from("swimmers").select("id, full_name, squads(name)").eq("active", true).eq("club_id", clubIdOf(club)).order("full_name").limit(30);
+  const t = text.trim().replace(/[%,()]/g, " ");
+  if (t) q = q.ilike("full_name", `%${t}%`);
+  const { data, error } = await q;
+  if (error) throw error;
+  const skip = new Set(exclude);
+  return ((data ?? []) as unknown as { id: string; full_name: string; squads: { name: string } | null }[])
+    .filter(r => !skip.has(r.id)).map(r => ({ id: r.id, full_name: r.full_name, squadName: r.squads?.name ?? null }));
+}
+
+/** The linked plan's total distance (m), or null. */
+export async function loadPlanDistance(planId: string | null): Promise<number | null> {
+  if (!planId) return null;
+  const { data, error } = await sb.from("session_plans").select("total_distance_m").eq("id", planId).maybeSingle();
+  if (error) { console.error(error); return null; }
+  return (data?.total_distance_m as number | null) ?? null;
+}
+
 export async function loadPlanOptions(club: string): Promise<PlanOption[]> {
   const { data, error } = await sb.from("session_plans")
     .select("id, title, intended_date, total_distance_m")
@@ -169,9 +225,14 @@ export async function loadSlots(club: string, squad: string, date: string): Prom
   if (error) throw error;
   const dow = isoDow(date);
   const out: Slot[] = [];
-  for (const t of (data ?? []) as unknown as Row[]) {
-    for (const s of t.timetable_sessions || []) {
-      if (s.is_active === false || s.day_of_week !== dow || !s.end_time) continue;
+  const rows = (data ?? []) as unknown as Row[];
+  const ids = rows.flatMap(t => (t.timetable_sessions || []).filter(s => s.day_of_week === dow).map(s => s.id));
+  const ovs = await loadOverrides(ids, date, date).catch(() => []);
+  for (const t of rows) {
+    for (const base of t.timetable_sessions || []) {
+      if (base.is_active === false || base.day_of_week !== dow) continue;
+      const s = effectiveSession({ ...base, is_active: true, end_time: base.end_time } as never, ovs.find(o => o.timetable_session_id === base.id));
+      if (s.cancelled || !s.end_time) continue;
       const start = s.start_time.slice(0, 5), end = s.end_time.slice(0, 5);
       out.push({ id: s.id, squad: t.squads.name, start, end, pool: (POOLS as string[]).includes(s.pool_size ?? "") ? (s.pool_size as Pool) : null, minutes: minutesBetween(start, end) });
     }
@@ -180,25 +241,39 @@ export async function loadSlots(club: string, squad: string, date: string): Prom
 }
 
 /** Active swimmers in scope, with any mark already saved for this exact session. */
-export async function loadRegister(s: Pick<AttSession, "club" | "squad" | "date" | "time" | "pool">): Promise<AttSwimmer[]> {
+export async function loadRegister(s: Pick<AttSession, "club" | "squad" | "date" | "time" | "pool" | "plannedDistance" | "sessionMinutes">): Promise<AttSwimmer[]> {
   let q = sb.from("swimmers").select("id, full_name").eq("active", true).eq("club_id", clubIdOf(s.club)).order("full_name");
   if (s.squad !== WHOLE_CLUB) q = q.eq("squad_id", await squadIdOf(s.club, s.squad));
   const { data: swimmers, error } = await q;
   if (error) throw error;
 
   const { data: existing, error: eErr } = await sb.from("attendance_records")
-    .select("swimmer_id, status, minutes_attended")
+    .select("swimmer_id, status, minutes_attended, note, lane, distance_m")
     .eq("session_date", s.date).eq("session_time", s.time + ":00").eq("pool_size", s.pool);
   if (eErr) console.error(eErr);
   const byId = new Map((existing ?? []).map(r => [r.swimmer_id, r]));
 
-  return (swimmers ?? []).map(sw => {
+  // Guests: anyone already marked for this session who isn't in the squad list (added earlier, then reloaded).
+  const have = new Set((swimmers ?? []).map(sw => sw.id as string));
+  const guestIds = (existing ?? []).map(r => r.swimmer_id as string).filter(id => !have.has(id));
+  let guests: { id: string; full_name: string; squads: { name: string } | null }[] = [];
+  if (guestIds.length && s.squad !== WHOLE_CLUB) {
+    const { data: g } = await sb.from("swimmers").select("id, full_name, squads(name)").in("id", guestIds).eq("club_id", clubIdOf(s.club)).eq("active", true);
+    guests = (g ?? []) as unknown as typeof guests;
+  }
+  const guestRows = guests.map(g => ({ id: g.id, full_name: g.full_name, guest: true, squadName: g.squads?.name ?? null }));
+
+  return [...(swimmers ?? []).map(sw => ({ ...sw, guest: false, squadName: null as string | null })), ...guestRows].map(sw => {
     const ex = byId.get(sw.id);
     return {
       id: sw.id,
       full_name: sw.full_name as string,
+      guest: sw.guest, squadName: sw.squadName,
       status: (ex?.status as AttStatus | null) ?? null,
-      minutes_attended: ex?.minutes_attended ?? null
+      minutes_attended: ex?.minutes_attended ?? null,
+      note: (ex as { note?: string | null } | undefined)?.note ?? null,
+      lane: (ex as { lane?: number | null } | undefined)?.lane ?? null,
+      distance_m: (ex as { distance_m?: number | null } | undefined)?.distance_m ?? null
     };
   });
 }
@@ -211,8 +286,11 @@ const ON_CONFLICT = "swimmer_id,session_date,session_time,pool_size";
 export type SaveResult = "saved" | "queued" | "failed";
 
 /** club_id is filled by the database (trigger) from the swimmer's squad. */
-export async function saveMark(session: AttSession, swimmerId: string, status: AttStatus, minutes: number | null = null): Promise<SaveResult> {
+export interface MarkExtras { note: string | null; lane: number | null; distance_m: number | null; }
+
+export async function saveMark(session: AttSession, swimmerId: string, status: AttStatus, minutes: number | null = null, extras: MarkExtras = { note: null, lane: null, distance_m: null }): Promise<SaveResult> {
   const payload = {
+    note: extras.note, lane: extras.lane, distance_m: extras.distance_m,
     swimmer_id: swimmerId,
     session_date: session.date,
     session_time: session.time + ":00",
