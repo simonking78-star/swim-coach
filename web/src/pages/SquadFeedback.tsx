@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthProvider";
 import { useClub } from "../club/ClubProvider";
@@ -7,10 +6,11 @@ import { ClubPicker } from "../club/ClubPicker";
 import { loadPlanOptions } from "../lib/attendance";
 import {
   CATEGORIES, QES, catLabel, loadDrills, loadFbSquads, loadRecentSquadFeedback, loadSquadHistory, loadSquadWeeks,
-  saveSquadFeedback, searchDrills, toThreads, validateSquadDraft, weekIsNow, weekIsPast,
+  saveSquadFeedback, toThreads, validateSquadDraft, weekIsNow, weekIsPast,
   type Drill, type EntryType, type SeasonWeek, type SquadFbEntry, type SquadLite, type Thread
 } from "../lib/feedback";
 import { fmtDate, fmtDdMm, logEvent, todayLocal, useCoachName } from "../lib/util";
+import { RemedialPicker, composeRemedial, cueFrom } from "../components/RemedialPicker";
 import { StatusPicker, StepTabs, StrokeChips, ThreadCard, TypeToggle } from "../components/feedbackParts";
 
 // Feedback on a squad as a whole. An entry can name a drill and the season
@@ -30,6 +30,8 @@ export function SquadFeedback({ editable }: { editable: boolean }) {
   const history = useQuery({ queryKey: ["sqf_history", squad?.id], enabled: !!squad, queryFn: () => loadSquadHistory(squad!.id) });
   const weeks = useQuery({ queryKey: ["sqf_weeks", club, squad?.id], enabled: !!club && !!squad, queryFn: () => loadSquadWeeks(club!, squad!.id) });
   const rows = history.data ?? [];
+  const library = useQuery({ queryKey: ["drills", club], enabled: !!club, queryFn: () => loadDrills(club!), staleTime: 5 * 60 * 1000 });
+  const drillName = (id: string) => library.data?.find(d => d.id === id)?.drill_name;
 
   useEffect(() => { setSquad(null); setUpdating(null); setTab("pick"); }, [club]);
 
@@ -47,12 +49,15 @@ export function SquadFeedback({ editable }: { editable: boolean }) {
     return w ? `Wk ${w.week_no} (${fmtDdMm(w.week_commencing)})` : "Week";
   };
   const extra = (e: SquadFbEntry, latest: boolean) => {
-    const wk = latest ? (e.squad_drill_weeks ?? []).filter(w => w.is_active) : [];
-    if (!e.drills_library && !wk.length) return null;
+    const wk = latest ? [...new Set((e.squad_drill_weeks ?? []).filter(w => w.is_active).map(w => w.micro_id))] : [];
+    const names = e.remedial_drill_ids?.length
+      ? e.remedial_drill_ids.map(id => drillName(id) ?? (id === e.drill_id ? e.drills_library?.drill_name : undefined)).filter((n): n is string => !!n)
+      : e.drills_library ? [e.drills_library.drill_name] : [];
+    if (!names.length && !wk.length) return null;
     return (
       <div className="chip-row tight">
-        {e.drills_library && <span className="chip drill">Drill: {e.drills_library.drill_name}</span>}
-        {wk.map(w => <span key={w.micro_id} className="chip">{weekLabel(w.micro_id)}</span>)}
+        {names.map(n => <span key={n} className="chip drill">Drill: {n}</span>)}
+        {wk.map(m => <span key={m} className="chip">{weekLabel(m)}</span>)}
       </div>
     );
   };
@@ -115,7 +120,7 @@ function RecentSquadFeedback({ club, onOpen }: { club: string; onOpen: (squadId:
       {q.data?.map(r => (
         <button key={r.id} type="button" className="recent-squad" onClick={() => onOpen(r.squad_id)}>
           <strong>{r.squad_name} · {catLabel(r.category)}{r.criterion ? ` — ${r.criterion}` : ""}</strong>
-          <span className="dim">{fmtDate(r.session_date)}{r.status ? ` · ${r.status}` : ""}{r.drill_name ? ` · Drill: ${r.drill_name}` : ""}</span>
+          <span className="dim">{fmtDate(r.session_date)}{r.status ? ` · ${r.status}` : ""}{r.drill_name ? ` · Drill: ${r.drill_name}${r.drill_count > 1 ? ` +${r.drill_count - 1}` : ""}` : ""}</span>
           <span>{r.observation.slice(0, 140)}</span>
         </button>
       ))}
@@ -162,9 +167,21 @@ function SquadForm({ squad, history, weeks, weeksLoading, updating, onCancelUpda
   const [criterion, setCriterion] = useState(latest?.criterion ?? "");
   const [status, setStatus] = useState<string | null>(latest?.status ?? null);
   const [observation, setObservation] = useState("");
-  const [remedial, setRemedial] = useState(latest?.remedial_action ?? "");
+  // Remedial action = drills/skills from the library + an optional cue.
+  const latestIds = latest ? (latest.remedial_drill_ids?.length ? latest.remedial_drill_ids : latest.drill_id ? [latest.drill_id] : []) : [];
+  const [drillIds, setDrillIds] = useState<string[]>(latestIds);
+  const [cue, setCue] = useState(latestIds.length ? "" : latest?.remedial_action ?? "");
   const [notes, setNotes] = useState("");
-  const [drill, setDrill] = useState<Drill | null>(latest?.drills_library ?? null);
+  const library = useQuery({ queryKey: ["drills", club], enabled: !!club, queryFn: () => loadDrills(club!), staleTime: 5 * 60 * 1000 });
+  const byId = useMemo(() => new Map((library.data ?? []).map(d => [d.id, d])), [library.data]);
+  const drills = drillIds.map(id => byId.get(id) ?? (id === latest?.drill_id ? latest?.drills_library ?? undefined : undefined)).filter((d): d is Drill => !!d);
+  // Once the library loads, split a continued string's stored text back into its cue.
+  const cueSeed = useRef(latestIds.length > 0);
+  useEffect(() => {
+    if (!cueSeed.current || !library.data || !latest) return;
+    cueSeed.current = false;
+    setCue(cueFrom(latest.remedial_action, drills));
+  }, [library.data]); // eslint-disable-line react-hooks/exhaustive-deps
   const [picked, setPicked] = useState<Set<string>>(() => new Set((latest?.squad_drill_weeks ?? []).filter(w => w.is_active).map(w => w.micro_id)));
   const [showPast, setShowPast] = useState(false);
   const [date, setDate] = useState(today);
@@ -180,8 +197,8 @@ function SquadForm({ squad, history, weeks, weeksLoading, updating, onCancelUpda
 
   const save = async () => {
     const draft = {
-      club: club!, squadId: squad.id, threadId: updating?.id ?? null, entryType, category, criterion, status, observation, remedial, notes,
-      drill, weeks: [...picked], date, planId, coach,
+      club: club!, squadId: squad.id, threadId: updating?.id ?? null, entryType, category, criterion, status, observation, remedial: composeRemedial(drills, cue) ?? "", notes,
+      drills, weeks: [...picked], date, planId, coach,
       previousIds: updating ? updating.entries.map(e => e.id) : []
     };
     const problem = validateSquadDraft(draft);
@@ -196,7 +213,7 @@ function SquadForm({ squad, history, weeks, weeksLoading, updating, onCancelUpda
       qc.invalidateQueries({ queryKey: ["squad_feedback"] });
       qc.invalidateQueries({ queryKey: ["home_stats"] });
       onSaved((draft.threadId ? "Update added to the string" : "Saved") + ` — dated ${fmtDate(date)}` +
-        (weeksLinked ? ` · ${drill!.drill_name} linked to ${weeksLinked} week${weeksLinked === 1 ? "" : "s"}.` : "."));
+        (weeksLinked ? ` · ${drills.length === 1 ? drills[0].drill_name : `${drills.length} drills`} linked to ${weeksLinked} week${weeksLinked === 1 ? "" : "s"}.` : "."));
     } catch (e) {
       setMsg({ text: "Save failed — " + (e as Error).message, error: true });
     } finally {
@@ -235,15 +252,20 @@ function SquadForm({ squad, history, weeks, weeksLoading, updating, onCancelUpda
 
       <label htmlFor="sqf-obs">Observation</label>
       <textarea id="sqf-obs" rows={3} placeholder="What did you see across the squad?" value={observation} onChange={e => setObservation(e.target.value)} />
-      <label htmlFor="sqf-fix">Remedial action <span className="dim">(optional)</span></label>
-      <textarea id="sqf-fix" rows={2} placeholder="The fix — cue, focus, set design…" value={remedial} onChange={e => setRemedial(e.target.value)} />
+      <fieldset className="choice-set">
+        <legend>Remedial action <span className="dim">(optional — drills &amp; skills from the library)</span></legend>
+        <RemedialPicker club={club!} category={category} idPrefix="sqf-fix" value={drills}
+          onChange={ds => { setDrillIds(ds.map(d => d.id)); if (!ds.length) setPicked(new Set()); }} />
+        <label htmlFor="sqf-cue">Coaching cue <span className="dim">(optional)</span></label>
+        <input id="sqf-cue" type="text" placeholder="e.g. Streamline before the first kick" value={cue} onChange={e => setCue(e.target.value)} />
+      </fieldset>
 
       <div className="link-box">
-        <p className="link-box-title">🔗 Drill → season plan</p>
-        <DrillPicker club={club!} drill={drill} onChange={d => { setDrill(d); if (!d) setPicked(new Set()); }} />
-        {drill && (
+        <p className="link-box-title">🔗 Remedial drills → season plan</p>
+        {!drills.length && <p className="dim">Choose drills or skills above to link them to weeks in {squad.name}'s season plan.</p>}
+        {drills.length > 0 && (
           <div className="weeks">
-            <p className="weeks-label">Weeks to work it <span className="dim">(micro-cycles in {squad.name}'s season plan)</span></p>
+            <p className="weeks-label">Weeks to work {drills.length === 1 ? "it" : `these ${drills.length}`} <span className="dim">(micro-cycles in {squad.name}'s season plan)</span></p>
             {weeksLoading && <p className="dim">Loading the season plan…</p>}
             {!weeksLoading && weeks.length === 0 && (
               <p className="dim">{squad.name} isn't in a macro-cycle yet. Add it under Season planner → Plan to link drills to weeks.</p>
@@ -277,34 +299,6 @@ function SquadForm({ squad, history, weeks, weeksLoading, updating, onCancelUpda
       <p className="hint">Saving always adds a new dated entry. The drill weeks of the latest entry in a string are the ones used in micro-cycles and session planning.</p>
       <button type="button" className="btn primary wide" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save squad entry"}</button>
       {msg && <p className={"msg" + (msg.error ? " error" : "")} role={msg.error ? "alert" : "status"}>{msg.text}</p>}
-    </div>
-  );
-}
-
-function DrillPicker({ club, drill, onChange }: { club: string; drill: Drill | null; onChange: (d: Drill | null) => void }) {
-  const [q, setQ] = useState("");
-  const drills = useQuery({ queryKey: ["drills", club], queryFn: () => loadDrills(club), staleTime: 5 * 60 * 1000 });
-  const hits = searchDrills(drills.data ?? [], q);
-  if (drill) {
-    return (
-      <div className="selected-pill">
-        <span><strong>{drill.drill_name}</strong>{drill.stroke && <span className="dim"> · {drill.stroke}</span>}</span>
-        <button type="button" className="link-btn" onClick={() => onChange(null)}>Change</button>
-      </div>
-    );
-  }
-  return (
-    <div className="search-box">
-      <label htmlFor="sqf-drill">Drill <span className="dim">(from the Drills &amp; Skills library)</span></label>
-      <input id="sqf-drill" type="search" autoComplete="off" placeholder="Search drills…" value={q} onChange={e => setQ(e.target.value)} />
-      {q.trim() && (
-        <ul className="search-results">
-          {hits.length === 0 && <li className="dim">No drill matches — add it under <Link to="/drills">Drills &amp; Skills</Link> first.</li>}
-          {hits.map(d => (
-            <li key={d.id}><button type="button" onClick={() => { onChange(d); setQ(""); }}><span>{d.drill_name}</span>{d.stroke && <span className="chip">{d.stroke}</span>}</button></li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }
