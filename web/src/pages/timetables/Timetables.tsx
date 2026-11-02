@@ -8,7 +8,7 @@ import { canEdit, LEVEL_NOTE, sectionLevel } from "../../lib/access";
 import { QES } from "../../lib/feedback";
 import { TECH_FOCUS } from "../../lib/plans";
 import {
-  buildWeekCard, DAYS_SHORT, disableTimetable, fmtRange, fmtTime, loadWeekPlans, meetStatus, seasonOf, ttState,
+  buildWeekCard, clearOverride, COURSES, DAYS_SHORT, disableTimetable, effectiveSession, loadOverrides, POOLS, saveOverride, type TtOverride, type TtSession, fmtRange, fmtTime, loadWeekPlans, meetStatus, seasonOf, ttState,
   upcomingMeets, weekFocus, type Timetable, type TimetablesData
 } from "../../lib/season";
 import { fmtDate, fmtDdMm, isoAdd, todayLocal } from "../../lib/util";
@@ -79,6 +79,12 @@ function WeekPlan({ data, club, canPlan }: { data: TimetablesData; club: string;
   const ctx = useSeasonCtx(club);
   const plans = useQuery({ queryKey: ["week_plans", club, wk], queryFn: () => loadWeekPlans(club, wk, end) });
   const touch = useRef<{ x: number; y: number } | null>(null);
+  const qc = useQueryClient();
+  const sessionIds = useMemo(() => data.timetables.flatMap(t => (t.timetable_sessions || []).map(x => x.id)), [data.timetables]);
+  const ovs = useQuery({ queryKey: ["tt_overrides", club, wk], queryFn: () => loadOverrides(sessionIds, wk, end) });
+  const ovAt = (id: string, date: string) => (ovs.data ?? []).find(o => o.timetable_session_id === id && o.session_date === date);
+  const [editing, setEditing] = useState<string | null>(null); // "<session id>|<date>"
+  const canSeries = canEdit(sectionLevel(useAuth().access, "timetables"));
 
   const squadOpts = useMemo(() => {
     const m = new Map<string, string>();
@@ -144,9 +150,13 @@ function WeekPlan({ data, club, canPlan }: { data: TimetablesData; club: string;
                   <div className="wk-date"><strong>{DAYS_SHORT[d.dow]}</strong> {fmtDdMm(d.date)}{isToday && <span className="sr-only"> (today)</span>}{d.brk && <span className="brk-pill">{d.brk}</span>}</div>
                   <div className="wk-body">
                     {!d.rows.length && <span className="dim">{d.brk ? "Rest" : "No sessions"}</span>}
-                    {d.rows.map(r => (
-                      <div key={r.ts.id} className="wk-sess">
-                        <div className="wk-when">{fmtTime(r.ts.start_time)}{r.ts.end_time ? " – " + fmtTime(r.ts.end_time) : ""}{r.ts.pool_size && <span className="chip">{r.ts.pool_size}</span>}</div>
+                    {d.rows.map(r => { const ov = ovAt(r.ts.id, d.date); const ev = effectiveSession(r.ts, ov); const key = r.ts.id + "|" + d.date; return (
+                      <div key={r.ts.id} className={"wk-sess" + (ev.cancelled ? " cancelled" : "")}>
+                        <div className="wk-when">{fmtTime(ev.start_time)}{ev.end_time ? " – " + fmtTime(ev.end_time) : ""}{ev.pool_size && <span className="chip">{ev.pool_size}</span>}{ev.course && <span className="chip">{ev.course}</span>}{ev.cancelled && <span className="brk-pill">Cancelled</span>}{ov && !ev.cancelled && <span className="chip">this date only</span>}</div>
+                        {(ev.location || ev.coaches) && <div className="small">{[ev.location, ev.coaches].filter(Boolean).join(" · ")}</div>}
+                        {ev.note && <div className="dim small">{ev.note}</div>}
+                        {canSeries && !d.brk && <button type="button" className="link-btn" aria-expanded={editing === key} onClick={() => setEditing(editing === key ? null : key)}>Edit this date</button>}
+                        {editing === key && <DateEditor ts={r.ts} date={d.date} ov={ov} onDone={async () => { setEditing(null); await Promise.all([qc.invalidateQueries({ queryKey: ["tt_overrides"] }), qc.invalidateQueries({ queryKey: ["att_slots"] })]); }} />}
                         {r.m?.stroke_focus && <div className="small">Stroke focus: {r.m.stroke_focus}</div>}
                         {r.m?.outline && <div className="dim small">{r.m.outline.length > 110 ? r.m.outline.slice(0, 107) + "…" : r.m.outline}</div>}
                         {r.plan ? (
@@ -161,7 +171,7 @@ function WeekPlan({ data, club, canPlan }: { data: TimetablesData; club: string;
                           </div>
                         )}
                       </div>
-                    ))}
+                    ); })}
                   </div>
                 </li>
               );
@@ -169,6 +179,62 @@ function WeekPlan({ data, club, canPlan }: { data: TimetablesData; club: string;
           </ol>
         </section>
       ))}
+    </div>
+  );
+}
+
+// Change one date of a weekly session without touching the series.
+function DateEditor({ ts, date, ov, onDone }: { ts: TtSession; date: string; ov: TtOverride | undefined; onDone: () => void | Promise<void> }) {
+  const [cancelled, setCancelled] = useState(ov?.cancelled ?? false);
+  const [start, setStart] = useState((ov?.start_time ?? ts.start_time).slice(0, 5));
+  const [end, setEnd] = useState((ov?.end_time ?? ts.end_time ?? "").slice(0, 5));
+  const [pool, setPool] = useState(ov?.pool_size ?? ts.pool_size ?? "");
+  const [course, setCourse] = useState(ov?.course ?? ts.course ?? "");
+  const [location, setLocation] = useState(ov?.location ?? ts.location ?? "");
+  const [coaches, setCoaches] = useState(ov?.coaches ?? ts.coaches ?? "");
+  const [note, setNote] = useState(ov?.note ?? ts.note ?? "");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const hh = (t: string) => (t.length === 5 ? t + ":00" : t);
+  // Store only what differs from the series, so later edits to the series still flow through.
+  const diff = <T,>(v: T, base: T | null | undefined) => (v === (base ?? ("" as unknown as T)) || v === ("" as unknown as T) ? null : v);
+  const save = async () => {
+    if (!cancelled && end && end <= start) { setErr("The finish must be after the start."); return; }
+    setBusy(true); setErr(null);
+    try {
+      await saveOverride(ts.id, date, {
+        cancelled,
+        start_time: diff(hh(start), ts.start_time), end_time: end ? diff(hh(end), ts.end_time) : null, pool_size: diff(pool, ts.pool_size),
+        course: diff(course, ts.course), location: diff(location.trim(), ts.location), coaches: diff(coaches.trim(), ts.coaches), note: diff(note.trim(), ts.note)
+      });
+      await onDone();
+    } catch (e) { console.error(e); setErr("Couldn't save — " + (e as Error).message); } finally { setBusy(false); }
+  };
+  const reset = async () => { setBusy(true); try { await clearOverride(ts.id, date); await onDone(); } catch (e) { setErr((e as Error).message); setBusy(false); } };
+  return (
+    <div className="card inner" role="group" aria-label={`Edit ${fmtDdMm(date)} only`}>
+      <p className="hint top">Changes {fmtDdMm(date)} only. To change every week, edit the timetable.</p>
+      <label className="check"><input type="checkbox" checked={cancelled} onChange={e => setCancelled(e.target.checked)} /> Cancelled on this date</label>
+      {!cancelled && (
+        <>
+          <div className="tt-row-times">
+            <label>Start<input type="time" step={300} value={start} onChange={e => setStart(e.target.value)} /></label>
+            <label>Finish<input type="time" step={300} value={end} onChange={e => setEnd(e.target.value)} /></label>
+            <label>Pool<select value={pool} onChange={e => setPool(e.target.value)}><option value="">—</option>{POOLS.map(p => <option key={p} value={p}>{p}</option>)}</select></label>
+          </div>
+          <div className="tt-row-times">
+            <label>Course<select value={course} onChange={e => setCourse(e.target.value)}><option value="">—</option>{COURSES.map(c => <option key={c} value={c}>{c}</option>)}</select></label>
+            <label>Location<input type="text" maxLength={120} value={location} onChange={e => setLocation(e.target.value)} /></label>
+            <label>Coaches<input type="text" maxLength={120} value={coaches} onChange={e => setCoaches(e.target.value)} /></label>
+          </div>
+          <label>Note<input type="text" maxLength={300} value={note} onChange={e => setNote(e.target.value)} /></label>
+        </>
+      )}
+      <div className="done-actions">
+        <button type="button" className="btn primary small" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save this date"}</button>
+        {ov && <button type="button" className="btn small" onClick={reset} disabled={busy}>Back to the series</button>}
+      </div>
+      {err && <p className="msg error" role="alert">{err}</p>}
     </div>
   );
 }

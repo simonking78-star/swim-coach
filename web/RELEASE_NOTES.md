@@ -2,7 +2,7 @@
 
 The version shown in the app footer comes from `package.json`. Bump it when a release goes out and add a line here.
 
-## 0.2.0 (unreleased)
+## 0.2.0 (2 Nov 2026)
 - Attendance register: lane, distance swum and a note per swimmer; session total distance (A-094).
 - Add a swimmer from another squad to a register (A-095).
 - Weekly sessions: course, location, coaches and note; change or cancel a single date (A-096).

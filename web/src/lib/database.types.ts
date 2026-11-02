@@ -229,9 +229,12 @@ export type Database = {
         Row: {
           club_id: string
           coach: string | null
+          distance_m: number | null
           id: string
+          lane: number | null
           marked_at: string
           minutes_attended: number | null
+          note: string | null
           pool_size: string
           present: boolean
           session_date: string
@@ -248,9 +251,12 @@ export type Database = {
         Insert: {
           club_id: string
           coach?: string | null
+          distance_m?: number | null
           id?: string
+          lane?: number | null
           marked_at?: string
           minutes_attended?: number | null
+          note?: string | null
           pool_size: string
           present?: boolean
           session_date: string
@@ -267,9 +273,12 @@ export type Database = {
         Update: {
           club_id?: string
           coach?: string | null
+          distance_m?: number | null
           id?: string
+          lane?: number | null
           marked_at?: string
           minutes_attended?: number | null
+          note?: string | null
           pool_size?: string
           present?: boolean
           session_date?: string
@@ -1432,7 +1441,7 @@ export type Database = {
         }
         Insert: {
           block_model?: string | null
-          club?: string
+          club: string
           club_id?: string | null
           coach?: string | null
           content?: Json
@@ -1594,6 +1603,7 @@ export type Database = {
           note: string | null
           observation: string
           remedial_action: string | null
+          remedial_drill_ids: string[]
           session_date: string
           session_plan_id: string | null
           squad_id: string
@@ -1614,6 +1624,7 @@ export type Database = {
           note?: string | null
           observation: string
           remedial_action?: string | null
+          remedial_drill_ids?: string[]
           session_date?: string
           session_plan_id?: string | null
           squad_id: string
@@ -1634,6 +1645,7 @@ export type Database = {
           note?: string | null
           observation?: string
           remedial_action?: string | null
+          remedial_drill_ids?: string[]
           session_date?: string
           session_plan_id?: string | null
           squad_id?: string
@@ -1729,7 +1741,7 @@ export type Database = {
       squad_month_snapshots: {
         Row: {
           club: string
-          club_id: string | null
+          club_id: string
           generated_at: string
           metrics: Json
           month: string
@@ -1737,7 +1749,7 @@ export type Database = {
         }
         Insert: {
           club: string
-          club_id?: string | null
+          club_id: string
           generated_at?: string
           metrics: Json
           month: string
@@ -1745,7 +1757,7 @@ export type Database = {
         }
         Update: {
           club?: string
-          club_id?: string | null
+          club_id?: string
           generated_at?: string
           metrics?: Json
           month?: string
@@ -1778,7 +1790,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          club?: string
+          club: string
           club_id?: string | null
           created_at?: string
           id?: string
@@ -1817,6 +1829,7 @@ export type Database = {
           rep_number: number | null
           session_date: string
           squad: string | null
+          squad_id: string | null
           stroke: string
           swimmer_id: string
           time_display: string
@@ -1836,6 +1849,7 @@ export type Database = {
           rep_number?: number | null
           session_date?: string
           squad?: string | null
+          squad_id?: string | null
           stroke: string
           swimmer_id: string
           time_display: string
@@ -1855,6 +1869,7 @@ export type Database = {
           rep_number?: number | null
           session_date?: string
           squad?: string | null
+          squad_id?: string | null
           stroke?: string
           swimmer_id?: string
           time_display?: string
@@ -1867,6 +1882,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stopwatch_times_squad_id_fkey"
+            columns: ["squad_id"]
+            isOneToOne: false
+            referencedRelation: "squads"
             referencedColumns: ["id"]
           },
           {
@@ -2053,6 +2075,7 @@ export type Database = {
           note: string | null
           observation: string | null
           remedial_action: string | null
+          remedial_drill_ids: string[]
           session_date: string
           session_plan_id: string | null
           status: string | null
@@ -2071,6 +2094,7 @@ export type Database = {
           note?: string | null
           observation?: string | null
           remedial_action?: string | null
+          remedial_drill_ids?: string[]
           session_date: string
           session_plan_id?: string | null
           status?: string | null
@@ -2089,6 +2113,7 @@ export type Database = {
           note?: string | null
           observation?: string | null
           remedial_action?: string | null
+          remedial_drill_ids?: string[]
           session_date?: string
           session_plan_id?: string | null
           status?: string | null
@@ -2421,35 +2446,103 @@ export type Database = {
           },
         ]
       }
+      timetable_session_overrides: {
+        Row: {
+          cancelled: boolean
+          coaches: string | null
+          course: string | null
+          created_at: string
+          end_time: string | null
+          id: string
+          location: string | null
+          note: string | null
+          pool_size: string | null
+          session_date: string
+          start_time: string | null
+          timetable_session_id: string
+          updated_at: string
+        }
+        Insert: {
+          cancelled?: boolean
+          coaches?: string | null
+          course?: string | null
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          note?: string | null
+          pool_size?: string | null
+          session_date: string
+          start_time?: string | null
+          timetable_session_id: string
+          updated_at?: string
+        }
+        Update: {
+          cancelled?: boolean
+          coaches?: string | null
+          course?: string | null
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          note?: string | null
+          pool_size?: string | null
+          session_date?: string
+          start_time?: string | null
+          timetable_session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timetable_session_overrides_timetable_session_id_fkey"
+            columns: ["timetable_session_id"]
+            isOneToOne: false
+            referencedRelation: "timetable_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timetable_sessions: {
         Row: {
+          coaches: string | null
+          course: string | null
           created_at: string
           day_of_week: number
           end_time: string | null
           id: string
           is_active: boolean
+          location: string | null
+          note: string | null
           pool_size: string | null
           start_time: string
           timetable_id: string
           updated_at: string
         }
         Insert: {
+          coaches?: string | null
+          course?: string | null
           created_at?: string
           day_of_week: number
           end_time?: string | null
           id?: string
           is_active?: boolean
+          location?: string | null
+          note?: string | null
           pool_size?: string | null
           start_time: string
           timetable_id: string
           updated_at?: string
         }
         Update: {
+          coaches?: string | null
+          course?: string | null
           created_at?: string
           day_of_week?: number
           end_time?: string | null
           id?: string
           is_active?: boolean
+          location?: string | null
+          note?: string | null
           pool_size?: string | null
           start_time?: string
           timetable_id?: string
@@ -2715,31 +2808,47 @@ export type Database = {
             }
             Returns: number
           }
-      can_grant_role: {
-        Args: { p_club: string; p_role: string }
-        Returns: boolean
-      }
+      can_grant_role:
+        | { Args: { p_club: string; p_role: string }; Returns: boolean }
+        | { Args: { p_club_id: string; p_role: string }; Returns: boolean }
       competitions_link_galas: { Args: never; Returns: number }
       deactivate_swimmer: {
         Args: { p_reason?: string; p_swimmer: string }
         Returns: Json
       }
-      home_stats: { Args: { p_club?: string }; Returns: Json }
+      home_stats:
+        | { Args: { p_club?: string }; Returns: Json }
+        | { Args: { p_club_id: string }; Returns: Json }
       is_superadmin: { Args: never; Returns: boolean }
-      list_deactivated_swimmers: {
-        Args: { p_club: string }
-        Returns: {
-          anon_name: string
-          date_of_birth: string
-          deactivated_on: string
-          full_name: string
-          reason: string
-          result_count: number
-          squad: string
-          squad_id: string
-          swimmer_id: string
-        }[]
-      }
+      list_deactivated_swimmers:
+        | {
+            Args: { p_club: string }
+            Returns: {
+              anon_name: string
+              date_of_birth: string
+              deactivated_on: string
+              full_name: string
+              reason: string
+              result_count: number
+              squad: string
+              squad_id: string
+              swimmer_id: string
+            }[]
+          }
+        | {
+            Args: { p_club_id: string }
+            Returns: {
+              anon_name: string
+              date_of_birth: string
+              deactivated_on: string
+              full_name: string
+              reason: string
+              result_count: number
+              squad: string
+              squad_id: string
+              swimmer_id: string
+            }[]
+          }
       my_access: { Args: never; Returns: Json }
       reactivate_swimmer: {
         Args: { p_squad?: string; p_swimmer: string }
@@ -2750,42 +2859,79 @@ export type Database = {
         Returns: number
       }
       snapshot_squad_month: { Args: { p_month?: string }; Returns: number }
-      squad_month_figures: {
-        Args: { p_club: string; p_from: string; p_to: string }
-        Returns: {
-          attendance_pct: number
-          avg_improvement_pct: number
-          drills_worked: number
-          excused: number
-          feedback_entries: number
-          feedback_notes: number
-          hours_per_swimmer: number
-          hours_trained: number
-          improved_swims: number
-          marks: number
-          median_improvement_pct: number
-          members: number
-          month: string
-          pbs: number
-          positive_feedback_pct: number
-          present: number
-          sessions: number
-          skill_moves_down: number
-          skill_moves_up: number
-          skill_score: number
-          squad_entries: number
-          squad_id: string
-          squad_name: string
-          st_developing: number
-          st_embedded: number
-          st_not_discussed: number
-          st_started: number
-          status_entries: number
-          swimmers_attending: number
-          swimmers_raced: number
-          swims: number
-        }[]
-      }
+      squad_month_figures:
+        | {
+            Args: { p_club: string; p_from: string; p_to: string }
+            Returns: {
+              attendance_pct: number
+              avg_improvement_pct: number
+              drills_worked: number
+              excused: number
+              feedback_entries: number
+              feedback_notes: number
+              hours_per_swimmer: number
+              hours_trained: number
+              improved_swims: number
+              marks: number
+              median_improvement_pct: number
+              members: number
+              month: string
+              pbs: number
+              positive_feedback_pct: number
+              present: number
+              sessions: number
+              skill_moves_down: number
+              skill_moves_up: number
+              skill_score: number
+              squad_entries: number
+              squad_id: string
+              squad_name: string
+              st_developing: number
+              st_embedded: number
+              st_not_discussed: number
+              st_started: number
+              status_entries: number
+              swimmers_attending: number
+              swimmers_raced: number
+              swims: number
+            }[]
+          }
+        | {
+            Args: { p_club_id: string; p_from: string; p_to: string }
+            Returns: {
+              attendance_pct: number
+              avg_improvement_pct: number
+              drills_worked: number
+              excused: number
+              feedback_entries: number
+              feedback_notes: number
+              hours_per_swimmer: number
+              hours_trained: number
+              improved_swims: number
+              marks: number
+              median_improvement_pct: number
+              members: number
+              month: string
+              pbs: number
+              positive_feedback_pct: number
+              present: number
+              sessions: number
+              skill_moves_down: number
+              skill_moves_up: number
+              skill_score: number
+              squad_entries: number
+              squad_id: string
+              squad_name: string
+              st_developing: number
+              st_embedded: number
+              st_not_discussed: number
+              st_started: number
+              status_entries: number
+              swimmers_attending: number
+              swimmers_raced: number
+              swims: number
+            }[]
+          }
       squad_month_review: {
         Args: { p_club: string; p_from: string; p_to: string }
         Returns: {
@@ -2819,10 +2965,9 @@ export type Database = {
           swims: number
         }[]
       }
-      squad_review_allowed: {
-        Args: { p_club: string; p_squad: string }
-        Returns: boolean
-      }
+      squad_review_allowed:
+        | { Args: { p_club: string; p_squad: string }; Returns: boolean }
+        | { Args: { p_club_id: string; p_squad: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

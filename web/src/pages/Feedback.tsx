@@ -7,10 +7,11 @@ import { ClubPicker } from "../club/ClubPicker";
 import { LEVEL_NOTE, canEdit, sectionLevel } from "../lib/access";
 import { loadPlanOptions, loadSquadNames } from "../lib/attendance";
 import {
-  CATEGORIES, MAX_FILE_MB, catLabel, loadCriteria, loadFbSwimmers, loadRecentSwimmerFeedback, loadSwimmerHistory,
+  CATEGORIES, MAX_FILE_MB, catLabel, loadCriteria, loadDrills, loadFbSwimmers, loadRecentSwimmerFeedback, loadSwimmerHistory,
   saveSwimmerFeedback, toThreads, validateSwimmerDraft,
-  type EntryType, type FbEntry, type SwimmerLite, type Thread
+  type Drill, type EntryType, type FbEntry, type SwimmerLite, type Thread
 } from "../lib/feedback";
+import { RemedialPicker, composeRemedial, cueFrom } from "../components/RemedialPicker";
 import { shareFeedbackPdf } from "../lib/feedbackPdf";
 import { fmtDate, logEvent, todayLocal, useCoachName } from "../lib/util";
 import { EntryBody, StatusBadge, StatusPicker, StepTabs, StrokeChips, ThreadCard, TypeToggle } from "../components/feedbackParts";
@@ -239,7 +240,24 @@ function SwimmerForm({ swimmer, history, updating, initialPlan, onCancelUpdate, 
   const [criterion, setCriterion] = useState(latest?.criterion ?? "");
   const [status, setStatus] = useState<string | null>(latest?.status ?? null);
   const [observation, setObservation] = useState("");
-  const [remedial, setRemedial] = useState(latest?.remedial_action ?? "");
+  // Remedial action = drills/skills from the library + an optional cue.
+  const [fixIds, setFixIds] = useState<string[]>(latest?.remedial_drill_ids ?? []);
+  const [cue, setCue] = useState(latest?.remedial_drill_ids?.length ? "" : latest?.remedial_action ?? "");
+  const library = useQuery({ queryKey: ["drills", club], enabled: !!club, queryFn: () => loadDrills(club!), staleTime: 5 * 60 * 1000 });
+  const byId = useMemo(() => new Map((library.data ?? []).map(d => [d.id, d])), [library.data]);
+  const fixDrills = fixIds.map(id => byId.get(id)).filter((d): d is Drill => !!d);
+  // Once the library loads, split a continued string's stored text back into its cue.
+  const cueSeed = useRef<FbEntry | null>(latest?.remedial_drill_ids?.length ? latest : null);
+  useEffect(() => {
+    if (!cueSeed.current || !library.data) return;
+    const e = cueSeed.current; cueSeed.current = null;
+    setCue(cueFrom(e.remedial_action, (e.remedial_drill_ids ?? []).map(id => byId.get(id)).filter((d): d is Drill => !!d)));
+  }, [library.data, byId]);
+  const loadFix = (e: FbEntry) => {
+    const ids = e.remedial_drill_ids ?? [];
+    setFixIds(ids);
+    setCue(ids.length ? cueFrom(e.remedial_action, ids.map(id => byId.get(id)).filter((d): d is Drill => !!d)) : e.remedial_action || "");
+  };
   const [notes, setNotes] = useState("");
   const [date, setDate] = useState(todayLocal().date);
   const [planId, setPlanId] = useState(initialPlan);
@@ -258,7 +276,8 @@ function SwimmerForm({ swimmer, history, updating, initialPlan, onCancelUpdate, 
   }, [updating, entryType, category, criterion, history]);
 
   const save = async () => {
-    const draft = { swimmerId: swimmer.id, threadId: updating?.id ?? null, entryType, category, criterion, status, observation, remedial, notes, date, planId, files, coach };
+    const remedial = composeRemedial(fixDrills, cue) ?? "";
+    const draft = { swimmerId: swimmer.id, threadId: updating?.id ?? null, entryType, category, criterion, status, observation, remedial, remedialDrillIds: fixDrills.map(d => d.id), notes, date, planId, files, coach };
     const problem = validateSwimmerDraft(draft);
     if (problem) { setMsg({ text: problem, error: true }); return; }
     setMsg(null);
@@ -311,7 +330,7 @@ function SwimmerForm({ swimmer, history, updating, initialPlan, onCancelUpdate, 
               <p><strong>Last reviewed {fmtDate(match.session_date)}</strong> <StatusBadge status={match.status} /></p>
               {(match.observation || match.note) && <p className="dim">{(match.observation || match.note)!.slice(0, 160)}</p>}
               <button type="button" className="btn small" onClick={() => {
-                setObservation(match.observation || match.note || ""); setRemedial(match.remedial_action || ""); if (match.status) setStatus(match.status);
+                setObservation(match.observation || match.note || ""); loadFix(match); if (match.status) setStatus(match.status);
               }}>Load into fields to edit</button>
             </div>
           )}
@@ -321,8 +340,12 @@ function SwimmerForm({ swimmer, history, updating, initialPlan, onCancelUpdate, 
 
       <label htmlFor="fb-obs">Observation</label>
       <textarea id="fb-obs" rows={3} placeholder="What did you see? The fact of the session…" value={observation} onChange={e => setObservation(e.target.value)} />
-      <label htmlFor="fb-fix">Remedial action <span className="dim">(optional)</span></label>
-      <textarea id="fb-fix" rows={2} placeholder="What's the fix — drill, cue, focus for next time…" value={remedial} onChange={e => setRemedial(e.target.value)} />
+      <fieldset className="choice-set">
+        <legend>Remedial action <span className="dim">(optional — drills &amp; skills from the library)</span></legend>
+        <RemedialPicker club={club!} category={category} idPrefix="fb-fix" value={fixDrills} onChange={ds => setFixIds(ds.map(d => d.id))} />
+        <label htmlFor="fb-cue">Coaching cue <span className="dim">(optional)</span></label>
+        <input id="fb-cue" type="text" placeholder="e.g. Keep the head still, lead with the hips" value={cue} onChange={e => setCue(e.target.value)} />
+      </fieldset>
       <label htmlFor="fb-notes">Additional notes <span className="dim">(optional)</span></label>
       <textarea id="fb-notes" rows={2} placeholder="Anything else — effort, attitude, context…" value={notes} onChange={e => setNotes(e.target.value)} />
 
