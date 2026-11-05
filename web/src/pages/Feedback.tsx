@@ -12,6 +12,7 @@ import {
   type Drill, type EntryType, type FbEntry, type SwimmerLite, type Thread
 } from "../lib/feedback";
 import { RemedialPicker, composeRemedial, cueFrom } from "../components/RemedialPicker";
+import { quickMeasureFor } from "../lib/measures";
 import { shareFeedbackPdf } from "../lib/feedbackPdf";
 import { fmtDate, logEvent, todayLocal, useCoachName } from "../lib/util";
 import { EntryBody, StatusBadge, StatusPicker, StepTabs, StrokeChips, ThreadCard, TypeToggle } from "../components/feedbackParts";
@@ -259,6 +260,9 @@ function SwimmerForm({ swimmer, history, updating, initialPlan, onCancelUpdate, 
     setCue(ids.length ? cueFrom(e.remedial_action, ids.map(id => byId.get(id)).filter((d): d is Drill => !!d)) : e.remedial_action || "");
   };
   const [notes, setNotes] = useState("");
+  const [qmValue, setQmValue] = useState<string>("");
+  const qm = quickMeasureFor(category);
+  useEffect(() => { setQmValue(""); }, [category]);
   const [date, setDate] = useState(todayLocal().date);
   const [planId, setPlanId] = useState(initialPlan);
   const [files, setFiles] = useState<File[]>([]);
@@ -277,7 +281,10 @@ function SwimmerForm({ swimmer, history, updating, initialPlan, onCancelUpdate, 
 
   const save = async () => {
     const remedial = composeRemedial(fixDrills, cue) ?? "";
-    const draft = { swimmerId: swimmer.id, threadId: updating?.id ?? null, entryType, category, criterion, status, observation, remedial, remedialDrillIds: fixDrills.map(d => d.id), notes, date, planId, files, coach };
+    const qmNum = qm && qmValue !== "" ? Number(qmValue) : null;
+    if (qm && qmNum != null && (!Number.isFinite(qmNum) || qmNum < qm.min || qmNum > qm.max)) { setMsg({ text: `${qm.label}: enter a number from ${qm.min} to ${qm.max}.`, error: true }); return; }
+    const draft = { swimmerId: swimmer.id, threadId: updating?.id ?? null, entryType, category, criterion, status, observation, remedial, remedialDrillIds: fixDrills.map(d => d.id), notes, date, planId, files, coach,
+      measureCode: qm && qmNum != null ? qm.code : null, measureValue: qmNum };
     const problem = validateSwimmerDraft(draft);
     if (problem) { setMsg({ text: problem, error: true }); return; }
     setMsg(null);
@@ -340,6 +347,16 @@ function SwimmerForm({ swimmer, history, updating, initialPlan, onCancelUpdate, 
 
       <label htmlFor="fb-obs">Observation</label>
       <textarea id="fb-obs" rows={3} placeholder="What did you see? The fact of the session…" value={observation} onChange={e => setObservation(e.target.value)} />
+      {qm && (
+        <fieldset className="choice-set">
+          <legend>Quick measure <span className="dim">(optional — tracked as a trend in Metrics &amp; Measures)</span></legend>
+          {qm.kind === "legal"
+            ? <div className="seg">{[["1", "Legal"], ["0", "Illegal"], ["", "Not checked"]].map(([v, l]) => (
+                <button key={l} type="button" className={"seg-btn" + (qmValue === v ? " on" : "")} aria-pressed={qmValue === v} onClick={() => setQmValue(v)}>{l}</button>))}</div>
+            : <label htmlFor="fb-qm">{qm.label}<input id="fb-qm" type="number" inputMode="numeric" min={qm.min} max={qm.max} value={qmValue} onChange={e => setQmValue(e.target.value)} /></label>}
+          <p className="hint">{qm.kind === "legal" ? qm.label + " " : ""}{qm.hint}.</p>
+        </fieldset>
+      )}
       <fieldset className="choice-set">
         <legend>Remedial action <span className="dim">(optional — drills &amp; skills from the library)</span></legend>
         <RemedialPicker club={club!} category={category} idPrefix="fb-fix" value={fixDrills} onChange={ds => setFixIds(ds.map(d => d.id))} />

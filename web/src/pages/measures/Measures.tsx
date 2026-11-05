@@ -52,7 +52,9 @@ export function MeasuresHub() {
   const tiles = [
     ...(canRun ? [{ to: "run", icon: "▶️", title: "Run a test", sub: "Pick a published protocol and level, on any date, for a squad or chosen swimmers" }] : []),
     { to: "results", icon: "📏", title: "Results", sub: "Each swimmer against their own baseline, with change judged against the test's noise" },
-    { to: "library", icon: "📚", title: "Protocol library", sub: "Fixed test protocols, their levels, versions and reliability" }
+    { to: "library", icon: "📚", title: "Protocol library", sub: "Fixed test protocols, their levels, versions and reliability" },
+    { to: "windows", icon: "🗓️", title: "Testing windows", sub: "Planned testing dates, and the fixed T15–T30 day" },
+    { to: "work", icon: "🏷️", title: "Work tags", sub: "Confirm what kind of work each session-plan line is, so results can be read against training" }
   ];
   return (
     <>

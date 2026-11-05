@@ -8,6 +8,10 @@ The version shown in the app footer comes from `package.json`. Bump it when a re
 - Run a test on any date; each swimmer's first result is their baseline; closing a test links results to the swimmer's own baseline and previous result, flagged against 2 × TE (A-132).
 - Timed trials with approach / wall / out splits and legality; "not tested" with a reason (A-122).
 - Results listed by name with a squad picture of counts; no ranks anywhere. Old Test & Assess results kept as Statistics → Legacy test sets (A-131).
+- Work tags: each session-plan set line gets suggested work types (kick, turns, speed, drill…) from its text and heading; coaches confirm them (A-126).
+- Training before each result: sessions, hours, metres and work types since the previous result, since the baseline and over 90 days, plus time at the club and in the squad, stored when a test is closed (A-127).
+- Quick measures in Feedback: stroke count, turn legality, underwater kicks after the dive; trends in Results (A-125).
+- Testing windows, including fixed-date tests such as the T15–T30 day.
 
 ## 0.2.0 (2 Nov 2026)
 - Attendance register: lane, distance swum and a note per swimmer; session total distance (A-094).

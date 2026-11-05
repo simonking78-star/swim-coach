@@ -5,8 +5,8 @@ import { useClub } from "../../club/ClubProvider";
 import { ClubPicker } from "../../club/ClubPicker";
 import { loadSwimmersByIds } from "../../lib/tests";
 import {
-  CAUTION_LABEL, FLAG_LABEL, fmtChange, fmtValue, loadProtocol, loadProtocolResults, loadProtocols, setRebaseline, unitOf, versionLabel,
-  type Flag, type MmResult
+  CAUTION_LABEL, FLAG_LABEL, QUICK_LABEL, WORK_LABEL, fmtChange, loadQuickMeasures, fmtValue, loadProtocol, loadProtocolResults, loadProtocols, setRebaseline, unitOf, versionLabel,
+  type Exposure, type Flag, type MmResult
 } from "../../lib/measures";
 import { fmtDate } from "../../lib/util";
 import { MBack, NoAccess, useMeasuresAccess } from "./Measures";
@@ -29,9 +29,10 @@ export function Results() {
   const set = (k: string, val: string) => setParams(prev => { const n = new URLSearchParams(prev); if (val) n.set(k, val); else n.delete(k); if (k === "protocol") { n.delete("level"); n.delete("swimmer"); } return n; }, { replace: true });
 
   const protocols = useQuery({ queryKey: ["mm_protocols", club], enabled: !!club && canView, queryFn: () => loadProtocols(club!) });
-  const detail = useQuery({ queryKey: ["mm_protocol", pid], enabled: !!pid, queryFn: () => loadProtocol(pid) });
-  const results = useQuery({ queryKey: ["mm_results_all", club, pid], enabled: !!club && !!pid, queryFn: () => loadProtocolResults(club!, pid) });
-  const ids = useMemo(() => [...new Set((results.data ?? []).map(r => r.swimmer_id))], [results.data]);
+  const detail = useQuery({ queryKey: ["mm_protocol", pid], enabled: !!pid && pid !== "quick", queryFn: () => loadProtocol(pid) });
+  const quick = useQuery({ queryKey: ["mm_quick", club], enabled: !!club && pid === "quick", queryFn: () => loadQuickMeasures(club!) });
+  const results = useQuery({ queryKey: ["mm_results_all", club, pid], enabled: !!club && !!pid && pid !== "quick", queryFn: () => loadProtocolResults(club!, pid) });
+  const ids = useMemo(() => [...new Set([...(results.data ?? []), ...(quick.data ?? [])].map(r => r.swimmer_id))], [results.data, quick.data]);
   const names = useQuery({ queryKey: ["mm_names", ids.join(",")], enabled: ids.length > 0, queryFn: () => loadSwimmersByIds(ids) });
   if (!canView) return <><MBack /><NoAccess /></>;
 
@@ -61,12 +62,14 @@ export function Results() {
         <label>Protocol<select value={pid} onChange={e => set("protocol", e.target.value)}>
           <option value="">— choose —</option>
           {(protocols.data ?? []).filter(x => x.status !== "draft").map(x => <option key={x.id} value={x.id}>{x.code} · {x.name}</option>)}
+          <option value="quick">Quick measures from feedback</option>
         </select></label>
-        {pid && <label>Level<select value={level} onChange={e => set("level", e.target.value)}>
+        {pid && pid !== "quick" && <label>Level<select value={level} onChange={e => set("level", e.target.value)}>
           <option value="">All levels</option>{levels.map(l => <option key={l.key} value={l.key}>{l.label}</option>)}</select></label>}
       </div>
 
-      {!pid ? <p className="dim">Choose a protocol.</p>
+      {pid === "quick" ? <QuickTrends rows={quick.data ?? []} loading={quick.isLoading} nameOf={nameOf} />
+        : !pid ? <p className="dim">Choose a protocol.</p>
         : results.isLoading ? <p className="dim">Loading…</p>
         : !rows.length ? <p className="dim">No closed results for this protocol yet.</p>
         : swimmerId ? <SwimmerHistory all={closed.filter(r => r.swimmer_id === swimmerId)} name={nameOf.get(swimmerId)?.full_name ?? ""} unit={unit}
@@ -149,6 +152,7 @@ function SwimmerHistory({ all, name, unit, levelLabel, back, canRun, onRebaselin
               </tr>
             ))}</tbody>
           </table></div>
+          <TrainingFor list={list} />
         </section>
       ))}
       {editing && (
@@ -161,6 +165,80 @@ function SwimmerHistory({ all, name, unit, levelLabel, back, canRun, onRebaselin
             <button className="btn primary" disabled={!reason.trim()} onClick={async () => { try { await onRebaseline(editing, reason); setEditing(null); } catch (e) { setErr((e as Error).message); } }}>Save</button></div>
         </section>
       )}
+    </>
+  );
+}
+
+const fmtDays = (d: number | null | undefined) => {
+  if (d == null) return null;
+  const m = Math.floor(d / 30.44);
+  return m >= 12 ? `${Math.floor(m / 12)} yr ${m % 12} mo` : m >= 1 ? `${m} mo` : `${d} days`;
+};
+
+/** One exposure summary: sessions, hours, metres and the biggest work types. */
+export function ExposureSummary({ e, label }: { e: Exposure | null | undefined; label: string }) {
+  if (!e) return null;
+  const top = Object.entries(e.by_tag).filter(([t]) => t !== "warm_up").sort((a, b) => b[1] - a[1]).slice(0, 4);
+  return (
+    <div className="mm-expo">
+      <strong>{label}</strong> <span className="dim">({e.days} days)</span>
+      <div>{e.sessions} sessions{e.per_week ? ` (${e.per_week.sessions}/wk)` : ""} · {e.hours} h · {e.metres.toLocaleString("en-GB")} m{e.per_week ? ` (${e.per_week.metres.toLocaleString("en-GB")} m/wk)` : ""}</div>
+      {!!top.length && <div className="dim">{top.map(([t, m]) => `${WORK_LABEL[t] ?? t} ${m.toLocaleString("en-GB")} m`).join(" · ")}</div>}
+      {e.plan_known_pct != null && e.plan_known_pct < 100 && <div className="dim">Plan attached for {e.plan_known_pct}% of sessions attended — the rest count towards sessions and hours only.</div>}
+    </div>
+  );
+}
+
+function TrainingFor({ list }: { list: MmResult[] }) {
+  const last = [...list].reverse().find(r => r.exposure);
+  if (!last?.exposure) return <p className="hint">Training figures appear once a test is closed.</p>;
+  const x = last.exposure;
+  return (
+    <details className="mm-training">
+      <summary>Training before the {fmtDate(last.session_date)} result</summary>
+      <p className="dim">{[fmtDays(x.tenure_days) && `At the club ${fmtDays(x.tenure_days)}`, fmtDays(x.squad_days) && `in this squad ${fmtDays(x.squad_days)}`].filter(Boolean).join(" · ")}</p>
+      <ExposureSummary e={x.since_prev} label="Since the previous result" />
+      <ExposureSummary e={x.since_base} label="Since the baseline" />
+      <ExposureSummary e={x.d90} label="Past 90 days" />
+      <p className="hint">Associations, not proof: swimmers who train more also differ in other ways, and juniors improve with growth alone.</p>
+    </details>
+  );
+}
+
+function QuickTrends({ rows, loading, nameOf }: { rows: { swimmer_id: string; measure_code: string; measure_value: number; session_date: string }[]; loading: boolean; nameOf: Map<string, { full_name: string; squad: string | null }> }) {
+  const [code, setCode] = useState("");
+  if (loading) return <p className="dim">Loading…</p>;
+  const codes = [...new Set(rows.map(r => r.measure_code))].sort();
+  const c = code || codes[0] || "";
+  if (!codes.length) return <p className="dim">No quick measures yet. Add one with a stroke, turn or dive entry in Feedback.</p>;
+  const legal = c.startsWith("TRN-LG");
+  const by = new Map<string, typeof rows>();
+  for (const r of rows.filter(r => r.measure_code === c)) (by.get(r.swimmer_id) ?? by.set(r.swimmer_id, []).get(r.swimmer_id)!).push(r);
+  const list = [...by].sort((a, b) => (nameOf.get(a[0])?.full_name ?? "").localeCompare(nameOf.get(b[0])?.full_name ?? ""));
+  return (
+    <>
+      <label>Measure<select value={c} onChange={e => setCode(e.target.value)}>{codes.map(k => <option key={k} value={k}>{QUICK_LABEL(k)}</option>)}</select></label>
+      <p className="hint">Taken during ordinary sessions, so less reliable than a formal test: a trend to watch, not a verdict.{c.startsWith("EFF") ? " Compare each swimmer with themselves — stroke count depends on height and arm span." : ""}</p>
+      <div className="table-wrap"><table className="data">
+        <thead><tr><th>Swimmer</th><th>{legal ? "Checks" : "First"}</th><th>{legal ? "Legal" : "Latest"}</th><th>{legal ? "Last check" : "Trend"}</th></tr></thead>
+        <tbody>{list.map(([sid, rs]) => {
+          const first = rs[0], last = rs[rs.length - 1], n = nameOf.get(sid);
+          return (
+            <tr key={sid}>
+              <th scope="row">{n?.full_name ?? "…"}<div className="dim">{n?.squad ?? ""}</div></th>
+              {legal ? <>
+                <td>{rs.length}</td>
+                <td>{Math.round((100 * rs.filter(r => r.measure_value).length) / rs.length)}%</td>
+                <td>{last.measure_value ? "Legal" : "Illegal"}<div className="dim">{fmtDate(last.session_date)}</div></td>
+              </> : <>
+                <td>{first.measure_value}<div className="dim">{fmtDate(first.session_date)}</div></td>
+                <td>{last.measure_value}<div className="dim">{fmtDate(last.session_date)}</div></td>
+                <td>{rs.length < 2 ? <span className="dim">One reading</span> : `${last.measure_value - first.measure_value > 0 ? "+" : ""}${last.measure_value - first.measure_value} over ${rs.length} readings`}</td>
+              </>}
+            </tr>
+          );
+        })}</tbody>
+      </table></div>
     </>
   );
 }

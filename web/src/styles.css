@@ -968,3 +968,13 @@ input.invalid { border-color: var(--red); outline-color: var(--red); }
 .mm-splits { display: flex; flex-wrap: wrap; gap: .5rem; padding-left: 4.7rem; }
 .mm-split-l { display: flex; flex-direction: column; font-size: .78rem; color: var(--text-dim); gap: .1rem; }
 @media (max-width: 420px) { .mm-splits { padding-left: 0; } }
+.chip-btn { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 999px; padding: .3rem .7rem; font: inherit; font-size: .85rem; cursor: pointer; min-height: 36px; }
+.chip-btn.suggested { border-style: dashed; border-color: var(--accent); }
+.chip-btn.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+.chip-btn:disabled { cursor: default; opacity: .8; }
+.mm-chips { display: flex; flex-wrap: wrap; gap: .35rem; margin: .5rem 0; }
+.mm-tag-line.ok { border-left: 4px solid var(--green); }
+.mm-tag-head { margin: 1rem 0 .4rem; }
+.mm-tag-foot { font-size: .85rem; }
+.mm-expo { margin: .5rem 0; }
+.mm-training summary { cursor: pointer; font-weight: 600; margin-top: .5rem; }

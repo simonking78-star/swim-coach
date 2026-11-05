@@ -42,6 +42,9 @@ export interface FbEntry {
   session_date: string;
   created_at: string;
   coach?: string | null;
+  /** A quick measure taken with this feedback (Metrics & Measures). */
+  measure_code?: string | null;
+  measure_value?: number | null;
 }
 
 export interface Thread<T extends FbEntry = FbEntry> { id: string; entries: T[]; /* newest first */ }
@@ -70,7 +73,7 @@ export async function loadFbSwimmers(club: string, squad: string | null): Promis
   return flatSquad((data ?? []) as unknown as { id: string; full_name: string; squad_id: string | null; sq: { name: string } | null }[]);
 }
 
-const FB_COLS = "id, thread_id, entry_type, category, criterion, status, observation, remedial_action, remedial_drill_ids, note, media, session_date, created_at, coach";
+const FB_COLS = "id, thread_id, entry_type, category, criterion, status, observation, remedial_action, remedial_drill_ids, note, media, session_date, created_at, coach, measure_code, measure_value";
 
 export async function loadSwimmerHistory(swimmerId: string): Promise<FbEntry[]> {
   const { data, error } = await sb.from("swimmer_feedback").select(FB_COLS)
@@ -116,6 +119,9 @@ export interface SwimmerFbDraft {
   planId: string;
   files: File[];
   coach: string;
+  /** Optional quick measure (Metrics & Measures). */
+  measureCode?: string | null;
+  measureValue?: number | null;
 }
 
 export function validateSwimmerDraft(d: SwimmerFbDraft): string | null {
@@ -162,6 +168,7 @@ export async function saveSwimmerFeedback(d: SwimmerFbDraft, onProgress?: (i: nu
     media
   };
   if (d.entryType === "status") { row.criterion = d.criterion.trim(); row.status = d.status; }
+  if (d.measureCode && d.measureValue != null) { row.measure_code = d.measureCode; row.measure_value = d.measureValue; row.measure_context = "quick"; }
   const { error } = await sb.from("swimmer_feedback").insert(row as never);
   if (error && looksOffline(error) && !d.files.length) {
     // Text-only entries can wait for a signal; one with media needed a live upload first.

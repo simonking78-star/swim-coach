@@ -5,7 +5,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { useClub } from "../../club/ClubProvider";
 import { ClubPicker } from "../../club/ClubPicker";
 import { loadClubSwimmers, loadSquads, type TestSwimmer } from "../../lib/tests";
-import { CYCLE_LABEL, createSession, cycleWeek, levelSummary, loadRunnable, versionLabel } from "../../lib/measures";
+import { CYCLE_LABEL, WINDOW_KIND, createSession, cycleWeek, levelSummary, loadRunnable, loadWindows, versionLabel } from "../../lib/measures";
 import { logEvent, todayLocal, useCoachName } from "../../lib/util";
 import { MBack, NoAccess, statusChip, useMeasuresAccess } from "./Measures";
 
@@ -30,6 +30,7 @@ export function StartRun() {
   const swimmers = useQuery({ queryKey: ["test_club_swimmers", club], enabled: !!club && canRun, queryFn: () => loadClubSwimmers(club!) });
   const squads = useQuery({ queryKey: ["test_squads", club], enabled: !!club && canRun, queryFn: () => loadSquads(club!) });
 
+  const windows = useQuery({ queryKey: ["mm_windows", club], enabled: !!club && canRun, queryFn: () => loadWindows(club!) });
   const [pid, setPid] = useState(params.get("protocol") ?? "");
   const [date, setDate] = useState(todayLocal().date);
   const [group, setGroup] = useState<Group | null>(squadOnly ? "squad" : null);
@@ -59,18 +60,19 @@ export function StartRun() {
   const intended = chosenRun?.version.intended_cycle ?? null;
   const focus = cw.data?.focus ?? null;
   const offCycle = !!intended && !!focus && focus !== intended;
+  const win = (windows.data ?? []).find(w => date >= w.starts_on && date <= w.ends_on && (!w.protocol_ids.length || (chosenRun && w.protocol_ids.includes(chosenRun.protocol.id)))) ?? null;
 
   const start = async () => {
     setMsg(null);
     if (!chosenRun) { setMsg("Choose the test."); return; }
-    if (chosenRun.protocol.fixed_date_only) { setMsg("This test runs on its fixed date only. Set up its testing window first."); return; }
+    if (chosenRun.protocol.fixed_date_only && !win) { setMsg("This test runs on its fixed date only, and no testing window for it covers this date. Add one in Testing windows."); return; }
     if (!group) { setMsg("Choose who the test is for."); return; }
     if (group === "squad" && !squadId) { setMsg("Choose the squad."); return; }
     if (!chosen.length) { setMsg("No swimmers are in this group."); return; }
     setStarting(true);
     try {
       const id = await createSession({
-        version_id: chosenRun.version.id, date, group_type: group, squad_id: group === "squad" ? squadId : null, swimmer_ids: chosen.map(s => s.id),
+        version_id: chosenRun.version.id, window_id: win?.id ?? null, date, group_type: group, squad_id: group === "squad" ? squadId : null, swimmer_ids: chosen.map(s => s.id),
         pool, course: POOLS.find(x => x[0] === pool)?.[1] ?? null, as_protocol: asWritten, tester: coach || null, notes: notes.trim() || null
       });
       logEvent(session?.user.id, club, "core_task", "mm_start", { protocol: chosenRun.protocol.code, swimmers: chosen.length });
@@ -108,6 +110,8 @@ export function StartRun() {
           <label>Pool<select value={pool} onChange={e => setPool(e.target.value)}>{POOLS.map(([p, c]) => <option key={p} value={p}>{p} ({c === "SC" ? "short course" : "long course"})</option>)}</select></label>
         </div>
         <p className="hint">Any date is fine. A swimmer's first result on this test and level becomes their baseline.</p>
+        {win && <p className="hint">In the testing window <strong>{win.name}</strong> ({WINDOW_KIND[win.kind] ?? win.kind}).</p>}
+        {chosenRun?.protocol.fixed_date_only && !win && <p className="notice warn">This test runs on its fixed date only. No testing window covers this date.</p>}
         {chosenRun && (
           <p className={"notice" + (offCycle ? " warn" : "")}>
             {focus ? <>Season Planner: <strong>{CYCLE_LABEL[focus] ?? focus} week</strong>{cw.data?.week_no ? ` (week ${cw.data.week_no})` : ""}. </> : <>No cycle week found in the Season Planner for this date. </>}

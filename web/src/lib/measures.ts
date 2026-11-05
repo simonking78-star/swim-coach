@@ -55,6 +55,7 @@ export interface MmResult {
   session_date?: string; protocol_id?: string; version_id?: string; major?: number; age?: number | null; year_of_birth?: number | null;
   is_baseline?: boolean; baseline_id?: string | null; previous_id?: string | null; days_since_prev?: number | null; days_since_base?: number | null;
   change_prev?: number | null; change_base?: number | null; caution?: string[]; flag?: Flag | null; rebaseline_reason?: string | null;
+  exposure?: ExposureSnap | null;
 }
 export interface Trial { id?: string; result_id: string; trial_no: number; variant?: string; time_s: number | null; splits: Record<string, number | null>; stroke_count?: number | null; legal: boolean; illegal_reason?: string | null; }
 
@@ -220,9 +221,9 @@ export async function cycleWeek(club: string, squadId: string | null, date: stri
   return ((data as { focus: string | null; week_no: number | null }[]) ?? [])[0] ?? null;
 }
 
-export async function createSession(s: { version_id: string; date: string; group_type: MmSession["group_type"]; squad_id: string | null; swimmer_ids: string[]; pool: string | null; course: "SC" | "LC" | null; as_protocol: boolean; tester: string | null; notes: string | null }): Promise<string> {
+export async function createSession(s: { window_id?: string | null; version_id: string; date: string; group_type: MmSession["group_type"]; squad_id: string | null; swimmer_ids: string[]; pool: string | null; course: "SC" | "LC" | null; as_protocol: boolean; tester: string | null; notes: string | null }): Promise<string> {
   const { data, error } = await db.from("mm_sessions").insert({
-    version_id: s.version_id, session_date: s.date, group_type: s.group_type, squad_id: s.squad_id, swimmer_ids: s.swimmer_ids,
+    version_id: s.version_id, window_id: s.window_id ?? null, session_date: s.date, group_type: s.group_type, squad_id: s.squad_id, swimmer_ids: s.swimmer_ids,
     pool: s.pool, course: s.course, as_protocol: s.as_protocol, tester: s.tester, notes: s.notes
   }).select("id").single();
   fail(error); return (data as { id: string }).id;
@@ -247,7 +248,7 @@ export async function loadVersion(id: string): Promise<{ version: Version; proto
   return { version: version as Version, protocol };
 }
 
-const RES = "id, session_id, swimmer_id, level_key, status, not_tested_reason, raw, value, legal, conditions, note, recorded_by, session_date, protocol_id, version_id, major, age, year_of_birth, is_baseline, baseline_id, previous_id, days_since_prev, days_since_base, change_prev, change_base, caution, flag, rebaseline_reason";
+const RES = "id, session_id, swimmer_id, level_key, status, not_tested_reason, raw, value, legal, conditions, note, recorded_by, session_date, protocol_id, version_id, major, age, year_of_birth, is_baseline, baseline_id, previous_id, days_since_prev, days_since_base, change_prev, change_base, caution, flag, rebaseline_reason, exposure";
 export async function loadSessionResults(sessionId: string): Promise<MmResult[]> {
   const { data, error } = await db.from("mm_results").select(RES).eq("session_id", sessionId);
   fail(error); return (data ?? []) as MmResult[];
@@ -303,3 +304,111 @@ export function parseSeconds(v: string): number | null {
   const n = Number(t);
   return Number.isFinite(n) && n > 0 ? n : null;
 }
+
+// ---------------------------------------------------------------------------
+// Training exposure (A-126, A-127)
+// ---------------------------------------------------------------------------
+export const WORK_TAGS: [string, string][] = [
+  ["aerobic", "Aerobic / threshold"], ["speed", "Speed"], ["race_pace", "Race pace"], ["kick", "Kick"], ["pull", "Pull"],
+  ["drill", "Drill / skill"], ["efficiency", "Stroke efficiency"], ["turns", "Turns"], ["starts", "Starts"],
+  ["underwater", "Underwater / streamline"], ["recovery", "Recovery"], ["warm_up", "Warm-up"]
+];
+export const WORK_LABEL: Record<string, string> = { ...Object.fromEntries(WORK_TAGS), swim: "Untagged swim" };
+
+export interface PlanLine { line_no: number; line_path: number[]; heading: string | null; text: string; mult: number; metres: number; tags: string[]; auto_tags: string[]; confirmed: boolean; strokes: string[]; drill_ids: string[]; }
+export interface Exposure {
+  from: string; to: string; days: number; sessions: number; sessions_offered: number; hours: number; with_plan: number; metres: number;
+  by_tag: Record<string, number>; lines_by_tag: Record<string, number>; by_stroke: Record<string, number>; drills: Record<string, number>;
+  per_week: { sessions: number; hours: number; metres: number } | null; plan_known_pct: number | null;
+}
+export interface ExposureSnap { since_prev: Exposure | null; since_base: Exposure | null; d90: Exposure; tenure_days: number | null; squad_days: number | null; taken_at: string; }
+
+export async function loadPlanLines(planId: string): Promise<PlanLine[]> {
+  const { data, error } = await db.rpc("mm_plan_lines", { p_plan: planId });
+  fail(error); return (data ?? []) as PlanLine[];
+}
+/** Writes confirmed work tags into the plan's set blocks (by path), leaving everything else as it is. */
+export async function saveWorkTags(planId: string, tags: { path: number[]; tags: string[] }[]) {
+  const { data, error } = await db.from("session_plans").select("content").eq("id", planId).single();
+  fail(error);
+  const content = JSON.parse(JSON.stringify((data as { content: unknown[] }).content ?? [])) as Record<string, unknown>[];
+  for (const t of tags) {
+    const top = content[t.path[0]] as Record<string, unknown> | undefined;
+    const block = t.path.length > 1 ? (top?.children as Record<string, unknown>[] | undefined)?.[t.path[1]] : top;
+    if (block && block.type === "set") block.work = [...t.tags].sort();
+  }
+  const { error: e2 } = await db.from("session_plans").update({ content, updated_at: new Date().toISOString() }).eq("id", planId);
+  fail(e2);
+}
+export interface PlanSummary { id: string; title: string; intended_date: string | null; squad_id: string | null; total_distance_m: number | null; lines: number; confirmed: number; }
+/** Plans in a club with how many of their set lines have confirmed work tags. */
+export async function loadPlanTagSummary(club: string): Promise<PlanSummary[]> {
+  const { data, error } = await db.from("session_plans").select("id, title, intended_date, squad_id, total_distance_m, content").eq("club_id", clubIdOf(club))
+    .order("intended_date", { ascending: false, nullsFirst: false }).limit(300);
+  fail(error);
+  return ((data ?? []) as { id: string; title: string; intended_date: string | null; squad_id: string | null; total_distance_m: number | null; content: unknown }[]).map(p => {
+    let lines = 0, confirmed = 0;
+    const visit = (b: Record<string, unknown>) => { if (b?.type === "set" && String(b.text ?? "").trim()) { lines++; if (Array.isArray(b.work)) confirmed++; } };
+    for (const b of (Array.isArray(p.content) ? p.content : []) as Record<string, unknown>[]) {
+      if (b?.type === "repeat_group") ((b.children as Record<string, unknown>[]) ?? []).forEach(visit); else visit(b);
+    }
+    return { id: p.id, title: p.title, intended_date: p.intended_date, squad_id: p.squad_id, total_distance_m: p.total_distance_m, lines, confirmed };
+  });
+}
+export async function swimmerExposure(swimmerId: string, from: string, to: string): Promise<Exposure | null> {
+  const { data, error } = await db.rpc("mm_swimmer_exposure", { p_swimmer: swimmerId, p_from: from, p_to: to });
+  if (error) return null;
+  return data as Exposure;
+}
+export async function refreshExposure(club: string): Promise<number> {
+  const { data, error } = await db.rpc("mm_refresh_exposure", { p_club: clubIdOf(club) });
+  fail(error); return data as number;
+}
+
+// ---------------------------------------------------------------------------
+// Quick measures on feedback (A-125): lower reliability than a formal test,
+// shown as a trend only. Codes line up with protocol codes where one exists.
+// ---------------------------------------------------------------------------
+export interface QuickMeasure { code: string; label: string; kind: "count" | "legal"; hint: string; min: number; max: number; }
+const STROKE_CODE: Record<string, string> = { Free: "FR", Back: "BK", Breast: "BR", Fly: "FL" };
+export function quickMeasureFor(category: string): QuickMeasure | null {
+  if (STROKE_CODE[category]) return { code: `EFF-${STROKE_CODE[category]}`, label: "Stroke count over a clean 25 m", kind: "count", hint: "Count from the push-off breakout to the wall, at a steady effort", min: 1, max: 80 };
+  if (category === "Tumble turn" || category === "Touch turn" || category === "Transition")
+    return { code: `TRN-LG-${category === "Tumble turn" ? "TB" : category === "Touch turn" ? "TO" : "TX"}`, label: "Was the turn legal?", kind: "legal", hint: "As a judge would see it", min: 0, max: 1 };
+  if (category === "Dive") return { code: "UWK-DV", label: "Underwater kicks to breakout", kind: "count", hint: "Kicks from entry to the first stroke", min: 0, max: 30 };
+  return null;
+}
+export function fmtQuick(code: string | null | undefined, value: number | null | undefined): string | null {
+  if (!code || value == null) return null;
+  if (code.startsWith("TRN-LG")) return value ? "Turn legal" : "Turn illegal";
+  if (code.startsWith("EFF")) return `Stroke count ${value} per 25 m`;
+  if (code.startsWith("UWK")) return `${value} underwater kick${value === 1 ? "" : "s"} to breakout`;
+  return `${code}: ${value}`;
+}
+
+export interface QuickRow { swimmer_id: string; measure_code: string; measure_value: number; session_date: string; category: string; }
+export async function loadQuickMeasures(club: string): Promise<QuickRow[]> {
+  const { data, error } = await db.from("swimmer_feedback").select("swimmer_id, measure_code, measure_value, session_date, category")
+    .eq("club_id", clubIdOf(club)).not("measure_code", "is", null).not("measure_value", "is", null).order("session_date").limit(5000);
+  fail(error); return (data ?? []) as QuickRow[];
+}
+export const QUICK_LABEL = (code: string) =>
+  code.startsWith("EFF-") ? `Stroke count, ${({ FR: "Freestyle", BK: "Backstroke", BR: "Breaststroke", FL: "Butterfly" } as Record<string, string>)[code.slice(4)] ?? code}`
+  : code.startsWith("TRN-LG-") ? `Turn legality, ${({ TB: "tumble turn", TO: "touch turn", TX: "transition" } as Record<string, string>)[code.slice(7)] ?? code}`
+  : code === "UWK-DV" ? "Underwater kicks after the dive" : code;
+
+// ---------------------------------------------------------------------------
+// Testing windows (optional planned dates; required for fixed-date protocols)
+// ---------------------------------------------------------------------------
+export interface Window { id: string; club_id: string; name: string; kind: string; starts_on: string; ends_on: string; protocol_ids: string[]; active: boolean; }
+export const WINDOW_KIND: Record<string, string> = { baseline: "Baseline", mid: "Mid-macro", end: "End-macro", novelty: "Novelty set", t_day: "T15–T30 day", pilot: "Pilot", other: "Other" };
+export async function loadWindows(club: string): Promise<Window[]> {
+  const { data, error } = await db.from("mm_windows").select("*").eq("club_id", clubIdOf(club)).eq("active", true).order("starts_on");
+  fail(error); return (data ?? []) as Window[];
+}
+export async function saveWindow(club: string, w: Omit<Window, "id" | "club_id" | "active"> & { id?: string }) {
+  const row = { name: w.name.trim(), kind: w.kind, starts_on: w.starts_on, ends_on: w.ends_on, protocol_ids: w.protocol_ids };
+  const { error } = w.id ? await db.from("mm_windows").update(row).eq("id", w.id) : await db.from("mm_windows").insert({ ...row, club_id: clubIdOf(club) });
+  fail(error);
+}
+export async function removeWindow(id: string) { const { error } = await db.from("mm_windows").update({ active: false }).eq("id", id); fail(error); }
