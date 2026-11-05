@@ -10,7 +10,8 @@ import { clubIdOf, clubCols, clubNameOf } from "./clubs";
 // Blocks
 // ---------------------------------------------------------------------------
 export interface HeadingBlock { type: "heading"; text: string; bold: boolean; underline: boolean; }
-export interface SetBlock { type: "set"; text: string; drill_ids?: string[]; }
+/** work: work-type tags a coach has confirmed for Metrics & Measures exposure (cleared when the text changes). */
+export interface SetBlock { type: "set"; text: string; drill_ids?: string[]; work?: string[]; }
 export interface RepeatBlock { type: "repeat_group"; reps: number; children: SetBlock[]; }
 export interface NoteBlock { type: "note"; text: string; }
 export interface DrillBlock { type: "drill"; drill_id: string | null; drill_name: string; }

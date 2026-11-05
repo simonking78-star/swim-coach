@@ -272,7 +272,7 @@ export function PlanEditor() {
               {controls(i, "Set line")}
               <SetLineInput value={b.text} drills={drillList} label="Set line"
                 placeholder="10 x 100 @2:00 Free — start typing a drill name for suggestions"
-                onChange={v => setItems(xs => xs.map((x, j) => (j === i && x.b.type === "set" ? { ...x, b: { ...x.b, text: v } } : x)))}
+                onChange={v => setItems(xs => xs.map((x, j) => (j === i && x.b.type === "set" ? { ...x, b: { ...x.b, text: v, work: undefined } } : x)))}
                 onDrill={(d: FullDrill) => setItems(xs => xs.map((x, j) => (j === i && x.b.type === "set" ? { ...x, b: addDrillId(x.b, d.id) } : x)))} />
               {setHintFor(b.text)}
             </div>
@@ -294,7 +294,7 @@ export function PlanEditor() {
                     <div key={ci} className="repeat-child">
                       <SetLineInput value={c.text} drills={drillList} label={`Repeat line ${ci + 1}`}
                         placeholder="2 x 75 @1:45 IM as 25 sprint, 50 drill"
-                        onChange={v => setChild(ci, x => ({ ...x, text: v }))}
+                        onChange={v => setChild(ci, x => ({ ...x, text: v, work: undefined }))}
                         onDrill={d => setChild(ci, x => addDrillId(x, d.id))} />
                       <span className="rc-dist">{p ? p.distance_m + "m" : "—"}</span>
                       <button type="button" className="icon-btn plain" aria-label={`Remove repeat line ${ci + 1}`}

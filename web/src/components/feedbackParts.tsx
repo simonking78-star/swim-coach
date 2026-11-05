@@ -1,3 +1,4 @@
+import { fmtQuick } from "../lib/measures";
 import { useState } from "react";
 import { STATUSES, catLabel, mediaPath, useSignedUrls, type FbEntry, type Media, type Thread } from "../lib/feedback";
 import { fmtDate } from "../lib/util";
@@ -79,6 +80,7 @@ export function EntryBody({ e, origin, extra }: { e: FbEntry; origin?: boolean; 
       {e.criterion && <p className="fb-crit">{e.criterion}</p>}
       {extra}
       {obs && <p className="fb-field"><span>Observation</span>{obs}</p>}
+      {fmtQuick(e.measure_code, e.measure_value) && <p className="fb-field"><span>Quick measure</span>{fmtQuick(e.measure_code, e.measure_value)}</p>}
       {e.remedial_action && <p className="fb-field"><span>Remedial action</span>{e.remedial_action}</p>}
       {e.note && e.observation && <p className="fb-field"><span>Additional notes</span>{e.note}</p>}
       {e.coach && <p className="fb-by">— {e.coach}</p>}

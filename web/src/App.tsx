@@ -37,6 +37,9 @@ const Library = lazy(() => import("./pages/measures/Measures").then(x => ({ defa
 const ProtocolPage = lazy(() => import("./pages/measures/ProtocolPage").then(x => ({ default: x.ProtocolPage })));
 const StartRun = lazy(() => import("./pages/measures/StartRun").then(x => ({ default: x.StartRun })));
 const RunSession = lazy(() => import("./pages/measures/RunSession").then(x => ({ default: x.RunSession })));
+const WorkTagList = lazy(() => import("./pages/measures/WorkTags").then(x => ({ default: x.WorkTagList })));
+const WorkTagPlan = lazy(() => import("./pages/measures/WorkTags").then(x => ({ default: x.WorkTagPlan })));
+const MmWindows = lazy(() => import("./pages/measures/Windows").then(x => ({ default: x.Windows })));
 const MmResults = lazy(() => import("./pages/measures/Results").then(x => ({ default: x.Results })));
 const RunTest = lazy(() => import("./pages/tests/RunTest").then(x => ({ default: x.RunTest })));
 const Users = lazy(() => import("./pages/admin/Users").then(x => ({ default: x.Users })));
@@ -103,6 +106,9 @@ function Gate() {
           <Route path="measures/run" element={wait(<StartRun />)} />
           <Route path="measures/session/:id" element={wait(<RunSession />)} />
           <Route path="measures/results" element={wait(<MmResults />)} />
+          <Route path="measures/windows" element={wait(<MmWindows />)} />
+          <Route path="measures/work" element={wait(<WorkTagList />)} />
+          <Route path="measures/work/:id" element={wait(<WorkTagPlan />)} />
           <Route path="statistics/measures" element={<Navigate to="/measures/results" replace />} />
           {/* Test & Assess is retired: old links open Metrics & Measures; archived legacy tests stay viewable. */}
           <Route path="tests" element={<Navigate to="/measures" replace />} />
