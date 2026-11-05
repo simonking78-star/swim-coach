@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/AuthProvider";
 import { useClub } from "../../club/ClubProvider";
@@ -19,7 +19,7 @@ type Group = "club" | "squad" | "swimmers";
 const POOLS: [string, "SC" | "LC"][] = [["25m", "SC"], ["50m", "LC"], ["17m", "SC"]];
 
 export function StartRun() {
-  const { canRun, squadOnly, mySquads } = useMeasuresAccess();
+  const { canRun, squadOnly, mySquads, canPublish } = useMeasuresAccess();
   const { club } = useClub();
   const { session } = useAuth();
   const coach = useCoachName();
@@ -90,7 +90,8 @@ export function StartRun() {
       <section className="card">
         <h2>Test</h2>
         {runnable.isLoading ? <p className="dim">Loading…</p>
-          : !runnable.data?.length ? <p className="dim">No protocol is published and in pilot or live yet. See the Protocol library.</p>
+          : runnable.error ? <LoadError e={runnable.error} />
+          : !runnable.data?.length ? <NothingToRun canPublish={canPublish} />
           : <ul className="tick-list">{runnable.data.map(({ protocol: p, version: v }) => (
               <li key={p.id} className="tick-row"><label className="pick-row">
                 <input type="radio" name="protocol" checked={pid === p.id} onChange={() => setPid(p.id)} />
@@ -103,6 +104,7 @@ export function StartRun() {
         )}
       </section>
 
+      {!!runnable.data?.length && <>
       <section className="card">
         <h2>When and where</h2>
         <div className="field-pair">
@@ -151,8 +153,34 @@ export function StartRun() {
         {group && <p className="hint">{chosen.length} swimmer{chosen.length === 1 ? "" : "s"}. You can add or take swimmers off once it has started.</p>}
       </section>
 
+      {(swimmers.error || squads.error) && <LoadError e={(swimmers.error || squads.error)!} what="swimmers and squads" />}
       {msg && <p className="msg error" role="alert">{msg}</p>}
       <button className="btn primary wide" disabled={starting || !chosenRun || !group} onClick={start}>{starting ? "Starting…" : "Start test"}</button>
+      </>}
     </>
+  );
+}
+
+/** A load failure, said plainly. A missing table means the database hasn't been updated for this version of the app. */
+export function LoadError({ e, what = "the tests" }: { e: unknown; what?: string }) {
+  const m = (e as Error)?.message ?? String(e);
+  const missing = /schema cache|does not exist|PGRST205|42P01/i.test(m);
+  return (
+    <p className="msg error" role="alert">
+      {missing
+        ? <>Couldn't load {what}: the database hasn't been updated for Metrics &amp; Measures yet. An admin needs to apply the Metrics &amp; Measures database update.</>
+        : <>Couldn't load {what}: {m}. Check your connection and try again.</>}
+    </p>
+  );
+}
+
+function NothingToRun({ canPublish }: { canPublish: boolean }) {
+  return (
+    <div className="notice">
+      <p><strong>No test is ready to run yet.</strong> A test can be run once a version of it is published and it is in <em>pilot</em> or <em>live</em>.</p>
+      {canPublish
+        ? <p>Open a draft in the <Link to="/measures/library">Protocol library</Link>, finish and publish its version, then move it to pilot.</p>
+        : <p>Ask the head coach to publish a test in the <Link to="/measures/library">Protocol library</Link>.</p>}
+    </div>
   );
 }

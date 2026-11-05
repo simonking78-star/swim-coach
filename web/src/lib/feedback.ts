@@ -73,25 +73,35 @@ export async function loadFbSwimmers(club: string, squad: string | null): Promis
   return flatSquad((data ?? []) as unknown as { id: string; full_name: string; squad_id: string | null; sq: { name: string } | null }[]);
 }
 
-const FB_COLS = "id, thread_id, entry_type, category, criterion, status, observation, remedial_action, remedial_drill_ids, note, media, session_date, created_at, coach, measure_code, measure_value";
+const FB_BASE = "id, thread_id, entry_type, category, criterion, status, observation, remedial_action, remedial_drill_ids, note, media, session_date, created_at, coach";
+// Quick-measure columns come with the Metrics & Measures database update. Until a
+// database has them, feedback still loads without them (and stops asking).
+let withMeasures = true;
+const fbCols = () => (withMeasures ? FB_BASE + ", measure_code, measure_value" : FB_BASE);
+const missingMeasureCols = (e: { code?: string; message?: string } | null) => !!e && withMeasures && (e.code === "42703" || /measure_(code|value)/.test(e.message ?? ""));
+/** Runs a feedback select; if the database doesn't have the quick-measure columns yet, runs it again without them. */
+async function fbSelect<T>(run: (cols: string) => PromiseLike<{ data: T | null; error: { code?: string; message?: string } | null }>): Promise<T | null> {
+  let { data, error } = await run(fbCols());
+  if (missingMeasureCols(error)) { withMeasures = false; ({ data, error } = await run(fbCols())); }
+  if (error) throw error;
+  return data;
+}
 
 export async function loadSwimmerHistory(swimmerId: string): Promise<FbEntry[]> {
-  const { data, error } = await sb.from("swimmer_feedback").select(FB_COLS)
+  const data = await fbSelect(cols => sb.from("swimmer_feedback").select(cols)
     .eq("swimmer_id", swimmerId)
     .order("session_date", { ascending: false })
-    .order("created_at", { ascending: false });
-  if (error) throw error;
+    .order("created_at", { ascending: false }));
   return (data ?? []) as unknown as FbEntry[];
 }
 
 export interface RecentEntry extends FbEntry { swimmer_id: string; swimmer_name: string; }
 export async function loadRecentSwimmerFeedback(club: string): Promise<RecentEntry[]> {
-  const { data, error } = await sb.from("swimmer_feedback")
-    .select(FB_COLS + ", swimmer_id, swimmers!inner(full_name, club_id)")
+  const data = await fbSelect(cols => sb.from("swimmer_feedback")
+    .select(cols + ", swimmer_id, swimmers!inner(full_name, club_id)")
     .eq("swimmers.club_id", clubIdOf(club))
     .order("created_at", { ascending: false })
-    .limit(15);
-  if (error) throw error;
+    .limit(15));
   return ((data ?? []) as unknown as (FbEntry & { swimmer_id: string; swimmers: { full_name: string } | null })[])
     .map(r => ({ ...r, swimmer_name: r.swimmers?.full_name ?? "Unknown swimmer" }));
 }
@@ -168,8 +178,13 @@ export async function saveSwimmerFeedback(d: SwimmerFbDraft, onProgress?: (i: nu
     media
   };
   if (d.entryType === "status") { row.criterion = d.criterion.trim(); row.status = d.status; }
-  if (d.measureCode && d.measureValue != null) { row.measure_code = d.measureCode; row.measure_value = d.measureValue; row.measure_context = "quick"; }
-  const { error } = await sb.from("swimmer_feedback").insert(row as never);
+  if (d.measureCode && d.measureValue != null && withMeasures) { row.measure_code = d.measureCode; row.measure_value = d.measureValue; row.measure_context = "quick"; }
+  let { error } = await sb.from("swimmer_feedback").insert(row as never);
+  if (missingMeasureCols(error)) {
+    // Database not updated yet: save the feedback without the quick measure.
+    withMeasures = false; delete row.measure_code; delete row.measure_value; delete row.measure_context;
+    ({ error } = await sb.from("swimmer_feedback").insert(row as never));
+  }
   if (error && looksOffline(error) && !d.files.length) {
     // Text-only entries can wait for a signal; one with media needed a live upload first.
     await queueWrite("swimmer_feedback", row);
