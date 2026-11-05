@@ -16,7 +16,8 @@ export function StatsHub() {
   if (st === "N") return <><div className="page-head"><h1>Statistics</h1></div><p className="notice warn">Your role doesn't have access to statistics.</p></>;
   const tiles = [
     { to: "regression", icon: "📈", title: "Regression Analysis", sub: "Swimmer & event trend vs county qualifying times" },
-    { to: "tests", icon: "🎯", title: "Test results", sub: "Test & Assess scores over time, each test session, and positions for the head coach" },
+    { to: "measures", icon: "📏", title: "Metrics & Measures", sub: "Each swimmer against their own baseline, change against test noise" },
+    { to: "tests", icon: "🗄️", title: "Legacy test sets", sub: "Test & Assess archive from before Metrics & Measures" },
     { to: "compare", icon: "⚖️", title: "Swimmer Comparison", sub: "A swimmer vs another swimmer, their birth-year average or a squad average" },
     ...(squadReview ? [{ to: "squad-review", icon: "📅", title: "Monthly Squad Review", sub: "Attendance, race times, skills & feedback by squad, month on month" }] : [])
   ];

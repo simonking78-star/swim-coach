@@ -32,10 +32,12 @@ const Micros = lazy(() => import("./pages/season/Micros").then(x => ({ default: 
 const PlanList = lazy(() => import("./pages/plans/PlanList").then(x => ({ default: x.PlanList })));
 const PlanView = lazy(() => import("./pages/plans/PlanView").then(x => ({ default: x.PlanView })));
 const PlanEditor = lazy(() => import("./pages/plans/PlanEditor").then(x => ({ default: x.PlanEditor })));
-const TestsHub = lazy(() => import("./pages/tests/Tests").then(x => ({ default: x.TestsHub })));
-const TemplatePick = lazy(() => import("./pages/tests/Tests").then(x => ({ default: x.TemplatePick })));
-const TemplateEditor = lazy(() => import("./pages/tests/TemplateEditor").then(x => ({ default: x.TemplateEditor })));
-const StartTest = lazy(() => import("./pages/tests/StartTest").then(x => ({ default: x.StartTest })));
+const MeasuresHub = lazy(() => import("./pages/measures/Measures").then(x => ({ default: x.MeasuresHub })));
+const Library = lazy(() => import("./pages/measures/Measures").then(x => ({ default: x.Library })));
+const ProtocolPage = lazy(() => import("./pages/measures/ProtocolPage").then(x => ({ default: x.ProtocolPage })));
+const StartRun = lazy(() => import("./pages/measures/StartRun").then(x => ({ default: x.StartRun })));
+const RunSession = lazy(() => import("./pages/measures/RunSession").then(x => ({ default: x.RunSession })));
+const MmResults = lazy(() => import("./pages/measures/Results").then(x => ({ default: x.Results })));
 const RunTest = lazy(() => import("./pages/tests/RunTest").then(x => ({ default: x.RunTest })));
 const Users = lazy(() => import("./pages/admin/Users").then(x => ({ default: x.Users })));
 const AppDev = lazy(() => import("./pages/AppDev").then(x => ({ default: x.AppDev })));
@@ -95,12 +97,20 @@ function Gate() {
           <Route path="admin/deactivate" element={wait(<Deactivate />)} />
           <Route path="admin/users" element={wait(<Users />)} />
           <Route path="appdev" element={wait(<AppDev />)} />
-          <Route path="tests" element={wait(<TestsHub />)} />
-          <Route path="tests/create" element={wait(<TemplateEditor key="new" />)} />
-          <Route path="tests/select" element={wait(<TemplatePick key="select" mode="select" />)} />
-          <Route path="tests/edit" element={wait(<TemplatePick key="edit" mode="edit" />)} />
-          <Route path="tests/templates/:id" element={wait(<TemplateEditor />)} />
-          <Route path="tests/start/:id" element={wait(<StartTest />)} />
+          <Route path="measures" element={wait(<MeasuresHub />)} />
+          <Route path="measures/library" element={wait(<Library />)} />
+          <Route path="measures/protocol/:id" element={wait(<ProtocolPage />)} />
+          <Route path="measures/run" element={wait(<StartRun />)} />
+          <Route path="measures/session/:id" element={wait(<RunSession />)} />
+          <Route path="measures/results" element={wait(<MmResults />)} />
+          <Route path="statistics/measures" element={<Navigate to="/measures/results" replace />} />
+          {/* Test & Assess is retired: old links open Metrics & Measures; archived legacy tests stay viewable. */}
+          <Route path="tests" element={<Navigate to="/measures" replace />} />
+          <Route path="tests/create" element={<Navigate to="/measures" replace />} />
+          <Route path="tests/select" element={<Navigate to="/measures/run" replace />} />
+          <Route path="tests/edit" element={<Navigate to="/measures/library" replace />} />
+          <Route path="tests/templates/:id" element={<Navigate to="/measures/library" replace />} />
+          <Route path="tests/start/:id" element={<Navigate to="/measures/run" replace />} />
           <Route path="tests/run/:id" element={wait(<RunTest />)} />
           <Route path="statistics" element={<StatsHub />} />
           <Route path="statistics/tests" element={wait(<TestResults />)} />

@@ -63,11 +63,15 @@ export function defaultLayout(): HomeLayout {
   };
 }
 
+/** Sections that were renamed: a saved button keeps its place and visibility. */
+const RENAMED: Record<string, string> = { tests: "measures" };
+
 /** Keep the saved order, drop unknown ids, append anything new with its default. */
 function mergeList(saved: LayoutItem[] | undefined, defaults: LayoutItem[]): LayoutItem[] {
   const known = new Map(defaults.map(d => [d.id, d]));
   const out: LayoutItem[] = [];
-  for (const item of saved || []) {
+  for (const raw of saved || []) {
+    const item = RENAMED[raw.id] ? { ...raw, id: RENAMED[raw.id] } : raw;
     if (known.has(item.id) && !out.some(o => o.id === item.id)) out.push({ id: item.id, visible: !!item.visible });
   }
   for (const d of defaults) if (!out.some(o => o.id === d.id)) out.push(d);
