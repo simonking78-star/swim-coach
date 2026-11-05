@@ -15,18 +15,17 @@ import { sessionPdf } from "../../lib/testPdf";
 import { fmtDate, fmtDdMm } from "../../lib/util";
 import { StatsBack } from "./StatsHub";
 
-// Statistics → Test results: the Test & Assess archive. Per swimmer, every
-// test on a template with the change since the previous one; per test
-// session, everyone's result. Placings and ranked exports are for the head
-// coach, club admin and superadmin only.
-
-const LEAD = ["superadmin", "club_admin", "head_coach"];
+// Statistics → Legacy test sets: the Test & Assess archive (THR-00), kept
+// read-only after the move to Metrics & Measures. Per swimmer, every test on a
+// template with the change since the previous one; per test session,
+// everyone's result. No ranks or placings for anyone: the testing model rules
+// out ranking swimmers in any output (claude/specs/metrics-and-measures.md).
 
 export default function TestResults() {
   const { access } = useAuth();
   const st = sectionLevel(access, "stats");
   const own = st === "CR"; // parent / swimmer: their own record only
-  const lead = (access?.roles ?? []).some(r => LEAD.includes(r.role));
+  const lead = false; // ranks retired with Metrics & Measures
   const { club } = useClub();
   const [params, setParams] = useSearchParams();
   const templateId = params.get("template") ?? "";
@@ -56,11 +55,11 @@ export default function TestResults() {
     <>
       <StatsBack />
       <div className="page-head row">
-        <div><h1><span aria-hidden="true">🎯</span> Test results</h1><p className="dim">Test &amp; Assess archive: progress over time and each test's results</p></div>
+        <div><h1><span aria-hidden="true">🎯</span> Legacy test sets</h1><p className="dim">Test &amp; Assess archive (before Metrics &amp; Measures). Not comparable with the new protocols.</p></div>
         <ClubPicker />
       </div>
       {tpls.isLoading ? <p className="dim">Loading…</p>
-        : !tpls.data?.length ? <div className="card"><p>No test results for {club} yet.</p>{!own && <Link to="/tests" className="btn">Go to Test &amp; Assess</Link>}</div>
+        : !tpls.data?.length ? <div className="card"><p>No test results for {club} yet.</p>{!own && <Link to="/measures" className="btn">Go to Metrics &amp; Measures</Link>}</div>
         : (
           <>
             <div className="field-pair">

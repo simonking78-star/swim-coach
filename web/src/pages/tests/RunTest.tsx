@@ -18,7 +18,7 @@ import { YobPrompt } from "./StartTest";
 // change saves straight away (queued if offline). Closing the test archives it.
 
 /** Two taps to confirm, without a browser dialog. */
-function ConfirmButton({ label, confirm, onConfirm, className = "btn", disabled }: { label: string; confirm: string; onConfirm: () => void; className?: string; disabled?: boolean }) {
+export function ConfirmButton({ label, confirm, onConfirm, className = "btn", disabled }: { label: string; confirm: string; onConfirm: () => void; className?: string; disabled?: boolean }) {
   const [armed, setArmed] = useState(false);
   useEffect(() => { if (!armed) return; const t = setTimeout(() => setArmed(false), 3500); return () => clearTimeout(t); }, [armed]);
   return <button type="button" className={className + (armed ? " armed" : "")} disabled={disabled} onClick={() => { if (armed) { setArmed(false); onConfirm(); } else setArmed(true); }}>{armed ? confirm : label}</button>;

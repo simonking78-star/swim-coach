@@ -932,3 +932,39 @@ details summary { cursor: pointer; min-height: 2.5rem; display: flex; align-item
 .rp-item.on .rp-tick { background: var(--navy-light); border-color: var(--navy-light); color: #fff; }
 .rp-name { flex: 1; min-width: 0; }
 .rp-actions { justify-content: space-between; align-items: center; margin-top: 6px; }
+
+/* Metrics & Measures */
+.mm-status.mm-draft { background: var(--grey-bg); color: var(--text-dim); }
+.mm-status.mm-pilot { background: #fff4e0; color: var(--amber-text); }
+.mm-status.mm-live { background: #e6f4ea; color: var(--green); }
+.mm-status.mm-retired { background: var(--grey-bg); color: var(--text-dim); text-decoration: line-through; }
+.mm-flag { white-space: nowrap; }
+.mm-flag.mm-baseline { background: #e8f1fb; color: var(--navy); }
+.mm-flag.mm-improved { background: #e6f4ea; color: var(--green); }
+.mm-flag.mm-noise { background: var(--grey-bg); color: var(--text-dim); }
+.mm-flag.mm-declined { background: #fdecea; color: var(--red); }
+.mm-flag.mm-caution, .mm-flag.mm-no_reliability { background: #fff4e0; color: var(--amber-text); }
+.mm-dl { display: grid; grid-template-columns: minmax(8rem, max-content) 1fr; gap: .35rem 1rem; margin: .5rem 0; }
+.mm-dl > div { display: contents; }
+.mm-dl dt { font-weight: 600; color: var(--text-dim); }
+.mm-dl dd { margin: 0; }
+.mm-levels { list-style: none; padding: 0; margin: .5rem 0; display: grid; gap: .5rem; }
+.mm-levels > li { border: 1px solid var(--border); border-radius: 10px; padding: .5rem .75rem; }
+.mm-versions { margin: 1rem 0 .5rem; flex-wrap: wrap; }
+.mm-level { margin-bottom: .75rem; }
+.mm-round { align-items: end; }
+.mm-trials { display: grid; gap: .4rem; margin: .5rem 0; }
+.mm-trial { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.mm-tno { font-weight: 600; min-width: 4.2rem; }
+.mm-time { width: 6rem; font-size: 1.1rem; }
+.mm-split { width: 5rem; }
+input.invalid { border-color: var(--red); outline-color: var(--red); }
+.tc-level { margin: .25rem 0; font-size: .9rem; }
+.tc-cond { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: .4rem; font-size: .9rem; }
+.pre { white-space: pre-wrap; }
+.mm-trial { border-top: 1px solid var(--border); padding-top: .4rem; display: grid; gap: .35rem; }
+.mm-trial.illegal .mm-time { text-decoration: line-through; }
+.mm-trial-main { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.mm-splits { display: flex; flex-wrap: wrap; gap: .5rem; padding-left: 4.7rem; }
+.mm-split-l { display: flex; flex-direction: column; font-size: .78rem; color: var(--text-dim); gap: .1rem; }
+@media (max-width: 420px) { .mm-splits { padding-left: 0; } }
