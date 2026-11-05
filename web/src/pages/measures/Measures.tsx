@@ -10,6 +10,7 @@ import {
   type Better, type Kind, type MmSession, type Status
 } from "../../lib/measures";
 import { fmtDate } from "../../lib/util";
+import { LoadError } from "./StartRun";
 
 // Metrics & Measures (claude/specs/metrics-and-measures.md): fixed, versioned
 // test protocols graded by level. Coaches run published protocols on any date;
@@ -74,6 +75,7 @@ export function MeasuresHub() {
         <>
           <h2 className="section-title">Live tests</h2>
           {live.isLoading ? <p className="dim">Loading…</p>
+            : live.error ? <LoadError e={live.error} what="live tests" />
             : !live.data?.length ? <p className="dim">No test is running.</p>
             : <ul className="feed card">{live.data.map(s => (
                 <li key={s.id}><Link to={`session/${s.id}`}><strong>{name(s)}</strong></Link>

@@ -178,7 +178,7 @@ export function RunSession() {
                   : <span>{lv?.label ?? row.level_key}</span>}
                 {editable
                   ? <select aria-label={`Tested or not for ${x.full_name}`} value={row.status === "recorded" ? "" : row.not_tested_reason ?? "Other"}
-                      onChange={e => commit({ ...row, status: e.target.value ? "not_tested" : "recorded", not_tested_reason: e.target.value || null })}>
+                      onChange={e => commit({ ...row, level_key: row.level_key || (e.target.value ? v.levels[0]?.key ?? "" : ""), status: e.target.value ? "not_tested" : "recorded", not_tested_reason: e.target.value || null })}>
                       <option value="">Tested</option>{NOT_TESTED.map(r => <option key={r} value={r}>Not tested: {r}</option>)}
                     </select>
                   : row.status === "not_tested" && <span className="chip">Not tested: {row.not_tested_reason}</span>}
