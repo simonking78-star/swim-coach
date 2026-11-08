@@ -51,14 +51,18 @@ export function Drills() {
       </div>
       {LEVEL_NOTE[level] && <p className="notice">{LEVEL_NOTE[level]}</p>}
 
-      <section className="card">
+      <section className="card filter-bar" aria-label="Filters">
         <ClubPicker />
-        <label htmlFor="dl-search">Search</label>
-        <input id="dl-search" type="search" placeholder="Search drills, pseudonyms…" autoComplete="off" value={q} onChange={e => setQ(e.target.value)} />
-        <div className="chip-row" role="group" aria-label="Stroke">
+        <div className="filter-fields">
+        <div className="ff-search">
+          <label htmlFor="dl-search">Search</label>
+          <input id="dl-search" type="search" placeholder="Search drills, pseudonyms…" autoComplete="off" value={q} onChange={e => setQ(e.target.value)} />
+        </div>
+        <div className="chip-row ff-chips" role="group" aria-label="Stroke">
           {[null, ...strokes].map(s => (
             <button key={s ?? "all"} type="button" className={"filter-chip" + (stroke === s ? " on" : "")} aria-pressed={stroke === s} onClick={() => setStroke(s)}>{s ?? "All"}</button>
           ))}
+        </div>
         </div>
       </section>
 

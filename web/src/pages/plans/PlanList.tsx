@@ -78,9 +78,10 @@ export function PlanList() {
       </div>
       {LEVEL_NOTE[level] && <p className="notice">{LEVEL_NOTE[level]}</p>}
 
-      <section className="card">
-        <h2 className="card-title">Filters</h2>
+      <section className="card filter-bar" aria-labelledby="pl-filters">
+        <h2 id="pl-filters" className="card-title filter-title">Filters</h2>
         <ClubPicker />
+        <div className="filter-fields">
         <div className="field-pair">
           <div>
             <label htmlFor="pl-squad">Squad</label>
@@ -97,8 +98,11 @@ export function PlanList() {
             </select>
           </div>
         </div>
-        <label htmlFor="pl-search">Search</label>
-        <input id="pl-search" type="search" placeholder="Search plans by title or tag…" autoComplete="off" value={q} onChange={e => setQ(e.target.value)} />
+        <div className="ff-search">
+          <label htmlFor="pl-search">Search</label>
+          <input id="pl-search" type="search" placeholder="Search plans by title or tag…" autoComplete="off" value={q} onChange={e => setQ(e.target.value)} />
+        </div>
+        </div>
       </section>
 
       <section className="card" aria-labelledby="pl-head">
