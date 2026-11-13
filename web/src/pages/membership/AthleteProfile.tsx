@@ -92,8 +92,8 @@ export function AthleteProfile({ swimmerId, club, canEdit, canEditMedical, canSe
                 <Txt label="Full name" value={d.full_name} onChange={v => setDet("full_name", v)} disabled={!canEdit} />
                 <Txt label="Date of birth" type="date" value={d.date_of_birth} onChange={v => setDet("date_of_birth", v || null)} disabled={!canEdit} />
                 <ReadOnly label="Age" value={calcAge(d.date_of_birth) ?? "—"} />
-                <ReadOnly label="Year of birth" value={yearOf(d.date_of_birth) ?? "—"} />
-                <Sel label="Gender" value={d.gender} onChange={v => setDet("gender", v || null)} disabled={!canEdit} blank="—" options={[["F", "Female"], ["M", "Male"]]} />
+                <ReadOnly label="Year of birth" value={yearOf(d.date_of_birth) ?? d.year_of_birth ?? "—"} />
+                <Sel label="Gender" value={d.gender} onChange={v => setDet("gender", v || null)} disabled={!canEdit} blank="—" options={[["Female", "Female"], ["Male", "Male"]]} />
                 <Txt label="England registration number" value={d.swim_england_id} onChange={v => setDet("swim_england_id", v)} disabled={!canEdit} />
                 <Txt label="Joined club" type="date" value={d.joined_club_on} onChange={v => setDet("joined_club_on", v || null)} disabled={!canEdit} />
                 <ReadOnly label="Total PBs" value={q.data.pbCount} />
