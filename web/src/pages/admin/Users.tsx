@@ -15,6 +15,9 @@ import { usePlanSquads } from "../plans/PlanList";
 
 type Msg = { text: string; error?: boolean } | null;
 const ROLES: Role[] = ["club_admin", "head_coach", "coach", "helper", "parent", "swimmer"];
+// "People with access" is grouped by role, highest first. Emails and clubs are not shown there.
+const ROLE_ORDER: Role[] = ["superadmin", "club_admin", "head_coach", "coach", "helper", "parent", "swimmer"];
+const personName = (p: Person) => p.full_name?.trim() || "Name not set";
 // Invite links land on the live app at the site root, which handles first sign-in.
 const REDIRECT = () => location.origin + "/";
 
@@ -172,52 +175,68 @@ export function Users() {
         {people.isLoading && <p className="dim">Loading…</p>}
         {people.error && <p className="msg error">Could not load people: {(people.error as Error).message}</p>}
         {people.data && !people.data.length && <p className="dim">Nobody else has access yet.</p>}
-        <ul className="people">
-          {(people.data ?? []).map(p => (
-            <li key={p.user_id} className="person">
-              <div className="person-name">{p.full_name || p.email}{p.user_id === me && " (you)"}</div>
-              <div className="dim small">{p.email}</div>
-              {!p.roles.length && <p className="dim small">No role</p>}
-              {p.roles.map(x => {
-                const key = `${p.user_id}|${x.role}|${x.club ?? ""}`;
-                const squadsHere = p.squads.filter(q => q.squads?.club === x.club).map(q => q.squads!.name).join(", ");
-                const kids = p.kids.filter(k => k.swimmers?.club === x.club);
-                const canRemove = !(p.user_id === me && x.role === "superadmin");
-                return (
-                  <div key={key} className="person-role">
-                    <div className="person-role-top">
-                      <span><strong>{ROLE_LABEL[x.role] ?? x.role}</strong> · {x.club || "all clubs"}</span>
-                      {canRemove && (confirm === key
-                        ? <button type="button" className="btn small danger" disabled={busy === key} onClick={() => act(key, () => removeRole(p, x.role, x.club), `Removed ${ROLE_LABEL[x.role]} access from ${p.full_name || p.email}.`)}>Confirm remove</button>
-                        : <button type="button" className="btn small" onClick={() => setConfirm(key)} aria-label={`Remove ${ROLE_LABEL[x.role]} access (${x.club || "all clubs"}) from ${p.full_name || p.email}`}>Remove</button>)}
-                    </div>
-                    {needsSquads(x.role) && <div className="dim small">{squadsHere || "no squads"}</div>}
-                    {needsSwimmers(x.role) && (
-                      <ul className="kid-list">
-                        {!kids.length && <li className="dim small">No linked swimmer</li>}
-                        {kids.map(k => {
-                          const kk = `${p.user_id}|kid|${k.swimmer_id}`;
-                          return (
-                            <li key={k.swimmer_id}>
-                              <span>{k.swimmers!.full_name}</span>
-                              {(kids.length > 1 || x.role === "parent") && (confirm === kk
-                                ? <button type="button" className="btn small danger" disabled={busy === kk} onClick={() => act(kk, () => unlinkSwimmer(p.user_id, k.swimmer_id), `${p.full_name || p.email} no longer sees ${k.swimmers!.full_name}.`)}>Confirm unlink</button>
-                                : <button type="button" className="link-btn" onClick={() => setConfirm(kk)} aria-label={`Stop ${p.full_name || p.email} seeing ${k.swimmers!.full_name}`}>Unlink</button>)}
-                            </li>
-                          );
-                        })}
-                        {x.role === "parent" && <li><button type="button" className="link-btn" onClick={() => addKid(p, x.club)}>+ Add another child</button></li>}
-                      </ul>
-                    )}
-                  </div>
-                );
-              })}
-              {p.user_id !== me && p.roles.length > 0 && (
-                <button type="button" className="btn small gap-top" onClick={() => relink(p)} disabled={busy === "relink" + p.user_id}>{busy === "relink" + p.user_id ? "Working…" : "New sign-in link"}</button>
-              )}
-            </li>
-          ))}
-        </ul>
+        {people.data && people.data.length > 0 && ROLE_ORDER.map(r => {
+          // One subsection per role; a person with several roles is listed under each.
+          const rows = (people.data ?? []).flatMap(p => p.roles.filter(x => x.role === r).map(x => ({ p, x })));
+          if (!rows.length) return null;
+          return (
+            <section key={r} className="role-group" aria-labelledby={`rg-${r}`}>
+              <h3 id={`rg-${r}`} className="role-group-title">{ROLE_LABEL[r]} <span className="dim">({rows.length})</span></h3>
+              <ul className="people">
+                {rows.map(({ p, x }) => {
+                  const who = personName(p);
+                  const key = `${p.user_id}|${x.role}|${x.club ?? ""}`;
+                  const squadsHere = p.squads.filter(q => q.squads?.club === x.club).map(q => q.squads!.name).join(", ");
+                  const kids = p.kids.filter(k => k.swimmers?.club === x.club);
+                  const canRemove = !(p.user_id === me && x.role === "superadmin");
+                  return (
+                    <li key={key} className="person">
+                      <div className="person-role-top">
+                        <span className="person-name">{who}{p.user_id === me && " (you)"}</span>
+                        <span className="btn-row">
+                          {p.user_id !== me && (
+                            <button type="button" className="btn small" onClick={() => relink(p)} disabled={busy === "relink" + p.user_id}>{busy === "relink" + p.user_id ? "Working…" : "New sign-in link"}</button>
+                          )}
+                          {canRemove && (confirm === key
+                            ? <button type="button" className="btn small danger" disabled={busy === key} onClick={() => act(key, () => removeRole(p, x.role, x.club), `Removed ${ROLE_LABEL[x.role]} access from ${who}.`)}>Confirm remove</button>
+                            : <button type="button" className="btn small" onClick={() => setConfirm(key)} aria-label={`Remove ${ROLE_LABEL[x.role]} access from ${who}`}>Remove</button>)}
+                        </span>
+                      </div>
+                      {needsSquads(x.role) && <div className="dim small">Squads: {squadsHere || "none"}</div>}
+                      {needsSwimmers(x.role) && (
+                        <ul className="kid-list">
+                          {!kids.length && <li className="dim small">No linked swimmer</li>}
+                          {kids.map(k => {
+                            const kk = `${p.user_id}|kid|${k.swimmer_id}`;
+                            return (
+                              <li key={k.swimmer_id}>
+                                <span>{k.swimmers!.full_name}</span>
+                                {(kids.length > 1 || x.role === "parent") && (confirm === kk
+                                  ? <button type="button" className="btn small danger" disabled={busy === kk} onClick={() => act(kk, () => unlinkSwimmer(p.user_id, k.swimmer_id), `${who} no longer sees ${k.swimmers!.full_name}.`)}>Confirm unlink</button>
+                                  : <button type="button" className="link-btn" onClick={() => setConfirm(kk)} aria-label={`Stop ${who} seeing ${k.swimmers!.full_name}`}>Unlink</button>)}
+                              </li>
+                            );
+                          })}
+                          {x.role === "parent" && <li><button type="button" className="link-btn" onClick={() => addKid(p, x.club)}>+ Add another child</button></li>}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          );
+        })}
+        {(() => {
+          const none = (people.data ?? []).filter(p => !p.roles.length);
+          if (!none.length) return null;
+          return (
+            <section className="role-group" aria-labelledby="rg-none">
+              <h3 id="rg-none" className="role-group-title">No role yet <span className="dim">({none.length})</span></h3>
+              <ul className="people">{none.map(p => <li key={p.user_id} className="person"><span className="person-name">{personName(p)}</span></li>)}</ul>
+            </section>
+          );
+        })()}
       </section>
     </AdminGate>
   );
