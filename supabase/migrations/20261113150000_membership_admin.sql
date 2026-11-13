@@ -1,6 +1,6 @@
 -- Membership administration (Accounts · Athletes · Registration)
 -- Spec: claude/specs/membership-admin.md (13 Nov 2026)
--- NOT YET APPLIED. Review, then apply to a branch / staging first.
+-- Applied 13 Nov 2026: staging (zefgaemhqgczyqwamfjs) then production (nxlgeykipnvswyeshrbl); role tests passed on both.
 --
 -- Decisions (Simon, 13 Nov 2026):
 --   * The app becomes the master record for members (SportsEngine Motion retired for membership).
