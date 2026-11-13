@@ -978,3 +978,13 @@ input.invalid { border-color: var(--red); outline-color: var(--red); }
 .mm-tag-foot { font-size: .85rem; }
 .mm-expo { margin: .5rem 0; }
 .mm-training summary { cursor: pointer; font-weight: 600; margin-top: .5rem; }
+
+/* Test sets: monthly window and swimmer comparison */
+.test-set-block + .test-set-block { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 12px; }
+.sub-title { font-size: 1rem; margin: 6px 0 4px; color: var(--navy); }
+h4.sub-title { font-size: .9rem; }
+.compare-list { margin: 10px 0; padding-left: 18px; font-size: .9rem; line-height: 1.5; }
+.compare-list .up { color: var(--green); }
+.compare-list .down { color: var(--red); }
+/* A wide chart scrolls inside its card instead of widening the page. */
+.chart-scroll { width: 100%; contain: inline-size; overflow-x: auto; }

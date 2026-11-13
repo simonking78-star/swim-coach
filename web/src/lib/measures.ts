@@ -412,3 +412,69 @@ export async function saveWindow(club: string, w: Omit<Window, "id" | "club_id" 
   fail(error);
 }
 export async function removeWindow(id: string) { const { error } = await db.from("mm_windows").update({ active: false }).eq("id", id); fail(error); }
+
+// ---------------------------------------------------------------------------
+// Monthly testing window and swimmer comparisons (graded repeat sets with the
+// workbook scoring: points 1/2/3 per rep below/at/above age level, and points
+// per age year = level × reps ÷ age). Worked out by the database.
+// ---------------------------------------------------------------------------
+export interface WindowRow {
+  result_id: string; swimmer_id: string; full_name: string; squad_id: string | null; squad_name: string | null; session_date: string;
+  level_key: string; level_no: number | null; level_label: string | null; age: number | null; value: number; max_reps: number | null;
+  points: number | null; points_per_age: number | null; vs_age: "below" | "at" | "above" | null; set_completed: boolean | null; benchmark: number | null;
+}
+export interface SwimmerCompare {
+  protocol_id: string; code: string; name: string; month: string; session_date: string; level_label: string | null; age: number | null;
+  value: number; max_reps: number | null; points: number | null; points_per_age: number | null; vs_age: "below" | "at" | "above" | null;
+  set_completed: boolean | null; benchmark: number | null; squad_name: string | null;
+  squad_n: number; squad_avg_ppa: number | null; squad_avg_points: number | null;
+  age_n: number; age_avg_ppa: number | null; age_avg_points: number | null;
+  history: { date: string; level: string | null; age: number | null; value: number; max_reps: number | null; points: number | null; ppa: number | null; vs_age: string | null; completed: boolean | null }[];
+}
+export const VS_AGE_LABEL: Record<string, string> = { below: "Below age level", at: "At age level", above: "Above age level" };
+
+const num = (x: unknown) => (x == null ? null : Number(x));
+
+/** First and last day of the calendar month holding `iso` (YYYY-MM-DD). */
+export function monthRange(iso: string): { from: string; to: string } {
+  const [y, m] = iso.slice(0, 7).split("-").map(Number);
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const mm = String(m).padStart(2, "0");
+  return { from: `${y}-${mm}-01`, to: `${y}-${mm}-${String(last).padStart(2, "0")}` };
+}
+export const monthLabel = (iso: string) => new Date(iso.slice(0, 7) + "-01T00:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+
+export async function loadWindowMonths(protocolId: string): Promise<{ month: string; swimmers: number }[]> {
+  const { data, error } = await db.rpc("mm_window_months", { p_protocol: protocolId });
+  fail(error);
+  return ((data ?? []) as { month: string; swimmers: number }[]).map(m => ({ month: m.month, swimmers: Number(m.swimmers) }));
+}
+export async function loadWindowRows(protocolId: string, month: string): Promise<WindowRow[]> {
+  const { from, to } = monthRange(month);
+  const { data, error } = await db.rpc("mm_window_rows", { p_protocol: protocolId, p_from: from, p_to: to });
+  fail(error);
+  return ((data ?? []) as WindowRow[]).map(r => ({
+    ...r, value: Number(r.value), max_reps: num(r.max_reps), points: num(r.points), points_per_age: num(r.points_per_age), benchmark: num(r.benchmark)
+  }));
+}
+export async function loadSwimmerCompare(swimmerId: string): Promise<SwimmerCompare[]> {
+  const { data, error } = await db.rpc("mm_swimmer_compare", { p_swimmer: swimmerId });
+  fail(error);
+  return ((data ?? []) as SwimmerCompare[]).map(r => ({
+    ...r, value: Number(r.value), max_reps: num(r.max_reps), points: num(r.points), points_per_age: num(r.points_per_age), benchmark: num(r.benchmark),
+    squad_avg_ppa: num(r.squad_avg_ppa), squad_avg_points: num(r.squad_avg_points), age_avg_ppa: num(r.age_avg_ppa), age_avg_points: num(r.age_avg_points),
+    history: (r.history ?? []).map(h => ({ ...h, value: Number(h.value), max_reps: num(h.max_reps), points: num(h.points), ppa: num(h.ppa) }))
+  }));
+}
+
+/** Round to 2 dp for display. */
+export const fmt2 = (x: number | null | undefined) => (x == null ? "–" : (Math.round(x * 100) / 100).toFixed(2));
+/** Signed difference and percentage against an average, e.g. "+0.54 (+25%)". */
+export function vsAverage(mine: number | null | undefined, avg: number | null | undefined, dp = 2, same = "level with the average"): { text: string; dir: "up" | "down" | "same" | null } {
+  if (mine == null || avg == null) return { text: "–", dir: null };
+  const d = mine - avg;
+  const f = (x: number) => (Math.round(Math.abs(x) * 10 ** dp) / 10 ** dp).toFixed(dp);
+  const pct = avg ? Math.round((d / avg) * 100) : null;
+  if (Math.abs(d) < 0.5 * 10 ** -dp) return { text: same, dir: "same" };
+  return { text: `${d > 0 ? "+" : "−"}${f(d)}${pct != null ? ` (${d > 0 ? "+" : "−"}${Math.abs(pct)}%)` : ""}`, dir: d > 0 ? "up" : "down" };
+}

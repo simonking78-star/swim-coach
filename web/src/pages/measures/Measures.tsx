@@ -41,7 +41,7 @@ export function NoAccess() {
 export const statusChip = (s: Status) => <span className={"chip mm-status mm-" + s}>{STATUS_LABEL[s]}</span>;
 
 export function MeasuresHub() {
-  const { canRun, canView } = useMeasuresAccess();
+  const { canRun, canView, ownOnly } = useMeasuresAccess();
   const { club } = useClub();
   const live = useQuery({ queryKey: ["mm_sessions", club, "live"], enabled: !!club && canRun, queryFn: () => loadSessions(club!, { status: "live" }) });
   const recent = useQuery({ queryKey: ["mm_sessions", club, "closed"], enabled: !!club && canRun, queryFn: () => loadSessions(club!, { status: "closed", limit: 6 }) });
@@ -52,6 +52,7 @@ export function MeasuresHub() {
 
   const tiles = [
     ...(canRun ? [{ to: "run", icon: "▶️", title: "Run a test", sub: "Pick a published protocol and level, on any date, for a squad or chosen swimmers" }] : []),
+    ...(ownOnly ? [] : [{ to: "monthly", icon: "📊", title: "Monthly testing window", sub: "Everyone tested in a month: points per age year against the at-age benchmark, with squad and age-group averages" }]),
     { to: "results", icon: "📏", title: "Results", sub: "Each swimmer against their own baseline, with change judged against the test's noise" },
     { to: "library", icon: "📚", title: "Protocol library", sub: "Fixed test protocols, their levels, versions and reliability" },
     { to: "windows", icon: "🗓️", title: "Testing windows", sub: "Planned testing dates, and the fixed T15–T30 day" },

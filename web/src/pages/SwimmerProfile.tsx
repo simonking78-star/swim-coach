@@ -15,6 +15,7 @@ import { fmtSessions } from "../lib/attendance";
 import { EntryBody } from "../components/feedbackParts";
 
 const EventChart = lazy(() => import("../components/EventChart"));
+const TestSetCard = lazy(() => import("../components/TestSetCard"));
 
 export function SwimmerProfile() {
   const { id } = useParams();
@@ -58,7 +59,7 @@ export function SwimmerProfile() {
               <button type="button" className="btn small" onClick={makePdf} disabled={pdf.busy}>{pdf.busy ? "Building PDF…" : "PDF report"}</button>
             </div>
             {pdf.msg && <p className="msg error" role="alert">{pdf.msg}</p>}
-            <p className="hint">The PDF covers attendance, personal bests and feedback.</p>
+            <p className="hint">The PDF covers attendance, personal bests, test sets and feedback.</p>
           </>
         )}
       </section>
@@ -102,6 +103,7 @@ export function SwimmerProfile() {
               : <PbList rows={results.data ?? []} loading={results.isLoading} error={!!results.error} onOpen={setEvent} />}
           </section>
 
+          <Suspense fallback={<section className="card"><h2 className="card-title">Test sets</h2><p className="dim">Loading…</p></section>}><TestSetCard swimmerId={sw.id} /></Suspense>
           <StopwatchCard swimmerId={sw.id} canDelete={canEdit(sectionLevel(access, "stopwatch"))} />
           <FeedbackArchive swimmerId={sw.id} />
         </div>

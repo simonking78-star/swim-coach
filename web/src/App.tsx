@@ -41,6 +41,8 @@ const WorkTagList = lazy(() => import("./pages/measures/WorkTags").then(x => ({ 
 const WorkTagPlan = lazy(() => import("./pages/measures/WorkTags").then(x => ({ default: x.WorkTagPlan })));
 const MmWindows = lazy(() => import("./pages/measures/Windows").then(x => ({ default: x.Windows })));
 const MmResults = lazy(() => import("./pages/measures/Results").then(x => ({ default: x.Results })));
+const MonthlyWindow = lazy(() => import("./pages/measures/MonthlyWindow").then(x => ({ default: x.MonthlyWindow })));
+const StatsMonthlyWindow = lazy(() => import("./pages/measures/MonthlyWindow").then(x => ({ default: x.StatsMonthlyWindow })));
 const RunTest = lazy(() => import("./pages/tests/RunTest").then(x => ({ default: x.RunTest })));
 const Users = lazy(() => import("./pages/admin/Users").then(x => ({ default: x.Users })));
 const AppDev = lazy(() => import("./pages/AppDev").then(x => ({ default: x.AppDev })));
@@ -106,6 +108,7 @@ function Gate() {
           <Route path="measures/run" element={wait(<StartRun />)} />
           <Route path="measures/session/:id" element={wait(<RunSession />)} />
           <Route path="measures/results" element={wait(<MmResults />)} />
+          <Route path="measures/monthly" element={wait(<MonthlyWindow />)} />
           <Route path="measures/windows" element={wait(<MmWindows />)} />
           <Route path="measures/work" element={wait(<WorkTagList />)} />
           <Route path="measures/work/:id" element={wait(<WorkTagPlan />)} />
@@ -120,6 +123,7 @@ function Gate() {
           <Route path="tests/run/:id" element={wait(<RunTest />)} />
           <Route path="statistics" element={<StatsHub />} />
           <Route path="statistics/tests" element={wait(<TestResults />)} />
+          <Route path="statistics/test-window" element={wait(<StatsMonthlyWindow />)} />
           <Route path="statistics/regression" element={wait(<Regression />)} />
           <Route path="statistics/compare" element={wait(<Compare />)} />
           <Route path="statistics/squad-review" element={<SquadReviewGate>{wait(<SquadReview />)}</SquadReviewGate>} />
