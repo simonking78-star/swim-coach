@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 
 // Native <dialog>: focus is trapped, Escape closes, the page behind is inert.
 // Tapping the backdrop also closes. Children render only while open.
-export function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode }) {
+export function Modal({ open, onClose, title, children, wide }: { open: boolean; onClose: () => void; title: ReactNode; children: ReactNode; wide?: boolean }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   useEffect(() => {
@@ -14,7 +14,7 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
   return (
     <dialog
       ref={ref}
-      className="modal"
+      className={"modal" + (wide ? " wide" : "")}
       aria-labelledby={titleId}
       onClose={onClose}
       onCancel={e => { e.preventDefault(); onClose(); }}

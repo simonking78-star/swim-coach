@@ -16,6 +16,7 @@ import { EntryBody } from "../components/feedbackParts";
 
 const EventChart = lazy(() => import("../components/EventChart"));
 const TestSetCard = lazy(() => import("../components/TestSetCard"));
+const MedicalCard = lazy(() => import("./membership/AthleteProfile").then(x => ({ default: x.MedicalCard })));
 
 export function SwimmerProfile() {
   const { id } = useParams();
@@ -104,6 +105,7 @@ export function SwimmerProfile() {
           </section>
 
           <Suspense fallback={<section className="card"><h2 className="card-title">Test sets</h2><p className="dim">Loading…</p></section>}><TestSetCard swimmerId={sw.id} /></Suspense>
+          {sectionLevel(access, "medical") !== "N" && <Suspense fallback={null}><MedicalCard swimmerId={sw.id} /></Suspense>}
           <StopwatchCard swimmerId={sw.id} canDelete={canEdit(sectionLevel(access, "stopwatch"))} />
           <FeedbackArchive swimmerId={sw.id} />
         </div>
@@ -132,7 +134,7 @@ function SwitchSwimmer({ currentId, onPick }: { currentId?: string; onPick: (id:
   );
 }
 
-function PbList({ rows, loading, error, onOpen }: { rows: ResultRow[]; loading: boolean; error: boolean; onOpen: (event: string) => void }) {
+export function PbList({ rows, loading, error, onOpen }: { rows: ResultRow[]; loading: boolean; error: boolean; onOpen: (event: string) => void }) {
   // Current PBs = rows already flagged is_pb (the same flag the rest of the app uses).
   const pbs = rows.filter(r => r.is_pb).sort((a, b) => a.event.localeCompare(b.event) || a.course.localeCompare(b.course));
   return (
@@ -157,7 +159,7 @@ function PbList({ rows, loading, error, onOpen }: { rows: ResultRow[]; loading: 
   );
 }
 
-function EventDetail({ event, rows, onBack }: { event: string; rows: ResultRow[]; onBack: () => void }) {
+export function EventDetail({ event, rows, onBack }: { event: string; rows: ResultRow[]; onBack: () => void }) {
   const swims = useMemo(() => rows.filter(r => r.event === event && parseTimeStr(r.swim_time_display) != null)
     .sort((a, b) => a.meet_date.localeCompare(b.meet_date)), [rows, event]);
   return (
