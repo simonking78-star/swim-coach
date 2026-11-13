@@ -4,15 +4,18 @@ import { PB_EVENTS, bestTimes, type ResultRow } from "./results";
 import { fmtDate, isoAdd, todayLocal } from "./util";
 import { fmtSessions, summarise } from "./attendance";
 import type { AttRow } from "./swimmers";
+import { VS_AGE_LABEL, fmt2, monthLabel, vsAverage, type SwimmerCompare } from "./measures";
 
 // Swimmer report PDF — same layout as the current app's buildSwimmerPdf():
 // 1. Attendance (30 / 90 days / all, then by month), 2. Personal best times
-// (fastest on record per event and course), 3. Feedback grouped by stroke.
+// (fastest on record per event and course), 3. Test sets (latest graded test set
+// against the rest of the squad, the age group and the at-age benchmark),
+// 4. Feedback grouped by stroke.
 
 type RGB = [number, number, number];
 interface Who { full_name: string; squad: string | null; date_of_birth: string | null; }
 
-export async function buildSwimmerPdf(sw: Who, club: string, att: AttRow[], results: ResultRow[], feedback: FbEntry[]) {
+export async function buildSwimmerPdf(sw: Who, club: string, att: AttRow[], results: ResultRow[], feedback: FbEntry[], tests: SwimmerCompare[] = []) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
@@ -113,8 +116,65 @@ export async function buildSwimmerPdf(sw: Who, club: string, att: AttRow[], resu
   para("Fastest swim on record in each event and course.", { size: 8.5, color: DIM });
   y += 10;
 
-  // ---- 3. Feedback ----
-  sectionHead("3. Feedback", 150);
+  // ---- 3. Test sets ----
+  sectionHead("3. Test sets", 150);
+  if (!tests.length) {
+    para("No graded test set on record.", { color: DIM });
+  } else {
+    for (const c of tests) {
+      need(260);
+      font(12, true, NAVY); doc.text(pdfSafe(`${c.code} - ${c.name}`), mL, y + 12); y += 20;
+      para(`Latest: ${fmtDate(c.session_date)}  -  ${c.level_label ?? ""}${c.squad_name ? `  -  tested in ${c.squad_name}` : ""}  -  age ${c.age ?? "?"}`, { size: 9.5, color: DIM });
+      y += 4;
+      table(
+        [{ h: "Reps completed", w: W * 0.2, align: "right" }, { h: "Set completed", w: W * 0.17 }, { h: "Points", w: W * 0.13, align: "right" }, { h: "Vs age level", w: W * 0.2 }, { h: "Pts per age yr", w: W * 0.15, align: "right" }, { h: "Benchmark", w: W * 0.15, align: "right" }],
+        [[`${c.value}/${c.max_reps ?? "?"}`, c.set_completed ? "Yes" : "No", c.points ?? "-", c.vs_age ? VS_AGE_LABEL[c.vs_age] : "-", fmt2(c.points_per_age), fmt2(c.benchmark)]]
+      );
+      para(`Compared with others tested in ${monthLabel(c.month)} (points per age year)`, { size: 10.5, bold: true, color: NAVY, gap: 2 });
+      y += 4;
+      const sq = vsAverage(c.points_per_age, c.squad_avg_ppa), ag = vsAverage(c.points_per_age, c.age_avg_ppa), bm = vsAverage(c.points_per_age, c.benchmark, 2, "on the benchmark");
+      table(
+        [{ h: "Compared with", w: W * 0.36 }, { h: "Swimmers", w: W * 0.13, align: "right" }, { h: "Pts per age yr", w: W * 0.17, align: "right" }, { h: "Avg points", w: W * 0.14, align: "right" }, { h: "Difference", w: W * 0.2, align: "right" }],
+        [
+          [`Rest of ${c.squad_name ?? "squad"}`, c.squad_n, c.squad_n ? fmt2(c.squad_avg_ppa) : "-", c.squad_avg_points ?? "-", c.squad_n ? sq.text : "-"],
+          [`Age ${c.age ?? "?"} (all squads)`, c.age_n, c.age_n ? fmt2(c.age_avg_ppa) : "-", c.age_avg_points ?? "-", c.age_n ? ag.text : "-"],
+          ["At-age benchmark", "", fmt2(c.benchmark), "", bm.text]
+        ]
+      );
+      // Bars: this swimmer, squad, age group, benchmark (same scale).
+      const bars: [string, number | null, RGB][] = [
+        ["This swimmer", c.points_per_age, c.vs_age === "above" ? [15, 122, 62] : c.vs_age === "at" ? [42, 120, 214] : [138, 164, 194]],
+        [`Rest of ${c.squad_name ?? "squad"}`, c.squad_n ? c.squad_avg_ppa : null, [185, 199, 216]],
+        [`Age ${c.age ?? "?"} average`, c.age_n ? c.age_avg_ppa : null, [214, 222, 232]],
+        ["At-age benchmark", c.benchmark, NAVY]
+      ];
+      const shown = bars.filter(b => b[1] != null) as [string, number, RGB][];
+      const max = Math.max(...shown.map(b => b[1]), 0.01);
+      const labelW = 130, barW = W - labelW - 50, bh = 14;
+      need(shown.length * (bh + 6) + 10);
+      for (const [label, v, col] of shown) {
+        font(9, false, TEXT); doc.text(pdfSafe(label), mL, y + 10.5);
+        doc.setFillColor(...col); doc.rect(mL + labelW, y, Math.max(1, (v / max) * barW), bh, "F");
+        font(9, true, NAVY); doc.text(fmt2(v), mL + labelW + (v / max) * barW + 5, y + 10.5);
+        y += bh + 6;
+      }
+      y += 4;
+      if (c.history.length > 1) {
+        para("Test history", { size: 10.5, bold: true, color: NAVY, gap: 4 });
+        y += 4;
+        table(
+          [{ h: "Date", w: W * 0.2 }, { h: "Level", w: W * 0.3 }, { h: "Age", w: W * 0.1, align: "right" }, { h: "Reps", w: W * 0.13, align: "right" }, { h: "Points", w: W * 0.12, align: "right" }, { h: "Pts per age yr", w: W * 0.15, align: "right" }],
+          [...c.history].reverse().map(h => [fmtDate(h.date), h.level ?? "-", h.age ?? "-", `${h.value}/${h.max_reps ?? "?"}`, h.points ?? "-", fmt2(h.ppa)])
+        );
+      }
+      para("Points per age year = level x reps completed / age. Points = reps x 1 (below age level), 2 (at) or 3 (above). Averages leave this swimmer out and use each swimmer's latest test in the same month.", { size: 8.5, color: DIM });
+      y += 10;
+    }
+  }
+  y += 8;
+
+  // ---- 4. Feedback ----
+  sectionHead("4. Feedback", 150);
   if (!feedback.length) {
     para("No feedback on record.", { color: DIM });
   } else {
@@ -145,8 +205,8 @@ export async function buildSwimmerPdf(sw: Who, club: string, att: AttRow[], resu
   return doc;
 }
 
-export async function shareSwimmerPdf(sw: Who, club: string, data: { attendance: AttRow[]; results: ResultRow[]; feedback: FbEntry[] }) {
-  const doc = await buildSwimmerPdf(sw, club, data.attendance, data.results, data.feedback);
+export async function shareSwimmerPdf(sw: Who, club: string, data: { attendance: AttRow[]; results: ResultRow[]; feedback: FbEntry[]; tests?: SwimmerCompare[] }) {
+  const doc = await buildSwimmerPdf(sw, club, data.attendance, data.results, data.feedback, data.tests ?? []);
   const slug = pdfSafe(sw.full_name || "swimmer").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   const filename = `swimmer-report-${slug || "swimmer"}-${todayLocal().date}.pdf`;
   const file = new File([doc.output("blob")], filename, { type: "application/pdf" });
