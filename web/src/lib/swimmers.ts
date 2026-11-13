@@ -129,9 +129,14 @@ export async function loadReportData(swimmerId: string) {
     sb.from("swimmer_feedback").select("id, thread_id, entry_type, category, criterion, status, observation, remedial_action, note, media, session_date, created_at").eq("swimmer_id", swimmerId)
   ]);
   for (const r of [at, rs, fb]) if (r.error) throw r.error;
+  // Graded test sets with squad / age-group comparison (Metrics & Measures). Optional:
+  // a failure here leaves the section out rather than stopping the report.
+  const { loadSwimmerCompare } = await import("./measures");
+  const tests = await loadSwimmerCompare(swimmerId).catch(() => []);
   return {
     attendance: (at.data ?? []) as AttRow[],
     results: (rs.data ?? []) as ResultRow[],
-    feedback: (fb.data ?? []) as unknown as FbEntry[]
+    feedback: (fb.data ?? []) as unknown as FbEntry[],
+    tests
   };
 }
