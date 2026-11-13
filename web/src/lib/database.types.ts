@@ -356,6 +356,152 @@ export type Database = {
         }
         Relationships: []
       }
+      club_competition_standards: {
+        Row: {
+          age_at: string | null
+          cct_gala_id: string | null
+          cct_time_type: string | null
+          club_id: string
+          confirmed_at: string
+          confirmed_by: string | null
+          county: string
+          cqt_gala_id: string
+          cqt_time_type: string
+          id: string
+          season_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          age_at?: string | null
+          cct_gala_id?: string | null
+          cct_time_type?: string | null
+          club_id: string
+          confirmed_at?: string
+          confirmed_by?: string | null
+          county: string
+          cqt_gala_id: string
+          cqt_time_type: string
+          id?: string
+          season_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          age_at?: string | null
+          cct_gala_id?: string | null
+          cct_time_type?: string | null
+          club_id?: string
+          confirmed_at?: string
+          confirmed_by?: string | null
+          county?: string
+          cqt_gala_id?: string
+          cqt_time_type?: string
+          id?: string
+          season_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_competition_standards_cct_gala_id_fkey"
+            columns: ["cct_gala_id"]
+            isOneToOne: false
+            referencedRelation: "galas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_competition_standards_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_competition_standards_cqt_gala_id_fkey"
+            columns: ["cqt_gala_id"]
+            isOneToOne: false
+            referencedRelation: "galas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_competition_standards_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: true
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_events: {
+        Row: {
+          club_id: string
+          created_at: string
+          created_by: string | null
+          ends_on: string
+          id: string
+          is_active: boolean
+          kind: string
+          location: string | null
+          note: string | null
+          season_id: string
+          squad_ids: string[] | null
+          starts_on: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          created_by?: string | null
+          ends_on: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          location?: string | null
+          note?: string | null
+          season_id: string
+          squad_ids?: string[] | null
+          starts_on: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          location?: string | null
+          note?: string | null
+          season_id?: string
+          squad_ids?: string[] | null
+          starts_on?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_events_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_events_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clubs: {
         Row: {
           club_code: string | null
@@ -524,6 +670,64 @@ export type Database = {
             columns: ["competition_id"]
             isOneToOne: false
             referencedRelation: "competitions_with_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competition_registrations: {
+        Row: {
+          club_id: string
+          created_at: string
+          id: string
+          recorded_by: string | null
+          season_competition_id: string
+          status: string
+          swimmer_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          id?: string
+          recorded_by?: string | null
+          season_competition_id: string
+          status?: string
+          swimmer_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          id?: string
+          recorded_by?: string | null
+          season_competition_id?: string
+          status?: string
+          swimmer_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competition_registrations_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_registrations_season_competition_id_fkey"
+            columns: ["season_competition_id"]
+            isOneToOne: false
+            referencedRelation: "season_competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_registrations_swimmer_id_fkey"
+            columns: ["swimmer_id"]
+            isOneToOne: false
+            referencedRelation: "swimmers"
             referencedColumns: ["id"]
           },
         ]
@@ -980,6 +1184,7 @@ export type Database = {
       }
       macros: {
         Row: {
+          colour: string | null
           created_at: string
           disabled_at: string | null
           head_coach_note: string | null
@@ -991,6 +1196,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          colour?: string | null
           created_at?: string
           disabled_at?: string | null
           head_coach_note?: string | null
@@ -1002,6 +1208,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          colour?: string | null
           created_at?: string
           disabled_at?: string | null
           head_coach_note?: string | null
@@ -1367,6 +1574,7 @@ export type Database = {
           is_active: boolean
           macro_id: string
           meso: number | null
+          planned_volume_m: number | null
           qes_focus: string | null
           technical_focus: number | null
           updated_at: string
@@ -1380,6 +1588,7 @@ export type Database = {
           is_active?: boolean
           macro_id: string
           meso?: number | null
+          planned_volume_m?: number | null
           qes_focus?: string | null
           technical_focus?: number | null
           updated_at?: string
@@ -1393,6 +1602,7 @@ export type Database = {
           is_active?: boolean
           macro_id?: string
           meso?: number | null
+          planned_volume_m?: number | null
           qes_focus?: string | null
           technical_focus?: number | null
           updated_at?: string
@@ -2308,6 +2518,89 @@ export type Database = {
             columns: ["season_id"]
             isOneToOne: false
             referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      season_windows: {
+        Row: {
+          club_id: string
+          created_at: string
+          created_by: string | null
+          ends_on: string
+          id: string
+          is_active: boolean
+          kind: string
+          note: string | null
+          season_id: string
+          squad_id: string | null
+          starts_on: string
+          test_set_template_id: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          created_by?: string | null
+          ends_on: string
+          id?: string
+          is_active?: boolean
+          kind: string
+          note?: string | null
+          season_id: string
+          squad_id?: string | null
+          starts_on: string
+          test_set_template_id?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          note?: string | null
+          season_id?: string
+          squad_id?: string | null
+          starts_on?: string
+          test_set_template_id?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_windows_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_windows_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_windows_squad_id_fkey"
+            columns: ["squad_id"]
+            isOneToOne: false
+            referencedRelation: "squads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_windows_test_set_template_id_fkey"
+            columns: ["test_set_template_id"]
+            isOneToOne: false
+            referencedRelation: "test_set_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -4076,6 +4369,7 @@ export type Database = {
         Args: { p_squad?: string; p_swimmer: string }
         Returns: Json
       }
+      season_plan_panels: { Args: { p_season: string }; Returns: Json }
       set_swimmer_birth_year: {
         Args: { p_swimmer: string; p_year: number }
         Returns: number

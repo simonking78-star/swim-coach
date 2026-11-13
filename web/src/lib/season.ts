@@ -453,7 +453,7 @@ export async function saveMacro(seasonId: string, d: MacroDraft): Promise<string
 // Micro-cycles: one card per week, sessions seeded from the squads' timetables
 // ---------------------------------------------------------------------------
 export interface MiSession { id: string | null; squad_id: string; session_date: string; start_time: string | null; end_time: string | null; timetable_session_id: string | null; stroke_focus: string; outline: string; }
-export interface MiWeek { id: string | null; no: number; wc: string; meso: string; qes: string; tech: string; breakDays: Set<number>; saved: MiSession[]; sessions: MiSession[]; }
+export interface MiWeek { id: string | null; no: number; wc: string; meso: string; qes: string; tech: string; vol: string; breakDays: Set<number>; saved: MiSession[]; sessions: MiSession[]; }
 export interface MiData {
   macro: { id: string; title: string; micro_count: number; season_id: string };
   squads: { id: string; name: string }[];
@@ -471,7 +471,7 @@ export async function loadMicroWeeks(macroId: string, season: Season | null, tod
   const squads = (m.macro_squads || []).filter(x => x.is_active).map(x => ({ id: x.squad_id, name: x.squads?.name || "Squad" }));
   const sqIds = squads.map(s => s.id);
   const [mi, sc, tt, br] = await Promise.all([
-    sb.from("micros").select("id, week_no, week_commencing, meso, qes_focus, technical_focus, break_days, micro_sessions(id, squad_id, session_date, start_time, end_time, stroke_focus, outline, timetable_session_id, is_active)")
+    sb.from("micros").select("id, week_no, week_commencing, meso, qes_focus, technical_focus, planned_volume_m, break_days, micro_sessions(id, squad_id, session_date, start_time, end_time, stroke_focus, outline, timetable_session_id, is_active)")
       .eq("macro_id", macroId).eq("is_active", true).order("week_no"),
     sb.from("season_competitions").select("id, name, date_from, date_to").eq("season_id", m.season_id).eq("is_active", true),
     sqIds.length
@@ -480,7 +480,7 @@ export async function loadMicroWeeks(macroId: string, season: Season | null, tod
     sb.from("season_breaks").select("break_start, break_end").eq("season_id", m.season_id).eq("is_active", true)
   ]);
   for (const r of [mi, sc, tt, br]) if (r.error) throw r.error;
-  type E = { id: string; week_no: number; week_commencing: string | null; meso: number | null; qes_focus: string | null; technical_focus: number | null; break_days: number[] | null; micro_sessions: (MiSession & { is_active: boolean; stroke_focus: string | null; outline: string | null })[] };
+  type E = { id: string; week_no: number; week_commencing: string | null; meso: number | null; qes_focus: string | null; technical_focus: number | null; planned_volume_m: number | null; break_days: number[] | null; micro_sessions: (MiSession & { is_active: boolean; stroke_focus: string | null; outline: string | null })[] };
   const existing = (mi.data ?? []) as unknown as E[];
   const weeks: MiWeek[] = [];
   for (let n = 1; n <= m.micro_count; n++) {
@@ -489,7 +489,7 @@ export async function loadMicroWeeks(macroId: string, season: Season | null, tod
       : prev?.wc ? isoAdd(prev.wc, 7)
       : n === 1 && season ? isoMonday(season.start_date > today ? season.start_date : today) : "";
     weeks.push({
-      id: e?.id ?? null, no: n, wc, meso: e?.meso ? String(e.meso) : "", qes: e?.qes_focus || "", tech: e?.technical_focus ? String(e.technical_focus) : "",
+      id: e?.id ?? null, no: n, wc, meso: e?.meso ? String(e.meso) : "", qes: e?.qes_focus || "", tech: e?.technical_focus ? String(e.technical_focus) : "", vol: e?.planned_volume_m != null ? String(e.planned_volume_m) : "",
       breakDays: new Set((e?.break_days || []).map(Number)),
       saved: (e?.micro_sessions || []).filter(s => s.is_active).map(s => ({ ...s, stroke_focus: s.stroke_focus || "", outline: s.outline || "" })),
       sessions: []
@@ -551,7 +551,7 @@ export async function saveMicros(d: MiData): Promise<MiWeek[]> {
   const t = now(), macroId = d.macro.id;
   const { data: saved, error } = await sb.from("micros").upsert(d.weeks.map(w => ({
     macro_id: macroId, week_no: w.no, week_commencing: w.wc, meso: w.meso ? +w.meso : null, qes_focus: w.qes || null,
-    technical_focus: w.tech ? +w.tech : null, break_days: [...w.breakDays].sort((a, b) => a - b), is_active: true, updated_at: t
+    technical_focus: w.tech ? +w.tech : null, planned_volume_m: w.vol.trim() ? Math.max(0, Math.round(+w.vol)) || null : null, break_days: [...w.breakDays].sort((a, b) => a - b), is_active: true, updated_at: t
   })) as never, { onConflict: "macro_id,week_no" }).select("id, week_no");
   if (error) throw error;
   const weeks = d.weeks.map(w => ({ ...w, sessions: w.sessions.map(s => ({ ...s })) }));
