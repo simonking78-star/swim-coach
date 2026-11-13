@@ -1152,3 +1152,7 @@ dialog.modal.wide { width: min(1040px, calc(100vw - 16px)); }
 .med-list div { display: grid; grid-template-columns: 170px 1fr; gap: 8px; }
 .med-list dt { font-weight: 600; color: var(--text-dim); font-size: .88rem; }
 .med-list dd { margin: 0; }
+.role-group { margin-top: 14px; }
+.role-group:first-of-type { margin-top: 6px; }
+.role-group-title { font-size: 1rem; color: var(--navy); margin: 0 0 4px; padding-bottom: 4px; border-bottom: 2px solid var(--border); }
+.role-group .person .person-role-top { align-items: center; }

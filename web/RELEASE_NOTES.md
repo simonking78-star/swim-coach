@@ -6,6 +6,7 @@ The version shown in the app footer comes from `package.json`. Bump it when a re
 - New Membership section (club admin edit, head coach read): Accounts, Athletes and Registration tabs, each a live table with chosen/reordered columns, search, per-column filters, sorting and CSV export.
 - Account profile: contact, home address, status (Pending new / Live / Suspended / Resigned), club roles, app access, guardians, linked athletes, fees and paid status. Save / Close.
 - Athlete profile: Details (age and year of birth from date of birth, squad registration and history, England number, total PBs, Swim England registration, fees, medical and emergency contacts, make inactive), Attendance (date range, 90-day default), Personal bests with history chart, Test sets.
+- Users & roles: "Superadmin" is now called "Development admin"; People with access is split into one section per role, showing names only (no email addresses or clubs).
 - Medical and emergency contacts also show (read only) on the Swimmers profile for the athlete's squad coaches.
 
 ## Earlier — Metrics & Measures

@@ -29,7 +29,7 @@ export const ACCESS_MATRIX: Record<Section, Partial<Record<Role, Level>>> = {
 const RANK: Record<Level, number> = { N: 0, CR: 1, SR: 2, R: 3, SE: 4, E: 5 };
 
 export const ROLE_LABEL: Record<Role, string> = {
-  superadmin: "Superadmin", club_admin: "Club admin", head_coach: "Head coach", coach: "Coach",
+  superadmin: "Development admin", club_admin: "Club admin", head_coach: "Head coach", coach: "Coach",
   helper: "Helper", parent: "Parent", swimmer: "Swimmer"
 };
 
