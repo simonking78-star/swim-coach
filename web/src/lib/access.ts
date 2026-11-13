@@ -5,7 +5,7 @@
 export type Role = "superadmin" | "club_admin" | "head_coach" | "coach" | "helper" | "parent" | "swimmer";
 export type Section =
   | "attendance" | "feedback" | "plans" | "timetables" | "season"
-  | "roster" | "stats" | "stopwatch" | "admin" | "appdev" | "membership" | "medical";
+  | "roster" | "stats" | "stopwatch" | "admin" | "appdev" | "membership" | "medical" | "registrations";
 /** E edit · SE edit own squads · R read · SR read own squads · CR read own child/self · N none */
 export type Level = "E" | "SE" | "R" | "SR" | "CR" | "N";
 
@@ -23,7 +23,9 @@ export const ACCESS_MATRIX: Record<Section, Partial<Record<Role, Level>>> = {
   // Membership administration (claude/specs/membership-admin.md, 13 Nov 2026)
   membership: { superadmin: "E", club_admin: "E", head_coach: "R" },
   // Medical + emergency contacts: special category. Coaches read their own squads only.
-  medical:    { superadmin: "E", club_admin: "E", head_coach: "R", coach: "SR" }
+  medical:    { superadmin: "E", club_admin: "E", head_coach: "R", coach: "SR" },
+  // Competition registrations (claude/specs/season-plan-desktop.md, 13 Nov 2026): coaches record their own squads
+  registrations: { superadmin: "E", club_admin: "E", head_coach: "E", coach: "SE" }
 };
 
 const RANK: Record<Level, number> = { N: 0, CR: 1, SR: 2, R: 3, SE: 4, E: 5 };

@@ -86,6 +86,8 @@ export function Micros() {
                 </select>
               </div>
             </div>
+            <label htmlFor={pre + "-vol"}>Planned volume <span className="dim">(metres, optional — used on the Season Plan until session plans are written)</span></label>
+            <input id={pre + "-vol"} type="number" inputMode="numeric" min={0} step={100} value={w.vol} onChange={e => setWeek(w.no, x => ({ ...x, vol: e.target.value }))} />
             <label htmlFor={pre + "-tech"}>Technical focus</label>
             <select id={pre + "-tech"} value={w.tech} onChange={e => setWeek(w.no, x => ({ ...x, tech: e.target.value }))}>
               <option value="">—</option>{TECH_FOCUS.slice(1).map((t, k) => <option key={t} value={String(k + 1)}>{k + 1}. {t}</option>)}

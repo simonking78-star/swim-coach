@@ -10,6 +10,8 @@ import { fmtRange, loadPlansBetween, pickMicros, pickSeason } from "../../lib/se
 import { fmtDate, fmtDdMm, isoAdd, todayLocal } from "../../lib/util";
 import { usePlanSquads, useSeasonCtx } from "../plans/PlanList";
 import { MicroChips } from "../timetables/Timetables";
+import { useMinWidth } from "../../lib/device";
+import { SeasonDesktop } from "./SeasonDesktop";
 
 // Season overview: one panel per squad with this week's training and the
 // season's forthcoming competitions. PLAN opens the season planner.
@@ -21,7 +23,15 @@ export function NoSeasonAccess() {
   return <><div className="page-head"><h1>Season planner</h1></div><p className="notice warn">Your role doesn't have access to the season planner.</p></>;
 }
 
+/** Laptops and desktops get the Season Plan calendar; phones and tablets keep the squad panels. */
 export function Season() {
+  const { access } = useAuth();
+  const desktop = useMinWidth(900);
+  if (sectionLevel(access, "season") === "N") return <NoSeasonAccess />;
+  return desktop ? <SeasonDesktop /> : <SeasonPhone />;
+}
+
+function SeasonPhone() {
   const { access } = useAuth();
   const level = sectionLevel(access, "season");
   const canPlan = canEdit(sectionLevel(access, "plans"));
