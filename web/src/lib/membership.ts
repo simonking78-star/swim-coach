@@ -191,7 +191,7 @@ export interface AthleteRow {
 export async function loadAthletes(club: string, withMedical: boolean): Promise<AthleteRow[]> {
   const cid = clubIdOf(club), yr = currentRegYear();
   const [s, a, r] = await Promise.all([
-    db.from("swimmers").select(`id, full_name, date_of_birth, gender, squad_id, swim_england_id, joined_club_on, account_id, ${SWIMMER_SQUAD}`).eq("club_id", cid).eq("active", true).order("full_name"),
+    db.from("swimmers").select(`id, full_name, date_of_birth, year_of_birth, gender, squad_id, swim_england_id, joined_club_on, account_id, ${SWIMMER_SQUAD}`).eq("club_id", cid).eq("active", true).order("full_name"),
     db.from("member_accounts").select("id, first_name, last_name, status").eq("club_id", cid),
     db.from("swim_england_registrations").select("swimmer_id, status, category").eq("club_id", cid).eq("reg_year", yr)
   ]);
@@ -202,7 +202,7 @@ export async function loadAthletes(club: string, withMedical: boolean): Promise<
   const pbRows = (await Promise.all(chunks.map(c => db.from("swim_results").select("swimmer_id").eq("is_pb", true).in("swimmer_id", c).limit(5000))))
     .flatMap(x => (check(x) ?? []) as { swimmer_id: string }[]);
   const med = withMedical ? await db.from("swimmer_medical").select("swimmer_id, conditions, medication, allergies").eq("club_id", cid) : null;
-  type Raw = Omit<AthleteRow, "squad" | "age" | "yob" | "account" | "account_status" | "pbs" | "seStatus" | "seCategory" | "medical" | "active" | "inactive_on"> & { sq: { name: string } | null };
+  type Raw = { year_of_birth: number | null } & Omit<AthleteRow, "squad" | "age" | "yob" | "account" | "account_status" | "pbs" | "seStatus" | "seCategory" | "medical" | "active" | "inactive_on"> & { sq: { name: string } | null };
   const accs = new Map(((check(a) ?? []) as { id: string; first_name: string; last_name: string; status: string }[]).map(x => [x.id, x]));
   const pbs: Record<string, number> = {};
   for (const x of pbRows) pbs[x.swimmer_id] = (pbs[x.swimmer_id] ?? 0) + 1;
@@ -212,7 +212,7 @@ export async function loadAthletes(club: string, withMedical: boolean): Promise<
     const acc = x.account_id ? accs.get(x.account_id) : undefined;
     const m = meds?.get(x.id);
     return {
-      ...x, age: calcAge(x.date_of_birth), yob: yearOf(x.date_of_birth),
+      ...x, age: calcAge(x.date_of_birth), yob: yearOf(x.date_of_birth) ?? x.year_of_birth,
       account: acc ? `${acc.last_name}, ${acc.first_name}` : null, account_status: acc?.status ?? null,
       pbs: pbs[x.id] ?? 0, seStatus: regs.get(x.id)?.status ?? null, seCategory: regs.get(x.id)?.category ?? null,
       medical: !meds ? null : !m ? "unknown" : (m.conditions || m.medication || m.allergies) ? "yes" : "none",
@@ -222,12 +222,12 @@ export async function loadAthletes(club: string, withMedical: boolean): Promise<
 }
 
 export interface AthleteDetail {
-  id: string; full_name: string; date_of_birth: string | null; gender: string | null; squad_id: string | null; squad: string | null;
+  id: string; full_name: string; date_of_birth: string | null; year_of_birth: number | null; gender: string | null; squad_id: string | null; squad: string | null;
   swim_england_id: string | null; joined_club_on: string | null; account_id: string | null; active: boolean; club_id: string;
 }
 export async function loadAthlete(id: string) {
   const [s, m, pb] = await Promise.all([
-    db.from("swimmers").select(`id, full_name, date_of_birth, gender, squad_id, swim_england_id, joined_club_on, account_id, active, club_id, ${SWIMMER_SQUAD}`).eq("id", id).single(),
+    db.from("swimmers").select(`id, full_name, date_of_birth, year_of_birth, gender, squad_id, swim_england_id, joined_club_on, account_id, active, club_id, ${SWIMMER_SQUAD}`).eq("id", id).single(),
     db.from("squad_memberships").select("id, joined_squad_on, ended_on, squad:squads(name)").eq("swimmer_id", id).order("joined_squad_on", { ascending: false }),
     db.from("swim_results").select("id", { count: "exact", head: true }).eq("swimmer_id", id).eq("is_pb", true)
   ]);
@@ -241,7 +241,11 @@ export async function loadAthlete(id: string) {
 }
 export async function saveAthlete(id: string, d: Pick<AthleteDetail, "full_name" | "date_of_birth" | "gender" | "swim_england_id" | "joined_club_on" | "account_id">) {
   if (!d.full_name.trim()) throw new Error("Enter the athlete's name.");
-  const body = tidy({ ...d, full_name: d.full_name.trim(), year_of_birth: yearOf(d.date_of_birth) });
+  if (d.gender && d.gender !== "Male" && d.gender !== "Female") throw new Error("Gender must be Male or Female.");
+  const { full_name, date_of_birth, gender, swim_england_id, joined_club_on, account_id } = d;
+  const body: Record<string, unknown> = tidy({ full_name: full_name.trim(), date_of_birth, gender, swim_england_id, joined_club_on, account_id });
+  // Year of birth follows the date of birth when there is one; otherwise the stored year is left alone.
+  if (date_of_birth) body.year_of_birth = yearOf(date_of_birth);
   check(await db.from("swimmers").update(body).eq("id", id));
 }
 
