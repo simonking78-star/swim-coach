@@ -44,6 +44,7 @@ const MmResults = lazy(() => import("./pages/measures/Results").then(x => ({ def
 const MonthlyWindow = lazy(() => import("./pages/measures/MonthlyWindow").then(x => ({ default: x.MonthlyWindow })));
 const StatsMonthlyWindow = lazy(() => import("./pages/measures/MonthlyWindow").then(x => ({ default: x.StatsMonthlyWindow })));
 const RunTest = lazy(() => import("./pages/tests/RunTest").then(x => ({ default: x.RunTest })));
+const Membership = lazy(() => import("./pages/membership/Membership").then(x => ({ default: x.Membership })));
 const Users = lazy(() => import("./pages/admin/Users").then(x => ({ default: x.Users })));
 const AppDev = lazy(() => import("./pages/AppDev").then(x => ({ default: x.AppDev })));
 const Admin = lazy(() => import("./pages/admin/Admin").then(x => ({ default: x.Admin })));
@@ -94,6 +95,7 @@ function Gate() {
           <Route path="season/macro/new" element={wait(<MacroForm key="new" />)} />
           <Route path="season/macro/:id" element={wait(<MacroForm />)} />
           <Route path="season/macro/:id/weeks" element={wait(<Micros />)} />
+          <Route path="membership" element={wait(<Membership />)} />
           <Route path="admin" element={wait(<Admin />)} />
           <Route path="admin/squads" element={wait(<ManageSquads />)} />
           <Route path="admin/add-member" element={wait(<AddMember />)} />
