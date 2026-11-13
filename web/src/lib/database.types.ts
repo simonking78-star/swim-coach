@@ -1022,6 +1022,276 @@ export type Database = {
           },
         ]
       }
+      member_accounts: {
+        Row: {
+          account_ref: string | null
+          address_line1: string | null
+          address_line2: string | null
+          applied_on: string | null
+          club_id: string
+          club_roles: string[]
+          county: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          first_name: string
+          id: string
+          joined_on: string | null
+          last_name: string
+          notes: string | null
+          phone_mobile: string | null
+          phone_other: string | null
+          postcode: string | null
+          resigned_on: string | null
+          status: string
+          status_changed_on: string
+          title: string | null
+          town: string | null
+          updated_at: string
+          updated_by: string | null
+          user_id: string | null
+        }
+        Insert: {
+          account_ref?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          applied_on?: string | null
+          club_id: string
+          club_roles?: string[]
+          county?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          first_name: string
+          id?: string
+          joined_on?: string | null
+          last_name: string
+          notes?: string | null
+          phone_mobile?: string | null
+          phone_other?: string | null
+          postcode?: string | null
+          resigned_on?: string | null
+          status?: string
+          status_changed_on?: string
+          title?: string | null
+          town?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          account_ref?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          applied_on?: string | null
+          club_id?: string
+          club_roles?: string[]
+          county?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          first_name?: string
+          id?: string
+          joined_on?: string | null
+          last_name?: string
+          notes?: string | null
+          phone_mobile?: string | null
+          phone_other?: string | null
+          postcode?: string | null
+          resigned_on?: string | null
+          status?: string
+          status_changed_on?: string
+          title?: string | null
+          town?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_accounts_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_audit: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          club_id: string | null
+          fields: string[] | null
+          id: number
+          row_id: string
+          table_name: string
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          club_id?: string | null
+          fields?: string[] | null
+          id?: never
+          row_id: string
+          table_name: string
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          club_id?: string | null
+          fields?: string[] | null
+          id?: never
+          row_id?: string
+          table_name?: string
+        }
+        Relationships: []
+      }
+      member_fees: {
+        Row: {
+          account_id: string
+          amount: number
+          club_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_on: string | null
+          fee_type: string
+          id: string
+          method: string | null
+          notes: string | null
+          paid_on: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string
+          swimmer_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          club_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_on?: string | null
+          fee_type: string
+          id?: string
+          method?: string | null
+          notes?: string | null
+          paid_on?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          swimmer_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          club_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_on?: string | null
+          fee_type?: string
+          id?: string
+          method?: string | null
+          notes?: string | null
+          paid_on?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          swimmer_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_fees_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "member_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_fees_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_fees_swimmer_id_fkey"
+            columns: ["swimmer_id"]
+            isOneToOne: false
+            referencedRelation: "swimmers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_guardians: {
+        Row: {
+          account_id: string
+          club_id: string
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          is_primary: boolean
+          phone: string | null
+          relationship: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_id: string
+          club_id: string
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          is_primary?: boolean
+          phone?: string | null
+          relationship?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_id?: string
+          club_id?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          is_primary?: boolean
+          phone?: string | null
+          relationship?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_guardians_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "member_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_guardians_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       micro_sessions: {
         Row: {
           created_at: string
@@ -1135,6 +1405,680 @@ export type Database = {
             columns: ["macro_id"]
             isOneToOne: false
             referencedRelation: "macros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mm_determinants: {
+        Row: {
+          code: string
+          name: string
+          sort: number
+        }
+        Insert: {
+          code: string
+          name: string
+          sort?: number
+        }
+        Update: {
+          code?: string
+          name?: string
+          sort?: number
+        }
+        Relationships: []
+      }
+      mm_protocol_versions: {
+        Row: {
+          club_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          intended_cycle: string | null
+          levels: Json
+          major: number
+          measure: Json
+          min_gap_days: number
+          minor: number
+          notes: string | null
+          protocol_id: string
+          published_at: string | null
+          published_by: string | null
+          sheet: Json
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intended_cycle?: string | null
+          levels?: Json
+          major?: number
+          measure?: Json
+          min_gap_days?: number
+          minor?: number
+          notes?: string | null
+          protocol_id: string
+          published_at?: string | null
+          published_by?: string | null
+          sheet?: Json
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intended_cycle?: string | null
+          levels?: Json
+          major?: number
+          measure?: Json
+          min_gap_days?: number
+          minor?: number
+          notes?: string | null
+          protocol_id?: string
+          published_at?: string | null
+          published_by?: string | null
+          sheet?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mm_protocol_versions_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_protocol_versions_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "mm_protocols"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mm_protocols: {
+        Row: {
+          better: string
+          club_id: string
+          code: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          determinant: string
+          fixed_date_only: boolean
+          id: string
+          kind: string
+          name: string
+          question_ids: string[]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          better: string
+          club_id: string
+          code: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          determinant: string
+          fixed_date_only?: boolean
+          id?: string
+          kind: string
+          name: string
+          question_ids?: string[]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          better?: string
+          club_id?: string
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          determinant?: string
+          fixed_date_only?: boolean
+          id?: string
+          kind?: string
+          name?: string
+          question_ids?: string[]
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mm_protocols_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_protocols_determinant_fkey"
+            columns: ["determinant"]
+            isOneToOne: false
+            referencedRelation: "mm_determinants"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      mm_questions: {
+        Row: {
+          active: boolean
+          club_id: string
+          created_at: string
+          id: string
+          sort: number
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          club_id: string
+          created_at?: string
+          id?: string
+          sort?: number
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          club_id?: string
+          created_at?: string
+          id?: string
+          sort?: number
+          text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mm_questions_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mm_reliability: {
+        Row: {
+          club_id: string
+          created_at: string
+          cv_pct: number | null
+          decision: string | null
+          icc: number | null
+          id: string
+          level_key: string
+          n: number | null
+          notes: string | null
+          studied_on: string | null
+          swc: number | null
+          te: number
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          cv_pct?: number | null
+          decision?: string | null
+          icc?: number | null
+          id?: string
+          level_key: string
+          n?: number | null
+          notes?: string | null
+          studied_on?: string | null
+          swc?: number | null
+          te: number
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          cv_pct?: number | null
+          decision?: string | null
+          icc?: number | null
+          id?: string
+          level_key?: string
+          n?: number | null
+          notes?: string | null
+          studied_on?: string | null
+          swc?: number | null
+          te?: number
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mm_reliability_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_reliability_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "mm_protocol_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mm_results: {
+        Row: {
+          age: number | null
+          age_level: number | null
+          baseline_id: string | null
+          caution: string[]
+          change_base: number | null
+          change_prev: number | null
+          club_id: string | null
+          conditions: Json
+          created_at: string
+          days_since_base: number | null
+          days_since_prev: number | null
+          exposure: Json | null
+          flag: string | null
+          id: string
+          is_baseline: boolean
+          legal: boolean | null
+          level_key: string
+          major: number | null
+          not_tested_reason: string | null
+          note: string | null
+          points: number | null
+          points_per_age: number | null
+          previous_id: string | null
+          protocol_id: string | null
+          raw: Json
+          rebaseline_reason: string | null
+          recorded_by: string | null
+          scored_age: number | null
+          session_date: string | null
+          session_id: string
+          set_completed: boolean | null
+          squad_id: string | null
+          status: string
+          swimmer_id: string
+          updated_at: string
+          value: number | null
+          version_id: string | null
+          vs_age: string | null
+          year_of_birth: number | null
+        }
+        Insert: {
+          age?: number | null
+          age_level?: number | null
+          baseline_id?: string | null
+          caution?: string[]
+          change_base?: number | null
+          change_prev?: number | null
+          club_id?: string | null
+          conditions?: Json
+          created_at?: string
+          days_since_base?: number | null
+          days_since_prev?: number | null
+          exposure?: Json | null
+          flag?: string | null
+          id?: string
+          is_baseline?: boolean
+          legal?: boolean | null
+          level_key: string
+          major?: number | null
+          not_tested_reason?: string | null
+          note?: string | null
+          points?: number | null
+          points_per_age?: number | null
+          previous_id?: string | null
+          protocol_id?: string | null
+          raw?: Json
+          rebaseline_reason?: string | null
+          recorded_by?: string | null
+          scored_age?: number | null
+          session_date?: string | null
+          session_id: string
+          set_completed?: boolean | null
+          squad_id?: string | null
+          status?: string
+          swimmer_id: string
+          updated_at?: string
+          value?: number | null
+          version_id?: string | null
+          vs_age?: string | null
+          year_of_birth?: number | null
+        }
+        Update: {
+          age?: number | null
+          age_level?: number | null
+          baseline_id?: string | null
+          caution?: string[]
+          change_base?: number | null
+          change_prev?: number | null
+          club_id?: string | null
+          conditions?: Json
+          created_at?: string
+          days_since_base?: number | null
+          days_since_prev?: number | null
+          exposure?: Json | null
+          flag?: string | null
+          id?: string
+          is_baseline?: boolean
+          legal?: boolean | null
+          level_key?: string
+          major?: number | null
+          not_tested_reason?: string | null
+          note?: string | null
+          points?: number | null
+          points_per_age?: number | null
+          previous_id?: string | null
+          protocol_id?: string | null
+          raw?: Json
+          rebaseline_reason?: string | null
+          recorded_by?: string | null
+          scored_age?: number | null
+          session_date?: string | null
+          session_id?: string
+          set_completed?: boolean | null
+          squad_id?: string | null
+          status?: string
+          swimmer_id?: string
+          updated_at?: string
+          value?: number | null
+          version_id?: string | null
+          vs_age?: string | null
+          year_of_birth?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mm_results_baseline_id_fkey"
+            columns: ["baseline_id"]
+            isOneToOne: false
+            referencedRelation: "mm_results"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_results_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_results_previous_id_fkey"
+            columns: ["previous_id"]
+            isOneToOne: false
+            referencedRelation: "mm_results"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_results_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "mm_protocols"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "mm_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_results_squad_id_fkey"
+            columns: ["squad_id"]
+            isOneToOne: false
+            referencedRelation: "squads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_results_swimmer_id_fkey"
+            columns: ["swimmer_id"]
+            isOneToOne: false
+            referencedRelation: "swimmers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_results_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "mm_protocol_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mm_sessions: {
+        Row: {
+          as_protocol: boolean
+          clock_started_at: string | null
+          closed_at: string | null
+          club_id: string | null
+          course: string | null
+          created_at: string
+          created_by: string | null
+          cycle_focus: string | null
+          cycle_week_no: number | null
+          group_type: string
+          id: string
+          notes: string | null
+          on_cycle: boolean | null
+          pool: string | null
+          protocol_id: string | null
+          session_date: string
+          squad_id: string | null
+          status: string
+          swimmer_ids: string[]
+          tester: string | null
+          version_id: string
+          window_id: string | null
+        }
+        Insert: {
+          as_protocol?: boolean
+          clock_started_at?: string | null
+          closed_at?: string | null
+          club_id?: string | null
+          course?: string | null
+          created_at?: string
+          created_by?: string | null
+          cycle_focus?: string | null
+          cycle_week_no?: number | null
+          group_type: string
+          id?: string
+          notes?: string | null
+          on_cycle?: boolean | null
+          pool?: string | null
+          protocol_id?: string | null
+          session_date?: string
+          squad_id?: string | null
+          status?: string
+          swimmer_ids?: string[]
+          tester?: string | null
+          version_id: string
+          window_id?: string | null
+        }
+        Update: {
+          as_protocol?: boolean
+          clock_started_at?: string | null
+          closed_at?: string | null
+          club_id?: string | null
+          course?: string | null
+          created_at?: string
+          created_by?: string | null
+          cycle_focus?: string | null
+          cycle_week_no?: number | null
+          group_type?: string
+          id?: string
+          notes?: string | null
+          on_cycle?: boolean | null
+          pool?: string | null
+          protocol_id?: string | null
+          session_date?: string
+          squad_id?: string | null
+          status?: string
+          swimmer_ids?: string[]
+          tester?: string | null
+          version_id?: string
+          window_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mm_sessions_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_sessions_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "mm_protocols"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_sessions_squad_id_fkey"
+            columns: ["squad_id"]
+            isOneToOne: false
+            referencedRelation: "squads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_sessions_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "mm_protocol_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_sessions_window_id_fkey"
+            columns: ["window_id"]
+            isOneToOne: false
+            referencedRelation: "mm_windows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mm_trials: {
+        Row: {
+          created_at: string
+          distance_m: number | null
+          id: string
+          illegal_reason: string | null
+          legal: boolean
+          order_no: number | null
+          result_id: string
+          session_id: string
+          splits: Json
+          stroke_count: number | null
+          swimmer_id: string
+          time_s: number | null
+          trial_no: number
+          updated_at: string
+          variant: string
+        }
+        Insert: {
+          created_at?: string
+          distance_m?: number | null
+          id?: string
+          illegal_reason?: string | null
+          legal?: boolean
+          order_no?: number | null
+          result_id: string
+          session_id: string
+          splits?: Json
+          stroke_count?: number | null
+          swimmer_id: string
+          time_s?: number | null
+          trial_no: number
+          updated_at?: string
+          variant?: string
+        }
+        Update: {
+          created_at?: string
+          distance_m?: number | null
+          id?: string
+          illegal_reason?: string | null
+          legal?: boolean
+          order_no?: number | null
+          result_id?: string
+          session_id?: string
+          splits?: Json
+          stroke_count?: number | null
+          swimmer_id?: string
+          time_s?: number | null
+          trial_no?: number
+          updated_at?: string
+          variant?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mm_trials_result_id_fkey"
+            columns: ["result_id"]
+            isOneToOne: false
+            referencedRelation: "mm_results"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_trials_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "mm_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mm_trials_swimmer_id_fkey"
+            columns: ["swimmer_id"]
+            isOneToOne: false
+            referencedRelation: "swimmers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mm_windows: {
+        Row: {
+          active: boolean
+          club_id: string
+          created_at: string
+          ends_on: string
+          id: string
+          kind: string
+          name: string
+          protocol_ids: string[]
+          starts_on: string
+        }
+        Insert: {
+          active?: boolean
+          club_id: string
+          created_at?: string
+          ends_on: string
+          id?: string
+          kind: string
+          name: string
+          protocol_ids?: string[]
+          starts_on: string
+        }
+        Update: {
+          active?: boolean
+          club_id?: string
+          created_at?: string
+          ends_on?: string
+          id?: string
+          kind?: string
+          name?: string
+          protocol_ids?: string[]
+          starts_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mm_windows_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
             referencedColumns: ["id"]
           },
         ]
@@ -1900,6 +2844,63 @@ export type Database = {
           },
         ]
       }
+      swim_england_registrations: {
+        Row: {
+          category: string
+          club_id: string
+          expires_on: string | null
+          id: string
+          notes: string | null
+          reg_year: number
+          registered_on: string | null
+          status: string
+          swimmer_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category: string
+          club_id: string
+          expires_on?: string | null
+          id?: string
+          notes?: string | null
+          reg_year: number
+          registered_on?: string | null
+          status?: string
+          swimmer_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category?: string
+          club_id?: string
+          expires_on?: string | null
+          id?: string
+          notes?: string | null
+          reg_year?: number
+          registered_on?: string | null
+          status?: string
+          swimmer_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "swim_england_registrations_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "swim_england_registrations_swimmer_id_fkey"
+            columns: ["swimmer_id"]
+            isOneToOne: false
+            referencedRelation: "swimmers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       swim_results: {
         Row: {
           age_at_swim: number | null
@@ -2062,6 +3063,60 @@ export type Database = {
           },
         ]
       }
+      swimmer_emergency_contacts: {
+        Row: {
+          club_id: string
+          full_name: string
+          id: string
+          phone: string
+          phone_alt: string | null
+          priority: number
+          relationship: string | null
+          swimmer_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          club_id: string
+          full_name: string
+          id?: string
+          phone: string
+          phone_alt?: string | null
+          priority?: number
+          relationship?: string | null
+          swimmer_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          club_id?: string
+          full_name?: string
+          id?: string
+          phone?: string
+          phone_alt?: string | null
+          priority?: number
+          relationship?: string | null
+          swimmer_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "swimmer_emergency_contacts_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "swimmer_emergency_contacts_swimmer_id_fkey"
+            columns: ["swimmer_id"]
+            isOneToOne: false
+            referencedRelation: "swimmers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       swimmer_feedback: {
         Row: {
           category: string
@@ -2071,6 +3126,9 @@ export type Database = {
           criterion: string | null
           entry_type: string
           id: string
+          measure_code: string | null
+          measure_context: string | null
+          measure_value: number | null
           media: Json
           note: string | null
           observation: string | null
@@ -2090,6 +3148,9 @@ export type Database = {
           criterion?: string | null
           entry_type: string
           id?: string
+          measure_code?: string | null
+          measure_context?: string | null
+          measure_value?: number | null
           media?: Json
           note?: string | null
           observation?: string | null
@@ -2109,6 +3170,9 @@ export type Database = {
           criterion?: string | null
           entry_type?: string
           id?: string
+          measure_code?: string | null
+          measure_context?: string | null
+          measure_value?: number | null
           media?: Json
           note?: string | null
           observation?: string | null
@@ -2144,8 +3208,69 @@ export type Database = {
           },
         ]
       }
+      swimmer_medical: {
+        Row: {
+          allergies: string | null
+          club_id: string
+          conditions: string | null
+          consent_emergency_treatment: boolean | null
+          gp_name: string | null
+          gp_phone: string | null
+          medication: string | null
+          other_notes: string | null
+          reviewed_on: string | null
+          swimmer_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          allergies?: string | null
+          club_id: string
+          conditions?: string | null
+          consent_emergency_treatment?: boolean | null
+          gp_name?: string | null
+          gp_phone?: string | null
+          medication?: string | null
+          other_notes?: string | null
+          reviewed_on?: string | null
+          swimmer_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          allergies?: string | null
+          club_id?: string
+          conditions?: string | null
+          consent_emergency_treatment?: boolean | null
+          gp_name?: string | null
+          gp_phone?: string | null
+          medication?: string | null
+          other_notes?: string | null
+          reviewed_on?: string | null
+          swimmer_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "swimmer_medical_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "swimmer_medical_swimmer_id_fkey"
+            columns: ["swimmer_id"]
+            isOneToOne: true
+            referencedRelation: "swimmers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       swimmers: {
         Row: {
+          account_id: string | null
           active: boolean | null
           club: string | null
           club_id: string | null
@@ -2165,6 +3290,7 @@ export type Database = {
           year_of_birth: number | null
         }
         Insert: {
+          account_id?: string | null
           active?: boolean | null
           club?: string | null
           club_id?: string | null
@@ -2184,6 +3310,7 @@ export type Database = {
           year_of_birth?: number | null
         }
         Update: {
+          account_id?: string | null
           active?: boolean | null
           club?: string | null
           club_id?: string | null
@@ -2203,6 +3330,13 @@ export type Database = {
           year_of_birth?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "swimmers_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "member_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "swimmers_club_id_fkey"
             columns: ["club_id"]
@@ -2849,6 +3983,94 @@ export type Database = {
               swimmer_id: string
             }[]
           }
+      mm_cycle_week: {
+        Args: { p_club: string; p_date: string; p_squad: string }
+        Returns: {
+          focus: string
+          week_no: number
+        }[]
+      }
+      mm_plan_lines: {
+        Args: { p_plan: string }
+        Returns: {
+          auto_tags: string[]
+          confirmed: boolean
+          drill_ids: string[]
+          heading: string
+          line_no: number
+          line_path: number[]
+          metres: number
+          mult: number
+          strokes: string[]
+          tags: string[]
+          text: string
+        }[]
+      }
+      mm_refresh_exposure: { Args: { p_club: string }; Returns: number }
+      mm_set_rebaseline: {
+        Args: { p_reason: string; p_result: string }
+        Returns: undefined
+      }
+      mm_swimmer_compare: {
+        Args: { p_swimmer: string }
+        Returns: {
+          age: number
+          age_avg_points: number
+          age_avg_ppa: number
+          age_n: number
+          benchmark: number
+          code: string
+          history: Json
+          level_label: string
+          max_reps: number
+          month: string
+          name: string
+          points: number
+          points_per_age: number
+          protocol_id: string
+          session_date: string
+          set_completed: boolean
+          squad_avg_points: number
+          squad_avg_ppa: number
+          squad_n: number
+          squad_name: string
+          value: number
+          vs_age: string
+        }[]
+      }
+      mm_swimmer_exposure: {
+        Args: { p_from: string; p_swimmer: string; p_to: string }
+        Returns: Json
+      }
+      mm_window_months: {
+        Args: { p_protocol: string }
+        Returns: {
+          month: string
+          swimmers: number
+        }[]
+      }
+      mm_window_rows: {
+        Args: { p_from: string; p_protocol: string; p_to: string }
+        Returns: {
+          age: number
+          benchmark: number
+          full_name: string
+          level_key: string
+          level_label: string
+          level_no: number
+          max_reps: number
+          points: number
+          points_per_age: number
+          result_id: string
+          session_date: string
+          set_completed: boolean
+          squad_id: string
+          squad_name: string
+          swimmer_id: string
+          value: number
+          vs_age: string
+        }[]
+      }
       my_access: { Args: never; Returns: Json }
       reactivate_swimmer: {
         Args: { p_squad?: string; p_swimmer: string }
