@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { ClubPicker } from "../club/ClubPicker";
+import { useClub } from "../club/ClubProvider";
 import { allowedItems, PANELS, useHomeLayout, type LayoutItem } from "../home/layout";
 import { PANEL_COMPONENTS } from "../home/Panels";
 import { SECTIONS } from "../sections";
@@ -10,6 +11,7 @@ import { SECTIONS } from "../sections";
 export function Home() {
   const { access } = useAuth();
   const { layout, loading } = useHomeLayout();
+  const { club } = useClub();
   const { panels, buttons } = allowedItems(layout, access);
   const shownPanels = panels.filter(p => p.visible);
   const shownButtons = buttons.filter(b => b.visible);
@@ -37,7 +39,7 @@ export function Home() {
   const clubGroup = clubPanels.length > 0 && (
     <section className="panel-group" aria-labelledby="club-group-title">
       <div className="group-head">
-        <h2 id="club-group-title" className="group-title">Club</h2>
+        <h2 id="club-group-title" className="group-title">Club{club && <span className="desk-only"> · {club}</span>}</h2>
         <ClubPicker hideLabel />
       </div>
       {renderPanels(clubPanels)}

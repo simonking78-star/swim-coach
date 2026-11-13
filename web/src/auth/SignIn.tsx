@@ -1,5 +1,11 @@
 import { useState, type FormEvent } from "react";
-import { sb } from "../lib/supabase";
+import { AUTH_STORAGE_KEY, sb } from "../lib/supabase";
+import { isSharedDevice, setSharedDevice } from "../lib/device";
+import { IDLE_FLAG } from "../components/IdleGuard";
+
+function takeIdleFlag(): boolean {
+  try { const on = sessionStorage.getItem(IDLE_FLAG) === "1"; sessionStorage.removeItem(IDLE_FLAG); return on; } catch { return false; }
+}
 import { useAuth } from "./AuthProvider";
 
 type Msg = { text: string; error?: boolean } | null;
@@ -9,13 +15,21 @@ export function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [shared, setShared] = useState(isSharedDevice);
   // Arrived from an invite / sign-in / reset link that had expired or was already used.
-  const [msg, setMsg] = useState<Msg>(LINK_ERROR ? { text: "That sign-in link has expired or was already used. Ask your club admin for a new one, or use “Forgotten your password?” below.", error: true } : null);
+  const [msg, setMsg] = useState<Msg>(() => {
+    if (LINK_ERROR) return { text: "That sign-in link has expired or was already used. Ask your club admin for a new one, or use “Forgotten your password?” below.", error: true };
+    if (takeIdleFlag()) return { text: "You were signed out after 15 minutes without use (shared computer)." };
+    return null;
+  });
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!email.trim() || !password) { setMsg({ text: "Enter your email and password.", error: true }); return; }
     setBusy(true);
+    // Shared computer: make sure no long-lived sign-in is left behind from before.
+    setSharedDevice(shared);
+    if (shared) { try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch { /* storage unavailable */ } }
     const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
     setBusy(false);
     setPassword("");
@@ -38,6 +52,10 @@ export function SignIn() {
         <p className="dim">Sign in with the account your club invited you to.</p>
         <label>Email<input type="email" autoComplete="username" value={email} onChange={e => setEmail(e.target.value)} /></label>
         <label>Password<input type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} /></label>
+        <label className="check-line">
+          <input type="checkbox" checked={shared} onChange={e => setShared(e.target.checked)} />
+          <span>This is a shared computer<span className="dim block small">Sign me out when the browser closes, or after 15 minutes without use</span></span>
+        </label>
         {msg && <p className={msg.error ? "msg error" : "msg"} role="status">{msg.text}</p>}
         <button className="btn primary" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
         <button type="button" className="link-btn" onClick={forgot}>Forgotten your password?</button>

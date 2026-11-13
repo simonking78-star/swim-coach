@@ -29,6 +29,14 @@ export const SECTIONS: NavSection[] = [
   { key: "appdev",       label: "App dev",          icon: "🛠️", blurb: "Development actions and milestones",   section: "appdev",     legacyGo: "appdev",       migrated: true  }
 ];
 
+/** Menu groups (A-119). Sections appear in this order, under these headings. */
+export const NAV_GROUPS: { label: string; keys: string[] }[] = [
+  { label: "Daily",           keys: ["attendance", "feedback", "stopwatch"] },
+  { label: "Planning",        keys: ["season", "timetables", "sessions", "drills", "competitions"] },
+  { label: "Swimmers & data", keys: ["swimmers", "measures", "statistics"] },
+  { label: "Admin",           keys: ["admin", "appdev"] }
+];
+
 /** The classic (pre-React) app, kept at /classic/ as a fallback after the switchover. */
 export const CLASSIC_URL = "/classic/";
 export const legacyUrl = (go: string) => `${CLASSIC_URL}?go=${encodeURIComponent(go)}`;

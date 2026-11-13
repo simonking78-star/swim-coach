@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { allowedItems, defaultLayout, PANELS, useHomeLayout, type HomeLayout, type LayoutItem } from "../home/layout";
 import { SECTIONS } from "../sections";
+import { isSharedDevice, readDensity, setDensity, type Density } from "../lib/device";
 
 type ListKey = keyof HomeLayout;
 
@@ -69,6 +70,7 @@ export function Settings() {
             onMove={(i, d) => move("buttons", allowed.buttons, i, d)}
             empty="No sections are available for your role."
           />
+          <ThisDevice />
           <InstallHelp />
           <div className="settings-foot">
             <button className="btn" onClick={() => apply(defaultLayout())} disabled={save.isPending}>Reset to default</button>
@@ -146,6 +148,29 @@ function InstallHelp() {
           <li>Tap <strong>Install app</strong> (or <strong>Add to Home screen</strong>), then <strong>Install</strong>.</li>
         </ol>
       </details>
+    </section>
+  );
+}
+
+// Display choices for this browser only (A-121). Density matters only with a mouse;
+// phones and tablets keep their touch sizes whatever is chosen here.
+function ThisDevice() {
+  const [density, setD] = useState<Density>(readDensity);
+  const pick = (d: Density) => { setD(d); setDensity(d); };
+  return (
+    <section className="card settings-card" aria-labelledby="dev-title">
+      <h2 id="dev-title">This device</h2>
+      <p className="dim">Saved in this browser only.</p>
+      <fieldset className="choice-set">
+        <legend>Size of buttons and rows with a mouse</legend>
+        <div className="seg seg-2">
+          {([["compact", "Compact"], ["comfortable", "Comfortable"]] as [Density, string][]).map(([d, l]) => (
+            <button key={d} type="button" className={"seg-btn" + (density === d ? " on" : "")} aria-pressed={density === d} onClick={() => pick(d)}>{l}</button>
+          ))}
+        </div>
+      </fieldset>
+      <p className="hint">Compact fits more on a desktop screen. Touch screens always use the larger size.</p>
+      {isSharedDevice() && <p className="hint">Signed in as a <strong>shared computer</strong>: you'll be signed out when the browser closes or after 15 minutes without use.</p>}
     </section>
   );
 }

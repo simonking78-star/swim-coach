@@ -16,6 +16,11 @@
   --radius: 14px;
   --shadow: 0 4px 18px rgba(11, 37, 69, .08);
   --sidenav-w: 240px;
+  /* Control sizes: 44px touch targets; smaller with a mouse (A-121, see "Desktop" at the end) */
+  --ctl-h: 44px;
+  --nav-h: 44px;
+  --cell-py: 8px;
+  --topbar-h: 64px;
 }
 
 * { box-sizing: border-box; }
@@ -35,7 +40,7 @@ h1 { font-size: 1.35rem; margin: 0; }
 /* ---------- Buttons & inputs ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
-  min-height: 44px; padding: 10px 18px; border-radius: 10px;
+  min-height: var(--ctl-h); padding: 10px 18px; border-radius: 10px;
   border: 1px solid var(--border); background: var(--card); color: var(--text);
   font: inherit; font-weight: 700; text-decoration: none; cursor: pointer;
 }
@@ -51,7 +56,7 @@ h1 { font-size: 1.35rem; margin: 0; }
 label { display: block; font-size: .85rem; font-weight: 600; margin: 12px 0 0; }
 input, select {
   font: inherit; font-size: 16px; /* stops iOS zooming on focus */
-  width: 100%; margin-top: 6px; padding: 10px 12px; min-height: 44px;
+  width: 100%; margin-top: 6px; padding: 10px 12px; min-height: var(--ctl-h);
   border: 1px solid var(--border); border-radius: 10px; background: #fff; color: var(--text);
 }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
@@ -112,10 +117,13 @@ input, select {
 .scrim { display: none; }
 .menu-open .scrim { display: block; position: fixed; inset: 0; z-index: 35; background: rgba(11,37,69,.4); }
 .nav-item {
-  display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 8px 12px;
+  display: flex; align-items: center; gap: 12px; min-height: var(--nav-h); padding: 8px 12px;
   border-radius: 10px; color: var(--text); text-decoration: none; font-weight: 600; font-size: .95rem;
 }
-.nav-item span { width: 24px; text-align: center; }
+.nav-icon { width: 24px; text-align: center; flex: 0 0 auto; }
+.nav-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-group-title { margin: 12px 12px 2px; font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); }
+.nav-collapse { display: none; }
 .nav-item:hover { background: var(--grey-bg); }
 .nav-item.active { background: #e3eef9; color: var(--navy); }
 .nav-foot { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); }
@@ -124,7 +132,7 @@ input, select {
   .menu-btn { display: none; }
   .sidenav {
     position: sticky; top: 0; transform: none; transition: none;
-    top: 64px; height: calc(100dvh - 64px); width: var(--sidenav-w);
+    top: var(--topbar-h); height: calc(100dvh - var(--topbar-h)); width: var(--sidenav-w);
     background: transparent; border-right: none; padding-top: 20px;
     visibility: visible; pointer-events: auto;
   }
@@ -173,7 +181,7 @@ h2 { font-size: 1.05rem; margin: 0; }
 
 .table-wrap { overflow-x: auto; margin: 0 -4px; }
 table.data { width: 100%; border-collapse: collapse; font-size: .9rem; }
-table.data th, table.data td { padding: 8px 6px; border-bottom: 1px solid var(--border); text-align: left; }
+table.data th, table.data td { padding: var(--cell-py) 6px; border-bottom: 1px solid var(--border); text-align: left; }
 table.data thead th { font-size: .75rem; font-weight: 700; color: var(--text-dim); vertical-align: bottom; }
 table.data tbody th { font-weight: 600; }
 table.data .num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -226,7 +234,7 @@ label.inline select { width: auto; flex: 1 1 auto; max-width: 280px; margin: 0; 
 .seg { display: grid; gap: 8px; }
 .seg-2 { grid-template-columns: 1fr 1fr; }
 .seg-3 { grid-template-columns: repeat(3, 1fr); }
-.seg-btn { min-height: 46px; border-radius: 10px; border: 1.5px solid var(--border); background: #fff; color: var(--text); font: inherit; font-weight: 700; cursor: pointer; }
+.seg-btn { min-height: calc(var(--ctl-h) + 2px); border-radius: 10px; border: 1.5px solid var(--border); background: #fff; color: var(--text); font: inherit; font-weight: 700; cursor: pointer; }
 .seg-btn.on { background: var(--navy); border-color: var(--navy); color: #fff; }
 .att-setup .club-picker { justify-content: flex-start; margin-bottom: 4px; }
 .att-setup .club-picker-label { font-weight: 600; color: var(--text); }
@@ -814,7 +822,7 @@ details.mi-outs > summary { font-size: .85rem; }
 .task-edit { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--grey-bg); }
 .task-edit label.inline input { width: auto; min-height: 0; margin: 0; }
 label.inline input[type=checkbox] { width: auto; min-height: 0; margin: 0; }
-button.nav-item { width: 100%; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+button.nav-item { width: 100%; border: 0; background: none; font: inherit; font-weight: 600; font-size: .95rem; text-align: left; cursor: pointer; }
 
 /* ---------- Test & Assess ---------- */
 textarea { font: inherit; font-size: 16px; width: 100%; margin-top: 6px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: #fff; color: var(--text); resize: vertical; }
@@ -978,3 +986,109 @@ input.invalid { border-color: var(--red); outline-color: var(--red); }
 .mm-tag-foot { font-size: .85rem; }
 .mm-expo { margin: .5rem 0; }
 .mm-training summary { cursor: pointer; font-weight: 600; margin-top: .5rem; }
+
+
+/* ==========================================================================
+   Desktop — Phase A (A-118 to A-122). Phones and tablets below 900px are unchanged,
+   except the menu's group headings. See claude/specs/desktop-layout.md.
+   ========================================================================== */
+.topbar-desk { display: none; }
+.desk-only { display: none; }
+.topbar .queued-badge { flex: 0 0 auto; background: var(--amber); color: #fff; border-radius: 999px; padding: 2px 10px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+label.check-line { display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; cursor: pointer; }
+label.check-line input { width: 20px; height: 20px; min-height: 0; margin: 2px 0 0; flex: 0 0 auto; accent-color: var(--navy); }
+.idle-banner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 14px;
+  margin: 0 0 16px; padding: 10px 14px; border-radius: 10px; background: #fdf3e1; border: 1px solid #f2d49b; color: var(--text);
+  position: sticky; top: calc(var(--topbar-h) + 8px); z-index: 25; }
+
+/* Account menu (top bar) */
+.acct { position: relative; flex: 0 0 auto; }
+.acct-btn { display: flex; align-items: center; gap: 8px; max-width: 320px; min-height: 40px; padding: 4px 12px 4px 4px;
+  border-radius: 999px; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.12); color: #fff;
+  font: inherit; font-size: .88rem; font-weight: 600; cursor: pointer; }
+.acct-btn:hover { background: rgba(255,255,255,.2); }
+.acct-avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 auto; background: var(--accent); color: var(--navy); font-weight: 800; }
+.acct-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-pop { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; width: 300px; padding: 8px;
+  background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 32px rgba(11,37,69,.2); }
+.acct-who { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px 10px; border-bottom: 1px solid var(--border); font-size: .88rem; overflow-wrap: anywhere; }
+.acct-who .chip { align-self: flex-start; white-space: normal; }
+.acct-pop ul { list-style: none; margin: 6px 0 0; padding: 0; }
+.acct-item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 38px; padding: 6px 10px; border: 0; border-radius: 8px;
+  background: none; color: var(--text); font: inherit; font-size: .92rem; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer; }
+.acct-item:hover { background: var(--grey-bg); }
+.acct-item span { width: 22px; text-align: center; }
+.acct-sep { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 6px; }
+
+/* Club picker in the top bar */
+.club-picker.in-topbar { flex: 0 1 auto; gap: 8px; }
+.in-topbar .club-picker-label { color: #c9d7e8; }
+.in-topbar .club-picker-name { color: #fff; }
+.in-topbar select { max-width: 280px; min-height: 36px; padding: 4px 10px; font-size: .9rem; }
+
+@media (min-width: 900px) {
+  :root { --topbar-h: 56px; }
+  .topbar { min-height: var(--topbar-h); padding-top: calc(8px + env(safe-area-inset-top, 0px)); padding-bottom: 8px; }
+  .brand { flex: 0 0 auto; }
+  .topbar-desk { display: flex; align-items: center; justify-content: flex-end; gap: 14px; flex: 1 1 auto; min-width: 0; }
+  .desk-only { display: inline; }
+
+  /* One bar: the account strip only shows while testing a role (it carries Stop test). */
+  .access-bar:not(.testing) { display: none; }
+  .access-bar .queued-badge { display: none; }
+
+  /* The top-bar club picker drives every page; in-page copies are for phones. */
+  .content .club-picker.in-page { display: none; }
+
+  /* Menu: footer items live in the account menu; collapse button at the bottom. */
+  .nav-foot { display: none; }
+  .nav-collapse { display: flex; margin-top: auto; color: var(--text-dim); }
+  .sidenav { padding-top: 12px; padding-bottom: 10px; }
+  .nav-group-title { margin-top: 10px; }
+
+  .nav-collapsed { --sidenav-w: 68px; }
+  .nav-collapsed .nav-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .nav-collapsed .nav-item { justify-content: center; gap: 0; padding-inline: 0; }
+  .nav-collapsed .nav-group-title { height: 0; margin: 8px 10px; overflow: hidden; border-top: 1px solid var(--border); }
+
+  /* Page widths by page type (A-120) */
+  .content { width: 100%; max-width: 1680px; min-width: 0; }
+  .content[data-width="medium"] { max-width: 1080px; }
+  .content[data-width="form"] { max-width: 760px; }
+
+  /* Filter cards become one sticky toolbar row (A-122) */
+  /* the extra shadow paints page background into the gap above, so rows don't show through it */
+  .filter-bar { position: sticky; top: calc(var(--topbar-h) + 8px); z-index: 20; padding: 10px 16px 12px; margin-bottom: 14px;
+    box-shadow: 0 -10px 0 var(--grey-bg), var(--shadow); }
+  .filter-bar .filter-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .filter-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; }
+  .filter-fields .field-pair { display: contents; }
+  .filter-fields > *, .filter-fields .field-pair > * { flex: 1 1 170px; min-width: 0; }
+  .filter-fields .ff-search { flex: 2 1 280px; }
+  .filter-fields .ff-chips { flex: 3 1 360px; margin: 0; align-self: center; }
+  .filter-fields label { margin-top: 0; }
+  .filter-bar .hint { margin-top: 8px; }
+}
+
+/* Wide screens: centre the page in the space beside the menu */
+@media (min-width: 1920px) {
+  .content { margin-inline: auto; }
+}
+@media (min-width: 1440px) {
+  .drill-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 1199px) {
+  .acct-name { display: none; }
+}
+
+/* Desktop density with a mouse (A-121): smaller controls and rows, row hover.
+   Settings → This device → Comfortable keeps the touch sizes. */
+@media (pointer: fine) and (hover: hover) {
+  :root:not([data-density="comfortable"]) { --ctl-h: 36px; --nav-h: 36px; --cell-py: 5px; }
+  :root:not([data-density="comfortable"]) .btn { padding: 6px 14px; }
+  :root:not([data-density="comfortable"]) .btn.small { min-height: 32px; padding: 4px 12px; }
+  :root:not([data-density="comfortable"]) input:not([type=checkbox]):not([type=radio]),
+  :root:not([data-density="comfortable"]) select { padding: 6px 10px; font-size: 15px; }
+  :root:not([data-density="comfortable"]) .nav-item { padding-block: 6px; font-size: .92rem; }
+  table.data tbody tr:hover > * { background: #f5fbfe; }
+}

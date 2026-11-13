@@ -2,19 +2,25 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { ROLE_LABEL, roleSummary, sectionLevel } from "../lib/access";
-import { SECTIONS } from "../sections";
+import { NAV_GROUPS, SECTIONS } from "../sections";
 import { usePendingWrites } from "../lib/offline";
 import { stopRoleTest } from "../lib/admin";
 import { CLASSIC_URL } from "../sections";
 import { logEvent } from "../lib/util";
 import { useClub } from "../club/ClubProvider";
 import { SendFeedback } from "./SendFeedback";
+import { AccountMenu } from "./AccountMenu";
+import { IdleGuard } from "./IdleGuard";
+import { ClubPicker } from "../club/ClubPicker";
+import { readNavCollapsed, writeNavCollapsed } from "../lib/device";
+import { pageWidth } from "../lib/pageWidth";
 
 export function Layout() {
   const { access, session, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [fbOpen, setFbOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(readNavCollapsed);
   const { club } = useClub();
   const uid = session?.user.id;
   const pending = usePendingWrites();
@@ -38,15 +44,29 @@ export function Layout() {
   }, [menuOpen]);
 
   const visible = SECTIONS.filter(s => sectionLevel(access, s.section) !== "N");
+  const grouped = NAV_GROUPS
+    .map(g => ({ label: g.label, items: g.keys.map(k => visible.find(s => s.key === k)).filter((s): s is typeof visible[number] => !!s) }))
+    .filter(g => g.items.length);
+  // Any section not given a group still appears, at the end.
+  const ungrouped = visible.filter(s => !NAV_GROUPS.some(g => g.keys.includes(s.key)));
+  if (ungrouped.length) grouped.push({ label: "More", items: ungrouped });
   const testing = access?.testing;
+  const toggleCollapsed = () => setCollapsed(c => { writeNavCollapsed(!c); return !c; });
+  const navTitle = (label: string) => (collapsed ? label : undefined);
 
   return (
-    <div className={"app" + (menuOpen ? " menu-open" : "")}>
+    <div className={"app" + (menuOpen ? " menu-open" : "") + (collapsed ? " nav-collapsed" : "")}>
       <header className="topbar">
         <button className="icon-btn menu-btn" aria-label="Open menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(o => !o)}>
           <span className="bars" aria-hidden="true" />
         </button>
         <NavLink to="/" className="brand">Coach Tools</NavLink>
+        {/* Desktop only (A-118): club, queued saves and the account menu live in the one top bar. */}
+        <div className="topbar-desk">
+          <ClubPicker variant="topbar" />
+          {pending > 0 && <span className="queued-badge" role="status">{pending === 1 ? "1 save queued" : `${pending} saves queued`}</span>}
+          <AccountMenu email={session?.user.email ?? ""} role={roleSummary(access)} onFeedback={() => setFbOpen(true)} onSignOut={signOut} />
+        </div>
       </header>
 
       <div className={"access-bar" + (testing ? " testing" : "")} role="region" aria-label="Signed-in account">
@@ -69,20 +89,30 @@ export function Layout() {
 
       <div className="frame">
         <nav className="sidenav" aria-label="Sections">
-          <NavLink to="/" end className="nav-item"><span aria-hidden="true">🏠</span>Home</NavLink>
-          {visible.map(s => (
-            <NavLink key={s.key} to={`/${s.key}`} className="nav-item">
-              <span aria-hidden="true">{s.icon}</span>{s.label}
-            </NavLink>
+          <NavLink to="/" end className="nav-item" title={navTitle("Home")}><span className="nav-icon" aria-hidden="true">🏠</span><span className="nav-label">Home</span></NavLink>
+          {grouped.map(g => (
+            <div key={g.label} className="nav-group" role="group" aria-label={g.label}>
+              <p className="nav-group-title" aria-hidden="true">{g.label}</p>
+              {g.items.map(s => (
+                <NavLink key={s.key} to={`/${s.key}`} className="nav-item" title={navTitle(s.label)}>
+                  <span className="nav-icon" aria-hidden="true">{s.icon}</span><span className="nav-label">{s.label}</span>
+                </NavLink>
+              ))}
+            </div>
           ))}
+          {/* Phone drawer only; on a desktop these are in the account menu. */}
           <div className="nav-foot">
-            <NavLink to="/settings" className="nav-item"><span aria-hidden="true">🔧</span>Settings</NavLink>
-            <button type="button" className="nav-item" onClick={() => { setMenuOpen(false); setFbOpen(true); }}><span aria-hidden="true">💬</span>Send feedback</button>
-            <a className="nav-item" href={CLASSIC_URL}><span aria-hidden="true">↩︎</span>Classic app</a>
+            <NavLink to="/settings" className="nav-item"><span className="nav-icon" aria-hidden="true">🔧</span><span className="nav-label">Settings</span></NavLink>
+            <button type="button" className="nav-item" onClick={() => { setMenuOpen(false); setFbOpen(true); }}><span className="nav-icon" aria-hidden="true">💬</span><span className="nav-label">Send feedback</span></button>
+            <a className="nav-item" href={CLASSIC_URL}><span className="nav-icon" aria-hidden="true">↩︎</span><span className="nav-label">Classic app</span></a>
           </div>
+          <button type="button" className="nav-item nav-collapse" aria-pressed={collapsed} onClick={toggleCollapsed} title={collapsed ? "Expand menu" : undefined}>
+            <span className="nav-icon" aria-hidden="true">{collapsed ? "»" : "«"}</span><span className="nav-label">Collapse menu</span>
+          </button>
         </nav>
         <div className="scrim" onClick={() => setMenuOpen(false)} aria-hidden="true" />
-        <main className="content">
+        <main className="content" data-width={pageWidth(location.pathname)}>
+          <IdleGuard pending={pending} signOut={signOut} />
           <Outlet />
           <footer className="app-foot">Coach Tools v{__APP_VERSION__} · built {__APP_BUILD__} · {__APP_COMMIT__}</footer>
         </main>

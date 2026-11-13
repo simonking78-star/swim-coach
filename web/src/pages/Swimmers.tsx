@@ -87,11 +87,14 @@ export function Swimmers() {
       </div>
       {LEVEL_NOTE[level] && <p className="notice">{LEVEL_NOTE[level]}</p>}
 
-      <section className="card">
-        <h2 className="card-title">Filters</h2>
+      <section className="card filter-bar" aria-labelledby="ro-filters">
+        <h2 id="ro-filters" className="card-title filter-title">Filters</h2>
         <ClubPicker />
-        <label htmlFor="ro-search">Search by name</label>
-        <input id="ro-search" type="search" placeholder="Type a name…" autoComplete="off" value={q} onChange={e => setQ(e.target.value)} />
+        <div className="filter-fields">
+        <div className="ff-search">
+          <label htmlFor="ro-search">Search by name</label>
+          <input id="ro-search" type="search" placeholder="Type a name…" autoComplete="off" value={q} onChange={e => setQ(e.target.value)} />
+        </div>
         <div className="field-pair">
           <div>
             <label htmlFor="ro-squad">Squad</label>
@@ -107,6 +110,7 @@ export function Swimmers() {
               {ages.map(a => <option key={a} value={String(a)}>{a}</option>)}
             </select>
           </div>
+        </div>
         </div>
       </section>
 

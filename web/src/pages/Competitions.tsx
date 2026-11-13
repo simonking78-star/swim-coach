@@ -53,14 +53,18 @@ export function Competitions() {
         <h1><span aria-hidden="true">🏆</span> Competitions</h1>
         <p className="dim">Upcoming licensed meets</p>
       </div>
-      <section className="card">
-        <label htmlFor="cp-search">Search</label>
-        <input id="cp-search" type="search" placeholder="Search meets by name or town" value={search} onChange={e => setSearch(e.target.value)} />
+      <section className="card filter-bar" aria-label="Filters">
+        <div className="filter-fields">
+        <div className="ff-search">
+          <label htmlFor="cp-search">Search</label>
+          <input id="cp-search" type="search" placeholder="Search meets by name or town" value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
         <div className="field-pair">
           <div><label htmlFor="cp-course">Course</label>
             <select id="cp-course" value={course} onChange={e => setCourse(e.target.value)}><option value="">All courses</option><option value="SC">Short course</option><option value="LC">Long course</option></select></div>
           <div><label htmlFor="cp-level">Level</label>
             <select id="cp-level" value={lvl} onChange={e => setLvl(e.target.value)}><option value="">All levels</option>{["1", "2", "3", "4"].map(l => <option key={l} value={l}>Level {l}</option>)}</select></div>
+        </div>
         </div>
         {q.data && <p className="hint" aria-live="polite">{rows.length} upcoming meet{rows.length === 1 ? "" : "s"}</p>}
       </section>
