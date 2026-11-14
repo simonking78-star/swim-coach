@@ -1,22 +1,36 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/AuthProvider";
 import { useClub } from "../../club/ClubProvider";
 import { canEdit, sectionLevel } from "../../lib/access";
 import {
-  disableRow, fmtRange, loadBreaks, loadPlanningLists, loadSeasons, pickSeason, saveSeason, validateSeason, type BreakRow
+  disableRow, fmtRange, loadBreaks, loadPlanningLists, loadSeasons, overlapping, pickSeason, saveSeason, validateSeason, type BreakRow
 } from "../../lib/season";
 import { todayLocal, uuid } from "../../lib/util";
 import { StatusMsg } from "../../components/seasonParts";
+import { usePlanSquads } from "../plans/PlanList";
 
 // Season planning: title, dates and breaks, then the season's competitions and macro-cycles.
 
 export const useSeasons = (club: string | null) => useQuery({ queryKey: ["seasons", club], enabled: !!club, queryFn: () => loadSeasons(club!) });
-/** The season the planner works on (running today, else next, else latest). */
+// The season plan being worked on: ?season=<id> on the page, else the one last chosen on this
+// device, else the plan running today (then the next, then the latest). ?season=new means a new plan.
+const chosenKey = (club: string) => "seasonPlan:" + club;
+export function chooseSeason(club: string | null, id: string) {
+  if (!club) return;
+  try { localStorage.setItem(chosenKey(club), id); } catch { /* storage unavailable: the URL still carries it */ }
+}
+function chosenSeason(club: string | null): string | null {
+  if (!club) return null;
+  try { return localStorage.getItem(chosenKey(club)); } catch { return null; }
+}
 export function useActiveSeason(club: string | null) {
   const q = useSeasons(club);
-  return { ...q, season: q.data ? pickSeason(q.data, todayLocal().date) : null };
+  const [params] = useSearchParams();
+  const want = params.get("season") || chosenSeason(club);
+  const season = !q.data || want === "new" ? null : q.data.find(s => s.id === want) || pickSeason(q.data, todayLocal().date);
+  return { ...q, season, isNew: want === "new" };
 }
 export const usePlanningLists = (seasonId: string | null | undefined) =>
   useQuery({ queryKey: ["planning", seasonId], enabled: !!seasonId, queryFn: () => loadPlanningLists(seasonId!) });
@@ -37,6 +51,9 @@ export function Planning() {
   const qc = useQueryClient();
   const active = useActiveSeason(club);
   const season = active.season;
+  const [, setParams] = useSearchParams();
+  const squadsQ = usePlanSquads(club);
+  const [squadSel, setSquadSel] = useState<Set<string>>(new Set());
   const breaksQ = useQuery({ queryKey: ["season_breaks", season?.id], enabled: !!season, queryFn: () => loadBreaks(season!.id) });
   const lists = usePlanningLists(season?.id);
 
@@ -58,7 +75,18 @@ export function Planning() {
     filledFor.current = key;
     setTitle(season?.title ?? ""); setStart(season?.start_date ?? ""); setFinish(season?.finish_date ?? "");
     setBreaks((breaksQ.data ?? []).map(b => ({ ...b, k: uuid() }))); setRemoved([]);
+    setSquadSel(new Set(season?.squad_ids ?? []));
   }, [active.data, season, breaksQ.data]);
+
+  const pickPlan = (id: string) => {
+    if (id !== "new") chooseSeason(club, id);
+    setParams(id ? { season: id } : {}, { replace: true });
+    setMsg(null);
+  };
+  const squadName = new Map((squadsQ.data ?? []).map(q => [q.id, q.name]));
+  // Squads already in another plan for overlapping dates can't be ticked here
+  const takenBy = new Map<string, string>();
+  for (const o of overlapping(active.data ?? [], start, finish, season?.id ?? null)) for (const q of o.squad_ids) takenBy.set(q, o.title);
 
   const crumb = <p className="crumb"><Link to="/season">‹ Season planner</Link></p>;
 
@@ -74,14 +102,17 @@ export function Planning() {
     setBusy(true);
     try {
       const copy = breaks.map(b => ({ ...b }));
-      const id = await saveSeason(club!, season?.id ?? null, title, start, finish, copy, removed);
+      const id = await saveSeason(club!, season?.id ?? null, title, start, finish, copy, removed, [...squadSel], squadName);
       setBreaks(copy); setRemoved([]);
       filledFor.current = id; // keep what's on screen
+      chooseSeason(club, id);
+      if (!season) setParams({ season: id }, { replace: true });
       invalidateSeason(qc, club);
+      qc.invalidateQueries({ queryKey: ["season_board"] }); qc.invalidateQueries({ queryKey: ["season_panels"] });
       qc.invalidateQueries({ queryKey: ["season_breaks"] });
       setMsg({ text: "Season saved." });
       return id;
-    } catch (e) { console.error(e); setMsg({ text: (e as Error).message.startsWith("These dates") ? (e as Error).message : "Could not save: " + (e as Error).message, error: true }); return null; }
+    } catch (e) { console.error(e); const m = (e as Error).message; setMsg({ text: /already in|two season plans/.test(m) ? m : "Could not save: " + m, error: true }); return null; }
     finally { setBusy(false); }
   };
   const addEvent = async () => { if (await save()) navigate("/season/competition/new"); };
@@ -105,12 +136,39 @@ export function Planning() {
       {crumb}
       <div className="page-head"><h1>Planning</h1><p className="dim">{club}</p></div>
       <section className="card">
+        <label htmlFor="pl-plan">Season plan</label>
+        <select id="pl-plan" value={active.isNew || !season ? "new" : season.id} onChange={e => pickPlan(e.target.value)}>
+          {(active.data ?? []).map(s => <option key={s.id} value={s.id}>{s.title} · {fmtRange(s.start_date, s.finish_date)}{s.squad_ids.length ? ` · ${s.squad_ids.length} squad${s.squad_ids.length === 1 ? "" : "s"}` : " · no squads"}</option>)}
+          <option value="new">+ New season plan</option>
+        </select>
+        <p className="hint">A club can run several season plans at once (for example Masters alongside the competitive squads), as long as each squad is in only one plan on any date.</p>
+      </section>
+      <section className="card">
         <label htmlFor="pl-title">Season title</label>
         <input id="pl-title" type="text" value={title} placeholder="e.g. 2026–27 Winter Season" onChange={e => setTitle(e.target.value)} />
         <div className="field-pair">
           <div><label htmlFor="pl-start">Season start</label><input id="pl-start" type="date" value={start} onChange={e => setStart(e.target.value)} /></div>
           <div><label htmlFor="pl-finish">Season finish</label><input id="pl-finish" type="date" value={finish} onChange={e => setFinish(e.target.value)} /></div>
         </div>
+        <fieldset className="plain-fieldset">
+          <legend>Squads on this plan</legend>
+          {squadsQ.isLoading ? <p className="dim">Loading squads…</p> : (
+            <div className="chip-row">
+              {(squadsQ.data ?? []).map(q => {
+                const taken = takenBy.get(q.id);
+                const on = squadSel.has(q.id);
+                return (
+                  <label key={q.id} className={"check-chip" + (taken && !on ? " taken" : "")} title={taken && !on ? `In “${taken}” for these dates` : undefined}>
+                    <input type="checkbox" checked={on} disabled={!!taken && !on}
+                      onChange={() => setSquadSel(cur => { const n = new Set(cur); if (n.has(q.id)) n.delete(q.id); else n.add(q.id); return n; })} />
+                    {q.name}{taken && !on ? <span className="dim small"> · in {taken}</span> : null}
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          {!squadSel.size && <p className="notice small">No squads ticked: this plan won't show any squads on the Season Plan page until you link at least one.</p>}
+        </fieldset>
         <fieldset className="plain-fieldset">
           <legend>Season breaks <span className="dim">(optional)</span></legend>
           {breaks.map((b, i) => (

@@ -2522,6 +2522,52 @@ export type Database = {
           },
         ]
       }
+      season_squads: {
+        Row: {
+          club_id: string
+          created_at: string
+          created_by: string | null
+          season_id: string
+          squad_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          created_by?: string | null
+          season_id: string
+          squad_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          created_by?: string | null
+          season_id?: string
+          squad_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_squads_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_squads_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_squads_squad_id_fkey"
+            columns: ["squad_id"]
+            isOneToOne: false
+            referencedRelation: "squads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       season_windows: {
         Row: {
           club_id: string

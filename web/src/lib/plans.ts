@@ -191,7 +191,7 @@ export interface SeasonCtx {
   sessions: MicroSession[];
   comps: { id: string; season_id: string; competition_id: string | null; name: string; date_from: string; date_to: string | null; course: string; level: number | null }[];
   breaks: { season_id: string; break_start: string; break_end: string }[];
-  seasons: { id: string; title: string; start_date: string; finish_date: string }[];
+  seasons: { id: string; title: string; start_date: string; finish_date: string; squad_ids: string[] }[];
 }
 export interface MicroCtx {
   micro: Micro & { macroTitle: string; seasonId: string };
@@ -203,10 +203,12 @@ export interface MicroCtx {
 }
 
 export async function loadSeasonCtx(club: string): Promise<SeasonCtx> {
-  const { data: seasons, error: se } = await sb.from("seasons").select("id, title, start_date, finish_date").eq("club_id", clubIdOf(club)).eq("is_active", true);
+  const { data: raw, error: se } = await sb.from("seasons").select("id, title, start_date, finish_date, season_squads(squad_id)").eq("club_id", clubIdOf(club)).eq("is_active", true);
   if (se) throw se;
-  const ids = (seasons ?? []).map(s => s.id as string);
-  const out: SeasonCtx = { macros: [], sessions: [], comps: [], breaks: [], seasons: (seasons ?? []) as SeasonCtx["seasons"] };
+  const seasons = ((raw ?? []) as unknown as { id: string; title: string; start_date: string; finish_date: string; season_squads: { squad_id: string }[] | null }[])
+    .map(({ season_squads, ...x }) => ({ ...x, squad_ids: (season_squads ?? []).map(q => q.squad_id) }));
+  const ids = seasons.map(s => s.id);
+  const out: SeasonCtx = { macros: [], sessions: [], comps: [], breaks: [], seasons };
   if (!ids.length) return out;
   const [mq, cq, bq] = await Promise.all([
     sb.from("macros").select("id, title, season_id, macro_squads(squad_id, is_active), micros(id, week_no, week_commencing, meso, qes_focus, technical_focus, break_days, is_active)").in("season_id", ids).eq("is_active", true),

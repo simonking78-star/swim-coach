@@ -71,7 +71,7 @@ export function MacroForm() {
           <legend>Squads</legend>
           {squads.isLoading && <p className="dim">Loading squads…</p>}
           <div className="check-grid">
-            {(squads.data ?? []).map(s => (
+            {(squads.data ?? []).filter(s => !season?.squad_ids.length || season.squad_ids.includes(s.id) || d.squads.has(s.id)).map(s => (
               <label key={s.id} className={"skill" + (d.squads.has(s.id) ? " on" : "")}>
                 <input type="checkbox" checked={d.squads.has(s.id)} onChange={e => setD(x => { const n = new Set(x.squads); if (e.target.checked) n.add(s.id); else n.delete(s.id); return { ...x, squads: n }; })} />
                 {s.name}
