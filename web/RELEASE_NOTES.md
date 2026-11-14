@@ -7,6 +7,7 @@ The version shown in the app footer comes from `package.json`. Bump it when a re
 - Planning and the desktop Season Plan page have a season plan picker, including "+ New season plan"; the macro, competition and week editors follow the plan you picked.
 - The desktop Season Plan page shows only the chosen plan's squads; "last season" comparisons use the previous plan for the same squads.
 - Existing plans start with no squads linked: choose them on the Planning page.
+- Phones: a **Squads** button on the Season planner picks which squads to show (All / My squads / None or tick each); remembered on the device, defaulting to the coach's own squads. Each squad shows its own season plan.
 
 ## Unreleased — Season Plan page (desktop)
 - On a laptop or desktop the Season planner opens as a landscape calendar: Annual (52 weeks, each split Mon–Fri / Sat–Sun), Month, Macro, Meso and Micro (weekly timetable) views. Zoom with − / +, Ctrl + scroll or pinch; Shift + scroll moves along (A-131, A-135).

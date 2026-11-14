@@ -51,6 +51,16 @@ export function pickSeason<T extends Pick<Season, "start_date" | "finish_date">>
   return rows.find(s => s.start_date <= today && s.finish_date >= today) || rows.find(s => s.start_date > today) || rows[rows.length - 1] || null;
 }
 
+/**
+ * The season plan a squad follows on `today`: a plan it is linked to (running today, else next, else
+ * latest); if the squad isn't linked to any plan, a plan with no squads linked yet (older plans).
+ */
+export function seasonForSquad<T extends Pick<Season, "start_date" | "finish_date" | "squad_ids">>(rows: T[], squadId: string, today: string): T | null {
+  const sorted = rows.slice().sort((a, b) => a.start_date.localeCompare(b.start_date));
+  const linked = sorted.filter(s => s.squad_ids.includes(squadId));
+  return pickSeason(linked.length ? linked : sorted.filter(s => !s.squad_ids.length), today);
+}
+
 // ---------------------------------------------------------------------------
 // Timetables
 // ---------------------------------------------------------------------------
