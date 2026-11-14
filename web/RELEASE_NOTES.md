@@ -2,6 +2,12 @@
 
 The version shown in the app footer comes from `package.json`. Bump it when a release goes out and add a line here.
 
+## Unreleased — Squads on season plans
+- Each season plan now lists the squads it covers (Planning → "Squads on this plan"). A club can run several plans at once, e.g. Masters alongside the competitive squads; a squad can be in only one plan on any date (squads already in an overlapping plan are greyed out).
+- Planning and the desktop Season Plan page have a season plan picker, including "+ New season plan"; the macro, competition and week editors follow the plan you picked.
+- The desktop Season Plan page shows only the chosen plan's squads; "last season" comparisons use the previous plan for the same squads.
+- Existing plans start with no squads linked: choose them on the Planning page.
+
 ## Unreleased — Season Plan page (desktop)
 - On a laptop or desktop the Season planner opens as a landscape calendar: Annual (52 weeks, each split Mon–Fri / Sat–Sun), Month, Macro, Meso and Micro (weekly timetable) views. Zoom with − / +, Ctrl + scroll or pinch; Shift + scroll moves along (A-131, A-135).
 - Three rows per squad: hover the name row to see the macro-cycle over its meso-cycles; events row with team / target blocks, qualifying / train-through dots, test set and squad movement windows, and club events; training row shaded light to deep blue by planned weekly metres, per squad (A-132 to A-134, A-136).

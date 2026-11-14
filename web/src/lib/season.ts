@@ -34,15 +34,20 @@ const now = () => new Date().toISOString();
 // ---------------------------------------------------------------------------
 // Seasons
 // ---------------------------------------------------------------------------
-export interface Season { id: string; title: string; start_date: string; finish_date: string; }
+/** A season plan. squad_ids: the squads it covers (season_squads); a squad is in at most one plan on any date. */
+export interface Season { id: string; title: string; start_date: string; finish_date: string; squad_ids: string[]; }
 
 export async function loadSeasons(club: string): Promise<Season[]> {
-  const { data, error } = await sb.from("seasons").select("id, title, start_date, finish_date").eq("club_id", clubIdOf(club)).eq("is_active", true).order("start_date");
+  const { data, error } = await sb.from("seasons").select("id, title, start_date, finish_date, season_squads(squad_id)").eq("club_id", clubIdOf(club)).eq("is_active", true).order("start_date");
   if (error) throw error;
-  return (data ?? []) as Season[];
+  return ((data ?? []) as unknown as (Omit<Season, "squad_ids"> & { season_squads: { squad_id: string }[] | null })[])
+    .map(({ season_squads, ...s }) => ({ ...s, squad_ids: (season_squads ?? []).map(x => x.squad_id) }));
 }
+/** Season plans whose dates overlap [start, finish], other than `exceptId`. */
+export const overlapping = (seasons: Season[], start: string, finish: string, exceptId: string | null) =>
+  seasons.filter(o => o.id !== exceptId && start && finish && o.start_date <= finish && o.finish_date >= start);
 /** The season running today, else the next one, else the latest. */
-export function pickSeason(rows: Season[], today: string): Season | null {
+export function pickSeason<T extends Pick<Season, "start_date" | "finish_date">>(rows: T[], today: string): T | null {
   return rows.find(s => s.start_date <= today && s.finish_date >= today) || rows.find(s => s.start_date > today) || rows[rows.length - 1] || null;
 }
 
@@ -341,13 +346,25 @@ export function validateSeason(title: string, start: string, finish: string, bre
   return null;
 }
 
-/** One active season per club at a time. Returns the season id. */
-export async function saveSeason(club: string, seasonId: string | null, title: string, start: string, finish: string, breaks: BreakRow[], removedBreakIds: string[]): Promise<string> {
+/**
+ * Saves a season plan and the squads it covers. Plans may overlap in time only when they share no
+ * squads (the database enforces this too). Returns the season id.
+ */
+export async function saveSeason(club: string, seasonId: string | null, title: string, start: string, finish: string, breaks: BreakRow[], removedBreakIds: string[],
+  squadIds: string[], squadNames: Map<string, string>): Promise<string> {
   const row = { ...clubCols(club), title: title.trim(), start_date: start, finish_date: finish, updated_at: now() };
-  const { data: others, error: oe } = await sb.from("seasons").select("id, title").eq("club_id", clubIdOf(club)).eq("is_active", true).lte("start_date", finish).gte("finish_date", start);
-  if (oe) throw oe;
-  const clash = ((others ?? []) as { id: string; title: string }[]).find(o => o.id !== seasonId);
-  if (clash) throw new Error(`These dates overlap “${clash.title}”. Change the dates.`);
+  const others = overlapping(await loadSeasons(club), start, finish, seasonId);
+  for (const o of others) {
+    const shared = o.squad_ids.find(q => squadIds.includes(q));
+    if (shared) throw new Error(`${squadNames.get(shared) ?? "A squad"} is already in “${o.title}” for these dates. Untick it or change the dates.`);
+  }
+  // Unlink squads first so changed dates aren't checked against squads being removed
+  const before = seasonId ? (await loadSeasons(club)).find(s => s.id === seasonId)?.squad_ids ?? [] : [];
+  const unlink = before.filter(q => !squadIds.includes(q));
+  if (seasonId && unlink.length) {
+    const { error } = await sb.from("season_squads").delete().eq("season_id", seasonId).in("squad_id", unlink);
+    if (error) throw error;
+  }
   let id = seasonId;
   if (id) {
     const { error } = await sb.from("seasons").update(row as never).eq("id", id);
@@ -365,6 +382,12 @@ export async function saveSeason(club: string, seasonId: string | null, title: s
   if (removedBreakIds.length) {
     const { error } = await sb.from("season_breaks").update({ is_active: false } as never).in("id", removedBreakIds);
     if (error) throw error;
+  }
+  const link = squadIds.filter(q => !before.includes(q));
+  if (link.length) {
+    // club_id is copied from the season by the database
+    const { error } = await sb.from("season_squads").insert(link.map(q => ({ season_id: id!, squad_id: q })) as never);
+    if (error) throw new Error(error.message.includes("already in the season plan") ? error.message.replace(/^.*?This squad/, "A squad") : error.message);
   }
   return id!;
 }
