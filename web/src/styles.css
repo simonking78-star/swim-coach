@@ -768,6 +768,11 @@ details.mi-outs > summary { font-size: .85rem; }
 .cp-item p { margin: 6px 0; }
 .cp-files { list-style: none; margin: 0; padding: 0; }
 .cp-files a { display: inline-block; padding: 6px 0; }
+.cp-files .link-btn { padding: 6px 0; text-align: left; }
+.doc-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.doc-list li.removed { color: var(--text-dim); }
+.cp-club { border-top: 1px solid var(--grey-bg); margin-top: 10px; padding-top: 8px; }
+.cp-club .cp-notes { white-space: pre-wrap; }
 .pl-list .btn-row.nowrap, .tt-card .btn-row.nowrap { flex-wrap: wrap; justify-content: flex-end; }
 .wk-plan .plan-tag { line-height: 1.3; }
 .wk-noplan .btn { white-space: nowrap; flex: 0 0 auto; }

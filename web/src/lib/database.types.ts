@@ -2446,6 +2446,66 @@ export type Database = {
           },
         ]
       }
+      season_competition_docs: {
+        Row: {
+          club_id: string
+          created_at: string
+          created_by: string | null
+          file_name: string
+          id: string
+          is_active: boolean
+          mime_type: string | null
+          season_competition_id: string
+          size_bytes: number | null
+          storage_path: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          club_id?: string
+          created_at?: string
+          created_by?: string | null
+          file_name: string
+          id?: string
+          is_active?: boolean
+          mime_type?: string | null
+          season_competition_id: string
+          size_bytes?: number | null
+          storage_path: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          created_by?: string | null
+          file_name?: string
+          id?: string
+          is_active?: boolean
+          mime_type?: string | null
+          season_competition_id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_competition_docs_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_competition_docs_season_competition_id_fkey"
+            columns: ["season_competition_id"]
+            isOneToOne: false
+            referencedRelation: "season_competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       season_competitions: {
         Row: {
           competition_id: string | null
@@ -2463,6 +2523,7 @@ export type Database = {
           updated_at: string
           venue_name: string | null
           venue_url: string | null
+          notes: string | null
         }
         Insert: {
           competition_id?: string | null
@@ -2480,6 +2541,7 @@ export type Database = {
           updated_at?: string
           venue_name?: string | null
           venue_url?: string | null
+          notes?: string | null
         }
         Update: {
           competition_id?: string | null
@@ -2497,6 +2559,7 @@ export type Database = {
           updated_at?: string
           venue_name?: string | null
           venue_url?: string | null
+          notes?: string | null
         }
         Relationships: [
           {
