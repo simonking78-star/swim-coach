@@ -22,21 +22,31 @@ export interface BoardMacro {
   micros: BoardMicro[];
 }
 export interface BoardComp { id: string; competition_id: string | null; name: string; date_from: string; date_to: string | null; course: string; level: number | null; venue_name: string | null; }
-export interface BoardWindow { id: string; kind: "test_set" | "squad_move"; squad_id: string | null; test_set_template_id: string | null; title: string; starts_on: string; ends_on: string; note: string | null; }
+export interface BoardWindow {
+  id: string; kind: "test_set" | "squad_move"; squad_id: string | null; title: string; starts_on: string; ends_on: string; note: string | null;
+  /** Test windows only (Metrics & Measures link): kind of test window, protocols in it, squads covered (null = all on the plan). */
+  test_kind: string | null; protocol_ids: string[]; squad_ids: string[] | null;
+}
+/** A Metrics & Measures test run, shown as a marker on the calendar. */
+export interface BoardRun {
+  id: string; session_date: string; squad_id: string | null; group_type: "club" | "squad" | "swimmers"; window_id: string | null;
+  cycle_focus: string | null; cycle_week_no: number | null; on_cycle: boolean | null; status: "live" | "closed";
+  code: string; name: string; tested: number; not_tested: number; swimmers: number;
+}
 export interface BoardEvent { id: string; title: string; kind: string; starts_on: string; ends_on: string; squad_ids: string[] | null; location: string | null; note: string | null; }
 export interface BoardPlan { id: string; squad_id: string | null; micro_id: string | null; intended_date: string | null; total_distance_m: number | null; title: string; }
 export interface BoardSession { id: string; micro_id: string; squad_id: string; session_date: string; start_time: string | null; end_time: string | null; stroke_focus: string | null; }
 export interface BoardData {
-  macros: BoardMacro[]; comps: BoardComp[]; windows: BoardWindow[]; events: BoardEvent[];
+  macros: BoardMacro[]; comps: BoardComp[]; windows: BoardWindow[]; events: BoardEvent[]; runs: BoardRun[];
   plans: BoardPlan[]; sessions: BoardSession[]; breaks: { start: string; end: string }[];
 }
 
-export async function loadBoard(seasonId: string, start: string, finish: string): Promise<BoardData> {
+export async function loadBoard(seasonId: string, start: string, finish: string, clubId?: string | null): Promise<BoardData> {
   const [mq, cq, wq, eq, bq, pq] = await Promise.all([
     sb.from("macros").select("id, title, colour, macro_squads(squad_id, is_active), macro_competitions(season_competition_id, designation, is_active), micros(id, week_no, week_commencing, meso, qes_focus, technical_focus, planned_volume_m, break_days, is_active)")
       .eq("season_id", seasonId).eq("is_active", true).order("created_at"),
     sb.from("season_competitions").select("id, competition_id, name, date_from, date_to, course, level, venue_name").eq("season_id", seasonId).eq("is_active", true).order("date_from"),
-    sb.from("season_windows").select("id, kind, squad_id, test_set_template_id, title, starts_on, ends_on, note").eq("season_id", seasonId).eq("is_active", true).order("starts_on"),
+    sb.from("season_windows").select("id, kind, squad_id, title, starts_on, ends_on, note, test_kind, protocol_ids, squad_ids").eq("season_id", seasonId).eq("is_active", true).order("starts_on"),
     sb.from("club_events").select("id, title, kind, starts_on, ends_on, squad_ids, location, note").eq("season_id", seasonId).eq("is_active", true).order("starts_on"),
     sb.from("season_breaks").select("break_start, break_end").eq("season_id", seasonId).eq("is_active", true),
     sb.from("session_plans").select("id, squad_id, micro_id, intended_date, total_distance_m, title").gte("intended_date", start).lte("intended_date", finish)
@@ -58,15 +68,35 @@ export async function loadBoard(seasonId: string, start: string, finish: string)
     sessions = (data ?? []) as BoardSession[];
   }
   return {
+    runs: await loadRuns(start, finish, clubId),
     macros,
     comps: (cq.data ?? []) as BoardComp[],
-    windows: (wq.data ?? []) as BoardWindow[],
+    windows: ((wq.data ?? []) as unknown as BoardWindow[]).map(w => ({ ...w, protocol_ids: w.protocol_ids ?? [] })),
     events: (eq.data ?? []) as BoardEvent[],
     breaks: ((bq.data ?? []) as { break_start: string; break_end: string }[]).map(b => ({ start: b.break_start, end: b.break_end })),
     plans: (pq.data ?? []) as BoardPlan[],
     sessions
   };
 }
+
+/** Test runs in the season. Read-only roles without access to tests simply get none (RLS). */
+async function loadRuns(start: string, finish: string, clubId?: string | null): Promise<BoardRun[]> {
+  let q = sb.from("mm_sessions" as never).select("id, session_date, squad_id, group_type, swimmer_ids, window_id, cycle_focus, cycle_week_no, on_cycle, status, mm_protocols(code, name), mm_results(status)")
+    .gte("session_date", start).lte("session_date", finish).order("session_date");
+  if (clubId) q = q.eq("club_id", clubId);
+  const { data, error } = await q;
+  if (error) { console.warn("Test runs not shown:", error.message); return []; }
+  type Raw = Omit<BoardRun, "code" | "name" | "tested" | "not_tested" | "swimmers"> & { swimmer_ids: string[] | null; mm_protocols: { code: string; name: string } | null; mm_results: { status: string }[] | null };
+  return ((data ?? []) as unknown as Raw[]).map(r => ({
+    id: r.id, session_date: r.session_date, squad_id: r.squad_id, group_type: r.group_type, window_id: r.window_id, cycle_focus: r.cycle_focus,
+    cycle_week_no: r.cycle_week_no, on_cycle: r.on_cycle, status: r.status, code: r.mm_protocols?.code ?? "Test", name: r.mm_protocols?.name ?? "",
+    tested: (r.mm_results ?? []).filter(x => x.status === "recorded").length, not_tested: (r.mm_results ?? []).filter(x => x.status === "not_tested").length,
+    swimmers: r.swimmer_ids?.length ?? 0
+  }));
+}
+/** Squads a window covers: test windows use squad_ids (null = all), squad moves use squad_id (null = all). */
+export const windowSquads = (w: BoardWindow): string[] | null =>
+  w.kind === "test_set" ? (w.squad_ids?.length ? w.squad_ids : w.squad_id ? [w.squad_id] : null) : (w.squad_id ? [w.squad_id] : null);
 
 // ---------------------------------------------------------------------------
 // Columns
@@ -150,6 +180,7 @@ export const EVENT_KIND: Record<string, { label: string; icon: string }> = {
 export type BoardItem =
   | { t: "comp"; id: string; from: string; to: string; kind: CompKind; comp: BoardComp; macroTitle: string | null }
   | { t: "window"; id: string; from: string; to: string; w: BoardWindow }
+  | { t: "run"; id: string; from: string; to: string; r: BoardRun }
   | { t: "event"; id: string; from: string; to: string; e: BoardEvent };
 
 /** Everything on one squad's events row. Competitions take the type the squad's macro gives them. */
@@ -162,7 +193,9 @@ export function squadItems(d: BoardData, squadId: string): BoardItem[] {
     if (link) items.push({ t: "comp", id: c.id, from: c.date_from, to: c.date_to || c.date_from, kind: (link.designation as CompKind) in COMP_KIND ? link.designation as CompKind : "unset", comp: c, macroTitle: link.macro });
     else if (!linkedAnywhere.has(c.id)) items.push({ t: "comp", id: c.id, from: c.date_from, to: c.date_to || c.date_from, kind: "unset", comp: c, macroTitle: null });
   }
-  for (const w of d.windows) if (!w.squad_id || w.squad_id === squadId) items.push({ t: "window", id: w.id, from: w.starts_on, to: w.ends_on, w });
+  for (const w of d.windows) { const sq = windowSquads(w); if (!sq || sq.includes(squadId)) items.push({ t: "window", id: w.id, from: w.starts_on, to: w.ends_on, w }); }
+  // Squad runs on their squad's row; whole-club and chosen-swimmer runs on every row
+  for (const r of d.runs) if (r.squad_id === squadId || (r.group_type !== "squad" && !r.squad_id)) items.push({ t: "run", id: r.id, from: r.session_date, to: r.session_date, r });
   for (const e of d.events) if (!e.squad_ids?.length || e.squad_ids.includes(squadId)) items.push({ t: "event", id: e.id, from: e.starts_on, to: e.ends_on, e });
   return items.sort((a, b) => a.from.localeCompare(b.from));
 }
@@ -232,7 +265,9 @@ export const mesoColour = (meso: number | null) => (meso == null ? "#d9dee5" : M
 // ---------------------------------------------------------------------------
 const now = () => new Date().toISOString();
 export async function saveWindow(seasonId: string, w: Omit<BoardWindow, "id"> & { id?: string | null }) {
-  const row = { season_id: seasonId, kind: w.kind, squad_id: w.squad_id || null, test_set_template_id: w.kind === "test_set" ? w.test_set_template_id || null : null,
+  const test = w.kind === "test_set";
+  const row = { season_id: seasonId, kind: w.kind, squad_id: test ? null : w.squad_id || null,
+    test_kind: test ? w.test_kind || null : null, protocol_ids: test ? w.protocol_ids : [], squad_ids: test && w.squad_ids?.length ? w.squad_ids : null,
     title: w.title.trim(), starts_on: w.starts_on, ends_on: w.ends_on, note: w.note?.trim() || null };
   const r = w.id ? await sb.from("season_windows").update(row as never).eq("id", w.id) : await sb.from("season_windows").insert({ ...row } as never);
   if (r.error) throw r.error;
@@ -310,7 +345,6 @@ export interface Panels {
   attendance: { period: "this" | "prev"; squad_id: string; attended: number; counted: number; hours: number; metres: number; swimmer_weeks: number }[];
   weekly: { period: "this" | "prev"; squad_id: string; week: number; metres: number; hours: number; swimmers: number }[];
   sessions: { squad_id: string; available: number; completed: number; plans: number; plans_season: number }[];
-  tests: { template_name: string; level: number | null; squad_id: string | null; n: number; median: number | null; min: number | null; max: number | null }[];
   standard: { county: string; age_at: string } | null;
   band_swimmers?: { squad_id: string | null; band: number; n: number }[];
   band_events?: { squad_id: string | null; band: number; n: number }[];
@@ -322,5 +356,19 @@ export async function loadPanels(seasonId: string): Promise<Panels | null> {
   const { data, error } = await sb.rpc("season_plan_panels" as never, { p_season: seasonId } as never);
   if (error) throw error;
   return data as unknown as Panels | null;
+}
+/** Metrics & Measures figures for the plan (public.season_plan_mm): results by test set title and squad, and window coverage. */
+export interface MmPanelRow {
+  win_id: string | null; win_title: string | null; win_from: string | null; protocol_id: string; code: string; test_name: string; unit: string | null;
+  better: "higher" | "lower"; major: number; level_key: string; level_label: string | null; level_no: number | null; squad_id: string;
+  n: number; swimmers: number; baselines: number; median: number | null; min: number | null; max: number | null;
+  improved: number; noise: number; declined: number; caution: number; with_caution: number;
+}
+export interface MmCoverage { window_id: string; title: string; starts_on: string; ends_on: string; test_kind: string | null; squad_id: string; swimmers: number; tested: number; no_baseline: number; }
+export interface MmPanels { mm_tests: MmPanelRow[]; mm_coverage: MmCoverage[]; }
+export async function loadSeasonMm(seasonId: string): Promise<MmPanels> {
+  const { data, error } = await sb.rpc("season_plan_mm" as never, { p_season: seasonId } as never);
+  if (error) throw error;
+  return (data as unknown as MmPanels | null) ?? { mm_tests: [], mm_coverage: [] };
 }
 export const BANDS = ["CQT", "CCT", "Within 5% of CCT", "Within 10% of CCT", "More than 10% off CCT"];

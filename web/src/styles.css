@@ -1215,6 +1215,11 @@ dialog.modal.wide { width: min(1040px, calc(100vw - 16px)); }
 .sb-mk.win { border-radius: 3px; color: var(--navy); font-weight: 600; margin: 0 1px; }
 .w-test { border: 1px solid #0f7a3e; border-left-width: 4px; border-right-width: 4px; background: rgba(15, 122, 62, .08); }
 .w-move { border: 2px dashed #8a5600; background: rgba(224, 142, 0, .08); }
+.sp-testset h4 { margin: .7rem 0 .25rem; font-size: .92rem; }
+.sb-mk.run { justify-content: center; }
+.sb-mk.run i, .lg.run { width: 10px; height: 10px; background: #0f7a3e; transform: rotate(45deg); display: block; flex: none; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+.sb-mk.run.off i, .lg.run.off { background: #fff; box-shadow: 0 0 0 1.5px #0f7a3e; }
+.lg.run { display: inline-block; margin: 0 4px; }
 .chipmk, .sb-mk.chipmk { background: #d7f2ee; color: #0b5a52; border-radius: 999px; font-weight: 600; margin: 0 1px; border: 1px solid #8fd3c9; }
 .sb-more { align-self: center; font-size: .62rem; font-weight: 700; color: var(--text-dim); z-index: 2; }
 .sb-train { min-height: 26px; background: repeating-linear-gradient(to right, transparent 0 calc(var(--cw) - 1px), #f2f4f7 calc(var(--cw) - 1px) var(--cw)); background-position-x: var(--lw); }

@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Modal } from "../../components/Modal";
 import { StatusMsg } from "../../components/seasonParts";
-import { loadTemplates } from "../../lib/tests";
-import { fmtDate } from "../../lib/util";
+import { CYCLE_LABEL, WINDOW_KIND, loadRunnable, type Protocol, type Version } from "../../lib/measures";
+import { isoDiffDays } from "../../lib/season";
+import { fmtDate, isoAdd } from "../../lib/util";
 import {
   disableBoardRow, EVENT_KIND, loadRegistrations, loadStandard, loadStandardOptions, saveEvent, saveStandard, saveWindow, setRegistration,
-  type BoardComp, type BoardEvent, type BoardWindow, type RegSwimmer
+  windowSquads, type BoardComp, type BoardData, type BoardEvent, type BoardWindow, type RegSwimmer
 } from "../../lib/seasonBoard";
 import type { BoardSquad } from "./SeasonBoard";
 
@@ -18,24 +19,34 @@ const errText = (e: unknown) => "Could not save: " + ((e as Error).message || St
 
 // ---------------------------------------------------------------------------
 // Test set windows and squad movement windows
+// Test windows are the one list shared with Metrics & Measures
+// (claude/specs/metrics-season-link.md): the tests in the window, its kind
+// (baseline / mid / end …) and the squads on the plan it covers.
 // ---------------------------------------------------------------------------
-export function WindowsEditor({ open, onClose, kind, seasonId, club, squads, windows, focusId, canEdit, onSaved }: {
+type WinDraft = Omit<BoardWindow, "id"> & { id: string | null };
+
+export function WindowsEditor({ open, onClose, kind, seasonId, club, squads, windows, data, focusId, canEdit, onSaved }: {
   open: boolean; onClose: () => void; kind: "test_set" | "squad_move"; seasonId: string; club: string; squads: BoardSquad[];
-  windows: BoardWindow[]; focusId: string | null; canEdit: boolean; onSaved: () => void;
+  windows: BoardWindow[]; data?: BoardData; focusId: string | null; canEdit: boolean; onSaved: () => void;
 }) {
-  const label = kind === "test_set" ? "Test set windows" : "Squad movement windows";
-  const templates = useQuery({ queryKey: ["templates", club], enabled: open && kind === "test_set", queryFn: () => loadTemplates(club) });
-  const blank = { id: null as string | null, kind, squad_id: null as string | null, test_set_template_id: null as string | null, title: "", starts_on: "", ends_on: "", note: "" as string | null };
-  const [draft, setDraft] = useState(blank);
+  const test = kind === "test_set";
+  const label = test ? "Test set windows" : "Squad movement windows";
+  const protocols = useQuery({ queryKey: ["mm_runnable", club], enabled: open && test, queryFn: () => loadRunnable(club) });
+  const blank: WinDraft = { id: null, kind, squad_id: null, title: "", starts_on: "", ends_on: "", note: "", test_kind: test ? "baseline" : null, protocol_ids: [], squad_ids: null };
+  const [draft, setDraft] = useState<WinDraft>(blank);
   const [msg, setMsg] = useState<Msg>(null);
   const [busy, setBusy] = useState(false);
   const list = windows.filter(w => w.kind === kind);
   useEffect(() => {
     if (!open) return;
     const f = focusId ? windows.find(w => w.id === focusId) : null;
-    setDraft(f ? { ...f } : blank); setMsg(null);
+    setDraft(f ? { ...f, squad_ids: f.squad_ids ?? (test && f.squad_id ? [f.squad_id] : null) } : blank); setMsg(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, focusId]);
+
+  const runs = protocols.data ?? [];
+  const code = new Map(runs.map(r => [r.protocol.id, r.protocol.code]));
+  const warnings = test ? windowWarnings(draft, runs, list, data, squads) : [];
 
   const save = async () => {
     if (!draft.title.trim()) return setMsg({ text: "Give the window a name.", error: true });
@@ -51,7 +62,15 @@ export function WindowsEditor({ open, onClose, kind, seasonId, club, squads, win
     try { await disableBoardRow("season_windows", id); onSaved(); setDraft(blank); setMsg({ text: "Removed. It is disabled, not erased." }); }
     catch (e) { setMsg({ text: errText(e), error: true }); } finally { setBusy(false); }
   };
-  const sqName = (id: string | null) => (id ? squads.find(s => s.id === id)?.name ?? "—" : "All squads");
+  const sqNames = (w: BoardWindow) => {
+    const ids = windowSquads(w);
+    return ids ? ids.map(id => squads.find(s => s.id === id)?.name ?? "—").join(", ") : "All squads";
+  };
+  const toggleSquad = (id: string) => setDraft(d => {
+    const cur = new Set(d.squad_ids ?? []);
+    if (cur.has(id)) cur.delete(id); else cur.add(id);
+    return { ...d, squad_ids: cur.size ? [...cur] : null };
+  });
 
   return (
     <Modal open={open} onClose={onClose} title={label} wide>
@@ -59,8 +78,12 @@ export function WindowsEditor({ open, onClose, kind, seasonId, club, squads, win
         <ul className="pl-list">
           {list.map(w => (
             <li key={w.id} className={draft.id === w.id ? "on" : ""}>
-              <div><div className="meet-name">{w.title}</div><div className="dim small">{fmtDate(w.starts_on)} – {fmtDate(w.ends_on)} · {sqName(w.squad_id)}</div>{w.note && <div className="small">{w.note}</div>}</div>
-              {canEdit && <div className="btn-row nowrap"><button type="button" className="btn small" onClick={() => setDraft({ ...w })}>Edit</button><button type="button" className="btn small" onClick={() => remove(w.id)} disabled={busy}>Remove</button></div>}
+              <div>
+                <div className="meet-name">{w.title}{test && w.test_kind ? <span className="chip tiny">{WINDOW_KIND[w.test_kind] ?? w.test_kind}</span> : null}</div>
+                <div className="dim small">{fmtDate(w.starts_on)} – {fmtDate(w.ends_on)} · {sqNames(w)}{test ? ` · ${w.protocol_ids.length ? w.protocol_ids.map(id => code.get(id) ?? "test").join(", ") : "any test"}` : ""}</div>
+                {w.note && <div className="small">{w.note}</div>}
+              </div>
+              {canEdit && <div className="btn-row nowrap"><button type="button" className="btn small" onClick={() => setDraft({ ...w, squad_ids: test ? windowSquads(w) : null })}>Edit</button><button type="button" className="btn small" onClick={() => remove(w.id)} disabled={busy}>Remove</button></div>}
             </li>
           ))}
         </ul>
@@ -69,25 +92,42 @@ export function WindowsEditor({ open, onClose, kind, seasonId, club, squads, win
         <fieldset className="plain-fieldset">
           <legend>{draft.id ? "Edit window" : "Add a window"}</legend>
           <label htmlFor="sw-title">Name</label>
-          <input id="sw-title" type="text" value={draft.title} placeholder={kind === "test_set" ? "e.g. Autumn CSS test" : "e.g. January squad moves"} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} />
+          <input id="sw-title" type="text" value={draft.title} placeholder={test ? "e.g. Test Set 2" : "e.g. January squad moves"} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} />
           <div className="field-pair">
             <div><label htmlFor="sw-from">Starts</label><input id="sw-from" type="date" value={draft.starts_on} onChange={e => setDraft(d => ({ ...d, starts_on: e.target.value }))} /></div>
             <div><label htmlFor="sw-to">Finishes</label><input id="sw-to" type="date" value={draft.ends_on} onChange={e => setDraft(d => ({ ...d, ends_on: e.target.value }))} /></div>
           </div>
-          <label htmlFor="sw-squad">Squad</label>
-          <select id="sw-squad" value={draft.squad_id ?? ""} onChange={e => setDraft(d => ({ ...d, squad_id: e.target.value || null }))}>
-            <option value="">All squads</option>
-            {squads.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
-          {kind === "test_set" && <>
-            <label htmlFor="sw-tpl">Test set</label>
-            <select id="sw-tpl" value={draft.test_set_template_id ?? ""} onChange={e => setDraft(d => ({ ...d, test_set_template_id: e.target.value || null }))}>
-              <option value="">Not chosen</option>
-              {(templates.data ?? []).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+          {test ? <>
+            <label htmlFor="sw-kind">Kind of window</label>
+            <select id="sw-kind" value={draft.test_kind ?? ""} onChange={e => setDraft(d => ({ ...d, test_kind: e.target.value || null }))}>
+              {Object.entries(WINDOW_KIND).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+            <fieldset className="choice-set"><legend>Tests in this window</legend>
+              {protocols.isLoading ? <p className="dim small">Loading tests…</p>
+                : !runs.length ? <p className="dim small">No test is published yet. Publish one in Metrics &amp; Measures → Protocol library; until then the window takes any test.</p>
+                : runs.map(({ protocol: p, version: v }) => (
+                  <label key={p.id} className="inline check-inline"><input type="checkbox" checked={draft.protocol_ids.includes(p.id)}
+                    onChange={e => setDraft(d => ({ ...d, protocol_ids: e.target.checked ? [...d.protocol_ids, p.id] : d.protocol_ids.filter(x => x !== p.id) }))} />
+                    {" "}<strong>{p.code}</strong> {p.name}{v.intended_cycle ? <span className="dim small"> · {CYCLE_LABEL[v.intended_cycle]} weeks</span> : null}</label>))}
+              {/* Keep tests already in the window that are no longer runnable */}
+              {draft.protocol_ids.filter(id => !code.has(id)).map(id => <p key={id} className="dim small">+ a test that is no longer published</p>)}
+            </fieldset>
+            <fieldset className="choice-set"><legend>Squads</legend>
+              <label className="inline check-inline"><input type="checkbox" checked={!draft.squad_ids} onChange={() => setDraft(d => ({ ...d, squad_ids: d.squad_ids ? null : [] }))} /> All squads on this plan</label>
+              {draft.squad_ids && squads.map(s => (
+                <label key={s.id} className="inline check-inline"><input type="checkbox" checked={draft.squad_ids!.includes(s.id)} onChange={() => toggleSquad(s.id)} /> {s.name}</label>
+              ))}
+            </fieldset>
+          </> : <>
+            <label htmlFor="sw-squad">Squad</label>
+            <select id="sw-squad" value={draft.squad_id ?? ""} onChange={e => setDraft(d => ({ ...d, squad_id: e.target.value || null }))}>
+              <option value="">All squads</option>
+              {squads.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </>}
           <label htmlFor="sw-note">Note <span className="dim">(optional)</span></label>
           <input id="sw-note" type="text" value={draft.note ?? ""} onChange={e => setDraft(d => ({ ...d, note: e.target.value }))} />
+          {warnings.length > 0 && <ul className="notice warn small">{warnings.map((w, i) => <li key={i}>{w}</li>)}</ul>}
           <div className="btn-row gap-top">
             <button type="button" className="btn primary" onClick={save} disabled={busy}>{busy ? "Saving…" : draft.id ? "Save changes" : "Add window"}</button>
             {draft.id && <button type="button" className="btn" onClick={() => setDraft(blank)}>New window</button>}
@@ -97,6 +137,38 @@ export function WindowsEditor({ open, onClose, kind, seasonId, club, squads, win
       <StatusMsg msg={msg} />
     </Modal>
   );
+}
+
+/**
+ * Planning checks for a test window (warnings only — a window can still be saved):
+ * - none of the window's weeks is the test's intended cycle week (e.g. Sprint) for a squad;
+ * - another window for the same test is closer than the test's minimum gap.
+ */
+function windowWarnings(d: WinDraft, runs: { protocol: Protocol; version: Version }[], all: BoardWindow[], data: BoardData | undefined, squads: BoardSquad[]): string[] {
+  if (!d.starts_on || !d.ends_on || d.ends_on < d.starts_on) return [];
+  const out: string[] = [];
+  const chosen = runs.filter(r => d.protocol_ids.includes(r.protocol.id));
+  const sqIds = d.squad_ids ?? squads.map(s => s.id);
+  if (data) {
+    for (const { protocol: p, version: v } of chosen) {
+      if (!v.intended_cycle) continue;
+      const missing = sqIds.filter(sid => {
+        const weeks = data.macros.filter(m => m.squadIds.includes(sid)).flatMap(m => m.micros)
+          .filter(mi => mi.week_commencing! <= d.ends_on && isoAdd(mi.week_commencing!, 6) >= d.starts_on);
+        return weeks.length > 0 && !weeks.some(mi => mi.qes_focus === v.intended_cycle);
+      });
+      if (missing.length) out.push(`${p.code} is meant for ${CYCLE_LABEL[v.intended_cycle]} weeks, but no week in this window is a ${CYCLE_LABEL[v.intended_cycle]} week for ${missing.map(id => squads.find(s => s.id === id)?.name ?? "a squad").join(", ")}. Tests run then are kept but compared with caution.`);
+    }
+  }
+  for (const { protocol: p, version: v } of chosen) {
+    if (!v.min_gap_days) continue;
+    for (const w of all) {
+      if (w.id === d.id || !(w.protocol_ids.length === 0 || w.protocol_ids.includes(p.id))) continue;
+      const gap = d.starts_on > w.ends_on ? isoDiffDays(w.ends_on, d.starts_on) : w.starts_on > d.ends_on ? isoDiffDays(d.ends_on, w.starts_on) : 0;
+      if (gap < v.min_gap_days) out.push(`${p.code} needs at least ${v.min_gap_days} days between tests; this window is ${gap ? gap + " days from" : "overlapping"} ${w.title}.`);
+    }
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------

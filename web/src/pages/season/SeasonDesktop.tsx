@@ -5,7 +5,8 @@ import { useAuth } from "../../auth/AuthProvider";
 import { useClub } from "../../club/ClubProvider";
 import { canEdit as canEditLv, LEVEL_NOTE, sectionLevel } from "../../lib/access";
 import { fmtDate, todayLocal } from "../../lib/util";
-import { loadBoard, loadPanels } from "../../lib/seasonBoard";
+import { loadBoard, loadPanels, loadSeasonMm } from "../../lib/seasonBoard";
+import { loadProtocols } from "../../lib/measures";
 import { usePlanSquads } from "../plans/PlanList";
 import { chooseSeason, useActiveSeason } from "./Planning";
 import { SeasonBoard } from "./SeasonBoard";
@@ -39,7 +40,10 @@ export function SeasonDesktop() {
   };
   const plan = season ? `?season=${season.id}` : "";
   const squads = usePlanSquads(club);
-  const board = useQuery({ queryKey: ["season_board", season?.id], enabled: !!season, queryFn: () => loadBoard(season!.id, season!.start_date, season!.finish_date) });
+  const board = useQuery({ queryKey: ["season_board", season?.id, clubId], enabled: !!season, queryFn: () => loadBoard(season!.id, season!.start_date, season!.finish_date, clubId) });
+  const mm = useQuery({ queryKey: ["season_mm", season?.id], enabled: !!season, staleTime: 60 * 1000, queryFn: () => loadSeasonMm(season!.id) });
+  const protocols = useQuery({ queryKey: ["mm_protocols", club], enabled: !!club, staleTime: 5 * 60 * 1000, queryFn: () => loadProtocols(club!) });
+  const protocolCode = new Map((protocols.data ?? []).map(p => [p.id, p.code]));
   const panels = useQuery({ queryKey: ["season_panels", season?.id], enabled: !!season, staleTime: 60 * 1000, queryFn: () => loadPanels(season!.id) });
   const [filter, setFilter] = useState<Set<string> | null>(null);
   const [open, setOpen] = useState<Open>(null);
@@ -48,7 +52,7 @@ export function SeasonDesktop() {
   const allSquads = (squads.data ?? []).filter(s => !!season?.squad_ids.includes(s.id));
   const selected = filter ?? new Set(allSquads.map(s => s.id));
   const shownSquads = allSquads.filter(s => selected.has(s.id));
-  const refresh = () => { qc.invalidateQueries({ queryKey: ["season_board"] }); qc.invalidateQueries({ queryKey: ["season_panels"] }); };
+  const refresh = () => { qc.invalidateQueries({ queryKey: ["season_board"] }); qc.invalidateQueries({ queryKey: ["season_panels"] }); qc.invalidateQueries({ queryKey: ["season_mm"] }); qc.invalidateQueries({ queryKey: ["mm_windows"] }); };
 
   const toggle = (id: string) => setFilter(f => {
     const n = new Set(f ?? allSquads.map(s => s.id));
@@ -116,17 +120,18 @@ export function SeasonDesktop() {
       {season && board.data && allSquads.length > 0 && (
         <SeasonBoard season={season} squads={shownSquads} data={board.data} today={today} mySquads={mySquads} canEdit={editable} canPlan={canPlan}
           onWindow={id => setOpen({ kind: board.data!.windows.find(w => w.id === id)?.kind ?? "test_set", focus: id })}
-          onEvent={id => setOpen({ kind: "events", focus: id })} />
+          onEvent={id => setOpen({ kind: "events", focus: id })}
+          onRun={id => navigate(`/measures/session/${id}`)} coverage={mm.data?.mm_coverage} protocolCode={protocolCode} />
       )}
 
       {season && allSquads.length > 0 && (panels.error ? <p className="msg error">Couldn't load the season figures. <button type="button" className="link-btn" onClick={() => panels.refetch()}>Try again</button></p>
         : panels.isLoading ? <p className="dim">Working out the season figures…</p>
-        : panels.data && <SeasonPanels panels={panels.data} squads={allSquads} squadFilter={selected} isAdmin={isAdmin} canRegister={canRegister}
+        : panels.data && <SeasonPanels panels={panels.data} mm={mm.data} mmError={!!mm.error} onWindow={id => setOpen({ kind: "test_set", focus: id })} squads={allSquads} squadFilter={selected} isAdmin={isAdmin} canRegister={canRegister}
             onStandard={() => setOpen({ kind: "standard" })} onRegister={id => setOpen({ kind: "regs", focus: id })} />)}
 
       {season && board.data && club && <>
         <WindowsEditor open={open?.kind === "test_set" || open?.kind === "squad_move"} kind={open?.kind === "squad_move" ? "squad_move" : "test_set"} onClose={() => setOpen(null)}
-          seasonId={season.id} club={club} squads={allSquads} windows={board.data.windows} focusId={open?.focus ?? null} canEdit={editable} onSaved={refresh} />
+          seasonId={season.id} club={club} squads={allSquads} windows={board.data.windows} data={board.data} focusId={open?.focus ?? null} canEdit={editable} onSaved={refresh} />
         <EventsEditor open={open?.kind === "events"} onClose={() => setOpen(null)} seasonId={season.id} squads={allSquads} events={board.data.events}
           focusId={open?.focus ?? null} canEdit={editable} onSaved={refresh} />
         {clubId && <RegistrationsEditor open={open?.kind === "regs"} onClose={() => setOpen(null)} comps={upcoming.length ? upcoming : board.data.comps}
