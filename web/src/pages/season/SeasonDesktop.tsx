@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/AuthProvider";
 import { useClub } from "../../club/ClubProvider";
@@ -7,7 +7,7 @@ import { canEdit as canEditLv, LEVEL_NOTE, sectionLevel } from "../../lib/access
 import { fmtDate, todayLocal } from "../../lib/util";
 import { loadBoard, loadPanels } from "../../lib/seasonBoard";
 import { usePlanSquads } from "../plans/PlanList";
-import { useActiveSeason, useSeasons } from "./Planning";
+import { chooseSeason, useActiveSeason } from "./Planning";
 import { SeasonBoard } from "./SeasonBoard";
 import { SeasonPanels } from "./SeasonPanels";
 import { EventsEditor, RegistrationsEditor, StandardEditor, WindowsEditor } from "./BoardEditors";
@@ -29,17 +29,23 @@ export function SeasonDesktop() {
   const mySquads = new Set((access?.squads ?? []) as string[]);
   const today = todayLocal().date;
 
-  const seasons = useSeasons(club);
-  const active = useActiveSeason(club);
-  const [seasonId, setSeasonId] = useState<string | null>(null);
-  const season = (seasonId && seasons.data?.find(s => s.id === seasonId)) || active.season;
+  const navigate = useNavigate();
+  const [, setParams] = useSearchParams();
+  const seasons = useActiveSeason(club);
+  const season = seasons.season;
+  const pickSeason = (id: string) => {
+    if (id === "new") { navigate("/season/plan?season=new"); return; }
+    chooseSeason(club, id); setParams({ season: id }, { replace: true }); setFilter(null);
+  };
+  const plan = season ? `?season=${season.id}` : "";
   const squads = usePlanSquads(club);
   const board = useQuery({ queryKey: ["season_board", season?.id], enabled: !!season, queryFn: () => loadBoard(season!.id, season!.start_date, season!.finish_date) });
   const panels = useQuery({ queryKey: ["season_panels", season?.id], enabled: !!season, staleTime: 60 * 1000, queryFn: () => loadPanels(season!.id) });
   const [filter, setFilter] = useState<Set<string> | null>(null);
   const [open, setOpen] = useState<Open>(null);
 
-  const allSquads = squads.data ?? [];
+  // Only the squads linked to this season plan
+  const allSquads = (squads.data ?? []).filter(s => !!season?.squad_ids.includes(s.id));
   const selected = filter ?? new Set(allSquads.map(s => s.id));
   const shownSquads = allSquads.filter(s => selected.has(s.id));
   const refresh = () => { qc.invalidateQueries({ queryKey: ["season_board"] }); qc.invalidateQueries({ queryKey: ["season_panels"] }); };
@@ -63,14 +69,16 @@ export function SeasonDesktop() {
           {season ? <p className="dim"><strong>{season.title}</strong> · {fmtDate(season.start_date)} – {fmtDate(season.finish_date)}</p>
             : seasons.data && <p className="dim">No season set up yet{editable ? " — use Season & breaks to create one" : ""}.</p>}
         </div>
-        {(seasons.data?.length ?? 0) > 1 && (
+        {(seasons.data?.length || editable) ? (
           <div>
-            <label htmlFor="sp-season" className="sr-only">Season</label>
-            <select id="sp-season" value={season?.id ?? ""} onChange={e => setSeasonId(e.target.value)}>
-              {seasons.data!.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
+            <label htmlFor="sp-season">Season plan</label>
+            <select id="sp-season" value={season?.id ?? ""} onChange={e => pickSeason(e.target.value)}>
+              {!season && <option value="">Choose…</option>}
+              {(seasons.data ?? []).map(s => <option key={s.id} value={s.id}>{s.title} · {s.squad_ids.length} squad{s.squad_ids.length === 1 ? "" : "s"}</option>)}
+              {editable && <option value="new">+ New season plan</option>}
             </select>
           </div>
-        )}
+        ) : null}
       </div>
       {LEVEL_NOTE[level] && <p className="notice">{LEVEL_NOTE[level]}</p>}
 
@@ -87,9 +95,9 @@ export function SeasonDesktop() {
         </div>
         {(editable || canPlan || canRegister) && (
           <div className="sp-edit" role="group" aria-label="Edit the season">
-            {editable && <Link className="btn small" to="/season/plan">Season &amp; breaks</Link>}
-            {editable && <Link className="btn small" to="/season/plan#pl-macros">Macros &amp; mesos</Link>}
-            {editable && <Link className="btn small" to="/season/plan#pl-comps">Competitions &amp; types</Link>}
+            {editable && <Link className="btn small" to={`/season/plan${plan}`}>Season, squads &amp; breaks</Link>}
+            {editable && <Link className="btn small" to={`/season/plan${plan}#pl-macros`}>Macros &amp; mesos</Link>}
+            {editable && <Link className="btn small" to={`/season/plan${plan}#pl-comps`}>Competitions &amp; types</Link>}
             {canRegister && <button type="button" className="btn small" onClick={() => setOpen({ kind: "regs" })} disabled={!upcoming.length && !board.data?.comps.length}>Registrations</button>}
             <button type="button" className="btn small" onClick={() => setOpen({ kind: "test_set" })}>Test windows</button>
             <button type="button" className="btn small" onClick={() => setOpen({ kind: "squad_move" })}>Squad moves</button>
@@ -101,13 +109,17 @@ export function SeasonDesktop() {
 
       {(seasons.isLoading || squads.isLoading || board.isLoading) && <p className="dim">Loading the season…</p>}
       {(board.error || squads.error) && <p className="msg error">Couldn't load the season. <button type="button" className="link-btn" onClick={() => { board.refetch(); squads.refetch(); }}>Try again</button></p>}
-      {season && board.data && (
+      {season && squads.data && !allSquads.length && (
+        <p className="notice warn">No squads are linked to <strong>{season.title}</strong> yet.{" "}
+          {editable ? <Link to={`/season/plan${plan}`}>Choose its squads</Link> : "Ask your head coach to choose its squads."}</p>
+      )}
+      {season && board.data && allSquads.length > 0 && (
         <SeasonBoard season={season} squads={shownSquads} data={board.data} today={today} mySquads={mySquads} canEdit={editable} canPlan={canPlan}
           onWindow={id => setOpen({ kind: board.data!.windows.find(w => w.id === id)?.kind ?? "test_set", focus: id })}
           onEvent={id => setOpen({ kind: "events", focus: id })} />
       )}
 
-      {season && (panels.error ? <p className="msg error">Couldn't load the season figures. <button type="button" className="link-btn" onClick={() => panels.refetch()}>Try again</button></p>
+      {season && allSquads.length > 0 && (panels.error ? <p className="msg error">Couldn't load the season figures. <button type="button" className="link-btn" onClick={() => panels.refetch()}>Try again</button></p>
         : panels.isLoading ? <p className="dim">Working out the season figures…</p>
         : panels.data && <SeasonPanels panels={panels.data} squads={allSquads} squadFilter={selected} isAdmin={isAdmin} canRegister={canRegister}
             onStandard={() => setOpen({ kind: "standard" })} onRegister={id => setOpen({ kind: "regs", focus: id })} />)}
