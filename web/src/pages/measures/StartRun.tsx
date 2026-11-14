@@ -5,7 +5,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { useClub } from "../../club/ClubProvider";
 import { ClubPicker } from "../../club/ClubPicker";
 import { loadClubSwimmers, loadSquads, type TestSwimmer } from "../../lib/tests";
-import { CYCLE_LABEL, WINDOW_KIND, createSession, cycleWeek, levelSummary, loadRunnable, loadWindows, versionLabel } from "../../lib/measures";
+import { CYCLE_LABEL, WINDOW_KIND, addRunToPlan, coveringWindow, createSession, cycleWeek, levelSummary, loadPlans, loadRunnable, loadWindows, planFor, versionLabel } from "../../lib/measures";
 import { logEvent, todayLocal, useCoachName } from "../../lib/util";
 import { MBack, NoAccess, statusChip, useMeasuresAccess } from "./Measures";
 
@@ -14,6 +14,8 @@ import { MBack, NoAccess, statusChip, useMeasuresAccess } from "./Measures";
 // that the test is being run as written; the Season Planner's cycle week is
 // shown against the protocol's intended week so an off-cycle test is a
 // conscious choice (it is kept, but compared with caution).
+// A run that no test window in the season plan covers asks the coach to add
+// it to the plan first (claude/specs/metrics-season-link.md, decision 7).
 
 type Group = "club" | "squad" | "swimmers";
 const POOLS: [string, "SC" | "LC"][] = [["25m", "SC"], ["50m", "LC"], ["17m", "SC"]];
@@ -31,6 +33,8 @@ export function StartRun() {
   const squads = useQuery({ queryKey: ["test_squads", club], enabled: !!club && canRun, queryFn: () => loadSquads(club!) });
 
   const windows = useQuery({ queryKey: ["mm_windows", club], enabled: !!club && canRun, queryFn: () => loadWindows(club!) });
+  const plans = useQuery({ queryKey: ["mm_plans", club], enabled: !!club && canRun, queryFn: () => loadPlans(club!) });
+  const [ask, setAsk] = useState(false);
   const [pid, setPid] = useState(params.get("protocol") ?? "");
   const [date, setDate] = useState(todayLocal().date);
   const [group, setGroup] = useState<Group | null>(squadOnly ? "squad" : null);
@@ -54,31 +58,41 @@ export function StartRun() {
 
   const cw = useQuery({ queryKey: ["mm_cycle", club, group === "squad" ? squadId : null, date], enabled: !!club && !!date,
     queryFn: () => cycleWeek(club!, group === "squad" && squadId ? squadId : null, date) });
-  useEffect(() => { setMsg(null); }, [pid, group, squadId]);
+  useEffect(() => { setMsg(null); setAsk(false); }, [pid, group, squadId, date]);
 
   if (!canRun) return <><MBack /><NoAccess /></>;
   const intended = chosenRun?.version.intended_cycle ?? null;
   const focus = cw.data?.focus ?? null;
   const offCycle = !!intended && !!focus && focus !== intended;
-  const win = (windows.data ?? []).find(w => date >= w.starts_on && date <= w.ends_on && (!w.protocol_ids.length || (chosenRun && w.protocol_ids.includes(chosenRun.protocol.id)))) ?? null;
+  const runSquad = group === "squad" && squadId ? squadId : null;
+  const win = coveringWindow(windows.data ?? [], plans.data ?? [], chosenRun?.protocol.id ?? null, runSquad, date);
+  const target = planFor(plans.data ?? [], runSquad, date);
+  const squadName = (squads.data ?? []).find(s => s.id === runSquad)?.name ?? "this squad";
 
-  const start = async () => {
+  const start = async (mode: "check" | "add" | "skip" = "check") => {
     setMsg(null);
     if (!chosenRun) { setMsg("Choose the test."); return; }
-    if (chosenRun.protocol.fixed_date_only && !win) { setMsg("This test runs on its fixed date only, and no testing window for it covers this date. Add one in Testing windows."); return; }
+    if (chosenRun.protocol.fixed_date_only && !win) { setMsg("This test runs on its fixed date only, and no test window in the season plan covers this date. Add one in the Season Plan (Test windows)."); return; }
     if (!group) { setMsg("Choose who the test is for."); return; }
     if (group === "squad" && !squadId) { setMsg("Choose the squad."); return; }
     if (!chosen.length) { setMsg("No swimmers are in this group."); return; }
+    if (!win && mode === "check" && windows.data && plans.data) { setAsk(true); return; }
     setStarting(true);
     try {
+      let windowId = win?.id ?? null;
+      if (!win && mode === "add" && target) {
+        windowId = await addRunToPlan(target.plan.id, runSquad, !target.linked, chosenRun.protocol, date);
+        qc.invalidateQueries({ queryKey: ["mm_windows"] }); qc.invalidateQueries({ queryKey: ["mm_plans"] });
+        qc.invalidateQueries({ queryKey: ["season_board"] }); qc.invalidateQueries({ queryKey: ["season_panels"] }); qc.invalidateQueries({ queryKey: ["season_mm"] });
+      }
       const id = await createSession({
-        version_id: chosenRun.version.id, window_id: win?.id ?? null, date, group_type: group, squad_id: group === "squad" ? squadId : null, swimmer_ids: chosen.map(s => s.id),
+        version_id: chosenRun.version.id, window_id: windowId, date, group_type: group, squad_id: group === "squad" ? squadId : null, swimmer_ids: chosen.map(s => s.id),
         pool, course: POOLS.find(x => x[0] === pool)?.[1] ?? null, as_protocol: asWritten, tester: coach || null, notes: notes.trim() || null
       });
       logEvent(session?.user.id, club, "core_task", "mm_start", { protocol: chosenRun.protocol.code, swimmers: chosen.length });
       qc.invalidateQueries({ queryKey: ["mm_sessions"] });
       navigate(`/measures/session/${id}`);
-    } catch (e) { setMsg("Couldn't start the test: " + (e as Error).message); setStarting(false); }
+    } catch (e) { setMsg("Couldn't start the test: " + (e as Error).message); setStarting(false); setAsk(false); }
   };
   const tq = search.trim().toLowerCase();
 
@@ -112,8 +126,9 @@ export function StartRun() {
           <label>Pool<select value={pool} onChange={e => setPool(e.target.value)}>{POOLS.map(([p, c]) => <option key={p} value={p}>{p} ({c === "SC" ? "short course" : "long course"})</option>)}</select></label>
         </div>
         <p className="hint">Any date is fine. A swimmer's first result on this test and level becomes their baseline.</p>
-        {win && <p className="hint">In the testing window <strong>{win.name}</strong> ({WINDOW_KIND[win.kind] ?? win.kind}).</p>}
-        {chosenRun?.protocol.fixed_date_only && !win && <p className="notice warn">This test runs on its fixed date only. No testing window covers this date.</p>}
+        {win && <p className="hint">In the season plan: test window <strong>{win.name}</strong>{win.kind ? <> ({WINDOW_KIND[win.kind] ?? win.kind})</> : null}{win.season_title ? <> · {win.season_title}</> : null}.</p>}
+        {!win && chosenRun && windows.data && <p className="hint">No test window in the season plan covers this date{runSquad ? " for this squad" : ""}. You'll be asked to add it when you start.</p>}
+        {chosenRun?.protocol.fixed_date_only && !win && <p className="notice warn">This test runs on its fixed date only. No test window in the season plan covers this date.</p>}
         {chosenRun && (
           <p className={"notice" + (offCycle ? " warn" : "")}>
             {focus ? <>Season Planner: <strong>{CYCLE_LABEL[focus] ?? focus} week</strong>{cw.data?.week_no ? ` (week ${cw.data.week_no})` : ""}. </> : <>No cycle week found in the Season Planner for this date. </>}
@@ -155,7 +170,20 @@ export function StartRun() {
 
       {(swimmers.error || squads.error) && <LoadError e={(swimmers.error || squads.error)!} what="swimmers and squads" />}
       {msg && <p className="msg error" role="alert">{msg}</p>}
-      <button className="btn primary wide" disabled={starting || !chosenRun || !group} onClick={start}>{starting ? "Starting…" : "Start test"}</button>
+      {ask && chosenRun ? (
+        <section className="card notice warn" role="alertdialog" aria-labelledby="mm-ask">
+          <h2 id="mm-ask">Add this test to the season plan?</h2>
+          {!target ? <p>No season plan runs on this date, so there is nothing to add it to. You can start it anyway; it is kept as an ad hoc test.</p>
+            : canPublish ? <p>{chosenRun.protocol.code} on this date isn't in a test window. Adding it puts a one-day test window on <strong>{target.plan.title}</strong>
+                {!target.linked && runSquad ? <> and links <strong>{squadName}</strong> to that plan</> : null}, so the test shows on the season calendar and in its figures.</p>
+            : <p>{chosenRun.protocol.code} on this date isn't in a test window on the season plan. Ask the head coach to add it to <strong>{target.plan.title}</strong>{!target.linked && runSquad ? <> (and link {squadName} to the plan)</> : null}. You can start it now and it will be linked once the window is added.</p>}
+          <div className="done-actions">
+            {target && canPublish && <button className="btn primary" disabled={starting} onClick={() => start("add")}>{starting ? "Starting…" : "Add to season plan and start"}</button>}
+            <button className="btn" disabled={starting} onClick={() => start("skip")}>Start without adding</button>
+            <button className="btn" disabled={starting} onClick={() => setAsk(false)}>Cancel</button>
+          </div>
+        </section>
+      ) : <button className="btn primary wide" disabled={starting || !chosenRun || !group} onClick={() => start()}>{starting ? "Starting…" : "Start test"}</button>}
       </>}
     </>
   );

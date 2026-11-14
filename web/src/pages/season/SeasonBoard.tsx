@@ -5,8 +5,9 @@ import { fmtTime, isoDiffDays, isoDow } from "../../lib/season";
 import {
   annualCols, brackets, COMP_KIND, dayCols, EVENT_KIND, laneItems, macroColour, macroRange, mesoColour, mesoRuns, monday,
   monthLabel, monthRange, shader, shiftMonth, span, squadItems, squadWeeks, VIEWS, weekMonth,
-  type BoardData, type BoardItem, type BoardMacro, type Col, type View
+  type BoardData, type BoardItem, type BoardMacro, type Col, type MmCoverage, type View
 } from "../../lib/seasonBoard";
+import { CYCLE_LABEL, WINDOW_KIND } from "../../lib/measures";
 
 // The landscape season calendar (A-131 to A-136). Squads as bands of three rows:
 // name (hover → macro over meso brackets), events, training (blue by planned volume).
@@ -29,9 +30,13 @@ export interface BoardProps {
   canPlan: boolean;
   onWindow: (id: string) => void;
   onEvent: (id: string) => void;
+  /** Metrics & Measures link: open a test run; window coverage and protocol codes for the window pop-up. */
+  onRun?: (id: string) => void;
+  coverage?: MmCoverage[];
+  protocolCode?: Map<string, string>;
 }
 
-export function SeasonBoard({ season, squads, data, today, mySquads, canEdit, canPlan, onWindow, onEvent }: BoardProps) {
+export function SeasonBoard({ season, squads, data, today, mySquads, canEdit, canPlan, onWindow, onEvent, onRun, coverage, protocolCode }: BoardProps) {
   const navigate = useNavigate();
   const clampDate = (d: string) => (d < season.start_date ? season.start_date : d > season.finish_date ? season.finish_date : d);
   const [view, setView] = useState<View>("annual");
@@ -209,12 +214,14 @@ export function SeasonBoard({ season, squads, data, today, mySquads, canEdit, ca
       <div className="sb-row sb-events" style={{ ...gridStyle, gridTemplateRows: `repeat(${lanes}, 20px)` }}>
         <div className="sb-label sub" style={{ gridRow: `1 / ${lanes + 1}` }}>Events</div>
         {placed.map(({ it, a, b, lane }) => <Marker key={it.t + it.id} it={it} style={pos(a, b, lane + 1)} tipProps={tipProps}
+          squadId={sq.id} coverage={coverage} protocolCode={protocolCode}
           onOpen={() => {
             if (it.t === "comp") navigate(canEdit ? `/season/competition/${it.id}` : it.comp.competition_id ? `/competitions?focus=${it.comp.competition_id}` : `/competitions?q=${encodeURIComponent(it.comp.name)}`);
             else if (it.t === "window") onWindow(it.id);
+            else if (it.t === "run") { if (onRun) onRun(it.id); else navigate(`/measures/session/${it.id}`); }
             else onEvent(it.id);
           }} />)}
-        {over.length > 0 && <span className="sb-more" style={pos(over[0].a, over[0].a, lanes)} {...tipProps(`${over.length} more`, over.map(o => o.it.t === "comp" ? o.it.comp.name : o.it.t === "window" ? o.it.w.title : o.it.e.title))}>+{over.length}</span>}
+        {over.length > 0 && <span className="sb-more" style={pos(over[0].a, over[0].a, lanes)} {...tipProps(`${over.length} more`, over.map(o => o.it.t === "comp" ? o.it.comp.name : o.it.t === "window" ? o.it.w.title : o.it.t === "run" ? `${o.it.r.code} test · ${fmtDate(o.it.r.session_date)}` : o.it.e.title))}>+{over.length}</span>}
       </div>
     );
 
@@ -319,8 +326,8 @@ export function SeasonBoard({ season, squads, data, today, mySquads, canEdit, ca
   );
 }
 
-function Marker({ it, style, onOpen, tipProps }: { it: BoardItem; style: CSSProperties; onOpen: () => void;
-  tipProps: (title: string, lines: string[]) => Record<string, unknown> }) {
+function Marker({ it, style, onOpen, tipProps, squadId, coverage, protocolCode }: { it: BoardItem; style: CSSProperties; onOpen: () => void;
+  tipProps: (title: string, lines: string[]) => Record<string, unknown>; squadId: string; coverage?: MmCoverage[]; protocolCode?: Map<string, string> }) {
   if (it.t === "comp") {
     const k = COMP_KIND[it.kind];
     const c = it.comp;
@@ -334,12 +341,32 @@ function Marker({ it, style, onOpen, tipProps }: { it: BoardItem; style: CSSProp
   }
   if (it.t === "window") {
     const w = it.w;
-    const label = w.kind === "test_set" ? "Test set window" : "Squad movement window";
+    const test = w.kind === "test_set";
+    const label = test ? "Test set window" + (w.test_kind ? ` · ${WINDOW_KIND[w.test_kind] ?? w.test_kind}` : "") : "Squad movement window";
+    const cov = test ? coverage?.find(c => c.window_id === w.id && c.squad_id === squadId) : undefined;
+    const tests = test ? (w.protocol_ids.length ? w.protocol_ids.map(id => protocolCode?.get(id) ?? "test").join(", ") : "Any test") : "";
+    const lines = [label, `Starts ${fmtDate(w.starts_on)} · finishes ${fmtDate(w.ends_on)}`, test ? `Tests: ${tests}` : "",
+      cov ? `${cov.tested} of ${cov.swimmers} swimmers tested in this window` : "", cov && cov.no_baseline ? `${cov.no_baseline} with no baseline yet` : "",
+      w.note || "", "Click for full details"];
     return (
-      <button type="button" className={"sb-mk win " + (w.kind === "test_set" ? "w-test" : "w-move")} style={style} onClick={onOpen}
-        aria-label={`${label}: ${w.title}, ${fmtDate(w.starts_on)} to ${fmtDate(w.ends_on)}`}
-        {...tipProps(w.title, [label, `Starts ${fmtDate(w.starts_on)} · finishes ${fmtDate(w.ends_on)}`, w.note || "", "Click for full details"])}>
+      <button type="button" className={"sb-mk win " + (test ? "w-test" : "w-move")} style={style} onClick={onOpen}
+        aria-label={`${label}: ${w.title}, ${fmtDate(w.starts_on)} to ${fmtDate(w.ends_on)}${cov ? `, ${cov.tested} of ${cov.swimmers} tested` : ""}`}
+        {...tipProps(w.title, lines)}>
         <span>{w.title}</span>
+      </button>
+    );
+  }
+  if (it.t === "run") {
+    const r = it.r;
+    const off = r.on_cycle === false;
+    const lines = [`${r.code} ${r.name}`.trim(), fmtDate(r.session_date),
+      r.cycle_focus ? `${CYCLE_LABEL[r.cycle_focus] ?? r.cycle_focus} week${r.cycle_week_no ? ` (week ${r.cycle_week_no})` : ""}${off ? " · off-cycle, compared with caution" : ""}` : "No cycle week in the plan",
+      `${r.tested} tested${r.not_tested ? ` · ${r.not_tested} not tested` : ""}${r.group_type === "squad" ? "" : r.group_type === "club" ? " · whole club" : " · chosen swimmers"}`,
+      r.window_id ? "" : "Not in a test window", r.status === "live" ? "Still running" : "Click to see the results"];
+    return (
+      <button type="button" className={"sb-mk run" + (off ? " off" : "")} style={style} onClick={onOpen}
+        aria-label={`Test run ${r.code}, ${fmtDate(r.session_date)}${off ? ", off-cycle" : ""}`} {...tipProps(`${r.code} test`, lines)}>
+        <i aria-hidden="true" />
       </button>
     );
   }
@@ -362,6 +389,8 @@ function Legend() {
       <span><i className="lg dot k-tt" /> Train-through</span>
       <span><i className="lg dot k-unset" /> Type not set</span>
       <span><i className="lg win w-test" /> Test set window</span>
+      <span><i className="lg run" /> Test run</span>
+      <span><i className="lg run off" /> Test run, off-cycle</span>
       <span><i className="lg win w-move" /> Squad movement</span>
       <span><i className="lg chipmk" /> Club event</span>
       <span className="lg-scale">Volume <i className="s1" /><i className="s2" /><i className="s3" /><i className="s4" /><i className="s5" /> more</span>

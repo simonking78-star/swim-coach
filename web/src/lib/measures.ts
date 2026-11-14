@@ -398,20 +398,70 @@ export const QUICK_LABEL = (code: string) =>
   : code === "UWK-DV" ? "Underwater kicks after the dive" : code;
 
 // ---------------------------------------------------------------------------
-// Testing windows (optional planned dates; required for fixed-date protocols)
+// Testing windows live in the Season Planner (season_windows, kind test_set).
+// They are optional planned dates, required only for fixed-date protocols. A
+// run is linked to the window that covers it by the database (mm_find_window).
+// Spec: claude/specs/metrics-season-link.md
 // ---------------------------------------------------------------------------
-export interface Window { id: string; club_id: string; name: string; kind: string; starts_on: string; ends_on: string; protocol_ids: string[]; active: boolean; }
+export interface Window {
+  id: string; club_id: string; season_id: string; season_title: string | null; name: string; kind: string | null;
+  starts_on: string; ends_on: string; protocol_ids: string[]; squad_ids: string[] | null; note: string | null;
+}
 export const WINDOW_KIND: Record<string, string> = { baseline: "Baseline", mid: "Mid-macro", end: "End-macro", novelty: "Novelty set", t_day: "T15–T30 day", pilot: "Pilot", other: "Other" };
+type RawWindow = { id: string; club_id: string; season_id: string; title: string; test_kind: string | null; starts_on: string; ends_on: string;
+  protocol_ids: string[] | null; squad_ids: string[] | null; note: string | null; seasons: { title: string; is_active: boolean } | null };
 export async function loadWindows(club: string): Promise<Window[]> {
-  const { data, error } = await db.from("mm_windows").select("*").eq("club_id", clubIdOf(club)).eq("active", true).order("starts_on");
-  fail(error); return (data ?? []) as Window[];
-}
-export async function saveWindow(club: string, w: Omit<Window, "id" | "club_id" | "active"> & { id?: string }) {
-  const row = { name: w.name.trim(), kind: w.kind, starts_on: w.starts_on, ends_on: w.ends_on, protocol_ids: w.protocol_ids };
-  const { error } = w.id ? await db.from("mm_windows").update(row).eq("id", w.id) : await db.from("mm_windows").insert({ ...row, club_id: clubIdOf(club) });
+  const { data, error } = await db.from("season_windows")
+    .select("id, club_id, season_id, title, test_kind, starts_on, ends_on, protocol_ids, squad_ids, note, seasons(title, is_active)")
+    .eq("club_id", clubIdOf(club)).eq("kind", "test_set").eq("is_active", true).order("starts_on");
   fail(error);
+  return ((data ?? []) as unknown as RawWindow[]).filter(w => w.seasons?.is_active !== false).map(w => ({
+    id: w.id, club_id: w.club_id, season_id: w.season_id, season_title: w.seasons?.title ?? null, name: w.title, kind: w.test_kind,
+    starts_on: w.starts_on, ends_on: w.ends_on, protocol_ids: w.protocol_ids ?? [], squad_ids: w.squad_ids, note: w.note
+  }));
 }
-export async function removeWindow(id: string) { const { error } = await db.from("mm_windows").update({ active: false }).eq("id", id); fail(error); }
+
+/** The squads on each active season plan of the club, with the plan's dates. */
+export interface PlanSquads { id: string; title: string; start_date: string; finish_date: string; squad_ids: string[]; }
+export async function loadPlans(club: string): Promise<PlanSquads[]> {
+  const { data, error } = await db.from("seasons").select("id, title, start_date, finish_date, season_squads(squad_id)")
+    .eq("club_id", clubIdOf(club)).eq("is_active", true).order("start_date", { ascending: false });
+  fail(error);
+  return ((data ?? []) as unknown as { id: string; title: string; start_date: string; finish_date: string; season_squads: { squad_id: string }[] }[])
+    .map(s => ({ id: s.id, title: s.title, start_date: s.start_date, finish_date: s.finish_date, squad_ids: (s.season_squads ?? []).map(x => x.squad_id) }));
+}
+
+/** Does a test window cover this run? Same rule as the database's mm_find_window. */
+export function coveringWindow(windows: Window[], plans: PlanSquads[], protocolId: string | null, squadId: string | null, date: string): Window | null {
+  return windows
+    .filter(w => date >= w.starts_on && date <= w.ends_on)
+    .filter(w => !w.protocol_ids.length || (!!protocolId && w.protocol_ids.includes(protocolId)))
+    .filter(w => !squadId || (w.squad_ids ? w.squad_ids.includes(squadId) : !!plans.find(p => p.id === w.season_id)?.squad_ids.includes(squadId)))
+    .sort((a, b) => (b.protocol_ids.length ? 1 : 0) - (a.protocol_ids.length ? 1 : 0) || b.starts_on.localeCompare(a.starts_on))[0] ?? null;
+}
+
+/** The plan a run belongs to: the one with the squad on it, else the plan running that day that already has squads. */
+export function planFor(plans: PlanSquads[], squadId: string | null, date: string): { plan: PlanSquads; linked: boolean } | null {
+  const running = plans.filter(p => date >= p.start_date && date <= p.finish_date);
+  const withSquad = squadId ? running.find(p => p.squad_ids.includes(squadId)) : null;
+  if (withSquad) return { plan: withSquad, linked: true };
+  const pick = running.slice().sort((a, b) => b.squad_ids.length - a.squad_ids.length)[0];
+  return pick ? { plan: pick, linked: !squadId } : null;
+}
+
+/** Put an ad hoc run into the season plan: link the squad if needed, then add a one-day test window. */
+export async function addRunToPlan(planId: string, squadId: string | null, linkSquad: boolean, protocol: Protocol, date: string): Promise<string> {
+  if (squadId && linkSquad) {
+    const { error } = await db.from("season_squads").insert({ season_id: planId, squad_id: squadId });
+    fail(error);
+  }
+  const { data, error } = await db.from("season_windows").insert({
+    season_id: planId, kind: "test_set", test_kind: "other", title: `${protocol.code} ${protocol.name}`.slice(0, 80),
+    starts_on: date, ends_on: date, protocol_ids: [protocol.id], squad_ids: squadId ? [squadId] : null, note: "Added when the test was run"
+  }).select("id").single();
+  fail(error);
+  return (data as { id: string }).id;
+}
 
 // ---------------------------------------------------------------------------
 // Monthly testing window and swimmer comparisons (graded repeat sets with the

@@ -2,6 +2,15 @@
 
 The version shown in the app footer comes from `package.json`. Bump it when a release goes out and add a line here.
 
+## Unreleased — Test sets linked to the Season Plan
+- One list of test windows for both sections: test windows are set on the Season Plan (**Test windows**) with the tests in them, the kind of window (baseline, mid, end…) and the squads on the plan they cover. Metrics & Measures → Testing windows now shows that list (A-146, A-148).
+- Each test run is linked to the test window that covers it automatically, including runs done before the window was added (A-146).
+- The cycle week (Quality / Endurance / Sprint) for a test now comes from the squad's season plan, so squads on a plan but not on a macro get one too; tests outside the protocol's intended week show as off-cycle (A-145).
+- Run a test: if no test window covers the date, the coach is asked to add it to the season plan (a one-day window, linking the squad to the plan if needed), or can start without adding (A-149).
+- Season calendar: test runs show as green diamonds (hollow when off-cycle); test window pop-ups list the tests and how many swimmers have been tested in the window (A-150).
+- Metrics panel: test set results from Metrics & Measures, grouped by test set title, median at each level per squad with the number of swimmers (all group sizes shown), change beyond noise once retests come in, and swimmers still without a baseline before the next window (A-147, A-151).
+- Window editor warns when no week in the window is the test's intended cycle week for a squad, or when two windows for the same test are closer than its minimum gap.
+
 ## Unreleased — Squads on season plans
 - Each season plan now lists the squads it covers (Planning → "Squads on this plan"). A club can run several plans at once, e.g. Masters alongside the competitive squads; a squad can be in only one plan on any date (squads already in an overlapping plan are greyed out).
 - Planning and the desktop Season Plan page have a season plan picker, including "+ New season plan"; the macro, competition and week editors follow the plan you picked.

@@ -2,7 +2,7 @@ import { Line } from "react-chartjs-2";
 import "../../lib/chartSetup";
 import { C } from "../../lib/chartSetup";
 import { fmtDate } from "../../lib/util";
-import { BANDS, type Panels } from "../../lib/seasonBoard";
+import { BANDS, type MmPanels, type MmPanelRow, type Panels } from "../../lib/seasonBoard";
 import type { BoardSquad } from "./SeasonBoard";
 
 // Training data · Metrics data · Competition data (A-138 to A-140).
@@ -17,9 +17,9 @@ function Delta({ now, before, unit = "", pts }: { now: number | null; before: nu
   return <span className={d > 0 ? "up" : d < 0 ? "down" : "dim"}>{d > 0 ? "▲ " : d < 0 ? "▼ " : ""}{Math.abs(d)}{pts ? " pts" : unit}</span>;
 }
 
-export function SeasonPanels({ panels, squads, squadFilter, isAdmin, onStandard, onRegister, canRegister }: {
-  panels: Panels; squads: BoardSquad[]; squadFilter: Set<string>; isAdmin: boolean; canRegister: boolean;
-  onStandard: () => void; onRegister: (compId: string) => void;
+export function SeasonPanels({ panels, mm, mmError, squads, squadFilter, isAdmin, onStandard, onRegister, canRegister, onWindow }: {
+  panels: Panels; mm?: MmPanels | null; mmError?: boolean; squads: BoardSquad[]; squadFilter: Set<string>; isAdmin: boolean; canRegister: boolean;
+  onStandard: () => void; onRegister: (compId: string) => void; onWindow?: (id: string) => void;
 }) {
   const inF = (id: string | null) => (id ? squadFilter.has(id) : squadFilter.size === squads.length);
   const name = (id: string | null) => (id ? squads.find(s => s.id === id)?.name ?? "Other squad" : "No squad");
@@ -67,9 +67,16 @@ export function SeasonPanels({ panels, squads, squadFilter, isAdmin, onStandard,
           scales: { y: { beginAtZero: true, grid: { color: C.grid }, title: { display: true, text: unit } }, x: { grid: { display: false } } } }} />
     </div>
   );
-  const tests = panels.tests.filter(t => inF(t.squad_id));
-  const testKeys = [...new Set(tests.map(t => `${t.template_name}|${t.level ?? ""}`))].sort();
-  const testSquads = [...new Set(tests.map(t => t.squad_id))];
+  // Metrics & Measures results, grouped by test set title (the season plan's test window)
+  const mmRows = (mm?.mm_tests ?? []).filter(t => inF(t.squad_id));
+  const groups: { key: string; title: string; winId: string | null; from: string | null; rows: MmPanelRow[] }[] = [];
+  for (const r of mmRows) {
+    const key = r.win_id ?? "none";
+    let g = groups.find(x => x.key === key);
+    if (!g) { g = { key, title: r.win_title ?? "Not in a test window", winId: r.win_id, from: r.win_from, rows: [] }; groups.push(g); }
+    g.rows.push(r);
+  }
+  const coverage = (mm?.mm_coverage ?? []).filter(c => inF(c.squad_id));
 
   // ---- Competition data ---------------------------------------------------------------
   const bandRow = (rows: { squad_id: string | null; band: number; n: number }[] | undefined) => BANDS.map((_, i) => sum((rows || []).filter(r => r.band === i + 1 && inF(r.squad_id)), r => r.n));
@@ -120,29 +127,51 @@ export function SeasonPanels({ panels, squads, squadFilter, isAdmin, onStandard,
           {chart("Average metres per swimmer per week", series(wNow, x => x.m / x.n), series(wPrev, x => x.m / x.n), "m")}
           {chart("Average hours per swimmer per week", series(wNow, x => x.h / x.n), series(wPrev, x => x.h / x.n), "h")}
         </>}
-        <h3 className="sec-title">Club test sets by squad</h3>
-        {testKeys.length ? (
-          <div className="table-scroll">
-            <table className="data">
-              <thead><tr><th>Test set · level</th>{testSquads.map(s => <th key={s ?? "none"} className="num">{name(s)}</th>)}</tr></thead>
-              <tbody>
-                {testKeys.map(k => {
-                  const [tn, lv] = k.split("|");
-                  return (
-                    <tr key={k}>
-                      <th>{tn}{lv ? ` · L${lv}` : ""}</th>
-                      {testSquads.map(s => {
-                        const t = tests.find(x => x.template_name === tn && String(x.level ?? "") === lv && x.squad_id === s);
-                        return <td key={s ?? "none"} className="num" title={t && t.median != null ? `Range ${t.min}–${t.max}` : undefined}>{!t ? "" : t.median == null ? <span className="dim">n={t.n}</span> : <>{Math.round(t.median)} <span className="dim small">n={t.n}</span></>}</td>;
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : <p className="dim">No test sets recorded this season.</p>}
-        <p className="hint">Median score; hidden when fewer than 3 swimmers took the set.</p>
+        <h3 className="sec-title">Test sets by squad</h3>
+        {mmError ? <p className="msg error small">Couldn't load the test set figures.</p>
+          : !mm ? <p className="dim">Working out the test sets…</p>
+          : groups.length ? groups.map(g => {
+            const sqs = [...new Set(g.rows.map(r => r.squad_id))].sort((a, b) => name(a).localeCompare(name(b)));
+            const tests = [...new Map(g.rows.map(r => [`${r.protocol_id}|${r.level_key}`, r])).values()]
+              .sort((a, b) => a.code.localeCompare(b.code) || (a.level_no ?? 0) - (b.level_no ?? 0));
+            const changed = sum(g.rows, r => r.improved + r.noise + r.declined + r.caution);
+            const cov = coverage.filter(c => c.window_id === g.winId);
+            return (
+              <div key={g.key} className="sp-testset">
+                <h4>{g.winId && onWindow ? <button type="button" className="link-btn" onClick={() => onWindow(g.winId!)}>{g.title}</button> : g.title}
+                  {g.from && <span className="dim small"> · from {fmtDate(g.from)}</span>}</h4>
+                <div className="table-scroll">
+                  <table className="data">
+                    <thead><tr><th>Test · level</th>{sqs.map(sq => <th key={sq} className="num">{name(sq)}</th>)}</tr></thead>
+                    <tbody>
+                      {tests.map(t => (
+                        <tr key={t.protocol_id + t.level_key}>
+                          <th title={t.test_name}>{t.code} · {t.level_label ?? t.level_key}</th>
+                          {sqs.map(sq => {
+                            const c = g.rows.find(r => r.squad_id === sq && r.protocol_id === t.protocol_id && r.level_key === t.level_key);
+                            if (!c) return <td key={sq} />;
+                            const tip = [`Range ${c.min}–${c.max}${c.unit ? " " + c.unit : ""}`, `${c.baselines} baseline${c.baselines === 1 ? "" : "s"}`,
+                              c.improved + c.noise + c.declined + c.caution ? `${c.improved} improved · ${c.noise} within noise · ${c.declined} declined · ${c.caution} compare with caution` : ""].filter(Boolean).join("\n");
+                            return <td key={sq} className="num" title={tip}>{c.median == null ? "—" : Math.round(c.median * 10) / 10}{c.unit && c.median != null ? <span className="dim small"> {c.unit}</span> : null} <span className="dim small">n={c.n}</span></td>;
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="dim small">
+                  {changed ? <>{sum(g.rows, r => r.improved)} improved · {sum(g.rows, r => r.noise)} within noise · {sum(g.rows, r => r.declined)} declined · {sum(g.rows, r => r.caution)} compare with caution. </>
+                    : <>All baselines so far — change shows from the next test. </>}
+                  {cov.length > 0 && <>Tested in this window: {cov.map(c => `${name(c.squad_id)} ${c.tested}/${c.swimmers}`).join(" · ")}.</>}
+                </p>
+              </div>
+            );
+          }) : <p className="dim">No test sets recorded this season.</p>}
+        {mm && coverage.some(c => c.starts_on > panels.season.today) && (
+          <p className="small"><strong>Coming up:</strong> {[...new Map(coverage.filter(c => c.starts_on > panels.season.today).map(c => [c.window_id, c])).values()]
+            .map(c => `${c.title} (${fmtDate(c.starts_on)}): ${sum(coverage.filter(x => x.window_id === c.window_id), x => x.no_baseline)} swimmers still without a baseline`).join(" · ")}</p>
+        )}
+        <p className="hint">Median result at each level, with the number of swimmers (all group sizes shown). Grouped by the season plan's test windows; no names or rankings. Hover a figure for the range and how many changed beyond noise.</p>
       </section>
 
       <section className="card sp" aria-labelledby="sp-comp">
