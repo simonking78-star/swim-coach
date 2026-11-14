@@ -2,19 +2,25 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthProvider";
-import { sectionLevel } from "../lib/access";
-import { fmtRange, loadCompetitions, type Competition } from "../lib/season";
+import { useClub } from "../club/ClubProvider";
+import { canEdit, sectionLevel } from "../lib/access";
+import { DESIGNATIONS, fmtRange, loadClubCompInfo, loadCompetitions, type Competition } from "../lib/season";
 import { todayLocal } from "../lib/util";
-import { QtModal } from "../components/seasonParts";
+import { CompDocLink, QtModal } from "../components/seasonParts";
+import { CompMacroModal } from "./season/CompMacroModal";
 
 // Upcoming licensed meets (scraped into public.competitions): search, course and
 // level filters; each opens to venue, licence, website, files and QTs.
+// Season editors can add a meet to a macro (with type, link, notes, documents);
+// anyone who can read season plans sees the club's macros, notes and documents for it.
 
 const FILE_ICON: Record<string, string> = { conditions: "📄", timetable: "🗓️", results: "🏁", qts: "⏱️" };
 
 export function Competitions() {
   const { access } = useAuth();
   const level = sectionLevel(access, "timetables");
+  const seasonLevel = sectionLevel(access, "season");
+  const { club } = useClub();
   const [params] = useSearchParams();
   const focus = params.get("focus");
   const today = todayLocal().date;
@@ -25,7 +31,11 @@ export function Competitions() {
   const [open, setOpen] = useState<Set<string>>(() => new Set(focus ? [focus] : []));
   const [qt, setQt] = useState<Competition | null>(null);
   const [note, setNote] = useState<{ id: string; text: string } | null>(null);
+  const [macroFor, setMacroFor] = useState<Competition | null>(null);
+  const [flash, setFlash] = useState("");
   const focused = useRef(false);
+  const clubInfo = useQuery({ queryKey: ["club_comp_info", club], enabled: !!club && seasonLevel !== "N", staleTime: 60 * 1000, retry: false,
+    queryFn: () => loadClubCompInfo(club!) });
 
   useEffect(() => {
     if (!focus || !q.data || focused.current) return;
@@ -69,19 +79,24 @@ export function Competitions() {
         {q.data && <p className="hint" aria-live="polite">{rows.length} upcoming meet{rows.length === 1 ? "" : "s"}</p>}
       </section>
       {note && !note.id && <p className="msg error">{note.text}</p>}
+      {flash && <p className="msg" role="status">{flash}</p>}
+      {clubInfo.error && canEdit(seasonLevel) && <p className="msg error">Couldn't load your club's macro links for these meets. <button type="button" className="link-btn" onClick={() => clubInfo.refetch()}>Try again</button></p>}
       {q.isLoading && <p className="dim">Loading competitions…</p>}
       {q.error && <p className="msg error">Couldn't load competitions. <button type="button" className="link-btn" onClick={() => q.refetch()}>Try again</button></p>}
       {q.data && !rows.length && <p className="dim card">No upcoming meets match. Run the competition-scrape skill to refresh the list.</p>}
       <ul className="cp-list">
         {rows.map(c => {
           const isOpen = open.has(c.id), files = q.data!.files[c.id] || [], nQt = c.gala_id ? q.data!.qtCount[c.gala_id] || 0 : 0;
+          const mine = clubInfo.data?.[c.id] ?? [];
+          const inMacro = mine.some(m => m.links.length);
           return (
             <li key={c.id} id={"cp-" + c.id} className="card cp-item">
               <button type="button" className="more-btn head" aria-expanded={isOpen} aria-controls={"cpb-" + c.id} onClick={() => toggle(c.id)}>
                 <span>
                   <strong>{c.name}</strong>
                   <span className="dim small block">{fmtRange(c.date_start, c.date_end || c.date_start)}
-                    {c.level && <span className="tt-pill upcoming">L{c.level}</span>}{c.course && <span className="tt-pill current">{c.course}</span>}</span>
+                    {c.level && <span className="tt-pill upcoming">L{c.level}</span>}{c.course && <span className="tt-pill current">{c.course}</span>}
+                    {inMacro && <span className="tt-pill upcoming">In macro</span>}</span>
                 </span>
                 <span aria-hidden="true">{isOpen ? "▴" : "▾"}</span>
               </button>
@@ -98,10 +113,22 @@ export function Competitions() {
                       </ul>
                     </>
                   )}
+                  {mine.map(m => (
+                    <div key={m.seasonCompId} className="cp-club">
+                      <h3 className="sec-title">{m.seasonTitle}</h3>
+                      {m.links.length
+                        ? <div className="chip-row tight">{m.links.map(l => <span key={l.macroId} className="chip">{l.macroTitle} · {DESIGNATIONS[l.designation] || l.designation}</span>)}</div>
+                        : <p className="dim small">In the season plan, not in a macro yet.</p>}
+                      {m.url && m.url !== c.website_url && <p><a href={m.url} target="_blank" rel="noopener noreferrer">Club link ↗<span className="sr-only"> (opens in a new tab)</span></a></p>}
+                      {m.notes && <p className="cp-notes"><strong>Notes:</strong> {m.notes}</p>}
+                      {m.docs.length > 0 && <ul className="cp-files">{m.docs.map(d => <li key={d.id}><CompDocLink doc={d} /></li>)}</ul>}
+                    </div>
+                  ))}
                   <div className="btn-row gap-top">
+                    {canEdit(seasonLevel) && <button type="button" className="btn small primary" onClick={() => { setFlash(""); setMacroFor(c); }}>{inMacro ? "Macros, notes & docs" : "Add to macro"}</button>}
                     <button type="button" className="btn small" disabled={!nQt} onClick={() => setQt(c)}>QTs{nQt ? "" : " —"}</button>
                     <button type="button" className="btn small" onClick={() => setNote({ id: c.id, text: "The eligibility report isn't built yet — its rule needs your sign-off first." })}>Eligibility</button>
-                    <button type="button" className="btn small primary" onClick={() => setNote({ id: c.id, text: "The competition entry page hasn't been built yet. Parents will land on it from here once it is." })}>Entry</button>
+                    <button type="button" className="btn small" onClick={() => setNote({ id: c.id, text: "The competition entry page hasn't been built yet. Parents will land on it from here once it is." })}>Entry</button>
                   </div>
                   {note?.id === c.id && <p className="hint" role="status">{note.text}</p>}
                 </div>
@@ -110,6 +137,8 @@ export function Competitions() {
           );
         })}
       </ul>
+      <CompMacroModal comp={macroFor} club={club} info={macroFor ? clubInfo.data?.[macroFor.id] ?? [] : []} onClose={() => setMacroFor(null)}
+        onSaved={t => { setMacroFor(null); setFlash(t); }} />
       <QtModal galaId={qt?.gala_id ?? null} name={qt?.name ?? ""} onClose={() => setQt(null)} />
     </>
   );

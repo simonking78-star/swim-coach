@@ -320,7 +320,7 @@ export async function loadPlansBetween(club: string, from: string, to: string) {
 // Planning: season title, dates, breaks; competitions and macros lists
 // ---------------------------------------------------------------------------
 export interface BreakRow { id: string | null; start: string; end: string; }
-export interface PlanningComp extends SeasonComp { total_days: number | null; venue_name: string | null; venue_url: string | null; competition_events: { id: string; is_active: boolean }[]; }
+export interface PlanningComp extends SeasonComp { total_days: number | null; venue_name: string | null; venue_url: string | null; notes?: string | null; competition_events: { id: string; is_active: boolean }[]; }
 export interface PlanningMacro {
   id: string; title: string; head_coach_note: string | null; micro_count: number;
   macro_squads: { squad_id: string; is_active: boolean; squads: { name: string } | null }[];
@@ -426,7 +426,7 @@ export async function loadCompEvents(seasonCompId: string): Promise<Record<numbe
     .forEach(r => { out[r.event_no] = { id: r.id, ticked: r.is_active, session: r.session || "", prog: r.programme_event_no || "" }; });
   return out;
 }
-export interface CompDraft { id: string | null; competitionId: string | null; name: string; course: string; level: string; from: string; to: string; venue: string; url: string; events: Record<number, EvState>; }
+export interface CompDraft { id: string | null; competitionId: string | null; name: string; course: string; level: string; from: string; to: string; venue: string; url: string; notes?: string; events: Record<number, EvState>; }
 export function validateComp(d: CompDraft): string | null {
   if (!d.name.trim()) return "A competition needs a name.";
   if (!d.course) return "Choose SC or LC.";
@@ -438,7 +438,8 @@ export function validateComp(d: CompDraft): string | null {
 export async function saveComp(seasonId: string, d: CompDraft): Promise<string> {
   const row = {
     season_id: seasonId, competition_id: d.competitionId, name: d.name.trim(), course: d.course, level: d.level ? +d.level : null,
-    date_from: d.from, date_to: d.to, venue_name: d.venue.trim() || null, venue_url: d.url.trim() || null, updated_at: now()
+    date_from: d.from, date_to: d.to, venue_name: d.venue.trim() || null, venue_url: d.url.trim() || null, updated_at: now(),
+    ...(d.notes !== undefined ? { notes: d.notes.trim() || null } : {})
   };
   if (d.id) { const { error } = await sb.from("season_competitions").update(row as never).eq("id", d.id); if (error) throw error; }
   else { const { data, error } = await sb.from("season_competitions").insert(row as never).select("id").single(); if (error) throw error; d.id = (data as { id: string }).id; }
@@ -673,4 +674,121 @@ export async function loadQtTable(galaId: string) {
   });
   const basis = [...new Set(rows.map(r => r.reference_age_type).filter(Boolean))].join("; ");
   return { ages, groups: [...groups.values()], basis, count: rows.length };
+}
+
+// ---------------------------------------------------------------------------
+// Competition → macro (from the Competitions page): the club's copy of a meet
+// (season_competitions) per season plan, its macro links, notes and documents.
+// ---------------------------------------------------------------------------
+export const DOC_BUCKET = "season-comp-docs";
+export const DOC_MAX_BYTES = 25 * 1024 * 1024;
+export const DOC_ACCEPT = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.jpg,.jpeg,.png,.heic,.webp";
+export interface CompDoc { id: string; season_competition_id: string; file_name: string; storage_path: string; mime_type: string | null; size_bytes: number | null; }
+export interface ClubCompInfo {
+  seasonCompId: string; seasonId: string; seasonTitle: string; competitionId: string;
+  url: string | null; notes: string | null; course: string;
+  links: { macroId: string; macroTitle: string; designation: string }[];
+  docs: CompDoc[];
+}
+
+/** The club's copies of scraped meets, keyed by competitions.id. Empty when the role can't read season plans. */
+export async function loadClubCompInfo(club: string): Promise<Record<string, ClubCompInfo[]>> {
+  const { data, error } = await sb.from("season_competitions")
+    .select("id, season_id, competition_id, course, venue_url, notes, seasons!inner(title, club_id, is_active), macro_competitions(designation, is_active, macros(id, title, is_active)), season_competition_docs(id, season_competition_id, file_name, storage_path, mime_type, size_bytes, is_active, created_at)")
+    .eq("seasons.club_id", clubIdOf(club)).eq("seasons.is_active", true).eq("is_active", true).not("competition_id", "is", null);
+  if (error) throw error;
+  type Row = { id: string; season_id: string; competition_id: string; course: string; venue_url: string | null; notes: string | null; seasons: { title: string };
+    macro_competitions: { designation: string; is_active: boolean; macros: { id: string; title: string; is_active: boolean } | null }[];
+    season_competition_docs: (CompDoc & { is_active: boolean; created_at: string })[] };
+  const out: Record<string, ClubCompInfo[]> = {};
+  for (const r of (data ?? []) as unknown as Row[]) {
+    (out[r.competition_id] ||= []).push({
+      seasonCompId: r.id, seasonId: r.season_id, seasonTitle: r.seasons.title, competitionId: r.competition_id, url: r.venue_url, notes: r.notes, course: r.course,
+      links: (r.macro_competitions ?? []).filter(m => m.is_active && m.macros?.is_active).map(m => ({ macroId: m.macros!.id, macroTitle: m.macros!.title, designation: m.designation })),
+      docs: (r.season_competition_docs ?? []).filter(d => d.is_active).sort((a, b) => a.created_at.localeCompare(b.created_at))
+    });
+  }
+  return out;
+}
+
+export async function loadCompDocs(seasonCompId: string): Promise<CompDoc[]> {
+  const { data, error } = await sb.from("season_competition_docs").select("id, season_competition_id, file_name, storage_path, mime_type, size_bytes")
+    .eq("season_competition_id", seasonCompId).eq("is_active", true).order("created_at");
+  if (error) throw error;
+  return (data ?? []) as CompDoc[];
+}
+
+/** Checks files before upload: size and type. Returns an error message or null. */
+export function checkDocFiles(files: File[]): string | null {
+  const ok = DOC_ACCEPT.split(",");
+  for (const f of files) {
+    if (f.size > DOC_MAX_BYTES) return `${f.name} is over 25 MB.`;
+    const ext = "." + (f.name.split(".").pop() || "").toLowerCase();
+    if (!ok.includes(ext)) return `${f.name}: only PDF, Word, Excel, PowerPoint, CSV, text and image files can be attached.`;
+  }
+  return null;
+}
+
+/** Uploads to the private bucket under <club_id>/<season_competition_id>/ and records each file. Removed docs are hidden, never erased. */
+export async function saveCompDocs(club: string, seasonCompId: string, files: File[], removeIds: string[]): Promise<void> {
+  const clubId = clubIdOf(club);
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    const safe = f.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${clubId}/${seasonCompId}/${Date.now()}-${i}-${safe}`;
+    const up = await sb.storage.from(DOC_BUCKET).upload(path, f, { contentType: f.type || "application/octet-stream", upsert: false });
+    if (up.error) throw new Error(`Upload failed for ${f.name}: ${up.error.message}`);
+    const { error } = await sb.from("season_competition_docs").insert({ season_competition_id: seasonCompId, file_name: f.name, storage_path: path, mime_type: f.type || null, size_bytes: f.size } as never);
+    if (error) { await sb.storage.from(DOC_BUCKET).remove([path]); throw error; }
+  }
+  if (removeIds.length) {
+    const { error } = await sb.from("season_competition_docs").update({ is_active: false, updated_at: now() } as never).in("id", removeIds);
+    if (error) throw error;
+  }
+}
+
+/** Opens a document through a short-lived signed link (the bucket is private). */
+export async function openCompDoc(path: string) {
+  const w = window.open("", "_blank");
+  const { data, error } = await sb.storage.from(DOC_BUCKET).createSignedUrl(path, 300);
+  if (error || !data?.signedUrl) { w?.close(); throw error || new Error("Couldn't open that document."); }
+  if (w) { w.opener = null; w.location.href = data.signedUrl; } else window.location.href = data.signedUrl;
+}
+
+export interface CompMacroDraft {
+  competition: Competition; seasonId: string; seasonCompId: string | null; macroId: string; designation: string;
+  course: string; url: string; notes: string; files: File[]; removeDocIds: string[];
+}
+export function validateCompMacro(d: CompMacroDraft): string | null {
+  if (!d.seasonId) return "Choose a season plan.";
+  if (!d.macroId) return "Choose a macro.";
+  if (!d.designation) return "Choose the competition type for this macro.";
+  if (!d.course) return "Choose SC or LC.";
+  if (d.url.trim() && !/^https?:\/\//i.test(d.url.trim())) return "The website link must start with http:// or https://";
+  return checkDocFiles(d.files);
+}
+/** Adds the meet to the season plan if it isn't there yet, links it to the macro with its type, then saves link, notes and documents. */
+export async function saveCompToMacro(club: string, d: CompMacroDraft): Promise<string> {
+  const t = now(), c = d.competition;
+  let scId = d.seasonCompId;
+  const info = { venue_url: d.url.trim() || null, notes: d.notes.trim() || null, updated_at: t };
+  if (scId) {
+    const { error } = await sb.from("season_competitions").update(info as never).eq("id", scId);
+    if (error) throw error;
+  } else {
+    const row = { season_id: d.seasonId, competition_id: c.id, name: c.name, course: d.course, level: c.level, date_from: c.date_start,
+      date_to: c.date_end && c.date_end >= c.date_start ? c.date_end : c.date_start, venue_name: c.town_city, ...info };
+    const { data, error } = await sb.from("season_competitions").insert(row as never).select("id").single();
+    if (error) throw error;
+    scId = (data as { id: string }).id;
+  }
+  const { error } = await sb.from("macro_competitions").upsert({ macro_id: d.macroId, season_competition_id: scId, designation: d.designation, is_active: true, updated_at: t } as never,
+    { onConflict: "macro_id,season_competition_id" });
+  if (error) throw error;
+  await saveCompDocs(club, scId!, d.files, d.removeDocIds);
+  return scId!;
+}
+export async function removeCompFromMacro(macroId: string, seasonCompId: string) {
+  const { error } = await sb.from("macro_competitions").update({ is_active: false, updated_at: now() } as never).eq("macro_id", macroId).eq("season_competition_id", seasonCompId);
+  if (error) throw error;
 }

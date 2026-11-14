@@ -4,13 +4,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/AuthProvider";
 import { useClub } from "../../club/ClubProvider";
 import { canEdit, sectionLevel } from "../../lib/access";
-import { EVENTS_18, isoDiffDays, loadCompEvents, loadScrapedInSeason, saveComp, validateComp, type CompDraft, type EvState } from "../../lib/season";
+import { EVENTS_18, checkDocFiles, isoDiffDays, loadCompDocs, loadCompEvents, loadScrapedInSeason, saveComp, saveCompDocs, validateComp, type CompDraft, type EvState } from "../../lib/season";
 import { fmtDdMm } from "../../lib/util";
-import { QtModal, StatusMsg } from "../../components/seasonParts";
+import { CompDocsField, QtModal, StatusMsg } from "../../components/seasonParts";
 import { invalidateSeason, useActiveSeason, usePlanningLists } from "./Planning";
 
 // Add / edit a season competition: pick from the scraped meets inside the
-// season (or type one in), dates, venue, link, and the events offered.
+// season (or type one in), dates, venue, link, notes, documents and the events offered.
 
 const MANUAL = "__manual";
 
@@ -26,9 +26,12 @@ export function CompForm() {
   const existing = id ? lists.data?.comps.find(c => c.id === id) : undefined;
   const source = useQuery({ queryKey: ["scraped_in_season", season?.id], enabled: !!season, queryFn: () => loadScrapedInSeason(season!) });
   const events = useQuery({ queryKey: ["comp_events", id], enabled: !!id, queryFn: () => loadCompEvents(id!) });
+  const docs = useQuery({ queryKey: ["comp_docs", id], enabled: !!id, queryFn: () => loadCompDocs(id!) });
+  const [files, setFiles] = useState<File[]>([]);
+  const [removed, setRemoved] = useState<Set<string>>(new Set());
 
   const [pick, setPick] = useState("");
-  const [d, setD] = useState<CompDraft>({ id: null, competitionId: null, name: "", course: "", level: "", from: "", to: "", venue: "", url: "", events: {} });
+  const [d, setD] = useState<CompDraft>({ id: null, competitionId: null, name: "", course: "", level: "", from: "", to: "", venue: "", url: "", notes: "", events: {} });
   const [galaId, setGalaId] = useState<string | null>(null);
   const [showEvents, setShowEvents] = useState(false);
   const [qtOpen, setQtOpen] = useState(false);
@@ -40,7 +43,7 @@ export function CompForm() {
     if (filled.current || !id || !existing || !events.data || !source.data) return;
     filled.current = true;
     setD({ id: existing.id, competitionId: existing.competition_id, name: existing.name, course: existing.course, level: existing.level ? String(existing.level) : "",
-      from: existing.date_from, to: existing.date_to || "", venue: existing.venue_name || "", url: existing.venue_url || "", events: events.data });
+      from: existing.date_from, to: existing.date_to || "", venue: existing.venue_name || "", url: existing.venue_url || "", notes: existing.notes || "", events: events.data });
     const src = source.data.find(c => c.id === existing.competition_id);
     setPick(src ? src.id : MANUAL); setGalaId(src?.gala_id ?? null);
   }, [id, existing, events.data, source.data]);
@@ -73,13 +76,16 @@ export function CompForm() {
 
   const save = async () => {
     setMsg(null);
-    const bad = validateComp(d);
+    const bad = validateComp(d) || checkDocFiles(files);
     if (bad) { setMsg({ text: bad, error: true }); return; }
     setBusy(true);
     try {
       const copy: CompDraft = { ...d, events: Object.fromEntries(Object.entries(d.events).map(([k, v]) => [k, { ...v }])) };
-      await saveComp(season.id, copy);
+      const scId = await saveComp(season.id, copy);
       setD(copy);
+      if (files.length || removed.size) await saveCompDocs(club!, scId, files, [...removed]);
+      qc.invalidateQueries({ queryKey: ["comp_docs"] });
+      qc.invalidateQueries({ queryKey: ["club_comp_info"] });
       invalidateSeason(qc, club);
       qc.invalidateQueries({ queryKey: ["comp_events"] });
       navigate("/season/plan", { state: { flash: "Competition saved." } });
@@ -115,6 +121,10 @@ export function CompForm() {
         <input id="cf-venue" type="text" value={d.venue} onChange={e => set("venue", e.target.value)} />
         <label htmlFor="cf-url">Website link</label>
         <input id="cf-url" type="url" placeholder="https://" value={d.url} onChange={e => set("url", e.target.value)} />
+        <label htmlFor="cf-notes">Notes</label>
+        <textarea id="cf-notes" rows={3} value={d.notes ?? ""} onChange={e => set("notes", e.target.value)} />
+        <CompDocsField saved={docs.data ?? []} removed={removed} files={files} onFiles={setFiles}
+          onToggleRemove={x => setRemoved(r => { const n = new Set(r); if (n.has(x)) n.delete(x); else n.add(x); return n; })} />
         <div className="btn-row gap-top">
           <button type="button" className="btn small" onClick={() => galaId ? setQtOpen(true) : setMsg({ text: "No qualifying times on file for this meet.", error: true })}>QTs</button>
           <button type="button" className="btn small" aria-expanded={showEvents} aria-controls="cf-events" onClick={() => setShowEvents(s => !s)}>Sessions &amp; events {showEvents ? "▴" : "▾"}</button>
