@@ -16,7 +16,9 @@ export function compareLines(c: SwimmerCompare) {
   const squad = vsAverage(c.points_per_age, c.squad_avg_ppa);
   const age = vsAverage(c.points_per_age, c.age_avg_ppa);
   const bench = vsAverage(c.points_per_age, c.benchmark, 2, "on the benchmark");
-  return { squad, age, bench };
+  const above = vsAverage(c.points_per_age, c.above_avg_ppa);
+  const below = vsAverage(c.points_per_age, c.below_avg_ppa);
+  return { squad, age, bench, above, below };
 }
 
 function Dir({ v }: { v: { text: string; dir: string | null } }) {
@@ -24,7 +26,8 @@ function Dir({ v }: { v: { text: string; dir: string | null } }) {
 }
 
 function OneProtocol({ c }: { c: SwimmerCompare }) {
-  const { squad, age, bench } = compareLines(c);
+  const { squad, age, bench, above, below } = compareLines(c);
+  const n = (k: number) => `${k} swimmer${k === 1 ? "" : "s"}`;
   const hist = c.history;
   return (
     <div className="test-set-block">
@@ -40,12 +43,16 @@ function OneProtocol({ c }: { c: SwimmerCompare }) {
       <h4 className="sub-title" style={{ marginTop: 14 }}>Compared with others tested in {monthLabel(c.month)}</h4>
       <CompareBars bars={[
         { label: "This swimmer", value: c.points_per_age, colour: VS_COLOUR[c.vs_age ?? "at"] },
-        { label: `Rest of ${c.squad_name ?? "squad"}`, note: `${c.squad_n} swimmer${c.squad_n === 1 ? "" : "s"}`, value: c.squad_avg_ppa, colour: "#b9c7d8" },
+        ...(c.above_name ? [{ label: c.above_name, note: `squad above · ${n(c.above_n)}`, value: c.above_n ? c.above_avg_ppa : null, colour: "#8fa3bd" }] : []),
+        { label: `Rest of ${c.squad_name ?? "squad"}`, note: n(c.squad_n), value: c.squad_avg_ppa, colour: "#b9c7d8" },
+        ...(c.below_name ? [{ label: c.below_name, note: `squad below · ${n(c.below_n)}`, value: c.below_n ? c.below_avg_ppa : null, colour: "#c9d4e1" }] : []),
         { label: `Age ${c.age ?? "?"} average`, note: `${c.age_n} other${c.age_n === 1 ? "" : "s"}`, value: c.age_avg_ppa, colour: "#d6dee8" },
         { label: "At-age benchmark", value: c.benchmark, colour: C.navy }
       ]} />
       <ul className="compare-list">
         <li>Against the rest of {c.squad_name ?? "their squad"}: {c.squad_n ? <><Dir v={squad} /> points per age year (squad average {fmt2(c.squad_avg_ppa)}, {c.squad_n} swimmer{c.squad_n === 1 ? "" : "s"}; average points {c.squad_avg_points ?? "–"})</> : <span className="dim">no one else in the squad was tested that month</span>}</li>
+        {c.above_name && <li>Against {c.above_name} (squad above): {c.above_n ? <><Dir v={above} /> points per age year (squad average {fmt2(c.above_avg_ppa)}, {n(c.above_n)}; average points {c.above_avg_points ?? "–"})</> : <span className="dim">no one in {c.above_name} was tested that month</span>}</li>}
+        {c.below_name && <li>Against {c.below_name} (squad below): {c.below_n ? <><Dir v={below} /> points per age year (squad average {fmt2(c.below_avg_ppa)}, {n(c.below_n)}; average points {c.below_avg_points ?? "–"})</> : <span className="dim">no one in {c.below_name} was tested that month</span>}</li>}
         <li>Against other {c.age ?? "?"}-year-olds: {c.age_n ? <><Dir v={age} /> points per age year (age-group average {fmt2(c.age_avg_ppa)}, {c.age_n} swimmer{c.age_n === 1 ? "" : "s"}, all squads; average points {c.age_avg_points ?? "–"})</> : <span className="dim">no one else of that age was tested that month</span>}</li>
       </ul>
 
@@ -81,7 +88,7 @@ export default function TestSetCard({ swimmerId }: { swimmerId: string }) {
         : q.error ? <p className="msg error">Couldn't load test sets.</p>
         : !q.data?.length ? <p className="dim">No graded test set on record yet.</p>
         : q.data.map(c => <OneProtocol key={c.protocol_id} c={c} />)}
-      <p className="hint">Points per age year = level × reps completed ÷ age. Squad and age-group averages leave this swimmer out and use each swimmer's latest test in the same month.</p>
+      <p className="hint">Points per age year = level × reps completed ÷ age. Squad (including the squads above and below) and age-group averages leave this swimmer out and use each swimmer's latest test in the same month.</p>
     </section>
   );
 }
