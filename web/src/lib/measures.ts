@@ -479,9 +479,8 @@ export interface SwimmerCompare {
   set_completed: boolean | null; benchmark: number | null; squad_name: string | null;
   squad_n: number; squad_avg_ppa: number | null; squad_avg_points: number | null;
   age_n: number; age_avg_ppa: number | null; age_avg_points: number | null;
-  /** Next squad up / down the club's ladder (squads.sort_order); null when there isn't one. */
-  above_name: string | null; above_n: number; above_avg_ppa: number | null; above_avg_points: number | null;
-  below_name: string | null; below_n: number; below_avg_ppa: number | null; below_avg_points: number | null;
+  /** Every squad that sat this test set in the same month, in name order (no ranking implied). own = the swimmer's squad, which leaves the swimmer out. */
+  squads: { name: string; n: number; avg_ppa: number | null; avg_points: number | null; own: boolean }[];
   history: { date: string; level: string | null; age: number | null; value: number; max_reps: number | null; points: number | null; ppa: number | null; vs_age: string | null; completed: boolean | null }[];
 }
 export const VS_AGE_LABEL: Record<string, string> = { below: "Below age level", at: "At age level", above: "Above age level" };
@@ -516,8 +515,7 @@ export async function loadSwimmerCompare(swimmerId: string): Promise<SwimmerComp
   return ((data ?? []) as SwimmerCompare[]).map(r => ({
     ...r, value: Number(r.value), max_reps: num(r.max_reps), points: num(r.points), points_per_age: num(r.points_per_age), benchmark: num(r.benchmark),
     squad_avg_ppa: num(r.squad_avg_ppa), squad_avg_points: num(r.squad_avg_points), age_avg_ppa: num(r.age_avg_ppa), age_avg_points: num(r.age_avg_points),
-    above_name: r.above_name ?? null, above_n: Number(r.above_n ?? 0), above_avg_ppa: num(r.above_avg_ppa), above_avg_points: num(r.above_avg_points),
-    below_name: r.below_name ?? null, below_n: Number(r.below_n ?? 0), below_avg_ppa: num(r.below_avg_ppa), below_avg_points: num(r.below_avg_points),
+    squads: (r.squads ?? []).map(g => ({ name: g.name, n: Number(g.n), avg_ppa: num(g.avg_ppa), avg_points: num(g.avg_points), own: !!g.own })),
     history: (r.history ?? []).map(h => ({ ...h, value: Number(h.value), max_reps: num(h.max_reps), points: num(h.points), ppa: num(h.ppa) }))
   }));
 }

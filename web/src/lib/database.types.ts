@@ -3133,7 +3133,6 @@ export type Database = {
           created_at: string
           id: string
           name: string
-          sort_order: number | null
           updated_at: string
         }
         Insert: {
@@ -3142,7 +3141,6 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
-          sort_order?: number | null
           updated_at?: string
         }
         Update: {
@@ -3151,7 +3149,6 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
-          sort_order?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -4423,14 +4420,6 @@ export type Database = {
           age_avg_points: number
           age_avg_ppa: number
           age_n: number
-          above_avg_points: number
-          above_avg_ppa: number
-          above_n: number
-          above_name: string
-          below_avg_points: number
-          below_avg_ppa: number
-          below_n: number
-          below_name: string
           benchmark: number
           code: string
           history: Json
@@ -4447,6 +4436,7 @@ export type Database = {
           squad_avg_ppa: number
           squad_n: number
           squad_name: string
+          squads: Json
           value: number
           vs_age: string
         }[]

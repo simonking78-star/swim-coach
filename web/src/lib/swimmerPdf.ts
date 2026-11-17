@@ -132,24 +132,28 @@ export async function buildSwimmerPdf(sw: Who, club: string, att: AttRow[], resu
       );
       para(`Compared with others tested in ${monthLabel(c.month)} (points per age year)`, { size: 10.5, bold: true, color: NAVY, gap: 2 });
       y += 4;
-      const ab = vsAverage(c.points_per_age, c.above_avg_ppa), be = vsAverage(c.points_per_age, c.below_avg_ppa);
       const sq = vsAverage(c.points_per_age, c.squad_avg_ppa), ag = vsAverage(c.points_per_age, c.age_avg_ppa), bm = vsAverage(c.points_per_age, c.benchmark, 2, "on the benchmark");
       table(
         [{ h: "Compared with", w: W * 0.36 }, { h: "Swimmers", w: W * 0.13, align: "right" }, { h: "Pts per age yr", w: W * 0.17, align: "right" }, { h: "Avg points", w: W * 0.14, align: "right" }, { h: "Difference", w: W * 0.2, align: "right" }],
         [
-          ...(c.above_name ? [[`${c.above_name} (squad above)`, c.above_n, c.above_n ? fmt2(c.above_avg_ppa) : "-", c.above_avg_points ?? "-", c.above_n ? ab.text : "-"]] : []),
           [`Rest of ${c.squad_name ?? "squad"}`, c.squad_n, c.squad_n ? fmt2(c.squad_avg_ppa) : "-", c.squad_avg_points ?? "-", c.squad_n ? sq.text : "-"],
-          ...(c.below_name ? [[`${c.below_name} (squad below)`, c.below_n, c.below_n ? fmt2(c.below_avg_ppa) : "-", c.below_avg_points ?? "-", c.below_n ? be.text : "-"]] : []),
           [`Age ${c.age ?? "?"} (all squads)`, c.age_n, c.age_n ? fmt2(c.age_avg_ppa) : "-", c.age_avg_points ?? "-", c.age_n ? ag.text : "-"],
           ["At-age benchmark", "", fmt2(c.benchmark), "", bm.text]
         ]
       );
+      if (c.squads.length) {
+        para(`Squads tested in ${monthLabel(c.month)} (information only, name order)`, { size: 10.5, bold: true, color: NAVY, gap: 2 });
+        y += 4;
+        table(
+          [{ h: "Squad", w: W * 0.4 }, { h: "Swimmers", w: W * 0.2, align: "right" }, { h: "Avg pts per age yr", w: W * 0.22, align: "right" }, { h: "Avg points", w: W * 0.18, align: "right" }],
+          c.squads.map(g => [g.own ? `${g.name} (rest of squad)` : g.name, g.n, fmt2(g.avg_ppa), g.avg_points ?? "-"])
+        );
+      }
       // Bars: this swimmer, squad, age group, benchmark (same scale).
       const bars: [string, number | null, RGB][] = [
         ["This swimmer", c.points_per_age, c.vs_age === "above" ? [15, 122, 62] : c.vs_age === "at" ? [42, 120, 214] : [138, 164, 194]],
-        ...(c.above_name ? [[`${c.above_name} (squad above)`, c.above_n ? c.above_avg_ppa : null, [143, 163, 189]] as [string, number | null, RGB]] : []),
         [`Rest of ${c.squad_name ?? "squad"}`, c.squad_n ? c.squad_avg_ppa : null, [185, 199, 216]],
-        ...(c.below_name ? [[`${c.below_name} (squad below)`, c.below_n ? c.below_avg_ppa : null, [201, 212, 225]] as [string, number | null, RGB]] : []),
+        ...c.squads.filter(g => !g.own).map(g => [g.name, g.avg_ppa, [163, 179, 199]] as [string, number | null, RGB]),
         [`Age ${c.age ?? "?"} average`, c.age_n ? c.age_avg_ppa : null, [214, 222, 232]],
         ["At-age benchmark", c.benchmark, NAVY]
       ];
@@ -172,7 +176,7 @@ export async function buildSwimmerPdf(sw: Who, club: string, att: AttRow[], resu
           [...c.history].reverse().map(h => [fmtDate(h.date), h.level ?? "-", h.age ?? "-", `${h.value}/${h.max_reps ?? "?"}`, h.points ?? "-", fmt2(h.ppa)])
         );
       }
-      para("Points per age year = level x reps completed / age. Points = reps x 1 (below age level), 2 (at) or 3 (above). Averages (including the squads above and below) leave this swimmer out and use each swimmer's latest test in the same month.", { size: 8.5, color: DIM });
+      para("Points per age year = level x reps completed / age. Points = reps x 1 (below age level), 2 (at) or 3 (above). Averages leave this swimmer out and use each swimmer's latest test in the same month.", { size: 8.5, color: DIM });
       y += 10;
     }
   }
