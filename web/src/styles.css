@@ -1268,3 +1268,19 @@ dialog.modal.wide { width: min(1040px, calc(100vw - 16px)); }
 .sq-pick li label { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 4px; border-bottom: 1px solid var(--border); cursor: pointer; }
 .sq-pick input { width: 22px; height: 22px; min-height: 0; flex: none; margin: 0; }
 .btn.primary-outline { border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+
+/* ===== Club vocabulary: drills, club terms, review (A-154) ===== */
+.flex-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.flex-row select { flex: 1 1 200px; min-width: 0; }
+.target-group + .target-group { margin-top: 6px; }
+.target-group-title { font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim); margin: 8px 0 0; }
+.filter-chip.target-chip.primary { background: var(--navy); border-color: var(--navy); color: #fff; }
+.filter-chip.target-chip.secondary { background: #fff; border-color: var(--navy); color: var(--navy); border-style: dashed; }
+.chip.target.primary { background: var(--navy); color: #fff; }
+.chip.target.secondary { background: #e8f4fb; color: var(--navy); }
+.review-card .card-title { margin: 0; }
+.review-card p { margin: 6px 0; }
+.review-card textarea { width: 100%; }
+.chip.verdict-ok { background: #e6f4ea; color: #1b5e20; }
+.chip.verdict-dup { background: #fdf3e1; color: var(--amber-text); }
+.chip.verdict-clash { background: #fdecea; color: #9b1c1c; }

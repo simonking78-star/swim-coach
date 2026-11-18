@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthProvider";
 import { useClub } from "../club/ClubProvider";
@@ -13,9 +13,13 @@ import { Modal } from "../components/Modal";
 import { DrillInfoModal, useDrills } from "../components/drillParts";
 import { DrillEditModal } from "../components/DrillEditModal";
 import { usePlans } from "./plans/PlanList";
+import { useCanReview, useReviewQueue } from "../components/vocabParts";
+import { ClubTerms } from "./vocab/ClubTerms";
 
-// Drills & Skills library: stroke filter, search, info pop-up, create/edit with
-// periodisation, export to PDF, and attach selected drills to a session plan.
+// Drills & Skills: the club vocabulary (A-154). Drills and skills tab: stroke filter, search, info pop-up
+// (what it develops, how much it's used in plans), create/edit, export to PDF, attach to a session plan.
+// Club terms tab: the other shorthand coaches write. Reviewers (head coach, club admin) also see the
+// review list of new entries; coaches don't see that their entries are reviewed.
 
 export function Drills() {
   const { access, session } = useAuth();
@@ -30,6 +34,9 @@ export function Drills() {
   const [editing, setEditing] = useState<FullDrill | "new" | null>(null);
   const [attaching, setAttaching] = useState(false);
   const [exporting, setExporting] = useState<string | null>(null);
+  const [tab, setTab] = useState<"drills" | "terms">("drills");
+  const reviewer = useCanReview(club);
+  const queue = useReviewQueue(club, reviewer.data === true);
 
   const all = drills.data ?? [];
   const strokes = useMemo(() => [...new Set(all.map(d => d.stroke).filter((s): s is string => !!s))].sort(), [all]);
@@ -45,11 +52,19 @@ export function Drills() {
       <div className="page-head row">
         <div>
           <h1><span aria-hidden="true">🧩</span> Drills &amp; Skills</h1>
-          <p className="dim">The club's drills library{editable ? " — select drills to attach them to a session plan" : ""}</p>
+          <p className="dim">The club's drills, skills and shorthand{editable && tab === "drills" ? " — select drills to attach them to a session plan" : ""}</p>
         </div>
-        {editable && <button type="button" className="btn primary" onClick={() => setEditing("new")}>+ New drill / skill</button>}
+        {editable && tab === "drills" && <button type="button" className="btn primary" onClick={() => setEditing("new")}>+ New drill / skill</button>}
       </div>
       {LEVEL_NOTE[level] && <p className="notice">{LEVEL_NOTE[level]}</p>}
+      {reviewer.data === true && !!queue.data?.length && (
+        <p className="notice"><strong>{queue.data.length}</strong> new {queue.data.length === 1 ? "entry" : "entries"} from coaches to look at. <Link to="/drills/review">Review now</Link></p>
+      )}
+      <div className="seg seg-2" role="group" aria-label="Show">
+        <button type="button" className={"seg-btn" + (tab === "drills" ? " on" : "")} aria-pressed={tab === "drills"} onClick={() => setTab("drills")}>Drills &amp; skills</button>
+        <button type="button" className={"seg-btn" + (tab === "terms" ? " on" : "")} aria-pressed={tab === "terms"} onClick={() => setTab("terms")}>Club terms</button>
+      </div>
+      {tab === "terms" ? <ClubTerms club={club} editable={editable} reviewer={reviewer.data === true} /> : <>
 
       <section className="card filter-bar" aria-label="Filters">
         <ClubPicker />
@@ -107,7 +122,9 @@ export function Drills() {
         </div>
       )}
 
-      <DrillInfoModal drillId={infoId} list={all} onClose={() => setInfoId(null)} />
+      </>}
+
+      <DrillInfoModal drillId={infoId} list={all} club={club} onClose={() => setInfoId(null)} />
       {editing && <DrillEditModal drill={editing === "new" ? null : editing} club={club!} onClose={() => setEditing(null)} />}
       {attaching && <AttachModal drills={all.filter(d => selected.has(d.id))} club={club!} userId={session?.user.id}
         onClose={() => setAttaching(false)} onDone={() => setSelected(new Set())} />}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { sb } from "./supabase";
+import { loadAllDrills } from "./drills";
 import { looksOffline, queueWrite } from "./offline";
 import { isoAdd, uuid } from "./util";
 import { clubIdOf, clubCols, squadIdOf, SWIMMER_SQUAD, flatSquad } from "./clubs";
@@ -277,10 +278,10 @@ export async function loadRecentSquadFeedback(club: string): Promise<RecentSquad
   }));
 }
 
+/** The club's Drills & Skills list (the club vocabulary, A-154), by drills_library id. Removed drills drop out;
+ *  feedback that already names one keeps it, because those names are read through the drill link. */
 export async function loadDrills(club: string): Promise<Drill[]> {
-  const { data, error } = await sb.from("drills_library").select("id, drill_name, stroke, pseudonyms").eq("club_id", clubIdOf(club)).order("stroke").order("drill_name");
-  if (error) throw error;
-  return (data ?? []) as unknown as Drill[];
+  return (await loadAllDrills(club)).map((d): Drill => ({ id: d.id, drill_name: d.drill_name, stroke: d.stroke, pseudonyms: d.pseudonyms }));
 }
 
 export function searchDrills(drills: Drill[], q: string): Drill[] {
