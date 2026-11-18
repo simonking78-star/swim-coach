@@ -1,33 +1,40 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { deleteDrill, loadPeri, MESOS, periKey, PHASES, saveDrill, type DrillDraft, type FullDrill } from "../lib/drills";
+import { deleteDrill, saveDrill, type DrillDraft, type FullDrill } from "../lib/drills";
+import { loadTermTargets } from "../lib/vocab";
 import { useCoachName } from "../lib/util";
 import { Modal } from "./Modal";
 import { useDrills } from "./drillParts";
+import { TargetPicker, useCanReview } from "./vocabParts";
 
-// Create / edit a drill or skill in the club's Drills & Skills library.
+// Create / edit a drill or skill in the club's Drills & Skills library (the club vocabulary, A-154).
 // Used by the library page and, for "create new", by the feedback forms'
 // remedial-action picker (which passes initialName and onSaved).
+// "What it develops" replaces the old periodisation grid: how much a drill is used, and when,
+// now comes from the dated session plans themselves.
 
-export const emptyDrillDraft = (): DrillDraft => ({ stroke: "", name: "", pseudonyms: "", purpose: "", blabt: "", biomech: "", equipment: "", regression: "", progression: "", peri: {} });
+export const emptyDrillDraft = (): DrillDraft => ({ kind: "drill", stroke: "", name: "", pseudonyms: "", purpose: "", blabt: "", biomech: "", equipment: "", regression: "", progression: "", targets: {} });
 
 export interface SavedDrill { id: string; drill_name: string; stroke: string | null; }
+
+const SKILL_HINT = /^(turn|dive|start|underwater|transition|finish|relay|breakout)/i;
 
 export function DrillEditModal({ drill, club, onClose, initialName, initialStroke, onSaved }: {
   drill: FullDrill | null; club: string; onClose: () => void;
   /** New drills only: pre-fill from what the coach typed / the feedback stroke. */
   initialName?: string; initialStroke?: string;
-  /** Called with the saved drill before the modal closes. */
+  /** Called with the saved drill (its drills_library id) before the modal closes. */
   onSaved?: (d: SavedDrill) => void;
 }) {
   const coach = useCoachName();
   const qc = useQueryClient();
+  const reviewer = useCanReview(club);
   const [d, setD] = useState<DrillDraft>(() => drill ? {
-    stroke: drill.stroke || "", name: drill.drill_name || "", pseudonyms: (drill.pseudonyms || []).join(", "),
+    kind: drill.term_type ?? "drill", stroke: drill.stroke || "", name: drill.drill_name || "", pseudonyms: (drill.pseudonyms || []).join(", "),
     purpose: drill.primary_purpose || "", blabt: drill.blabt || "", biomech: drill.biomechanical || "", equipment: drill.equipment || "",
-    regression: drill.regression || "", progression: drill.progression || "", peri: {}
-  } : { ...emptyDrillDraft(), name: initialName ?? "", stroke: initialStroke ?? "" });
-  const [periReady, setPeriReady] = useState(!drill);
+    regression: drill.regression || "", progression: drill.progression || "", targets: {}
+  } : { ...emptyDrillDraft(), name: initialName ?? "", stroke: initialStroke ?? "", kind: SKILL_HINT.test(initialStroke ?? "") ? "skill" : "drill" });
+  const [targetsReady, setTargetsReady] = useState(!drill?.term_id);
   const [msg, setMsg] = useState<{ text: string; error?: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
@@ -35,28 +42,28 @@ export function DrillEditModal({ drill, club, onClose, initialName, initialStrok
   const strokeOptions = useMemo(() => [...new Set([...(library.data ?? []).map(x => x.stroke).filter((s): s is string => !!s),
     "Frontcrawl", "Backstroke", "Breaststroke", "Butterfly", "Turn - Frontcrawl", "Turn - Backstroke", "Turn - Breaststroke", "Turn - Butterfly", "Dive", "Underwater", "Transition"])].sort(), [library.data]);
 
-  // Load the drill's periodisation grid once.
+  // Load what the drill develops once.
   useEffect(() => {
-    if (!drill) return;
-    loadPeri(drill.id).then(rows => {
-      const peri: DrillDraft["peri"] = {};
-      rows.forEach(r => { peri[periKey(r.meso, r.phase_type)] = { placement: r.session_plan_placement || "", distance: r.distance_m != null ? String(r.distance_m) : "" }; });
-      setD(x => ({ ...x, peri })); setPeriReady(true);
-    }).catch(e => { console.error(e); setPeriReady(true); });
+    if (!drill?.term_id) return;
+    loadTermTargets([drill.term_id]).then(rows => {
+      setD(x => ({ ...x, targets: Object.fromEntries(rows.map(r => [r.target_id, r.weight])) }));
+      setTargetsReady(true);
+    }).catch(e => { console.error(e); setTargetsReady(true); });
   }, [drill]);
 
-  const set = (k: keyof Omit<DrillDraft, "peri">) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setD(x => ({ ...x, [k]: e.target.value }));
-  const setPeri = (meso: string, phase: string, f: "placement" | "distance", v: string) =>
-    setD(x => { const key = periKey(meso, phase); const cur = x.peri[key] ?? { placement: "", distance: "" }; return { ...x, peri: { ...x.peri, [key]: { ...cur, [f]: v } } }; });
-  const refresh = () => { qc.invalidateQueries({ queryKey: ["drills_full", club] }); qc.invalidateQueries({ queryKey: ["drills", club] }); };
+  const set = (k: keyof Omit<DrillDraft, "targets" | "kind">) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setD(x => ({ ...x, [k]: e.target.value }));
+  const refresh = () => {
+    ["drills_full", "drills", "vocab_terms", "vocab_review"].forEach(k => qc.invalidateQueries({ queryKey: [k, club] }));
+    qc.invalidateQueries({ queryKey: ["term_targets"] });
+    if (drill) qc.invalidateQueries({ queryKey: ["drill", drill.id] });
+  };
 
   const save = async () => {
     setMsg(null);
     if (!d.name.trim()) { setMsg({ text: "Give it a name.", error: true }); return; }
     setBusy(true);
     try {
-      const id = await saveDrill(club, drill?.id ?? null, d, coach);
-      qc.invalidateQueries({ queryKey: ["drill_peri", id] });
+      const id = await saveDrill(club, drill, d, { coach, reviewer: reviewer.data === true });
       refresh();
       setMsg({ text: "Saved to Drills & Skills." });
       onSaved?.({ id, drill_name: d.name.trim(), stroke: d.stroke.trim() || null });
@@ -67,11 +74,11 @@ export function DrillEditModal({ drill, club, onClose, initialName, initialStrok
   const del = async () => {
     if (!drill) return;
     setBusy(true);
-    try { await deleteDrill(drill.id); refresh(); onClose(); }
-    catch (e) { console.error(e); setMsg({ text: "Delete failed — " + ((e as Error).message || "please try again."), error: true }); setBusy(false); }
+    try { await deleteDrill(drill); refresh(); onClose(); }
+    catch (e) { console.error(e); setMsg({ text: "Remove failed — " + ((e as Error).message || "please try again."), error: true }); setBusy(false); }
   };
 
-  const field = (id: string, label: string, k: keyof Omit<DrillDraft, "peri">, ph: string, area = false) => (
+  const field = (id: string, label: string, k: keyof Omit<DrillDraft, "targets" | "kind">, ph: string, area = false) => (
     <>
       <label htmlFor={id}>{label}</label>
       {area ? <textarea id={id} rows={2} value={d[k]} placeholder={ph} onChange={set(k)} /> : <input id={id} type="text" value={d[k]} placeholder={ph} onChange={set(k)} />}
@@ -80,12 +87,16 @@ export function DrillEditModal({ drill, club, onClose, initialName, initialStrok
 
   return (
     <Modal open onClose={onClose} title={drill ? "Edit drill / skill" : "New drill / skill"}>
-      <label htmlFor="de-stroke">Stroke / skill</label>
+      <div className="seg seg-2" role="group" aria-label="Drill or skill">
+        <button type="button" className={"seg-btn" + (d.kind === "drill" ? " on" : "")} aria-pressed={d.kind === "drill"} onClick={() => setD(x => ({ ...x, kind: "drill" }))}>Drill</button>
+        <button type="button" className={"seg-btn" + (d.kind === "skill" ? " on" : "")} aria-pressed={d.kind === "skill"} onClick={() => setD(x => ({ ...x, kind: "skill" }))}>Skill</button>
+      </div>
+      <label htmlFor="de-stroke">Stroke / skill area</label>
       <input id="de-stroke" type="text" list="de-stroke-list" autoComplete="off" value={d.stroke} placeholder="e.g. Frontcrawl, Turn - Backstroke" onChange={set("stroke")} />
       <datalist id="de-stroke-list">{strokeOptions.map(s => <option key={s} value={s} />)}</datalist>
-      <p className="hint">Pick a stroke for a drill, or a skill (e.g. a turn, dive or underwater) — or type a new one.</p>
       {field("de-name", "Name", "name", "e.g. Zip")}
-      {field("de-pseudo", "Pseudonyms (comma separated)", "pseudonyms", "Finger drag, Thumb drag")}
+      {field("de-pseudo", "Other names coaches use (comma separated)", "pseudonyms", "Finger drag, Thumb drag")}
+      <p className="hint">Any of these names in a session plan is counted as this drill.</p>
       {field("de-purpose", "Primary purpose", "purpose", "What this drill develops", true)}
       {field("de-blabt", "BLABT / focus", "blabt", "e.g. Arms, Body")}
       {field("de-biomech", "Biomechanical", "biomech", "Biomechanical notes", true)}
@@ -94,41 +105,17 @@ export function DrillEditModal({ drill, club, onClose, initialName, initialStrok
       {field("de-progress", "Progression", "progression", "What this links into / builds towards", true)}
 
       <details open className="peri">
-        <summary>Periodisation recommendations</summary>
-        {!periReady ? <p className="dim">Loading…</p> : (
-          <div className="table-wrap">
-            <table className="data peri-grid">
-              <caption className="sr-only">Placement and distance per meso cycle and phase</caption>
-              <thead><tr><th scope="col">Phase</th>{MESOS.map(m => <th key={m} scope="col">{m}</th>)}</tr></thead>
-              <tbody>
-                {PHASES.map(ph => (
-                  <tr key={ph}>
-                    <th scope="row">{ph}</th>
-                    {MESOS.map(m => {
-                      const c = d.peri[periKey(m, ph)];
-                      return (
-                        <td key={m}>
-                          <input type="text" aria-label={`${m} ${ph} placement`} placeholder="Placement" value={c?.placement ?? ""} onChange={e => setPeri(m, ph, "placement", e.target.value)} />
-                          <input type="number" inputMode="numeric" aria-label={`${m} ${ph} distance in metres`} placeholder="m" value={c?.distance ?? ""} onChange={e => setPeri(m, ph, "distance", e.target.value)} />
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <p className="hint">Placement (e.g. Warm-up, pre-set) + distance in metres, per meso cycle.</p>
+        <summary>What it develops</summary>
+        {targetsReady ? <TargetPicker value={d.targets} onChange={targets => setD(x => ({ ...x, targets }))} disabled={busy} /> : <p className="dim">Loading…</p>}
       </details>
 
-      <button type="button" className="btn primary wide" onClick={save} disabled={busy || !periReady}>{busy ? "Saving…" : "Save drill"}</button>
-      {drill && !confirmDel && <button type="button" className="btn wide danger-outline" onClick={() => setConfirmDel(true)} disabled={busy}>Delete drill</button>}
+      <button type="button" className="btn primary wide" onClick={save} disabled={busy || !targetsReady}>{busy ? "Saving…" : "Save"}</button>
+      {drill && !confirmDel && <button type="button" className="btn wide danger-outline" onClick={() => setConfirmDel(true)} disabled={busy}>Remove from the library</button>}
       {drill && confirmDel && (
         <div className="confirm-box" role="alert">
-          <p>Delete this drill? This also removes its periodisation recommendations and archived set-line drafts.</p>
+          <p>Remove this from Drills &amp; Skills? Plans and feedback that used it keep their history.</p>
           <div className="btn-row">
-            <button type="button" className="btn danger" onClick={del} disabled={busy}>Yes, delete</button>
+            <button type="button" className="btn danger" onClick={del} disabled={busy}>Yes, remove</button>
             <button type="button" className="btn" onClick={() => setConfirmDel(false)} disabled={busy}>Cancel</button>
           </div>
         </div>
@@ -137,4 +124,3 @@ export function DrillEditModal({ drill, club, onClose, initialName, initialStrok
     </Modal>
   );
 }
-

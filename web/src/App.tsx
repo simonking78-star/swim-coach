@@ -21,6 +21,7 @@ const SquadReview = lazy(() => import("./pages/stats/SquadReview"));
 const TestResults = lazy(() => import("./pages/stats/TestResults"));
 // Less-used sections load when first opened, keeping the first download small.
 const Drills = lazy(() => import("./pages/Drills").then(x => ({ default: x.Drills })));
+const VocabReview = lazy(() => import("./pages/vocab/Review").then(x => ({ default: x.VocabReview })));
 const Competitions = lazy(() => import("./pages/Competitions").then(x => ({ default: x.Competitions })));
 const Timetables = lazy(() => import("./pages/timetables/Timetables").then(x => ({ default: x.Timetables })));
 const TimetableForm = lazy(() => import("./pages/timetables/TimetableForm").then(x => ({ default: x.TimetableForm })));
@@ -84,6 +85,7 @@ function Gate() {
           <Route path="sessions/:id" element={wait(<PlanView />)} />
           <Route path="sessions/:id/edit" element={wait(<PlanEditor />)} />
           <Route path="drills" element={wait(<Drills />)} />
+          <Route path="drills/review" element={wait(<VocabReview />)} />
           <Route path="timetables" element={wait(<Timetables />)} />
           <Route path="timetables/new" element={wait(<TimetableForm key="new" />)} />
           <Route path="timetables/:id/edit" element={wait(<TimetableForm />)} />

@@ -58,7 +58,7 @@ export function PlanView() {
         <PlanBody content={p.content || []} onDrill={setDrillId} />
         {p.notes && <p className="pv-note notes">{p.notes}</p>}
       </section>
-      <DrillInfoModal drillId={drillId} onClose={() => setDrillId(null)} />
+      <DrillInfoModal drillId={drillId} club={club} onClose={() => setDrillId(null)} />
     </>
   );
 }
