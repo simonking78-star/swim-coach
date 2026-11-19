@@ -38,6 +38,3 @@ export const NAV_GROUPS: { label: string; keys: string[] }[] = [
   { label: "Admin",           keys: ["membership", "admin", "appdev"] }
 ];
 
-/** The classic (pre-React) app, kept at /classic/ as a fallback after the switchover. */
-export const CLASSIC_URL = "/classic/";
-export const legacyUrl = (go: string) => `${CLASSIC_URL}?go=${encodeURIComponent(go)}`;

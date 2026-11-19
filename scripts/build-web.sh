@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Builds the site Netlify publishes, in site/:
 #   /           the React app (web/), built here
-#   /classic/   the classic app (coach-tools-deploy/), copied as-is, kept
-#               as a fallback after the switchover
-# Old /v2/ links redirect to the root (netlify.toml).
+# The classic app (/classic/, coach-tools-deploy/) was retired at Phase 6 of the
+# club & squad normalisation: it read club and squad name columns that no
+# longer exist. Old /classic/ and /v2/ links redirect to the root (netlify.toml).
 #
 # Deploy previews and branch deploys point the React app at the staging
 # Supabase project (A-018); swap-staging-env.sh does the same for the
-# classic app before this runs. Production builds always use the
+# classic app before this runs (no longer deployed). Production builds always use the
 # production defaults baked into web/src/lib/supabase.ts.
 
 set -euo pipefail
@@ -28,7 +28,6 @@ npm run build
 
 SITE="$ROOT/site"
 rm -rf "$SITE"
-mkdir -p "$SITE/classic"
+mkdir -p "$SITE"
 cp -R dist/. "$SITE/"
-cp "$ROOT"/coach-tools-deploy/{index.html,sw.js,manifest.json,icon-192.png,icon-512.png} "$SITE/classic/"
-echo "build-web: site/ assembled — React app at /, classic app at /classic/."
+echo "build-web: site/ assembled — React app at /."
