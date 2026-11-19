@@ -194,11 +194,14 @@ export function Planning() {
           <ul className="pl-list">
             {lists.data.comps.map(c => {
               const n = (c.competition_events || []).filter(e => e.is_active).length;
+              const names = new Map((squadsQ.data ?? []).map(s => [s.id, s.name]));
+              const goingNames = (c.season_competition_squads ?? []).filter(x => x.is_active).map(x => names.get(x.squad_id)).filter(Boolean).sort();
               return (
                 <li key={c.id}>
                   <div>
                     <div className="meet-name">{c.name}</div>
                     <div className="dim small">{fmtRange(c.date_from, c.date_to)} · {c.total_days} day{c.total_days === 1 ? "" : "s"} · {c.level ? `L${c.level} · ` : ""}{c.course} · {n} event{n === 1 ? "" : "s"}</div>
+                    <div className={"small" + (goingNames.length ? " dim" : " warn-text")}>{goingNames.length ? `Squads: ${goingNames.join(", ")}` : "No squads chosen yet"}</div>
                   </div>
                   <div className="btn-row nowrap">
                     <Link className="btn small" to={`/season/competition/${c.id}`}>Edit</Link>
