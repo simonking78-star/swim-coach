@@ -2701,6 +2701,61 @@ export type Database = {
           },
         ]
       }
+      season_competition_squads: {
+        Row: {
+          club_id: string
+          created_at: string
+          is_active: boolean
+          note: string | null
+          season_competition_id: string
+          squad_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          is_active?: boolean
+          note?: string | null
+          season_competition_id: string
+          squad_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          is_active?: boolean
+          note?: string | null
+          season_competition_id?: string
+          squad_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_competition_squads_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_competition_squads_season_competition_id_fkey"
+            columns: ["season_competition_id"]
+            isOneToOne: false
+            referencedRelation: "season_competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_competition_squads_squad_id_fkey"
+            columns: ["squad_id"]
+            isOneToOne: false
+            referencedRelation: "squads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       season_competitions: {
         Row: {
           competition_id: string | null
