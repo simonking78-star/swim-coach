@@ -5,7 +5,6 @@ import { ROLE_LABEL, roleSummary, sectionLevel } from "../lib/access";
 import { NAV_GROUPS, SECTIONS } from "../sections";
 import { usePendingWrites } from "../lib/offline";
 import { stopRoleTest } from "../lib/admin";
-import { CLASSIC_URL } from "../sections";
 import { logEvent } from "../lib/util";
 import { useClub } from "../club/ClubProvider";
 import { SendFeedback } from "./SendFeedback";
@@ -104,7 +103,6 @@ export function Layout() {
           <div className="nav-foot">
             <NavLink to="/settings" className="nav-item"><span className="nav-icon" aria-hidden="true">🔧</span><span className="nav-label">Settings</span></NavLink>
             <button type="button" className="nav-item" onClick={() => { setMenuOpen(false); setFbOpen(true); }}><span className="nav-icon" aria-hidden="true">💬</span><span className="nav-label">Send feedback</span></button>
-            <a className="nav-item" href={CLASSIC_URL}><span className="nav-icon" aria-hidden="true">↩︎</span><span className="nav-label">Classic app</span></a>
           </div>
           <button type="button" className="nav-item nav-collapse" aria-pressed={collapsed} onClick={toggleCollapsed} title={collapsed ? "Expand menu" : undefined}>
             <span className="nav-icon" aria-hidden="true">{collapsed ? "»" : "«"}</span><span className="nav-label">Collapse menu</span>

@@ -1,10 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { CLASSIC_URL } from "../sections";
 import { isSharedDevice } from "../lib/device";
 
 /**
- * Desktop account menu (A-118): who is signed in, Settings, Send feedback, the classic app,
+ * Desktop account menu (A-118): who is signed in, Settings, Send feedback,
  * and Sign out. A simple disclosure (button + list), closed by Escape, an outside click or navigating.
  */
 export function AccountMenu({ email, role, onFeedback, onSignOut }: {
@@ -45,7 +44,6 @@ export function AccountMenu({ email, role, onFeedback, onSignOut }: {
           <ul>
             <li><Link to="/settings" className="acct-item"><span aria-hidden="true">🔧</span>Settings</Link></li>
             <li><button type="button" className="acct-item" onClick={() => { setOpen(false); onFeedback(); }}><span aria-hidden="true">💬</span>Send feedback</button></li>
-            <li><a href={CLASSIC_URL} className="acct-item"><span aria-hidden="true">↩︎</span>Classic app</a></li>
             <li className="acct-sep"><button type="button" className="acct-item" onClick={onSignOut}><span aria-hidden="true">⎋</span>Sign out</button></li>
           </ul>
         </div>

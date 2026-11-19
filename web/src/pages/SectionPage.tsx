@@ -1,10 +1,10 @@
 import { Navigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { LEVEL_NOTE, sectionLevel } from "../lib/access";
-import { SECTIONS, legacyUrl } from "../sections";
+import { SECTIONS } from "../sections";
 
-// Placeholder for every section until it is rebuilt in React: checks access,
-// then hands over to the current app at the same section.
+// Fallback for a section key with no React screen: checks access, then says so.
+// (The classic app it used to hand over to was retired at Phase 6.)
 export function SectionPage() {
   const { key } = useParams();
   const { access } = useAuth();
@@ -29,8 +29,7 @@ export function SectionPage() {
       </div>
       {LEVEL_NOTE[lv] && <p className="notice">{LEVEL_NOTE[lv]}</p>}
       <div className="card">
-        <p>This section hasn't moved to the new version yet. It opens in the current app, signed in as you.</p>
-        <a className="btn primary" href={legacyUrl(s.legacyGo)}>Open {s.label} in the current app</a>
+        <p>This section isn't available yet.</p>
       </div>
     </>
   );

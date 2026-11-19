@@ -1,12 +1,10 @@
 # scripts/build-web.sh assembles site/:
 #   /          the React app (web/)
-#   /classic/  the classic app (coach-tools-deploy/, a static index.html),
-#              kept as a fallback after the switchover
+# The classic app (/classic/) was retired at Phase 6 of the club & squad
+# normalisation; its links redirect to the root.
 # See claude/specs/react-rewrite-scope.md.
-# Deploy-preview and branch-deploy contexts first run
-# scripts/swap-staging-env.sh, which points the current app at the
-# staging Supabase project (A-018); build-web.sh does the same for the
-# React app in those contexts.
+# In deploy-preview and branch-deploy contexts build-web.sh points the
+# React app at the staging Supabase project (A-018).
 
 [build]
   base = "/"
@@ -20,10 +18,10 @@
   NODE_VERSION = "22"
 
 [context.deploy-preview]
-  command = "bash scripts/swap-staging-env.sh && bash scripts/build-web.sh"
+  command = "bash scripts/build-web.sh"
 
 [context.branch-deploy]
-  command = "bash scripts/swap-staging-env.sh && bash scripts/build-web.sh"
+  command = "bash scripts/build-web.sh"
 
 # Old links and bookmarks to the /v2 preview go to the same screen at the root.
 [[redirects]]
@@ -31,8 +29,14 @@
   to = "/:splat"
   status = 301
 
+# The classic app was retired (Phase 6): old /classic/ links open the React app.
+[[redirects]]
+  from = "/classic/*"
+  to = "/"
+  status = 301
+  force = true
+
 # React Router: any path that isn't a real file loads the React app.
-# (Real files win, so /classic/ and its assets are served as they are.)
 [[redirects]]
   from = "/*"
   to = "/index.html"

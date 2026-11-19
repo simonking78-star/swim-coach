@@ -24,7 +24,7 @@ export function AccountProfile({ accountId, club, canEdit, canEditMedical, canSe
   const q = useQuery({ queryKey: ["mb_account", id], enabled: !!id, queryFn: () => loadAccount(id!) });
   const appRoles = useQuery({
     queryKey: ["mb_account_roles", q.data?.account.user_id], enabled: !!q.data?.account.user_id,
-    queryFn: async () => ((await sb.from("user_roles").select("role, club").eq("user_id", q.data!.account.user_id!)).data ?? []) as { role: string; club: string | null }[]
+    queryFn: async () => ((await sb.from("user_roles").select("role, club_id").eq("user_id", q.data!.account.user_id!)).data ?? []) as { role: string; club_id: string | null }[]
   });
   const unlinked = useQuery({
     queryKey: ["mb_unlinked", club], enabled: canEdit,
@@ -131,7 +131,7 @@ export function AccountProfile({ accountId, club, canEdit, canEditMedical, canSe
                 })}
               </div>
             </div>
-            <ReadOnly label="App access" value={!draft.user_id ? "No app login" : appRoles.data?.length ? appRoles.data.map(r => `${ROLE_LABEL[r.role as Role] ?? r.role}${r.club ? "" : " (all clubs)"}`).join(", ") : "Login, no role"} />
+            <ReadOnly label="App access" value={!draft.user_id ? "No app login" : appRoles.data?.length ? appRoles.data.map(r => `${ROLE_LABEL[r.role as Role] ?? r.role}${r.club_id ? "" : " (all clubs)"}`).join(", ") : "Login, no role"} />
           </Fieldset>
           {!draft.user_id && <p className="hint">App logins and permissions are managed in Admin → Users. Club roles here are for the club's records only.</p>}
 
