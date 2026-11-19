@@ -33,6 +33,7 @@ const Micros = lazy(() => import("./pages/season/Micros").then(x => ({ default: 
 const PlanList = lazy(() => import("./pages/plans/PlanList").then(x => ({ default: x.PlanList })));
 const PlanView = lazy(() => import("./pages/plans/PlanView").then(x => ({ default: x.PlanView })));
 const PlanEditor = lazy(() => import("./pages/plans/PlanEditor").then(x => ({ default: x.PlanEditor })));
+const SessionWriter = lazy(() => import("./pages/plans/SessionWriter").then(x => ({ default: x.SessionWriter })));
 const MeasuresHub = lazy(() => import("./pages/measures/Measures").then(x => ({ default: x.MeasuresHub })));
 const Library = lazy(() => import("./pages/measures/Measures").then(x => ({ default: x.Library })));
 const ProtocolPage = lazy(() => import("./pages/measures/ProtocolPage").then(x => ({ default: x.ProtocolPage })));
@@ -81,9 +82,11 @@ function Gate() {
           <Route path="swimmers" element={<Swimmers />} />
           <Route path="swimmers/:id" element={<SwimmerProfile />} />
           <Route path="sessions" element={wait(<PlanList />)} />
-          <Route path="sessions/new" element={wait(<PlanEditor key="new" />)} />
+          <Route path="sessions/new" element={wait(<SessionWriter key="new" />)} />
+          <Route path="sessions/new/blocks" element={wait(<PlanEditor key="new-blocks" />)} />
           <Route path="sessions/:id" element={wait(<PlanView />)} />
-          <Route path="sessions/:id/edit" element={wait(<PlanEditor />)} />
+          <Route path="sessions/:id/edit" element={wait(<SessionWriter />)} />
+          <Route path="sessions/:id/blocks" element={wait(<PlanEditor />)} />
           <Route path="drills" element={wait(<Drills />)} />
           <Route path="drills/review" element={wait(<VocabReview />)} />
           <Route path="timetables" element={wait(<Timetables />)} />
