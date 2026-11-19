@@ -129,7 +129,6 @@ export type Database = {
       }
       app_feedback: {
         Row: {
-          club: string | null
           club_id: string | null
           created_at: string
           id: string
@@ -138,7 +137,6 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
-          club?: string | null
           club_id?: string | null
           created_at?: string
           id?: string
@@ -147,7 +145,6 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
-          club?: string | null
           club_id?: string | null
           created_at?: string
           id?: string
@@ -195,35 +192,56 @@ export type Database = {
       assessments: {
         Row: {
           assessed_at: string
+          club_id: string
           coach_email: string
           created_at: string
           group: string
           id: string
           notes: string | null
           scores: Json
+          swimmer_id: string
           swimmer_name: string
         }
         Insert: {
           assessed_at?: string
+          club_id: string
           coach_email: string
           created_at?: string
           group: string
           id?: string
           notes?: string | null
           scores?: Json
+          swimmer_id: string
           swimmer_name: string
         }
         Update: {
           assessed_at?: string
+          club_id?: string
           coach_email?: string
           created_at?: string
           group?: string
           id?: string
           notes?: string | null
           scores?: Json
+          swimmer_id?: string
           swimmer_name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "assessments_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_swimmer_id_fkey"
+            columns: ["swimmer_id"]
+            isOneToOne: false
+            referencedRelation: "swimmers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       attendance_records: {
         Row: {
@@ -863,6 +881,45 @@ export type Database = {
         }
         Relationships: []
       }
+      development_targets: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          oadf_domain: string | null
+          oadf_levels: string[] | null
+          sort_order: number
+          source: string | null
+          target_group: string
+          work_tag: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          oadf_domain?: string | null
+          oadf_levels?: string[] | null
+          sort_order?: number
+          source?: string | null
+          target_group: string
+          work_tag?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          oadf_domain?: string | null
+          oadf_levels?: string[] | null
+          sort_order?: number
+          source?: string | null
+          target_group?: string
+          work_tag?: string | null
+        }
+        Relationships: []
+      }
       drill_periodisation: {
         Row: {
           created_at: string
@@ -962,7 +1019,6 @@ export type Database = {
         Row: {
           biomechanical: string | null
           blabt: string | null
-          club: string | null
           club_id: string | null
           coach: string | null
           created_at: string
@@ -979,7 +1035,6 @@ export type Database = {
         Insert: {
           biomechanical?: string | null
           blabt?: string | null
-          club?: string | null
           club_id?: string | null
           coach?: string | null
           created_at?: string
@@ -996,7 +1051,6 @@ export type Database = {
         Update: {
           biomechanical?: string | null
           blabt?: string | null
-          club?: string | null
           club_id?: string | null
           coach?: string | null
           created_at?: string
@@ -2168,7 +2222,7 @@ export type Database = {
             foreignKeyName: "mm_sessions_window_id_fkey"
             columns: ["window_id"]
             isOneToOne: false
-            referencedRelation: "mm_windows"
+            referencedRelation: "season_windows"
             referencedColumns: ["id"]
           },
         ]
@@ -2293,6 +2347,150 @@ export type Database = {
           },
         ]
       }
+      plan_line_usage: {
+        Row: {
+          club_id: string
+          created_at: string
+          distance_m: number | null
+          id: string
+          intensity: string | null
+          interval_text: string | null
+          line_no: number | null
+          line_text: string | null
+          matched_text: string | null
+          plan_date: string | null
+          reps: number | null
+          session_plan_id: string | null
+          source: string
+          squad_id: string | null
+          term_id: string | null
+          total_m: number | null
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          distance_m?: number | null
+          id?: string
+          intensity?: string | null
+          interval_text?: string | null
+          line_no?: number | null
+          line_text?: string | null
+          matched_text?: string | null
+          plan_date?: string | null
+          reps?: number | null
+          session_plan_id?: string | null
+          source?: string
+          squad_id?: string | null
+          term_id?: string | null
+          total_m?: number | null
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          distance_m?: number | null
+          id?: string
+          intensity?: string | null
+          interval_text?: string | null
+          line_no?: number | null
+          line_text?: string | null
+          matched_text?: string | null
+          plan_date?: string | null
+          reps?: number | null
+          session_plan_id?: string | null
+          source?: string
+          squad_id?: string | null
+          term_id?: string | null
+          total_m?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_line_usage_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_line_usage_session_plan_id_fkey"
+            columns: ["session_plan_id"]
+            isOneToOne: false
+            referencedRelation: "session_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_line_usage_squad_id_fkey"
+            columns: ["squad_id"]
+            isOneToOne: false
+            referencedRelation: "squads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_line_usage_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary_review_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_line_usage_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary_terms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      planner_glossary: {
+        Row: {
+          club_id: string
+          coach: string | null
+          created_at: string
+          created_by: string | null
+          drill_id: string | null
+          id: string
+          meaning: string
+          term: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          coach?: string | null
+          created_at?: string
+          created_by?: string | null
+          drill_id?: string | null
+          id?: string
+          meaning: string
+          term: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          coach?: string | null
+          created_at?: string
+          created_by?: string | null
+          drill_id?: string | null
+          id?: string
+          meaning?: string
+          term?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planner_glossary_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planner_glossary_drill_id_fkey"
+            columns: ["drill_id"]
+            isOneToOne: false
+            referencedRelation: "drills_library"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       qualifying_times: {
         Row: {
           age_group: string
@@ -2369,7 +2567,6 @@ export type Database = {
       }
       role_test_mode: {
         Row: {
-          club: string | null
           club_id: string | null
           expires_at: string
           role: string
@@ -2379,7 +2576,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          club?: string | null
           club_id?: string | null
           expires_at?: string
           role: string
@@ -2389,7 +2585,6 @@ export type Database = {
           user_id?: string
         }
         Update: {
-          club?: string | null
           club_id?: string | null
           expires_at?: string
           role?: string
@@ -2462,7 +2657,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
-          club_id?: string
+          club_id: string
           created_at?: string
           created_by?: string | null
           file_name: string
@@ -2518,12 +2713,12 @@ export type Database = {
           is_active: boolean
           level: number | null
           name: string
+          notes: string | null
           season_id: string
           total_days: number | null
           updated_at: string
           venue_name: string | null
           venue_url: string | null
-          notes: string | null
         }
         Insert: {
           competition_id?: string | null
@@ -2536,12 +2731,12 @@ export type Database = {
           is_active?: boolean
           level?: number | null
           name: string
+          notes?: string | null
           season_id: string
           total_days?: number | null
           updated_at?: string
           venue_name?: string | null
           venue_url?: string | null
-          notes?: string | null
         }
         Update: {
           competition_id?: string | null
@@ -2554,12 +2749,12 @@ export type Database = {
           is_active?: boolean
           level?: number | null
           name?: string
+          notes?: string | null
           season_id?: string
           total_days?: number | null
           updated_at?: string
           venue_name?: string | null
           venue_url?: string | null
-          notes?: string | null
         }
         Relationships: [
           {
@@ -2641,9 +2836,12 @@ export type Database = {
           is_active: boolean
           kind: string
           note: string | null
+          protocol_ids: string[]
           season_id: string
           squad_id: string | null
+          squad_ids: string[] | null
           starts_on: string
+          test_kind: string | null
           test_set_template_id: string | null
           title: string
           updated_at: string
@@ -2658,9 +2856,12 @@ export type Database = {
           is_active?: boolean
           kind: string
           note?: string | null
+          protocol_ids?: string[]
           season_id: string
           squad_id?: string | null
+          squad_ids?: string[] | null
           starts_on: string
+          test_kind?: string | null
           test_set_template_id?: string | null
           title: string
           updated_at?: string
@@ -2675,9 +2876,12 @@ export type Database = {
           is_active?: boolean
           kind?: string
           note?: string | null
+          protocol_ids?: string[]
           season_id?: string
           squad_id?: string | null
+          squad_ids?: string[] | null
           starts_on?: string
+          test_kind?: string | null
           test_set_template_id?: string | null
           title?: string
           updated_at?: string
@@ -2716,7 +2920,6 @@ export type Database = {
       }
       seasons: {
         Row: {
-          club: string
           club_id: string | null
           created_at: string
           disabled_at: string | null
@@ -2728,7 +2931,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          club: string
           club_id?: string | null
           created_at?: string
           disabled_at?: string | null
@@ -2740,7 +2942,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          club?: string
           club_id?: string | null
           created_at?: string
           disabled_at?: string | null
@@ -2761,22 +2962,128 @@ export type Database = {
           },
         ]
       }
+      session_plan_sets: {
+        Row: {
+          club_id: string | null
+          created_at: string
+          description: string | null
+          distance_m: number | null
+          drill_id: string | null
+          drill_name: string | null
+          effort: string | null
+          equipment: string[] | null
+          group_label: string | null
+          group_reps: number
+          id: string
+          interval_s: number | null
+          interval_text: string | null
+          kind: string | null
+          reps: number | null
+          rest_s: number | null
+          section: string | null
+          session_plan_id: string
+          set_order: number
+          stroke: string | null
+          target_text: string | null
+          total_m: number | null
+        }
+        Insert: {
+          club_id?: string | null
+          created_at?: string
+          description?: string | null
+          distance_m?: number | null
+          drill_id?: string | null
+          drill_name?: string | null
+          effort?: string | null
+          equipment?: string[] | null
+          group_label?: string | null
+          group_reps?: number
+          id?: string
+          interval_s?: number | null
+          interval_text?: string | null
+          kind?: string | null
+          reps?: number | null
+          rest_s?: number | null
+          section?: string | null
+          session_plan_id: string
+          set_order: number
+          stroke?: string | null
+          target_text?: string | null
+          total_m?: number | null
+        }
+        Update: {
+          club_id?: string | null
+          created_at?: string
+          description?: string | null
+          distance_m?: number | null
+          drill_id?: string | null
+          drill_name?: string | null
+          effort?: string | null
+          equipment?: string[] | null
+          group_label?: string | null
+          group_reps?: number
+          id?: string
+          interval_s?: number | null
+          interval_text?: string | null
+          kind?: string | null
+          reps?: number | null
+          rest_s?: number | null
+          section?: string | null
+          session_plan_id?: string
+          set_order?: number
+          stroke?: string | null
+          target_text?: string | null
+          total_m?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_plan_sets_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_plan_sets_drill_id_fkey"
+            columns: ["drill_id"]
+            isOneToOne: false
+            referencedRelation: "drills_library"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_plan_sets_session_plan_id_fkey"
+            columns: ["session_plan_id"]
+            isOneToOne: false
+            referencedRelation: "session_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_plans: {
         Row: {
           block_model: string | null
-          club: string
           club_id: string | null
           coach: string | null
           content: Json
           created_at: string
+          distance_by_stroke: Json | null
+          distance_by_type: Json | null
+          distance_by_zone: Json | null
+          flags: Json | null
           id: string
           intended_date: string | null
           macro: string | null
+          main_set: string | null
           meso: string | null
           micro_id: string | null
           micro_session_id: string | null
           notes: string | null
+          parsed_at: string | null
+          parser_version: string | null
           pool_size: string | null
+          raw_text: string | null
+          session_focus: string | null
+          source: string | null
           squad_id: string | null
           squad_scope: string | null
           stroke_skills: string[]
@@ -2787,19 +3094,28 @@ export type Database = {
         }
         Insert: {
           block_model?: string | null
-          club: string
           club_id?: string | null
           coach?: string | null
           content?: Json
           created_at?: string
+          distance_by_stroke?: Json | null
+          distance_by_type?: Json | null
+          distance_by_zone?: Json | null
+          flags?: Json | null
           id?: string
           intended_date?: string | null
           macro?: string | null
+          main_set?: string | null
           meso?: string | null
           micro_id?: string | null
           micro_session_id?: string | null
           notes?: string | null
+          parsed_at?: string | null
+          parser_version?: string | null
           pool_size?: string | null
+          raw_text?: string | null
+          session_focus?: string | null
+          source?: string | null
           squad_id?: string | null
           squad_scope?: string | null
           stroke_skills?: string[]
@@ -2810,19 +3126,28 @@ export type Database = {
         }
         Update: {
           block_model?: string | null
-          club?: string
           club_id?: string | null
           coach?: string | null
           content?: Json
           created_at?: string
+          distance_by_stroke?: Json | null
+          distance_by_type?: Json | null
+          distance_by_zone?: Json | null
+          flags?: Json | null
           id?: string
           intended_date?: string | null
           macro?: string | null
+          main_set?: string | null
           meso?: string | null
           micro_id?: string | null
           micro_session_id?: string | null
           notes?: string | null
+          parsed_at?: string | null
+          parser_version?: string | null
           pool_size?: string | null
+          raw_text?: string | null
+          session_focus?: string | null
+          source?: string | null
           squad_id?: string | null
           squad_scope?: string | null
           stroke_skills?: string[]
@@ -2864,7 +3189,6 @@ export type Database = {
       }
       squad_drill_weeks: {
         Row: {
-          club: string
           club_id: string | null
           created_at: string
           drill_id: string
@@ -2875,7 +3199,6 @@ export type Database = {
           squad_id: string
         }
         Insert: {
-          club: string
           club_id?: string | null
           created_at?: string
           drill_id: string
@@ -2886,7 +3209,6 @@ export type Database = {
           squad_id: string
         }
         Update: {
-          club?: string
           club_id?: string | null
           created_at?: string
           drill_id?: string
@@ -2937,7 +3259,6 @@ export type Database = {
       squad_feedback: {
         Row: {
           category: string
-          club: string
           club_id: string | null
           coach: string | null
           created_at: string
@@ -2958,7 +3279,6 @@ export type Database = {
         }
         Insert: {
           category: string
-          club: string
           club_id?: string | null
           coach?: string | null
           created_at?: string
@@ -2979,7 +3299,6 @@ export type Database = {
         }
         Update: {
           category?: string
-          club?: string
           club_id?: string | null
           coach?: string | null
           created_at?: string
@@ -3086,7 +3405,6 @@ export type Database = {
       }
       squad_month_snapshots: {
         Row: {
-          club: string
           club_id: string
           generated_at: string
           metrics: Json
@@ -3094,7 +3412,6 @@ export type Database = {
           squad_id: string
         }
         Insert: {
-          club: string
           club_id: string
           generated_at?: string
           metrics: Json
@@ -3102,7 +3419,6 @@ export type Database = {
           squad_id: string
         }
         Update: {
-          club?: string
           club_id?: string
           generated_at?: string
           metrics?: Json
@@ -3128,7 +3444,6 @@ export type Database = {
       }
       squads: {
         Row: {
-          club: string
           club_id: string | null
           created_at: string
           id: string
@@ -3136,7 +3451,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          club: string
           club_id?: string | null
           created_at?: string
           id?: string
@@ -3144,7 +3458,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          club?: string
           club_id?: string | null
           created_at?: string
           id?: string
@@ -3163,7 +3476,6 @@ export type Database = {
       }
       stopwatch_times: {
         Row: {
-          club: string | null
           club_id: string
           course: string | null
           created_at: string
@@ -3174,7 +3486,6 @@ export type Database = {
           rep_count: number | null
           rep_number: number | null
           session_date: string
-          squad: string | null
           squad_id: string | null
           stroke: string
           swimmer_id: string
@@ -3183,7 +3494,6 @@ export type Database = {
           time_type: string
         }
         Insert: {
-          club?: string | null
           club_id: string
           course?: string | null
           created_at?: string
@@ -3194,7 +3504,6 @@ export type Database = {
           rep_count?: number | null
           rep_number?: number | null
           session_date?: string
-          squad?: string | null
           squad_id?: string | null
           stroke: string
           swimmer_id: string
@@ -3203,7 +3512,6 @@ export type Database = {
           time_type?: string
         }
         Update: {
-          club?: string | null
           club_id?: string
           course?: string | null
           created_at?: string
@@ -3214,7 +3522,6 @@ export type Database = {
           rep_count?: number | null
           rep_number?: number | null
           session_date?: string
-          squad?: string | null
           squad_id?: string | null
           stroke?: string
           swimmer_id?: string
@@ -3306,7 +3613,6 @@ export type Database = {
       swim_results: {
         Row: {
           age_at_swim: number | null
-          club: string | null
           club_id: string | null
           converted_time: string | null
           converted_time_display: string | null
@@ -3328,7 +3634,6 @@ export type Database = {
         }
         Insert: {
           age_at_swim?: number | null
-          club?: string | null
           club_id?: string | null
           converted_time?: string | null
           converted_time_display?: string | null
@@ -3350,7 +3655,6 @@ export type Database = {
         }
         Update: {
           age_at_swim?: number | null
-          club?: string | null
           club_id?: string | null
           converted_time?: string | null
           converted_time_display?: string | null
@@ -3674,7 +3978,6 @@ export type Database = {
         Row: {
           account_id: string | null
           active: boolean | null
-          club: string | null
           club_id: string | null
           created_at: string | null
           date_of_birth: string | null
@@ -3685,7 +3988,6 @@ export type Database = {
           parent_email: string | null
           parent_name: string | null
           parent_phone: string | null
-          squad: string | null
           squad_id: string | null
           swim_england_id: string | null
           updated_at: string | null
@@ -3694,7 +3996,6 @@ export type Database = {
         Insert: {
           account_id?: string | null
           active?: boolean | null
-          club?: string | null
           club_id?: string | null
           created_at?: string | null
           date_of_birth?: string | null
@@ -3705,7 +4006,6 @@ export type Database = {
           parent_email?: string | null
           parent_name?: string | null
           parent_phone?: string | null
-          squad?: string | null
           squad_id?: string | null
           swim_england_id?: string | null
           updated_at?: string | null
@@ -3714,7 +4014,6 @@ export type Database = {
         Update: {
           account_id?: string | null
           active?: boolean | null
-          club?: string | null
           club_id?: string | null
           created_at?: string | null
           date_of_birth?: string | null
@@ -3725,7 +4024,6 @@ export type Database = {
           parent_email?: string | null
           parent_name?: string | null
           parent_phone?: string | null
-          squad?: string | null
           squad_id?: string | null
           swim_england_id?: string | null
           updated_at?: string | null
@@ -3755,10 +4053,58 @@ export type Database = {
           },
         ]
       }
+      term_targets: {
+        Row: {
+          confirmed: boolean
+          created_at: string
+          suggested_by: string
+          target_id: string
+          term_id: string
+          weight: string
+        }
+        Insert: {
+          confirmed?: boolean
+          created_at?: string
+          suggested_by?: string
+          target_id: string
+          term_id: string
+          weight?: string
+        }
+        Update: {
+          confirmed?: boolean
+          created_at?: string
+          suggested_by?: string
+          target_id?: string
+          term_id?: string
+          weight?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "term_targets_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "development_targets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "term_targets_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary_review_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "term_targets_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary_terms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_results: {
         Row: {
           age: number | null
-          club: string
           club_id: string | null
           created_at: string
           id: string
@@ -3779,7 +4125,6 @@ export type Database = {
         }
         Insert: {
           age?: number | null
-          club: string
           club_id?: string | null
           created_at?: string
           id?: string
@@ -3800,7 +4145,6 @@ export type Database = {
         }
         Update: {
           age?: number | null
-          club?: string
           club_id?: string | null
           created_at?: string
           id?: string
@@ -3854,7 +4198,6 @@ export type Database = {
         Row: {
           clock_started_at: string | null
           closed_at: string | null
-          club: string
           club_id: string | null
           created_at: string
           created_by: string | null
@@ -3863,7 +4206,6 @@ export type Database = {
           model: Json
           session_date: string
           squad_id: string | null
-          squad_name: string | null
           status: string
           swimmer_ids: string[]
           template_id: string
@@ -3872,7 +4214,6 @@ export type Database = {
         Insert: {
           clock_started_at?: string | null
           closed_at?: string | null
-          club: string
           club_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -3881,7 +4222,6 @@ export type Database = {
           model: Json
           session_date?: string
           squad_id?: string | null
-          squad_name?: string | null
           status?: string
           swimmer_ids?: string[]
           template_id: string
@@ -3890,7 +4230,6 @@ export type Database = {
         Update: {
           clock_started_at?: string | null
           closed_at?: string | null
-          club?: string
           club_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -3899,7 +4238,6 @@ export type Database = {
           model?: Json
           session_date?: string
           squad_id?: string | null
-          squad_name?: string | null
           status?: string
           swimmer_ids?: string[]
           template_id?: string
@@ -3932,7 +4270,6 @@ export type Database = {
       test_set_templates: {
         Row: {
           active: boolean
-          club: string
           club_id: string | null
           created_at: string
           created_by: string | null
@@ -3946,7 +4283,6 @@ export type Database = {
         }
         Insert: {
           active?: boolean
-          club: string
           club_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -3960,7 +4296,6 @@ export type Database = {
         }
         Update: {
           active?: boolean
-          club?: string
           club_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -4171,21 +4506,18 @@ export type Database = {
       }
       user_roles: {
         Row: {
-          club: string | null
           club_id: string | null
           created_at: string
           role: string
           user_id: string
         }
         Insert: {
-          club?: string | null
           club_id?: string | null
           created_at?: string
           role: string
           user_id: string
         }
         Update: {
-          club?: string | null
           club_id?: string | null
           created_at?: string
           role?: string
@@ -4256,6 +4588,127 @@ export type Database = {
           },
         ]
       }
+      vocabulary_terms: {
+        Row: {
+          active: boolean
+          aliases: string[]
+          auto_merged: boolean
+          claude_checked_at: string | null
+          claude_match_id: string | null
+          claude_reason: string | null
+          claude_verdict: string | null
+          club_id: string
+          created_at: string
+          created_by: string | null
+          details: Json
+          full_form: string | null
+          id: string
+          legacy_drill_id: string | null
+          meaning: string | null
+          merged_into: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          stroke: string | null
+          term: string
+          term_type: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          aliases?: string[]
+          auto_merged?: boolean
+          claude_checked_at?: string | null
+          claude_match_id?: string | null
+          claude_reason?: string | null
+          claude_verdict?: string | null
+          club_id: string
+          created_at?: string
+          created_by?: string | null
+          details?: Json
+          full_form?: string | null
+          id?: string
+          legacy_drill_id?: string | null
+          meaning?: string | null
+          merged_into?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          stroke?: string | null
+          term: string
+          term_type: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          aliases?: string[]
+          auto_merged?: boolean
+          claude_checked_at?: string | null
+          claude_match_id?: string | null
+          claude_reason?: string | null
+          claude_verdict?: string | null
+          club_id?: string
+          created_at?: string
+          created_by?: string | null
+          details?: Json
+          full_form?: string | null
+          id?: string
+          legacy_drill_id?: string | null
+          meaning?: string | null
+          merged_into?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          stroke?: string | null
+          term?: string
+          term_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vocabulary_terms_claude_match_id_fkey"
+            columns: ["claude_match_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary_review_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vocabulary_terms_claude_match_id_fkey"
+            columns: ["claude_match_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary_terms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vocabulary_terms_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vocabulary_terms_legacy_drill_id_fkey"
+            columns: ["legacy_drill_id"]
+            isOneToOne: true
+            referencedRelation: "drills_library"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vocabulary_terms_merged_into_fkey"
+            columns: ["merged_into"]
+            isOneToOne: false
+            referencedRelation: "vocabulary_review_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vocabulary_terms_merged_into_fkey"
+            columns: ["merged_into"]
+            isOneToOne: false
+            referencedRelation: "vocabulary_terms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       competitions_with_files: {
@@ -4306,23 +4759,117 @@ export type Database = {
       latest_per_swimmer: {
         Row: {
           assessed_at: string | null
+          club_id: string | null
           coach_email: string | null
           group: string | null
           notes: string | null
           scores: Json | null
+          swimmer_id: string | null
           swimmer_name: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "assessments_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_swimmer_id_fkey"
+            columns: ["swimmer_id"]
+            isOneToOne: false
+            referencedRelation: "swimmers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rolling_90day: {
         Row: {
           assessment_count: number | null
           avg_total_score: number | null
+          club_id: string | null
           group: string | null
           last_assessed: string | null
+          swimmer_id: string | null
           swimmer_name: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "assessments_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_swimmer_id_fkey"
+            columns: ["swimmer_id"]
+            isOneToOne: false
+            referencedRelation: "swimmers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vocabulary_review_queue: {
+        Row: {
+          auto_merged: boolean | null
+          claude_checked_at: string | null
+          claude_match_id: string | null
+          claude_reason: string | null
+          claude_verdict: string | null
+          club_id: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string | null
+          match_meaning: string | null
+          match_term: string | null
+          meaning: string | null
+          merged_into: string | null
+          merged_into_term: string | null
+          status: string | null
+          stroke: string | null
+          suggested_targets: Json | null
+          term: string | null
+          term_type: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vocabulary_terms_claude_match_id_fkey"
+            columns: ["claude_match_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary_review_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vocabulary_terms_claude_match_id_fkey"
+            columns: ["claude_match_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary_terms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vocabulary_terms_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vocabulary_terms_merged_into_fkey"
+            columns: ["merged_into"]
+            isOneToOne: false
+            referencedRelation: "vocabulary_review_queue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vocabulary_terms_merged_into_fkey"
+            columns: ["merged_into"]
+            isOneToOne: false
+            referencedRelation: "vocabulary_terms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
@@ -4344,53 +4891,48 @@ export type Database = {
             }
             Returns: number
           }
-      can_grant_role:
-        | { Args: { p_club: string; p_role: string }; Returns: boolean }
-        | { Args: { p_club_id: string; p_role: string }; Returns: boolean }
+      can_grant_role: {
+        Args: { p_club_id: string; p_role: string }
+        Returns: boolean
+      }
+      can_write_plans_for: { Args: { p_club: string }; Returns: boolean }
       competitions_link_galas: { Args: never; Returns: number }
       deactivate_swimmer: {
         Args: { p_reason?: string; p_swimmer: string }
         Returns: Json
       }
-      home_stats:
-        | { Args: { p_club?: string }; Returns: Json }
-        | { Args: { p_club_id: string }; Returns: Json }
+      home_stats: { Args: { p_club_id: string }; Returns: Json }
       is_superadmin: { Args: never; Returns: boolean }
-      list_deactivated_swimmers:
-        | {
-            Args: { p_club: string }
-            Returns: {
-              anon_name: string
-              date_of_birth: string
-              deactivated_on: string
-              full_name: string
-              reason: string
-              result_count: number
-              squad: string
-              squad_id: string
-              swimmer_id: string
-            }[]
-          }
-        | {
-            Args: { p_club_id: string }
-            Returns: {
-              anon_name: string
-              date_of_birth: string
-              deactivated_on: string
-              full_name: string
-              reason: string
-              result_count: number
-              squad: string
-              squad_id: string
-              swimmer_id: string
-            }[]
-          }
+      link_attendance_to_plan: { Args: { p_plan: string }; Returns: number }
+      list_deactivated_swimmers: {
+        Args: { p_club_id: string }
+        Returns: {
+          anon_name: string
+          date_of_birth: string
+          deactivated_on: string
+          full_name: string
+          reason: string
+          result_count: number
+          squad: string
+          squad_id: string
+          swimmer_id: string
+        }[]
+      }
       mm_cycle_week: {
         Args: { p_club: string; p_date: string; p_squad: string }
         Returns: {
           focus: string
           week_no: number
         }[]
+      }
+      mm_find_window: {
+        Args: {
+          p_club: string
+          p_date: string
+          p_protocol: string
+          p_squad: string
+        }
+        Returns: string
       }
       mm_plan_lines: {
         Args: { p_plan: string }
@@ -4436,7 +4978,6 @@ export type Database = {
           squad_avg_ppa: number
           squad_n: number
           squad_name: string
-          squads: Json
           value: number
           vs_age: string
         }[]
@@ -4479,93 +5020,24 @@ export type Database = {
         Args: { p_squad?: string; p_swimmer: string }
         Returns: Json
       }
+      season_plan_mm: { Args: { p_season: string }; Returns: Json }
       season_plan_panels: { Args: { p_season: string }; Returns: Json }
       set_swimmer_birth_year: {
         Args: { p_swimmer: string; p_year: number }
         Returns: number
       }
       snapshot_squad_month: { Args: { p_month?: string }; Returns: number }
-      squad_month_figures:
-        | {
-            Args: { p_club: string; p_from: string; p_to: string }
-            Returns: {
-              attendance_pct: number
-              avg_improvement_pct: number
-              drills_worked: number
-              excused: number
-              feedback_entries: number
-              feedback_notes: number
-              hours_per_swimmer: number
-              hours_trained: number
-              improved_swims: number
-              marks: number
-              median_improvement_pct: number
-              members: number
-              month: string
-              pbs: number
-              positive_feedback_pct: number
-              present: number
-              sessions: number
-              skill_moves_down: number
-              skill_moves_up: number
-              skill_score: number
-              squad_entries: number
-              squad_id: string
-              squad_name: string
-              st_developing: number
-              st_embedded: number
-              st_not_discussed: number
-              st_started: number
-              status_entries: number
-              swimmers_attending: number
-              swimmers_raced: number
-              swims: number
-            }[]
-          }
-        | {
-            Args: { p_club_id: string; p_from: string; p_to: string }
-            Returns: {
-              attendance_pct: number
-              avg_improvement_pct: number
-              drills_worked: number
-              excused: number
-              feedback_entries: number
-              feedback_notes: number
-              hours_per_swimmer: number
-              hours_trained: number
-              improved_swims: number
-              marks: number
-              median_improvement_pct: number
-              members: number
-              month: string
-              pbs: number
-              positive_feedback_pct: number
-              present: number
-              sessions: number
-              skill_moves_down: number
-              skill_moves_up: number
-              skill_score: number
-              squad_entries: number
-              squad_id: string
-              squad_name: string
-              st_developing: number
-              st_embedded: number
-              st_not_discussed: number
-              st_started: number
-              status_entries: number
-              swimmers_attending: number
-              swimmers_raced: number
-              swims: number
-            }[]
-          }
-      squad_month_review: {
-        Args: { p_club: string; p_from: string; p_to: string }
+      squad_month_figures: {
+        Args: { p_club_id: string; p_from: string; p_to: string }
         Returns: {
           attendance_pct: number
           avg_improvement_pct: number
           drills_worked: number
+          excused: number
           feedback_entries: number
           feedback_notes: number
+          hours_per_swimmer: number
+          hours_trained: number
           improved_swims: number
           marks: number
           median_improvement_pct: number
@@ -4591,9 +5063,21 @@ export type Database = {
           swims: number
         }[]
       }
-      squad_review_allowed:
-        | { Args: { p_club: string; p_squad: string }; Returns: boolean }
-        | { Args: { p_club_id: string; p_squad: string }; Returns: boolean }
+      squad_review_allowed: {
+        Args: { p_club_id: string; p_squad: string }
+        Returns: boolean
+      }
+      vocab_ack_merge: { Args: { p_term: string }; Returns: undefined }
+      vocab_approve: {
+        Args: { p_meaning?: string; p_term: string }
+        Returns: undefined
+      }
+      vocab_can_review: { Args: { p_club: string }; Returns: boolean }
+      vocab_merge: {
+        Args: { p_into: string; p_term: string }
+        Returns: undefined
+      }
+      vocab_reject: { Args: { p_term: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
