@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b5cab">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Swipe Register</title>
+<style>
+:root{
+  --bg:#f4f7fb; --card:#fff; --ink:#13202e; --muted:#5d6b7a; --line:#dde4ec;
+  --brand:#0b5cab; --brand-ink:#fff; --in:#1f9d55; --in-bg:#e3f6ea; --out:#d64545; --out-bg:#fde8e8;
+  --part:#c98a00; --part-bg:#fff4d6; --radius:16px;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0e141b; --card:#18212b; --ink:#e8eef5; --muted:#9aa8b6; --line:#2a3644;
+    --brand:#3d8de0; --in:#37c274; --in-bg:#163524; --out:#ef6a6a; --out-bg:#3a1c1c; --part:#e8b33a; --part-bg:#3a2f12; }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{min-height:100vh;padding-bottom:env(safe-area-inset-bottom)}
+header.top{position:sticky;top:0;z-index:20;background:var(--brand);color:var(--brand-ink);padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px}
+header.top h1{font-size:18px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header.top button{background:rgba(255,255,255,.18);color:inherit;border:0;border-radius:10px;padding:8px 12px;font-size:15px}
+.sync{font-size:12px;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,.2)}
+.sync.pending{background:#ffcf4a;color:#3b2c00}
+.sync.error{background:#ff8a8a;color:#3b0000}
+main{max-width:720px;margin:0 auto;padding:16px}
+.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+label{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
+input,select{width:100%;font-size:17px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:15px;font-size:17px;font-weight:600;background:var(--brand);color:var(--brand-ink);margin-top:14px}
+.btn.secondary{background:transparent;color:var(--brand);border:2px solid var(--brand)}
+.btn:disabled{opacity:.5}
+.err{color:var(--out);margin-top:10px;font-size:15px}
+h2{font-size:20px;margin:4px 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:14px}
+.squad{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 6px 10px;text-align:center;font:inherit;color:inherit;min-height:120px}
+.squad .ic{width:60px;height:60px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:20px}
+.squad .nm{font-size:14px;font-weight:600;line-height:1.2}
+.squad .ct{font-size:12px;color:var(--muted)}
+.squad.empty{opacity:.45}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:10px 14px;font:inherit;font-weight:600}
+.chip.on{border-color:var(--brand);background:var(--brand);color:var(--brand-ink)}
+.opt{width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;padding:14px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink);font:inherit}
+.opt b{font-size:18px}
+.opt small{color:var(--muted)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.plan{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--brand);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:15px}
+.counter{position:sticky;top:56px;z-index:10;background:var(--bg);padding:8px 0 10px;display:flex;gap:8px;align-items:center}
+.pill{flex:1;text-align:center;border-radius:12px;padding:8px 4px;font-weight:700;font-size:15px;background:var(--card);border:1px solid var(--line)}
+.pill.in{color:var(--in)} .pill.out{color:var(--out)}
+.undo{border:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 12px;font:inherit;color:var(--ink)}
+.hint{font-size:13px;color:var(--muted);text-align:center;margin:0 0 10px}
+.sw{position:relative;margin-bottom:8px;border-radius:14px;overflow:hidden;background:var(--line);touch-action:pan-y;user-select:none}
+.sw .bgL,.sw .bgR{position:absolute;inset:0;display:flex;align-items:center;padding:0 20px;font-weight:800;font-size:18px;color:#fff}
+.sw .bgR{background:var(--in);justify-content:flex-start}
+.sw .bgL{background:var(--out);justify-content:flex-end}
+.sw .fg{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;align-items:center;gap:12px;min-height:64px;transition:transform .18s ease}
+.sw.drag .fg{transition:none}
+.sw .name{flex:1;font-size:18px;font-weight:600}
+.badge{font-size:13px;font-weight:800;padding:5px 10px;border-radius:99px;background:var(--bg);color:var(--muted);min-width:64px;text-align:center}
+.sw.in .fg{background:var(--in-bg);border-color:var(--in)} .sw.in .badge{background:var(--in);color:#fff}
+.sw.out .fg{background:var(--out-bg);border-color:var(--out)} .sw.out .badge{background:var(--out);color:#fff}
+.sw.partial .fg{background:var(--part-bg);border-color:var(--part)} .sw.partial .badge{background:var(--part);color:#fff}
+.sw.excused .badge{background:var(--muted);color:#fff}
+.dot{width:8px;height:8px;border-radius:50%;background:#ffcf4a;display:none}
+.sw.unsaved .dot{display:block}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+.modal .sheet{background:var(--card);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom))}
+.sumgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center;margin:10px 0}
+.sumgrid div{background:var(--bg);border-radius:12px;padding:12px}
+.sumgrid b{display:block;font-size:26px}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<header class="top">
+  <button id="backBtn" class="hide" aria-label="Back">‹ Back</button>
+  <h1 id="title">Swipe Register</h1>
+  <span id="sync" class="sync hide"></span>
+  <button id="menuBtn" class="hide">Sign out</button>
+</header>
+<main id="app"><p class="muted">Loading…</p></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+"use strict";
+const SUPABASE_URL = "https://nxlgeykipnvswyeshrbl.supabase.co";
+const SUPABASE_KEY = "sb_publishable_BYuKct-F0f4H04Gl_S58uQ_gKzuW_Ff";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+const POOLS = ["25m", "17m", "50m"];
+const QKEY = "swipeAtt.queue.v1";
+const CONFLICT = "swimmer_id,session_date,session_time,pool_size";
+
+const S = { user:null, roles:[], clubs:[], club:null, squads:[], counts:{}, squad:null,
+            date:todayISO(), session:null, plan:null, swimmers:[], marks:{}, undo:[], view:"login" };
+
+const $ = (sel) => document.querySelector(sel);
+const app = $("#app");
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function todayISO(){ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+function hm(t){ return t ? String(t).slice(0,5) : ""; }
+function toTime(t){ return t.length===5 ? t+":00" : t; }
+function mins(a,b){ if(!a||!b) return null; const [h1,m1]=a.split(":").map(Number),[h2,m2]=b.split(":").map(Number); const d=(h2*60+m2)-(h1*60+m1); return d>0?d:null; }
+function addMin(t,m){ const [h,mm]=t.split(":").map(Number); const x=h*60+mm+m; return String(Math.floor(x/60)%24).padStart(2,"0")+":"+String(x%60).padStart(2,"0"); }
+function niceDate(iso){ return new Date(iso+"T12:00:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"short"}); }
+function initials(name){ const w=name.replace(/[^A-Za-z0-9 ]/g," ").trim().split(/\s+/); return (w.length>1? w[0][0]+w[1][0] : name.slice(0,2)).toUpperCase(); }
+function hue(name){ let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))%360; return h; }
+function timeSlots(){ const out=[]; for(let m=5*60; m<=22*60; m+=15) out.push(addMin("00:00",m)); return out; }
+
+/* ---------- offline queue ---------- */
+function qLoad(){ try{ return JSON.parse(localStorage.getItem(QKEY)||"{}"); }catch{ return {}; } }
+function qSave(q){ try{ localStorage.setItem(QKEY, JSON.stringify(q)); }catch{} }
+function qKey(r){ return [r.swimmer_id,r.session_date,r.session_time,r.pool_size].join("|"); }
+let flushing=false, lastErr=null;
+function setSync(){
+  const n=Object.keys(qLoad()).length, el=$("#sync");
+  if(!S.user){ el.classList.add("hide"); return; }
+  el.classList.remove("hide","pending","error");
+  if(lastErr){ el.textContent="Not saved – tap to retry"; el.classList.add("error"); }
+  else if(n){ el.textContent=n+" not yet saved"; el.classList.add("pending"); }
+  else el.textContent="All saved";
+}
+async function flush(){
+  if(flushing) return; const q=qLoad(); const rows=Object.values(q); if(!rows.length){ lastErr=null; setSync(); return; }
+  flushing=true;
+  try{
+    const { error } = await sb.from("attendance_records").upsert(rows, { onConflict: CONFLICT });
+    if(error){ lastErr=error.message; }
+    else {
+      const now=qLoad(); for(const r of rows){ const k=qKey(r); if(now[k] && now[k].updated_at===r.updated_at) delete now[k]; }
+      qSave(now); lastErr=null;
+      document.querySelectorAll(".sw.unsaved").forEach(el=>{ if(!now[el.dataset.key]) el.classList.remove("unsaved"); });
+    }
+  }catch(e){ lastErr=navigator.onLine ? (e.message||"Network error") : null; }
+  flushing=false; setSync();
+  if(!lastErr && Object.keys(qLoad()).length) setTimeout(flush, 300);
+}
+window.addEventListener("online", flush);
+setInterval(flush, 15000);
+$("#sync").addEventListener("click", ()=>{ lastErr=null; flush(); });
+
+/* ---------- auth ---------- */
+async function boot(){
+  const { data } = await sb.auth.getSession();
+  if(data.session){ S.user=data.session.user; await afterLogin(); } else renderLogin();
+  sb.auth.onAuthStateChange((ev, sess)=>{ if(ev==="SIGNED_OUT"){ S.user=null; renderLogin(); } });
+}
+function coachName(){
+  const m=S.user?.user_metadata||{}; if(m.full_name||m.name) return (m.full_name||m.name).split(" ")[0];
+  const e=(S.user?.email||"coach").split("@")[0].replace(/[0-9._-]+/g," ").trim().split(" ")[0]||"Coach";
+  return e[0].toUpperCase()+e.slice(1);
+}
+function renderLogin(msg){
+  S.view="login"; header("Swipe Register", false);
+  app.innerHTML = `<div class="card"><h2>Coach sign in</h2>
+    <p class="muted">Use the same email and password as Coach Tools.</p>
+    <label for="em">Email</label><input id="em" type="email" autocomplete="username" inputmode="email">
+    <label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password">
+    <button class="btn" id="go">Sign in</button>
+    <button class="btn secondary" id="link">Email me a sign-in link</button>
+    <div class="err" id="er">${esc(msg||"")}</div></div>`;
+  $("#go").onclick = async ()=>{
+    $("#er").textContent=""; $("#go").disabled=true;
+    const { data, error } = await sb.auth.signInWithPassword({ email:$("#em").value.trim(), password:$("#pw").value });
+    $("#go").disabled=false;
+    if(error){ $("#er").textContent=error.message; return; }
+    S.user=data.user; afterLogin();
+  };
+  $("#link").onclick = async ()=>{
+    const email=$("#em").value.trim(); if(!email){ $("#er").textContent="Enter your email first."; return; }
+    const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: location.origin+location.pathname, shouldCreateUser:false } });
+    $("#er").textContent = error ? error.message : "Check your email for the sign-in link.";
+  };
+}
+async function afterLogin(){
+  app.innerHTML=`<p class="muted">Loading your clubs…</p>`; setSync();
+  const { data: roles, error } = await sb.from("user_roles").select("role, club_id").eq("user_id", S.user.id);
+  if(error){ renderLogin(error.message); return; }
+  S.roles = (roles||[]).filter(r=>r.role!=="parent" && r.role!=="swimmer");
+  if(!S.roles.length){ renderLogin("This account has no coach access. Ask your club admin to add a coach role."); return; }
+  const { data: clubs } = await sb.from("clubs").select("id, name, short_name").order("name");
+  const all = S.roles.some(r=>!r.club_id);
+  S.clubs = (clubs||[]).filter(c => all || S.roles.some(r=>r.club_id===c.id));
+  const saved = localStorage.getItem("swipeAtt.club");
+  S.club = S.clubs.find(c=>c.id===saved) || (S.clubs.length===1 ? S.clubs[0] : null);
+  flush();
+  S.club ? loadSquads() : renderClubs();
+}
+
+/* ---------- navigation ---------- */
+function header(t, back, onBack){
+  $("#title").textContent=t;
+  $("#backBtn").classList.toggle("hide", !back); $("#backBtn").onclick=onBack||null;
+  $("#menuBtn").classList.toggle("hide", !S.user);
+}
+$("#menuBtn").onclick = async ()=>{
+  if(Object.keys(qLoad()).length && !confirm("Some marks are not saved yet. Sign out anyway? They will be kept on this device.")) return;
+  await sb.auth.signOut();
+};
+
+function renderClubs(){
+  S.view="clubs"; header("Choose club", false);
+  app.innerHTML = `<h2>Which club?</h2>` + S.clubs.map(c=>`<button class="opt" data-id="${c.id}"><b>${esc(c.short_name||c.name)}</b></button>`).join("");
+  app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{ S.club=S.clubs.find(c=>c.id===b.dataset.id); localStorage.setItem("swipeAtt.club",S.club.id); loadSquads(); });
+}
+
+/* ---------- squads ---------- */
+async function loadSquads(){
+  header(S.club.short_name||S.club.name, S.clubs.length>1, renderClubs);
+  app.innerHTML=`<p class="muted">Loading squads…</p>`;
+  const { data: squads, error } = await sb.from("squads").select("id, name").eq("club_id", S.club.id).order("name");
+  if(error){ app.innerHTML=`<p class="err">${esc(error.message)}</p>`; return; }
+  S.squads = squads||[];
+  const ids = S.squads.map(s=>s.id); S.counts={};
+  if(ids.length){
+    const { data: mem } = await sb.from("squad_memberships").select("squad_id").in("squad_id", ids).is("ended_on", null);
+    (mem||[]).forEach(m=>S.counts[m.squad_id]=(S.counts[m.squad_id]||0)+1);
+  }
+  renderSquads();
+}
+function renderSquads(){
+  S.view="squads"; header(S.club.short_name||S.club.name, S.clubs.length>1, renderClubs);
+  if(!S.squads.length){ app.innerHTML=`<div class="card">No squads set up for this club yet.</div>`; return; }
+  app.innerHTML = `<h2>Tap a squad</h2><div class="grid">` + S.squads.map(s=>{
+    const n=S.counts[s.id]||0;
+    return `<button class="squad ${n?"":"empty"}" data-id="${s.id}">
+      <div class="ic" style="background:hsl(${hue(s.name)} 55% 42%)">${esc(initials(s.name))}</div>
+      <div class="nm">${esc(s.name)}</div><div class="ct">${n} swimmer${n===1?"":"s"}</div></button>`;
+  }).join("") + `</div>`;
+  app.querySelectorAll(".squad").forEach(b=>b.onclick=()=>{ S.squad=S.squads.find(s=>s.id===b.dataset.id); S.date=todayISO(); loadSessions(); });
+}
+
+/* ---------- sessions ---------- */
+async function squadSwimmerIds(){
+  const { data } = await sb.from("squad_memberships").select("swimmer_id").eq("squad_id", S.squad.id).is("ended_on", null);
+  return [...new Set((data||[]).map(r=>r.swimmer_id))];
+}
+async function loadSessions(){
+  header(S.squad.name, true, renderSquads);
+  app.innerHTML=`<p class="muted">Finding sessions…</p>`;
+  const date=S.date, dow=new Date(date+"T12:00:00").getDay(), opts=[];
+  // 1. weekly timetable
+  const { data: tts } = await sb.from("timetables").select("id, season_start, season_end").eq("squad_id", S.squad.id).eq("is_active", true);
+  const live=(tts||[]).filter(t=>(!t.season_start||t.season_start<=date)&&(!t.season_end||t.season_end>=date)).map(t=>t.id);
+  if(live.length){
+    const { data: ts } = await sb.from("timetable_sessions").select("id, start_time, end_time, pool_size, location").in("timetable_id", live).eq("day_of_week", dow).eq("is_active", true);
+    const tsIds=(ts||[]).map(t=>t.id); let ovs=[];
+    if(tsIds.length){ const r=await sb.from("timetable_session_overrides").select("*").in("timetable_session_id", tsIds).eq("session_date", date); ovs=r.data||[]; }
+    for(const t of ts||[]){
+      const o=ovs.find(x=>x.timetable_session_id===t.id);
+      if(o && o.cancelled) continue;
+      opts.push({ src:"Timetable"+(o?" (changed)":""), start:hm(o?.start_time||t.start_time), end:hm(o?.end_time||t.end_time), pool:o?.pool_size||t.pool_size||"25m", timetable_session_id:t.id, where:o?.location||t.location });
+    }
+  }
+  // 2. Season Planner sessions
+  const { data: ms } = await sb.from("micro_sessions").select("id, start_time, end_time, timetable_session_id, stroke_focus").eq("squad_id", S.squad.id).eq("session_date", date).eq("is_active", true);
+  for(const m of ms||[]){
+    const hit=opts.find(o=>(m.timetable_session_id && o.timetable_session_id===m.timetable_session_id) || o.start===hm(m.start_time));
+    if(hit){ hit.micro_session_id=m.id; hit.focus=m.stroke_focus; continue; }
+    opts.push({ src:"Season Planner", start:hm(m.start_time), end:hm(m.end_time), pool:"25m", timetable_session_id:m.timetable_session_id, micro_session_id:m.id, focus:m.stroke_focus, poolGuess:true });
+  }
+  // 3. registers already taken that day
+  const ids=await squadSwimmerIds(); S.squadSwimmerIds=ids; let existing=[];
+  if(ids.length){
+    const { data: ex } = await sb.from("attendance_records").select("session_time, session_end_time, pool_size, timetable_session_id, session_plan_id").in("swimmer_id", ids).eq("session_date", date);
+    const seen={}; for(const r of ex||[]){ const k=hm(r.session_time)+"|"+r.pool_size; if(!seen[k]) seen[k]={ start:hm(r.session_time), end:hm(r.session_end_time), pool:r.pool_size, timetable_session_id:r.timetable_session_id, session_plan_id:r.session_plan_id, n:0 }; seen[k].n++; }
+    existing=Object.values(seen);
+  }
+  for(const e of existing){
+    const hit=opts.find(o=>o.start===e.start && o.pool===e.pool);
+    if(hit){ hit.taken=e.n; hit.session_plan_id=hit.session_plan_id||e.session_plan_id; }
+    else opts.push({ src:"Register already taken", start:e.start, end:e.end, pool:e.pool, timetable_session_id:e.timetable_session_id, session_plan_id:e.session_plan_id, taken:e.n });
+  }
+  opts.sort((a,b)=>a.start.localeCompare(b.start));
+  S.dayOpts=opts; S.existing=existing;
+  renderSessions();
+}
+function renderSessions(){
+  S.view="sessions"; header(S.squad.name, true, renderSquads);
+  const opts=S.dayOpts, slots=timeSlots();
+  app.innerHTML = `
+    <div class="card"><label for="dt" style="margin-top:0">Date</label><input id="dt" type="date" value="${S.date}"></div>
+    <h2>${esc(niceDate(S.date))}</h2>
+    ${opts.length ? opts.map((o,i)=>`<button class="opt" data-i="${i}"><span><b>${o.start}${o.end?"–"+o.end:""}</b> · ${esc(o.pool)}${o.poolGuess?" ?":""}<br><small>${esc(o.src)}${o.focus?" · "+esc(o.focus):""}${o.where?" · "+esc(o.where):""}</small></span><small>${o.taken?o.taken+" marked":""}</small></button>`).join("")
+      : `<p class="muted">No scheduled session found for this squad on this day.</p>`}
+    <div class="card"><h2 style="font-size:17px">Another session</h2>
+      <div class="row2"><div><label for="st">Start</label><select id="st">${slots.map(t=>`<option ${t==="18:00"?"selected":""}>${t}</option>`).join("")}</select></div>
+      <div><label for="en">Finish</label><select id="en">${slots.map(t=>`<option ${t==="19:00"?"selected":""}>${t}</option>`).join("")}</select></div></div>
+      <label>Pool</label><div class="chips" id="pools">${POOLS.map((p,i)=>`<button class="chip ${i===0?"on":""}" data-p="${p}">${p}</button>`).join("")}</div>
+      <button class="btn secondary" id="manual">Start this register</button></div>`;
+  $("#dt").onchange=e=>{ S.date=e.target.value||todayISO(); loadSessions(); };
+  app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    const o=opts[+b.dataset.i];
+    if(o.poolGuess) return pickPool(o);
+    startRegister(o);
+  });
+  let pool="25m";
+  app.querySelectorAll("#pools .chip").forEach(c=>c.onclick=()=>{ pool=c.dataset.p; app.querySelectorAll("#pools .chip").forEach(x=>x.classList.toggle("on",x===c)); });
+  $("#st").onchange=()=>{ $("#en").value=addMin($("#st").value,60); };
+  $("#manual").onclick=()=>{
+    const o={ src:"Manual", start:$("#st").value, end:$("#en").value, pool };
+    if(!mins(o.start,o.end)){ alert("Finish time must be after the start time."); return; }
+    const same=opts.find(x=>x.start===o.start && x.pool===o.pool); if(same) return startRegister(same);
+    const others=(S.existing||[]);
+    if(others.length) return dupWarn(o, others);
+    const sched=opts.filter(x=>!x.taken);
+    if(sched.length) return dupWarn(o, sched, true);
+    startRegister(o);
+  };
+}
+function sheet(html){ const m=document.createElement("div"); m.className="modal"; m.innerHTML=`<div class="sheet">${html}</div>`; m.onclick=e=>{ if(e.target===m) m.remove(); }; document.body.appendChild(m); return m; }
+function pickPool(o){
+  const m=sheet(`<h2>Which pool?</h2><p class="muted">The Season Planner doesn't record the pool for ${o.start}.</p><div class="chips">${POOLS.map(p=>`<button class="chip" data-p="${p}">${p}</button>`).join("")}</div>`);
+  m.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{ m.remove(); startRegister({...o, pool:c.dataset.p, poolGuess:false}); });
+}
+function dupWarn(o, list, scheduled){
+  const m=sheet(`<h2>Did you mean this one?</h2>
+    <p class="muted">${scheduled?"This squad already has a scheduled session":"A register is already taken for this squad"} on ${esc(niceDate(S.date))}. A different time or pool starts a separate register.</p>
+    ${list.map((x,i)=>`<button class="opt" data-i="${i}"><span><b>${x.start}${x.end?"–"+x.end:""}</b> · ${esc(x.pool)}</span><small>${x.n||x.taken?((x.n||x.taken)+" marked"):"scheduled"}</small></button>`).join("")}
+    <button class="btn secondary" id="new">No, start ${o.start} · ${esc(o.pool)} as a new register</button>`);
+  m.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{ m.remove(); const x=list[+b.dataset.i]; if(x.poolGuess) pickPool(x); else startRegister(x); });
+  m.querySelector("#new").onclick=()=>{ m.remove(); startRegister(o); };
+}
+
+/* ---------- plan lookup ---------- */
+async function findPlan(o){
+  const pick=async (q)=>{ const { data } = await q.limit(1); return data && data[0]; };
+  const cols="id, title, total_distance_m";
+  if(o.session_plan_id){ const p=await pick(sb.from("session_plans").select(cols).eq("id", o.session_plan_id)); if(p) return p; }
+  let msId=o.micro_session_id;
+  if(!msId){
+    let q=sb.from("micro_sessions").select("id, start_time, timetable_session_id").eq("squad_id", S.squad.id).eq("session_date", S.date).eq("is_active", true);
+    const { data } = await q;
+    const m=(data||[]).find(x=>(o.timetable_session_id && x.timetable_session_id===o.timetable_session_id) || hm(x.start_time)===o.start);
+    msId=m?.id;
+  }
+  if(msId){ const p=await pick(sb.from("session_plans").select(cols).eq("micro_session_id", msId).order("updated_at",{ascending:false})); if(p) return p; }
+  const { data: same } = await sb.from("session_plans").select(cols).eq("squad_id", S.squad.id).eq("intended_date", S.date);
+  return (same && same.length===1) ? same[0] : null;
+}
+
+/* ---------- register ---------- */
+async function startRegister(o){
+  S.session={ ...o, minutes: mins(o.start,o.end) };
+  header(S.squad.name, true, ()=>{ flush(); loadSessions(); });
+  app.innerHTML=`<p class="muted">Loading swimmers…</p>`;
+  const ids=S.squadSwimmerIds || await squadSwimmerIds();
+  const [swRes, exRes, plan] = await Promise.all([
+    ids.length ? sb.from("swimmers").select("id, full_name, active").in("id", ids) : Promise.resolve({data:[]}),
+    ids.length ? sb.from("attendance_records").select("swimmer_id, present, status, minutes_attended, session_minutes, session_plan_id, timetable_session_id").in("swimmer_id", ids).eq("session_date", S.date).eq("session_time", toTime(o.start)).eq("pool_size", o.pool) : Promise.resolve({data:[]}),
+    findPlan(o)
+  ]);
+  if(swRes.error){ app.innerHTML=`<p class="err">${esc(swRes.error.message)}</p>`; return; }
+  S.plan=plan;
+  S.swimmers=(swRes.data||[]).filter(s=>s.active!==false).sort((a,b)=>a.full_name.localeCompare(b.full_name));
+  S.marks={}; S.undo=[];
+  for(const r of exRes.data||[]) S.marks[r.swimmer_id]={ status:r.status||(r.present?"in":"out"), minutes_attended:r.minutes_attended };
+  if(!S.session.timetable_session_id){ const t=(exRes.data||[]).find(r=>r.timetable_session_id); if(t) S.session.timetable_session_id=t.timetable_session_id; }
+  const q=qLoad(); for(const r of Object.values(q)) if(r.session_date===S.date && r.session_time===toTime(o.start) && r.pool_size===o.pool && S.marks) S.marks[r.swimmer_id]={ status:r.status, minutes_attended:S.marks[r.swimmer_id]?.minutes_attended };
+  renderRegister();
+}
+function rowFor(id, status){
+  const m=S.marks[id]||{}, sm=S.session.minutes, total=S.plan?.total_distance_m||null;
+  let dist=null;
+  if(total){ if(status==="in") dist=total; else if(status==="partial" && m.minutes_attended && sm) dist=Math.round(total*Math.min(1,m.minutes_attended/sm)); }
+  const now=new Date().toISOString();
+  return { swimmer_id:id, session_date:S.date, session_time:toTime(S.session.start), pool_size:S.session.pool,
+    present: status==="in"||status==="partial", status, marked_at:now, updated_at:now, updated_by:S.user.id,
+    coach:coachName(), club_id:S.club.id, session_end_time: S.session.end?toTime(S.session.end):null, session_minutes:sm,
+    timetable_session_id:S.session.timetable_session_id||null, session_plan_id:S.plan?.id||null, distance_m:dist };
+}
+function mark(id, status, record=true){
+  const prev=S.marks[id]?.status||null;
+  if(prev===status) return;
+  if(record) S.undo.push({ id, prev });
+  S.marks[id]={ ...(S.marks[id]||{}), status };
+  const q=qLoad();
+  if(status){ const r=rowFor(id,status); q[qKey(r)]=r; }
+  qSave(q); paintRow(id); paintCounts(); setSync(); flush();
+}
+function paintRow(id){
+  const el=app.querySelector(`.sw[data-id="${id}"]`); if(!el) return;
+  const st=S.marks[id]?.status||"";
+  el.className="sw "+st+(qLoad()[el.dataset.key]?" unsaved":"");
+  el.querySelector(".badge").textContent = ({in:"IN",out:"OUT",partial:"PART",excused:"EXCUSED"})[st]||"—";
+}
+function paintCounts(){
+  const v=S.swimmers.map(s=>S.marks[s.id]?.status);
+  const inN=v.filter(x=>x==="in"||x==="partial").length, outN=v.filter(x=>x==="out"||x==="excused").length;
+  $("#cIn").textContent="In "+inN; $("#cOut").textContent="Out "+outN; $("#cLeft").textContent=(S.swimmers.length-inN-outN)+" to mark";
+  $("#undo").disabled=!S.undo.length;
+}
+function renderRegister(){
+  S.view="register";
+  const o=S.session, p=S.plan;
+  app.innerHTML = `
+    <div class="plan"><b>${esc(niceDate(S.date))} · ${o.start}${o.end?"–"+o.end:""} · ${esc(o.pool)}</b><br>
+      ${p ? `Plan: ${esc(p.title||"Untitled")}${p.total_distance_m?` · ${p.total_distance_m.toLocaleString("en-GB")} m`:""}` : `<span class="muted">No session plan linked yet</span>`}</div>
+    <div class="counter"><div class="pill in" id="cIn"></div><div class="pill out" id="cOut"></div><div class="pill" id="cLeft"></div><button class="undo" id="undo">Undo</button></div>
+    <p class="hint">Swipe right for In, left for Out. Tap to switch.</p>
+    <div id="list">${S.swimmers.length ? S.swimmers.map(s=>{
+      const key=[s.id,S.date,toTime(o.start),o.pool].join("|");
+      return `<div class="sw" data-id="${s.id}" data-key="${key}"><div class="bgR">IN</div><div class="bgL">OUT</div>
+        <div class="fg"><span class="dot" title="Not yet saved"></span><span class="name">${esc(s.full_name)}</span><span class="badge">—</span></div></div>`;
+    }).join("") : `<div class="card">No current swimmers in this squad.</div>`}</div>
+    <button class="btn" id="finish">Finish register</button>`;
+  S.swimmers.forEach(s=>paintRow(s.id)); paintCounts();
+  $("#undo").onclick=()=>{ const u=S.undo.pop(); if(!u) return; if(u.prev) mark(u.id,u.prev,false); else { S.marks[u.id]={...(S.marks[u.id]||{}), status:null}; const q=qLoad(); delete q[[u.id,S.date,toTime(o.start),o.pool].join("|")]; qSave(q); paintRow(u.id); paintCounts(); setSync(); } };
+  $("#finish").onclick=finish;
+  app.querySelectorAll(".sw").forEach(attachSwipe);
+}
+function attachSwipe(el){
+  const fg=el.querySelector(".fg"), id=el.dataset.id; let x0=null,y0=null,dx=0,moved=false,horiz=null;
+  el.addEventListener("pointerdown",e=>{ x0=e.clientX; y0=e.clientY; dx=0; moved=false; horiz=null; });
+  el.addEventListener("pointermove",e=>{
+    if(x0===null) return; const ddx=e.clientX-x0, ddy=e.clientY-y0;
+    if(horiz===null && (Math.abs(ddx)>8||Math.abs(ddy)>8)){ horiz=Math.abs(ddx)>Math.abs(ddy); if(horiz){ el.classList.add("drag"); try{el.setPointerCapture(e.pointerId);}catch{} } }
+    if(!horiz) return; moved=true; dx=ddx; fg.style.transform=`translateX(${dx}px)`;
+  });
+  const end=()=>{
+    if(x0===null) return; el.classList.remove("drag"); fg.style.transform="";
+    const w=el.offsetWidth;
+    if(moved && Math.abs(dx)>Math.min(90,w*0.25)) mark(id, dx>0?"in":"out");
+    else if(!moved && horiz===null){ const st=S.marks[id]?.status; mark(id, st==="in"||st==="partial" ? "out" : "in"); }
+    x0=null;
+  };
+  el.addEventListener("pointerup",end); el.addEventListener("pointercancel",()=>{ x0=null; el.classList.remove("drag"); fg.style.transform=""; });
+}
+async function finish(){
+  const left=S.swimmers.filter(s=>!S.marks[s.id]?.status);
+  if(left.length && !confirm(`${left.length} swimmer${left.length===1?" is":"s are"} unmarked and will be saved as Out. Finish?`)) return;
+  const q=qLoad(); for(const s of left){ S.marks[s.id]={...(S.marks[s.id]||{}), status:"out"}; const r=rowFor(s.id,"out"); q[qKey(r)]=r; }
+  qSave(q); left.forEach(s=>paintRow(s.id)); paintCounts(); await flush();
+  const v=S.swimmers.map(s=>S.marks[s.id]?.status), inN=v.filter(x=>x==="in"||x==="partial").length;
+  const pending=Object.keys(qLoad()).length;
+  const m=sheet(`<h2>Register saved</h2><p class="muted">${esc(S.squad.name)} · ${esc(niceDate(S.date))} · ${S.session.start} · ${esc(S.session.pool)}</p>
+    <div class="sumgrid"><div><b>${inN}</b>In</div><div><b>${S.swimmers.length-inN}</b>Out</div><div><b>${S.swimmers.length?Math.round(inN*100/S.swimmers.length):0}%</b>Attended</div></div>
+    ${S.plan?.total_distance_m?`<p class="muted">Each swimmer In is credited ${S.plan.total_distance_m.toLocaleString("en-GB")} m from the linked plan.</p>`:""}
+    ${pending?`<p class="err">${pending} mark${pending===1?"":"s"} still waiting to save. They'll send automatically when you're back online.</p>`:""}
+    <button class="btn" id="done">Done</button><button class="btn secondary" id="again">Back to register</button>`);
+  m.querySelector("#done").onclick=()=>{ m.remove(); renderSquads(); };
+  m.querySelector("#again").onclick=()=>m.remove();
+}
+
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+boot();
+</script>
+</body>
+</html>
