@@ -320,7 +320,9 @@ export async function loadPlansBetween(club: string, from: string, to: string) {
 // Planning: season title, dates, breaks; competitions and macros lists
 // ---------------------------------------------------------------------------
 export interface BreakRow { id: string | null; start: string; end: string; }
-export interface PlanningComp extends SeasonComp { total_days: number | null; venue_name: string | null; venue_url: string | null; notes?: string | null; competition_events: { id: string; is_active: boolean }[]; }
+/** A squad going to one of the club's season competitions, with the club's own note for that squad. */
+export interface CompSquad { squad_id: string; note: string | null; is_active: boolean; }
+export interface PlanningComp extends SeasonComp { total_days: number | null; venue_name: string | null; venue_url: string | null; notes?: string | null; competition_events: { id: string; is_active: boolean }[]; season_competition_squads?: CompSquad[]; }
 export interface PlanningMacro {
   id: string; title: string; head_coach_note: string | null; micro_count: number;
   macro_squads: { squad_id: string; is_active: boolean; squads: { name: string } | null }[];
@@ -334,7 +336,7 @@ export async function loadBreaks(seasonId: string): Promise<BreakRow[]> {
 }
 export async function loadPlanningLists(seasonId: string): Promise<{ comps: PlanningComp[]; macros: PlanningMacro[] }> {
   const [c, m] = await Promise.all([
-    sb.from("season_competitions").select("*, competition_events(id, is_active)").eq("season_id", seasonId).eq("is_active", true).order("date_from"),
+    sb.from("season_competitions").select("*, competition_events(id, is_active), season_competition_squads(squad_id, note, is_active)").eq("season_id", seasonId).eq("is_active", true).order("date_from"),
     sb.from("macros").select("id, title, head_coach_note, micro_count, macro_squads(squad_id, is_active, squads(name)), macro_competitions(season_competition_id, designation, is_active)")
       .eq("season_id", seasonId).eq("is_active", true).order("created_at")
   ]);
@@ -453,6 +455,25 @@ export async function saveComp(seasonId: string, d: CompDraft): Promise<string> 
     else if (on) { const { data, error } = await sb.from("competition_events").insert(p as never).select("id").single(); if (error) throw error; st.id = (data as { id: string }).id; }
   }
   return d.id!;
+}
+
+/**
+ * Which of the club's squads go to a season competition, each with an optional note.
+ * Squads taken off are kept as inactive rows so their notes come back if they are ticked again.
+ */
+export async function saveCompSquads(seasonCompId: string, chosen: Map<string, string>, prev: Set<string>) {
+  const t = now();
+  const rows = [...chosen].map(([squad_id, note]) => ({ season_competition_id: seasonCompId, squad_id, note: note.trim() || null, is_active: true, updated_at: t }));
+  if (rows.length) {
+    const { error } = await sb.from("season_competition_squads").upsert(rows as never, { onConflict: "season_competition_id,squad_id" });
+    if (error) throw error;
+  }
+  const dropped = [...prev].filter(id => !chosen.has(id));
+  if (dropped.length) {
+    const { error } = await sb.from("season_competition_squads").update({ is_active: false, updated_at: t } as never)
+      .eq("season_competition_id", seasonCompId).in("squad_id", dropped);
+    if (error) throw error;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -785,6 +806,14 @@ export async function saveCompToMacro(club: string, d: CompMacroDraft): Promise<
   const { error } = await sb.from("macro_competitions").upsert({ macro_id: d.macroId, season_competition_id: scId, designation: d.designation, is_active: true, updated_at: t } as never,
     { onConflict: "macro_id,season_competition_id" });
   if (error) throw error;
+  // The macro's squads go to the meet unless the club has already chosen squads for it.
+  const ms = await sb.from("macro_squads").select("squad_id").eq("macro_id", d.macroId).eq("is_active", true);
+  if (ms.error) throw ms.error;
+  const sqRows = ((ms.data ?? []) as { squad_id: string }[]).map(x => ({ season_competition_id: scId, squad_id: x.squad_id, is_active: true }));
+  if (sqRows.length) {
+    const { error: e2 } = await sb.from("season_competition_squads").upsert(sqRows as never, { onConflict: "season_competition_id,squad_id", ignoreDuplicates: true });
+    if (e2) throw e2;
+  }
   await saveCompDocs(club, scId!, d.files, d.removeDocIds);
   return scId!;
 }

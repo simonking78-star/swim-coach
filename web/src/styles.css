@@ -1384,3 +1384,10 @@ dialog.modal.wide { width: min(1040px, calc(100vw - 16px)); }
 .sw-layer-body > .card { border: 0; box-shadow: none; padding: 0; margin: 0; background: transparent; }
 .sw-layer-body .sw-season > .card-title, .sw-layer-body .sw-fb .card-title { display: none; }
 .sw-layer-body .sw-fb-head { justify-content: flex-end; }
+
+/* Season competition: squads going, with a note per squad */
+fieldset.cf-squads { border: 0; padding: 0; margin: 16px 0 0; }
+fieldset.cf-squads legend { font-weight: 700; padding: 0; margin-bottom: 8px; }
+.cf-squad { display: grid; gap: 6px; margin-bottom: 8px; }
+.cf-squad label.skill { justify-content: flex-start; padding: 0 12px; }
+.cf-squad textarea { margin: 0; }

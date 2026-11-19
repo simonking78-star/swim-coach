@@ -4,13 +4,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/AuthProvider";
 import { useClub } from "../../club/ClubProvider";
 import { canEdit, sectionLevel } from "../../lib/access";
-import { EVENTS_18, checkDocFiles, isoDiffDays, loadCompDocs, loadCompEvents, loadScrapedInSeason, saveComp, saveCompDocs, validateComp, type CompDraft, type EvState } from "../../lib/season";
+import { EVENTS_18, checkDocFiles, isoDiffDays, loadCompDocs, loadCompEvents, loadScrapedInSeason, saveComp, saveCompDocs, saveCompSquads, validateComp, type CompDraft, type EvState } from "../../lib/season";
 import { fmtDdMm } from "../../lib/util";
 import { CompDocsField, QtModal, StatusMsg } from "../../components/seasonParts";
 import { invalidateSeason, useActiveSeason, usePlanningLists } from "./Planning";
+import { usePlanSquads } from "../plans/PlanList";
 
-// Add / edit a season competition: pick from the scraped meets inside the
-// season (or type one in), dates, venue, link, notes, documents and the events offered.
+// Add / edit a season competition: pick from the shared competitions list inside the
+// season (or type one in), then edit the club's own copy: dates, venue, link, notes,
+// documents, the events offered, and which of the plan's squads go (with a note per squad).
 
 const MANUAL = "__manual";
 
@@ -29,6 +31,9 @@ export function CompForm() {
   const docs = useQuery({ queryKey: ["comp_docs", id], enabled: !!id, queryFn: () => loadCompDocs(id!) });
   const [files, setFiles] = useState<File[]>([]);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
+  const squadsQ = usePlanSquads(club);
+  const [going, setGoing] = useState<Map<string, string>>(new Map());
+  const [prevGoing, setPrevGoing] = useState<Set<string>>(new Set());
 
   const [pick, setPick] = useState("");
   const [d, setD] = useState<CompDraft>({ id: null, competitionId: null, name: "", course: "", level: "", from: "", to: "", venue: "", url: "", notes: "", events: {} });
@@ -44,6 +49,9 @@ export function CompForm() {
     filled.current = true;
     setD({ id: existing.id, competitionId: existing.competition_id, name: existing.name, course: existing.course, level: existing.level ? String(existing.level) : "",
       from: existing.date_from, to: existing.date_to || "", venue: existing.venue_name || "", url: existing.venue_url || "", notes: existing.notes || "", events: events.data });
+    const sq = (existing.season_competition_squads ?? []);
+    setGoing(new Map(sq.filter(x => x.is_active).map(x => [x.squad_id, x.note ?? ""])));
+    setPrevGoing(new Set(sq.map(x => x.squad_id)));
     const src = source.data.find(c => c.id === existing.competition_id);
     setPick(src ? src.id : MANUAL); setGalaId(src?.gala_id ?? null);
   }, [id, existing, events.data, source.data]);
@@ -76,13 +84,15 @@ export function CompForm() {
 
   const save = async () => {
     setMsg(null);
-    const bad = validateComp(d) || checkDocFiles(files);
+    const bad = validateComp(d) || (going.size ? null : "Tick at least one squad going to this competition.") || checkDocFiles(files);
     if (bad) { setMsg({ text: bad, error: true }); return; }
     setBusy(true);
     try {
       const copy: CompDraft = { ...d, events: Object.fromEntries(Object.entries(d.events).map(([k, v]) => [k, { ...v }])) };
       const scId = await saveComp(season.id, copy);
       setD(copy);
+      await saveCompSquads(scId, going, prevGoing);
+      setPrevGoing(new Set([...prevGoing, ...going.keys()]));
       if (files.length || removed.size) await saveCompDocs(club!, scId, files, [...removed]);
       qc.invalidateQueries({ queryKey: ["comp_docs"] });
       qc.invalidateQueries({ queryKey: ["club_comp_info"] });
@@ -104,7 +114,7 @@ export function CompForm() {
           {(source.data ?? []).map(c => <option key={c.id} value={c.id}>{fmtDdMm(c.date_start)} · {c.name}{c.level ? ` (L${c.level} ${c.course || ""})` : ""}</option>)}
           <option value={MANUAL}>{source.error ? "Could not load list — type it in" : "Not listed — type it in"}</option>
         </select>
-        <p className="hint">Meets inside the season dates, from the scraped competitions list. Choose “Not listed” to type one in.</p>
+        <p className="hint">Meets inside the season dates, from the shared competitions list. Changes you make here only affect your club's copy. Choose “Not listed” to type one in.</p>
         {pick === MANUAL && (<><label htmlFor="cf-name">Competition name</label><input id="cf-name" type="text" value={d.name} onChange={e => set("name", e.target.value)} /></>)}
         <div className="field-pair">
           <div><label htmlFor="cf-level">Level</label>
@@ -123,6 +133,27 @@ export function CompForm() {
         <input id="cf-url" type="url" placeholder="https://" value={d.url} onChange={e => set("url", e.target.value)} />
         <label htmlFor="cf-notes">Notes</label>
         <textarea id="cf-notes" rows={3} value={d.notes ?? ""} onChange={e => set("notes", e.target.value)} />
+        <fieldset className="cf-squads">
+          <legend>Squads going</legend>
+          {squadsQ.isLoading && <p className="dim">Loading squads…</p>}
+          {(squadsQ.data ?? []).filter(s => !season.squad_ids.length || season.squad_ids.includes(s.id) || going.has(s.id)).map(s => {
+            const on = going.has(s.id);
+            return (
+              <div key={s.id} className="cf-squad">
+                <label className={"skill" + (on ? " on" : "")}>
+                  <input type="checkbox" checked={on} onChange={e => setGoing(g => { const n = new Map(g); if (e.target.checked) n.set(s.id, n.get(s.id) ?? ""); else n.delete(s.id); return n; })} />
+                  {s.name}
+                </label>
+                {on && (<>
+                  <label htmlFor={`cf-sq-${s.id}`} className="sr-only">Notes for {s.name}</label>
+                  <textarea id={`cf-sq-${s.id}`} rows={2} maxLength={2000} placeholder={`Notes for ${s.name} (optional)`} value={going.get(s.id) ?? ""}
+                    onChange={e => { const v = e.target.value; setGoing(g => new Map(g).set(s.id, v)); }} />
+                </>)}
+              </div>
+            );
+          })}
+          <p className="hint">Only the squads in this season plan are listed. The notes are your club's own and are not shared.</p>
+        </fieldset>
         <CompDocsField saved={docs.data ?? []} removed={removed} files={files} onFiles={setFiles}
           onToggleRemove={x => setRemoved(r => { const n = new Set(r); if (n.has(x)) n.delete(x); else n.add(x); return n; })} />
         <div className="btn-row gap-top">
