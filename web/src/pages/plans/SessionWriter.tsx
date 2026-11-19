@@ -72,6 +72,16 @@ export function SessionWriter() {
   const [busy, setBusy] = useState<"" | "analyse" | "save">("");
   const [msg, setMsg] = useState<{ text: string; error?: boolean } | null>(null);
   const loaded = useRef(false);
+  // Phone layers: which are open (kept on this device).
+  const [layers, setLayers] = useState<Record<"season" | "feedback" | "write", boolean>>(() => {
+    try { return { season: true, feedback: false, write: true, ...JSON.parse(localStorage.getItem("ct.writer.layers") || "{}") }; }
+    catch { return { season: true, feedback: false, write: true }; }
+  });
+  const toggleLayer = (k: "season" | "feedback" | "write") => setLayers(l => {
+    const next = { ...l, [k]: !l[k] };
+    try { localStorage.setItem("ct.writer.layers", JSON.stringify(next)); } catch { /* storage unavailable */ }
+    return next;
+  });
 
   // Fill from the saved plan (its own text, or older block plans written out as text).
   useEffect(() => {
@@ -178,21 +188,28 @@ export function SessionWriter() {
   );
 
   // ---------------- Left: write ----------------
+  // Date and squad drive everything else on the page (season plan, feedback and the plan itself).
+  const dateSquad = (
+    <>
+      <div>
+        <label htmlFor="sw-date">Date</label>
+        <input id="sw-date" type="date" value={date} onChange={e => { setDate(e.target.value); setSessionId(null); }} />
+      </div>
+      <div>
+        <label htmlFor="sw-squad">Squad</label>
+        <select id="sw-squad" value={squadId} onChange={e => { setSquadId(e.target.value); setSessionId(null); }}>
+          <option value="">Choose a squad…</option>
+          {(squads.data ?? []).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+      </div>
+    </>
+  );
+
   const write = (
     <section className="card sw-write" aria-labelledby="sw-write-h">
       <h2 id="sw-write-h" className="sr-only">Write the session</h2>
-      <div className="sw-head">
-        <div>
-          <label htmlFor="sw-date">Date</label>
-          <input id="sw-date" type="date" value={date} onChange={e => { setDate(e.target.value); setSessionId(null); }} />
-        </div>
-        <div>
-          <label htmlFor="sw-squad">Squad</label>
-          <select id="sw-squad" value={squadId} onChange={e => { setSquadId(e.target.value); setSessionId(null); }}>
-            <option value="">Choose a squad…</option>
-            {(squads.data ?? []).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
-        </div>
+      <div className={"sw-head" + (desktop ? "" : " pool-only")}>
+        {desktop && dateSquad}
         <div>
           <label htmlFor="sw-pool">Pool</label>
           <select id="sw-pool" value={pool ?? ""} onChange={e => setPool(e.target.value || null)}>
@@ -249,7 +266,21 @@ export function SessionWriter() {
       <div className="page-head"><h1><span aria-hidden="true">✍️</span> {id ? "Edit session" : "Write a session"}</h1></div>
       {desktop
         ? <div className="sw-grid">{write}<div className="sw-right">{seasonPane}{fbPane}</div></div>
-        : <div className="sw-stack">{seasonPane}{write}{fbPane}</div>}
+        : (
+          // Phone: date and squad on top, then three layers in order — season plan, feedback to date, write plan.
+          <div className="sw-stack">
+            <section className="card sw-pick" aria-label="Date and squad">
+              <div className="sw-head">{dateSquad}</div>
+              <p className="dim small">{squadName ? `${squadName} · ${fmtDayShort(date)}` : "Choose the squad"} — sets the season plan, feedback and plan below.</p>
+            </section>
+            <Layer n={1} title="Season plan" note={ctx ? `${ctx.micro.macroTitle}${ctx.micro.meso ? ` · Meso ${ctx.micro.meso}` : ""} · Week ${ctx.micro.week_no}` : ""}
+              open={layers.season} onToggle={() => toggleLayer("season")}>{seasonPane}</Layer>
+            <Layer n={2} title="Feedback to date" note={focus.length ? `Focus: ${focus.map(catLabel).join(", ")}` : ""}
+              open={layers.feedback} onToggle={() => toggleLayer("feedback")}>{fbPane}</Layer>
+            <Layer n={3} title="Write plan" note={changed ? (text.trim() ? "Not analysed yet" : "") : "Analysed ✓"}
+              open={layers.write} onToggle={() => toggleLayer("write")}>{write}</Layer>
+          </div>
+        )}
     </>
   );
 }
@@ -479,5 +510,22 @@ function FbList({ rows, showCat, squad }: { rows: CurrentFb[]; showCat: boolean;
         </li>
       ))}
     </ul>
+  );
+}
+
+// A collapsible layer on the phone layout.
+function Layer({ n, title, note, open, onToggle, children }: { n: number; title: string; note: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
+  const id = `sw-layer-${n}`;
+  return (
+    <section className={"sw-layer" + (open ? " open" : "")}>
+      <h2 className="sw-layer-h">
+        <button type="button" aria-expanded={open} aria-controls={id} onClick={onToggle}>
+          <span className="sw-layer-n" aria-hidden="true">{n}</span>
+          <span className="sw-layer-t">{title}{note && <span className="sw-layer-note">{note}</span>}</span>
+          <span className="sw-layer-chev" aria-hidden="true">{open ? "▾" : "▸"}</span>
+        </button>
+      </h2>
+      <div id={id} className="sw-layer-body" hidden={!open}>{children}</div>
+    </section>
   );
 }
