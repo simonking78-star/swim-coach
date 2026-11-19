@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14532d">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Session Planner</title>
+<style>
+:root{
+  --bg:#f5f7f4; --card:#fff; --ink:#15211b; --muted:#5f6d66; --line:#dce3de;
+  --brand:#14532d; --brand-2:#1f7a45; --brand-ink:#fff; --flag:#b45309; --flag-bg:#fff4e0; --err:#c03535; --radius:16px;
+  --mono: ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0f1512; --card:#18211c; --ink:#e7efe9; --muted:#9aaba1; --line:#2a3630;
+    --brand:#2f9a5c; --brand-2:#3fb36e; --flag:#f0a64a; --flag-bg:#3a2a12; --err:#ef6b6b; }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header.top{position:sticky;top:0;z-index:20;background:var(--brand);color:var(--brand-ink);padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px}
+header.top h1{font-size:18px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header.top button{background:rgba(255,255,255,.18);color:inherit;border:0;border-radius:10px;padding:8px 12px;font-size:15px}
+nav.tabs{display:flex;gap:6px;background:var(--brand);padding:0 16px 10px}
+nav.tabs button{flex:1;border:0;border-radius:10px;padding:9px;font:inherit;font-weight:600;background:rgba(255,255,255,.14);color:#fff}
+nav.tabs button.on{background:#fff;color:var(--brand)}
+main{max-width:760px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}
+.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+label{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
+input,select,textarea{width:100%;font:inherit;font-size:17px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+textarea{font-family:var(--mono);font-size:15px;line-height:1.5;min-height:46vh;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:15px;font-size:17px;font-weight:600;background:var(--brand-2);color:#fff;margin-top:14px}
+.btn.secondary{background:transparent;color:var(--brand-2);border:2px solid var(--brand-2)}
+.btn:disabled{opacity:.5}
+.btnrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.err{color:var(--err);margin-top:10px}
+h2{font-size:20px;margin:4px 0 12px}
+h3{font-size:16px;margin:16px 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:9px 13px;font:inherit;font-weight:600}
+.chip.on{border-color:var(--brand-2);background:var(--brand-2);color:#fff}
+.tag{display:inline-block;font-size:13px;padding:3px 9px;border-radius:99px;background:var(--bg);border:1px solid var(--line);margin:2px 4px 2px 0}
+.ctx{border-left:5px solid var(--brand-2)}
+.ctx p{margin:2px 0;font-size:15px}
+.flag{background:var(--flag-bg);border:1px solid var(--flag);border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
+.flag b{color:var(--flag)}
+.flag button{margin-left:auto;border:1px solid var(--flag);background:transparent;color:var(--flag);border-radius:10px;padding:6px 10px;font:inherit;font-weight:600;white-space:nowrap}
+.flag.ok{opacity:.55}
+.flag.done{background:transparent;border-color:var(--brand-2)}
+.flag.done b{color:var(--brand-2)}
+.flag .acts{margin-left:auto;display:flex;flex-direction:column;gap:6px}
+.flag .acts button{margin-left:0}
+.flag .explain{flex-basis:100%;margin-top:4px}
+.flag.wrap{flex-wrap:wrap}
+.flag .explain .btn{background:var(--brand-2);color:#fff;border:0;margin-left:0;white-space:normal}
+.chk{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:15px;color:var(--ink)}
+.chk input{width:22px;height:22px}
+.rerun{position:sticky;bottom:12px;z-index:5;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.gl{display:flex;gap:10px;align-items:flex-start}
+.gl .del{margin-left:auto;border:1px solid var(--line);background:transparent;color:var(--err);border-radius:10px;padding:6px 10px;font:inherit}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center}
+.stats div{background:var(--bg);border-radius:12px;padding:10px 6px}
+.stats b{display:block;font-size:22px}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;color:var(--muted);font-weight:600;padding:6px 4px;border-bottom:1px solid var(--line);font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+.tbl td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr.sec td{font-weight:700;background:var(--bg)}
+.tbl tr.grp td{color:var(--brand-2);font-weight:600}
+.tbl td.r{text-align:right;white-space:nowrap}
+.scroll{overflow-x:auto}
+.item{width:100%;text-align:left;display:block;margin-bottom:10px;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit}
+.item .t{font-weight:700;font-size:17px}
+.item .m{font-size:14px;color:var(--muted)}
+.raw{white-space:pre-wrap;font-family:var(--mono);font-size:14px;background:var(--bg);border-radius:12px;padding:12px;margin:0}
+.draft{font-size:13px;color:var(--muted);text-align:right;margin-top:4px}
+.spin{display:inline-block;width:18px;height:18px;border:3px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:s 1s linear infinite;vertical-align:-3px;margin-right:8px}
+@keyframes s{to{transform:rotate(360deg)}}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1 id="title">Session Planner</h1>
+  <button id="outBtn" class="hide">Sign out</button>
+</header>
+<nav class="tabs hide" id="tabs"><button data-t="write" class="on">Write</button><button data-t="archive">Archive</button><button data-t="shorthand">Shorthand</button></nav>
+<main id="app"><p class="muted">Loading…</p></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+"use strict";
+const SUPABASE_URL="https://nxlgeykipnvswyeshrbl.supabase.co";
+const SUPABASE_KEY="sb_publishable_BYuKct-F0f4H04Gl_S58uQ_gKzuW_Ff";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+const POOLS=["25m","17m","50m"];
+const DRAFT="planner.draft.v1", ARCH="planner.archive.v1";
+const S={ user:null, clubs:[], club:null, squads:[], tab:"write",
+  w:{ id:null, squad_id:"", date:todayISO(), pool:"25m", slot:null, slots:[], ctx:null, text:"" },
+  result:null, okFlags:{}, clar:[], clarDirty:false, drills:[], gloss:[], archive:{ squad:"", month:"", plans:[] } };
+
+const $=s=>document.querySelector(s), app=$("#app");
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function todayISO(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);}
+function hm(t){return t?String(t).slice(0,5):"";}
+function niceDate(iso){return new Date(iso+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"});}
+function monthKey(iso){return iso?iso.slice(0,7):"";}
+function monthName(k){return new Date(k+"-15T12:00:00").toLocaleDateString("en-GB",{month:"long",year:"numeric"});}
+function m(n){return n?Number(n).toLocaleString("en-GB")+" m":"—";}
+function squadName(id){return S.squads.find(s=>s.id===id)?.name||"";}
+function coachName(){const md=S.user?.user_metadata||{};return md.full_name||md.name||(S.user?.email||"").split("@")[0];}
+function store(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+function load(k){try{return JSON.parse(localStorage.getItem(k)||"null");}catch{return null;}}
+
+/* ---------- auth ---------- */
+async function boot(){
+  const {data}=await sb.auth.getSession();
+  if(data.session){S.user=data.session.user;await afterLogin();}else renderLogin();
+  sb.auth.onAuthStateChange(ev=>{if(ev==="SIGNED_OUT"){S.user=null;renderLogin();}});
+}
+function renderLogin(msg){
+  $("#tabs").classList.add("hide");$("#outBtn").classList.add("hide");$("#title").textContent="Session Planner";
+  app.innerHTML=`<div class="card"><h2>Coach sign in</h2><p class="muted">Use the same email and password as Coach Tools.</p>
+    <label for="em">Email</label><input id="em" type="email" autocomplete="username">
+    <label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password">
+    <button class="btn" id="go">Sign in</button><div class="err" id="er">${esc(msg||"")}</div></div>`;
+  $("#go").onclick=async()=>{
+    $("#go").disabled=true;
+    const {data,error}=await sb.auth.signInWithPassword({email:$("#em").value.trim(),password:$("#pw").value});
+    $("#go").disabled=false; if(error){$("#er").textContent=error.message;return;}
+    S.user=data.user; afterLogin();
+  };
+}
+async function afterLogin(){
+  app.innerHTML=`<p class="muted">Loading…</p>`;
+  const {data:roles,error}=await sb.from("user_roles").select("role, club_id").eq("user_id",S.user.id);
+  if(error){renderLogin(error.message);return;}
+  const r=(roles||[]).filter(x=>!["parent","swimmer"].includes(x.role));
+  if(!r.length){renderLogin("This account has no coach access.");return;}
+  const {data:clubs}=await sb.from("clubs").select("id, name, short_name").order("name");
+  const all=r.some(x=>!x.club_id);
+  S.clubs=(clubs||[]).filter(c=>all||r.some(x=>x.club_id===c.id));
+  S.club=S.clubs.find(c=>c.id===localStorage.getItem("planner.club"))||(S.clubs.length===1?S.clubs[0]:null);
+  $("#outBtn").classList.remove("hide");
+  S.club?enterClub():renderClubs();
+}
+$("#outBtn").onclick=()=>sb.auth.signOut();
+function renderClubs(){
+  $("#tabs").classList.add("hide");$("#title").textContent="Choose club";
+  app.innerHTML=`<h2>Which club?</h2>`+S.clubs.map(c=>`<button class="item" data-id="${c.id}"><span class="t">${esc(c.short_name||c.name)}</span></button>`).join("");
+  app.querySelectorAll(".item").forEach(b=>b.onclick=()=>{S.club=S.clubs.find(c=>c.id===b.dataset.id);localStorage.setItem("planner.club",S.club.id);enterClub();});
+}
+async function enterClub(){
+  $("#title").textContent=S.club.short_name||S.club.name;
+  const {data}=await sb.from("squads").select("id, name").eq("club_id",S.club.id).order("name");
+  S.squads=data||[];
+  const dr=await sb.from("drills_library").select("id, drill_name, stroke").order("drill_name").limit(600);
+  S.drills=dr.data||[];
+  const d=load(DRAFT); if(d&&d.club_id===S.club.id) Object.assign(S.w,d.w);
+  const a=load(ARCH); if(a){S.archive.squad=a.squad||"";S.archive.month=a.month||"";}
+  $("#tabs").classList.remove("hide"); showTab(S.tab);
+}
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+function showTab(t){
+  S.tab=t; document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+  if(S.clubs.length>1) $("#title").innerHTML=`<span style="cursor:pointer" id="clubsw">${esc(S.club.short_name||S.club.name)} ▾</span>`;
+  const cs=$("#clubsw"); if(cs) cs.onclick=renderClubs;
+  t==="write"?renderWrite():t==="archive"?loadArchive():loadShorthand();
+}
+
+/* ---------- write ---------- */
+function saveDraft(){ store(DRAFT,{club_id:S.club.id,w:{...S.w,slots:[],ctx:null}}); const el=$("#drafted"); if(el) el.textContent="Draft kept on this device"; }
+async function loadSlots(){
+  const w=S.w; w.slots=[]; w.ctx=null;
+  if(!w.squad_id||!w.date) return;
+  const {data:ms}=await sb.from("micro_sessions").select("id, micro_id, start_time, end_time, stroke_focus, outline, timetable_session_id").eq("squad_id",w.squad_id).eq("session_date",w.date).eq("is_active",true).order("start_time");
+  let tsPool={};
+  const tsIds=(ms||[]).map(x=>x.timetable_session_id).filter(Boolean);
+  if(tsIds.length){const {data:ts}=await sb.from("timetable_sessions").select("id, pool_size").in("id",tsIds);(ts||[]).forEach(t=>tsPool[t.id]=t.pool_size);}
+  const microIds=[...new Set((ms||[]).map(x=>x.micro_id))]; let micros={}, macros={};
+  if(microIds.length){
+    const {data:mi}=await sb.from("micros").select("id, macro_id, week_no, week_commencing, meso, qes_focus, planned_volume_m").in("id",microIds);
+    (mi||[]).forEach(x=>micros[x.id]=x);
+    const macIds=[...new Set((mi||[]).map(x=>x.macro_id))];
+    if(macIds.length){const {data:ma}=await sb.from("macros").select("id, title").in("id",macIds);(ma||[]).forEach(x=>macros[x.id]=x);}
+  }
+  w.slots=(ms||[]).map(x=>{const mi=micros[x.micro_id]||{};return {id:x.id,micro_id:x.micro_id,start:hm(x.start_time),end:hm(x.end_time),pool:tsPool[x.timetable_session_id]||null,
+    stroke_focus:x.stroke_focus,outline:x.outline,meso:mi.meso,week_no:mi.week_no,week_focus:mi.qes_focus,planned_volume_m:mi.planned_volume_m,macro:macros[mi.macro_id]?.title};});
+  if(w.slot && !w.slots.find(s=>s.id===w.slot)) w.slot=null;
+  if(!w.slot && w.slots.length===1) w.slot=w.slots[0].id;
+  const sl=w.slots.find(s=>s.id===w.slot); if(sl){ w.ctx=sl; if(sl.pool) w.pool=sl.pool; }
+}
+async function renderWrite(){
+  const w=S.w;
+  if(!w.squad_id && S.squads.length===1) w.squad_id=S.squads[0].id;
+  await loadSlots();
+  const ctx=w.ctx;
+  app.innerHTML=`
+    ${w.id?`<div class="card" style="border-color:var(--brand-2)"><b>Editing a saved plan.</b> <span class="muted">Saving updates it.</span> <button class="chip" id="newPlan" style="margin-left:6px">Start a new plan</button></div>`:""}
+    <div class="card">
+      <div class="row2"><div><label for="sq" style="margin-top:0">Squad</label><select id="sq"><option value="">Choose squad</option>${S.squads.map(s=>`<option value="${s.id}" ${s.id===w.squad_id?"selected":""}>${esc(s.name)}</option>`).join("")}</select></div>
+      <div><label for="dt" style="margin-top:0">Date</label><input id="dt" type="date" value="${w.date}"></div></div>
+      ${w.slots.length>1?`<label>Session</label><div class="chips" id="slots">${w.slots.map(s=>`<button class="chip ${s.id===w.slot?"on":""}" data-id="${s.id}">${s.start}${s.end?"–"+s.end:""}</button>`).join("")}<button class="chip ${!w.slot?"on":""}" data-id="">Not in Season Planner</button></div>`:""}
+      <label>Pool</label><div class="chips" id="pools">${POOLS.map(p=>`<button class="chip ${p===w.pool?"on":""}" data-p="${p}">${p}</button>`).join("")}</div>
+    </div>
+    ${ctx?`<div class="card ctx"><h3 style="margin-top:0">This week in the Season Planner</h3>
+      ${ctx.macro?`<p>${esc(ctx.macro)}${ctx.week_no?` · week ${ctx.week_no}`:""}${ctx.meso?` · meso ${esc(ctx.meso)}`:""}</p>`:""}
+      ${ctx.week_focus?`<p><b>Week focus:</b> ${esc(ctx.week_focus)}</p>`:""}
+      ${ctx.stroke_focus?`<p><b>Session focus:</b> ${esc(ctx.stroke_focus)}</p>`:""}
+      ${ctx.outline?`<p><b>Outline:</b> ${esc(ctx.outline)}</p>`:""}
+      ${ctx.planned_volume_m?`<p><b>Planned week volume:</b> ${m(ctx.planned_volume_m)}</p>`:""}</div>`
+      :(w.squad_id?`<p class="muted" style="margin:0 0 12px">No Season Planner session for this squad on this day, so the plan will be saved without a week link.</p>`:"")}
+    <div class="card"><label for="tx" style="margin-top:0">Write the session your way</label>
+      <textarea id="tx" placeholder="Warm up&#10;400 FR fins every 4th length shoulder tap&#10;4 x 50 @1:00 kick&#10;&#10;Main set x3&#10;6 x 100 @1:45 desc&#10;200 pull ez&#10;&#10;Swim down 200 choice">${esc(w.text)}</textarea>
+      <div class="draft" id="drafted"></div>
+      <button class="btn" id="go">Analyse with Claude</button><div class="err" id="er"></div></div>`;
+  if(w.id) $("#newPlan").onclick=()=>{ Object.assign(S.w,{id:null,text:""}); S.clar=[]; saveDraft(); renderWrite(); };
+  $("#sq").onchange=e=>{w.squad_id=e.target.value;w.slot=null;saveDraft();renderWrite();};
+  $("#dt").onchange=e=>{w.date=e.target.value||todayISO();w.slot=null;saveDraft();renderWrite();};
+  app.querySelectorAll("#slots .chip").forEach(c=>c.onclick=()=>{w.slot=c.dataset.id||null;saveDraft();renderWrite();});
+  app.querySelectorAll("#pools .chip").forEach(c=>c.onclick=()=>{w.pool=c.dataset.p;app.querySelectorAll("#pools .chip").forEach(x=>x.classList.toggle("on",x===c));saveDraft();});
+  let t; $("#tx").oninput=e=>{w.text=e.target.value;clearTimeout(t);t=setTimeout(saveDraft,500);};
+  $("#go").onclick=()=>analyse($("#go"),$("#er"),"Analyse with Claude");
+}
+async function analyse(go,er,label){
+  const w=S.w;
+  if(!w.squad_id){er.textContent="Choose a squad first.";return;}
+  if(w.text.trim().length<5){er.textContent="Write the session first.";return;}
+  er.textContent=""; go.disabled=true; go.innerHTML=`<span class="spin"></span>Claude is reading your plan…`;
+  const ctx=w.ctx||{};
+  const {data,error}=await sb.functions.invoke("analyse-session-plan",{body:{
+    text:w.text, club_id:S.club.id, squad_name:squadName(w.squad_id), date:w.date, pool_size:w.pool,
+    context:{meso:ctx.meso,week_focus:ctx.week_focus,stroke_focus:ctx.stroke_focus,outline:ctx.outline},
+    clarifications:S.clar.map(c=>({term:c.term,meaning:c.meaning,drill_id:c.drill_id||null}))}});
+  go.disabled=false; go.textContent=label;
+  if(error){
+    let msg=error.message; try{const j=await error.context.json(); if(j.error) msg=j.error;}catch{}
+    er.textContent=msg; return;
+  }
+  S.result=data; S.okFlags={}; S.clarDirty=false;
+  renderPreview();
+}
+
+/* ---------- preview ---------- */
+function setLine(s){
+  const bits=[]; if(s.reps&&s.distance_m) bits.push(`${s.reps} × ${s.distance_m}`); else if(s.distance_m) bits.push(`${s.distance_m}`);
+  return bits.join(" ");
+}
+function setsTable(blocks){
+  let rows="";
+  const row=(s,indent)=>`<tr><td>${indent?"&nbsp;&nbsp;":""}${esc(s.text||"")}</td><td class="r">${esc(setLine(s))}</td><td>${esc(s.stroke||"")}</td><td>${esc(s.kind||"")}</td><td>${esc(s.interval_text||"")}</td><td>${esc(s.effort||"")}</td><td>${esc(s.drill_name||"")}${s.drill_id?" ✓":""}</td></tr>`;
+  for(const b of blocks||[]){
+    if(b.type==="heading") rows+=`<tr class="sec"><td colspan="7">${esc(b.text)}</td></tr>`;
+    else if(b.type==="note") rows+=`<tr><td colspan="7" class="muted"><i>${esc(b.text)}</i></td></tr>`;
+    else if(b.type==="set"&&b.set) rows+=row(b.set,false);
+    else if(b.type==="repeat_group"){ rows+=`<tr class="grp"><td colspan="7">${b.reps||1} rounds${b.label?" · "+esc(b.label):""}</td></tr>`; (b.children||[]).forEach(c=>rows+=row(c,true)); }
+  }
+  return `<div class="scroll"><table class="tbl"><thead><tr><th>Set</th><th class="r">Reps × m</th><th>Stroke</th><th>Type</th><th>Send-off</th><th>Effort</th><th>Drill</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function breakdown(obj){
+  const e=Object.entries(obj||{}).filter(([k,v])=>v).sort((a,b)=>b[1]-a[1]);
+  return e.length?e.map(([k,v])=>`<span class="tag">${esc(k)} ${m(v)}</span>`).join(""):`<span class="muted">—</span>`;
+}
+function renderPreview(){
+  const r=S.result, p=r.plan, t=r.totals, flags=p.flags||[];
+  const open=()=>flags.filter((f,i)=>!S.okFlags[i]).length;
+  app.innerHTML=`
+    <div class="card"><label for="ti" style="margin-top:0">Title</label><input id="ti" value="${esc(p.title||"")}">
+      <div class="row2"><div><label for="fo">Focus</label><input id="fo" value="${esc(p.focus||"")}"></div>
+      <div><label for="zo">Training zone</label><select id="zo">${["A1-3","Threshold","Sprint","Race pace","Technique","Recovery","Mixed"].map(z=>`<option ${z===p.training_zone?"selected":""}>${z}</option>`).join("")}</select></div></div>
+      ${p.main_set?`<p class="muted" style="margin:10px 0 0">Main set: ${esc(p.main_set)}</p>`:""}</div>
+    <div class="card"><div class="stats"><div><b>${m(t.total_m)}</b>Total</div><div><b>${(p.stroke_skills||[]).join(" ")||"—"}</b>Strokes/skills</div><div><b id="fl">${open()}</b>To check</div></div>
+      <h3>By stroke</h3>${breakdown(t.by_stroke)}<h3>By type</h3>${breakdown(t.by_type)}<h3>By effort</h3>${breakdown(t.by_zone)}</div>
+    ${S.clar.length?`<div class="card"><h3 style="margin-top:0">Your explanations used</h3>${S.clar.map(c=>`<span class="tag"><b>${esc(c.term)}</b> = ${esc(c.meaning||"")}${c.drill_id?` (${esc(drillLabel(c.drill_id))})`:""}</span>`).join("")}</div>`:""}
+    ${flags.length?`<div class="card"><h3 style="margin-top:0">Please check</h3>
+      <p class="muted" style="font-size:14px;margin-top:0">Tap <b>Explain</b> on anything Claude didn't understand. Tell it what it means, then re-analyse.</p>
+      ${flags.map((f,i)=>`<div class="flag wrap" data-i="${i}"><div><b>${esc(f.term||f.text)}</b>${f.term&&f.text&&f.text!==f.term?`<br><span class="muted" style="font-size:14px">in “${esc(f.text)}”</span>`:""}<br>${esc(f.reason)}</div>
+        <div class="acts"><button class="ex">Explain</button><button class="lr">Looks right</button></div><div class="explain hide"></div></div>`).join("")}
+      <p class="muted" style="font-size:14px">To change a set yourself, go back, edit your text and analyse again.</p></div>`:""}
+    <div class="card"><h3 style="margin-top:0">Set by set</h3>${setsTable(p.blocks)}</div>
+    <div class="btnrow"><button class="btn secondary" id="back">Edit text</button><button class="btn" id="save">Save plan</button></div>
+    <div class="err" id="er"></div>`;
+  app.querySelectorAll(".flag").forEach(el=>{
+    const i=+el.dataset.i;
+    el.querySelector(".lr").onclick=()=>{S.okFlags[i]=!S.okFlags[i];el.classList.toggle("ok",!!S.okFlags[i]);$("#fl").textContent=open();};
+    el.querySelector(".ex").onclick=()=>openExplain(el,flags[i],i,()=>{$("#fl").textContent=open();});
+  });
+  if(S.clarDirty) showRerun();
+  $("#back").onclick=renderWrite;
+  $("#save").onclick=async()=>{
+    if(open() && !confirm(`${open()} item${open()===1?"":"s"} still to check. Save anyway? They'll be kept with the plan.`)) return;
+    p.title=$("#ti").value.trim()||p.title; p.focus=$("#fo").value.trim(); p.training_zone=$("#zo").value;
+    await savePlan();
+  };
+  window.scrollTo(0,0);
+}
+
+/* ---------- save ---------- */
+function toContent(blocks){
+  const set=s=>({type:"set",text:s.text||"",drill_ids:s.drill_id?[s.drill_id]:[]});
+  const out=[];
+  for(const b of blocks||[]){
+    if(b.type==="heading") out.push({type:"heading",text:b.text||"",bold:true,underline:true});
+    else if(b.type==="note") out.push({type:"note",text:b.text||""});
+    else if(b.type==="set"&&b.set) out.push(set(b.set));
+    else if(b.type==="repeat_group"){ if(b.label) out.push({type:"note",text:b.label}); out.push({type:"repeat_group",reps:b.reps||1,children:(b.children||[]).map(set)}); }
+  }
+  return out;
+}
+function toSetRows(planId, blocks){
+  const rows=[]; let section=null, n=0;
+  const add=(s,grp)=>rows.push({ session_plan_id:planId, club_id:S.club.id, set_order:++n, section, group_label:grp?.label||null, group_reps:grp?.reps||1,
+    reps:s.reps??null, distance_m:s.distance_m??null, total_m:(s.reps&&s.distance_m)?s.reps*s.distance_m*(grp?.reps||1):null,
+    stroke:s.stroke||null, kind:s.kind||null, effort:s.effort||null, interval_text:s.interval_text||null, interval_s:s.interval_s??null,
+    target_text:s.target_text||null, rest_s:s.rest_s??null, equipment:s.equipment?.length?s.equipment:null,
+    drill_id:s.drill_id||null, drill_name:s.drill_name||null, description:s.text||null });
+  for(const b of blocks||[]){
+    if(b.type==="heading") section=b.text;
+    else if(b.type==="set"&&b.set) add(b.set,null);
+    else if(b.type==="repeat_group") (b.children||[]).forEach(c=>add(c,b));
+  }
+  return rows;
+}
+async function savePlan(){
+  const w=S.w, r=S.result, p=r.plan, t=r.totals, ctx=w.ctx||{}, er=$("#er"), btn=$("#save");
+  btn.disabled=true; btn.textContent="Saving…"; er.textContent="";
+  const flags=(p.flags||[]).map((f,i)=>({...f,checked:!!S.okFlags[i]}));
+  for(const c of S.clar) flags.push({term:c.term,text:c.term,reason:`Explained by coach: ${c.meaning||""}${c.drill_id?" ("+drillLabel(c.drill_id)+")":""}`,checked:true,explained:true});
+  const row={ title:p.title, content:toContent(p.blocks), total_distance_m:t.total_m||null, squad_id:w.squad_id, club_id:S.club.id,
+    intended_date:w.date, pool_size:w.pool, training_zone:p.training_zone, stroke_skills:p.stroke_skills||[],
+    micro_id:ctx.micro_id||null, micro_session_id:ctx.id||null, macro:ctx.macro||null, meso:ctx.meso!=null?String(ctx.meso):null,
+    coach:coachName(), source:"freetext", raw_text:w.text, parsed_at:new Date().toISOString(), parser_version:r.parser_version,
+    session_focus:p.focus, main_set:p.main_set||null, distance_by_stroke:t.by_stroke, distance_by_zone:t.by_zone, distance_by_type:t.by_type,
+    flags, updated_at:new Date().toISOString() };
+  let id=w.id, res;
+  if(id) res=await sb.from("session_plans").update(row).eq("id",id).select("id").single();
+  else res=await sb.from("session_plans").insert(row).select("id").single();
+  if(res.error){ er.textContent=res.error.message; btn.disabled=false; btn.textContent="Save plan"; return; }
+  id=res.data.id;
+  const del=await sb.from("session_plan_sets").delete().eq("session_plan_id",id);
+  const ins=del.error?del:await sb.from("session_plan_sets").insert(toSetRows(id,p.blocks));
+  const link=await sb.rpc("link_attendance_to_plan",{p_plan:id});
+  const linked=link.data||0;
+  Object.assign(S.w,{id:null,text:""}); S.clar=[]; S.clarDirty=false; saveDraft();
+  app.innerHTML=`<div class="card"><h2>Plan saved</h2><p><b>${esc(p.title)}</b><br>${esc(squadName(w.squad_id))} · ${esc(niceDate(w.date))} · ${m(t.total_m)}</p>
+    ${ins.error?`<p class="err">The plan saved, but the set-by-set rows didn't: ${esc(ins.error.message)}. Open it from the archive and save again.</p>`:""}
+    ${ctx.id?`<p class="muted">Linked to the Season Planner session.</p>`:""}
+    ${linked?`<p class="muted">${linked} attendance mark${linked===1?"":"s"} for this session now credit this plan's distance.</p>`:""}
+    <button class="btn" id="another">Write another</button><button class="btn secondary" id="toArch">Open archive</button></div>`;
+  $("#another").onclick=()=>showTab("write"); $("#toArch").onclick=()=>{S.archive.squad=w.squad_id;S.archive.month=monthKey(w.date);showTab("archive");};
+}
+
+/* ---------- explain unclear terms ---------- */
+function drillLabel(id){const d=S.drills.find(x=>x.id===id);return d?d.drill_name+(d.stroke?` (${d.stroke})`:""):"";}
+function drillOptions(sel){
+  return `<option value="">Not a drill from the library</option>`+S.drills.map(d=>`<option value="${d.id}" ${d.id===sel?"selected":""}>${esc(d.drill_name)}${d.stroke?` · ${esc(d.stroke)}`:""}</option>`).join("");
+}
+function openExplain(el,f,i,after){
+  const box=el.querySelector(".explain"); if(!box.classList.contains("hide")){box.classList.add("hide");return;}
+  const term=(f.term||"").trim(), prev=S.clar.find(c=>c.term.toLowerCase()===(term||f.text).toLowerCase());
+  box.classList.remove("hide");
+  box.innerHTML=`<label>${term?`What does “${esc(term)}” mean?`:"Add the detail Claude needs"}</label>
+    <input class="mean" placeholder="${term?"e.g. vertical catch-up drill, 25 m each arm":"e.g. 5 mins is about 250 m"}" value="${esc(prev?.meaning||"")}">
+    <label>Is it a drill from the library? (optional)</label><select class="dr">${drillOptions(prev?.drill_id)}</select>
+    ${term?`<label class="chk"><input type="checkbox" class="rem" checked> Remember “${esc(term)}” for the club, so Claude knows it next time</label>`:""}
+    <button class="btn" style="margin-top:10px;padding:12px">Save explanation</button><div class="err"></div>`;
+  box.querySelector(".mean").focus();
+  box.querySelector(".btn").onclick=async()=>{
+    const meaning=box.querySelector(".mean").value.trim(), drill_id=box.querySelector(".dr").value||null, err=box.querySelector(".err");
+    if(!meaning && !drill_id){err.textContent="Write what it means or pick a drill.";return;}
+    const key=term||f.text;
+    S.clar=S.clar.filter(c=>c.term.toLowerCase()!==key.toLowerCase());
+    S.clar.push({term:key,meaning:meaning||drillLabel(drill_id),drill_id});
+    if(term && box.querySelector(".rem")?.checked){
+      const e=await saveGloss(term,meaning||drillLabel(drill_id),drill_id);
+      if(e){err.textContent="Saved for this plan, but couldn't remember it for the club: "+e;}
+    }
+    S.okFlags[i]=true; S.clarDirty=true;
+    el.classList.add("done"); el.classList.remove("ok");
+    el.querySelector("b").innerHTML=`${esc(key)} ✓`;
+    box.classList.add("hide"); after&&after(); showRerun();
+  };
+}
+async function saveGloss(term,meaning,drill_id){
+  const row={club_id:S.club.id,term,meaning,drill_id,coach:coachName(),created_by:S.user.id,updated_at:new Date().toISOString()};
+  const {data:ex}=await sb.from("planner_glossary").select("id, term").eq("club_id",S.club.id).ilike("term",term.replace(/[%_\\]/g,"\\$&"));
+  const hit=(ex||[]).find(x=>x.term.toLowerCase()===term.toLowerCase());
+  const r=hit?await sb.from("planner_glossary").update(row).eq("id",hit.id):await sb.from("planner_glossary").insert(row);
+  return r.error?r.error.message:null;
+}
+function showRerun(){
+  if($("#rerun")) return;
+  const b=document.createElement("button"); b.id="rerun"; b.className="btn rerun"; b.textContent="Re-analyse with your explanations";
+  const er=document.createElement("div"); er.className="err";
+  const anchor=$("#back")?.parentElement; if(!anchor) return;
+  anchor.parentElement.insertBefore(b,anchor); anchor.parentElement.insertBefore(er,anchor);
+  b.onclick=()=>analyse(b,er,"Re-analyse with your explanations");
+}
+
+/* ---------- club shorthand ---------- */
+async function loadShorthand(){
+  app.innerHTML=`<p class="muted">Loading…</p>`;
+  const {data,error}=await sb.from("planner_glossary").select("id, term, meaning, drill_id, coach, updated_at").eq("club_id",S.club.id).order("term");
+  if(error){app.innerHTML=`<p class="err">${esc(error.message)}</p>`;return;}
+  S.gloss=data||[]; renderShorthand();
+}
+function renderShorthand(){
+  app.innerHTML=`
+    <div class="card"><h2 style="margin-top:0">Club shorthand</h2>
+      <p class="muted" style="margin-top:0">Claude reads this list every time it analyses a ${esc(S.club.short_name||S.club.name)} plan. Coaches add to it by explaining terms in “Please check”, or here.</p>
+      <div class="row2"><div><label>Shorthand</label><input id="gt" placeholder="e.g. VCUP"></div><div><label>Means</label><input id="gm" placeholder="e.g. vertical catch-up"></div></div>
+      <label>Drill from the library (optional)</label><select id="gd">${drillOptions(null)}</select>
+      <button class="btn" id="gadd">Add to the list</button><div class="err" id="ger"></div></div>
+    <p class="muted" style="margin:0 0 10px">${S.gloss.length} term${S.gloss.length===1?"":"s"}</p>
+    ${S.gloss.map(g=>`<div class="card gl"><div><b>${esc(g.term)}</b> = ${esc(g.meaning)}${g.drill_id?`<br><span class="tag">Drill: ${esc(drillLabel(g.drill_id))}</span>`:""}
+      <br><span class="muted" style="font-size:13px">${g.coach?`Added by ${esc(g.coach)} · `:""}${esc(niceDate(String(g.updated_at).slice(0,10)))}</span></div>
+      <button class="del" data-id="${g.id}">Remove</button></div>`).join("")}`;
+  $("#gadd").onclick=async()=>{
+    const t=$("#gt").value.trim(), mm=$("#gm").value.trim(), d=$("#gd").value||null;
+    if(!t||(!mm&&!d)){$("#ger").textContent="Add the shorthand and what it means.";return;}
+    const e=await saveGloss(t,mm||drillLabel(d),d); if(e){$("#ger").textContent=e;return;} loadShorthand();
+  };
+  app.querySelectorAll(".del").forEach(b=>b.onclick=async()=>{
+    const g=S.gloss.find(x=>x.id===b.dataset.id);
+    if(!confirm(`Remove “${g.term}” from the club shorthand? Claude will ask about it again next time.`)) return;
+    const {error}=await sb.from("planner_glossary").delete().eq("id",g.id);
+    if(error){alert(error.message);return;} loadShorthand();
+  });
+}
+
+/* ---------- archive ---------- */
+async function loadArchive(){
+  app.innerHTML=`<p class="muted">Loading plans…</p>`;
+  const {data,error}=await sb.from("session_plans").select("id, title, intended_date, squad_id, session_focus, training_zone, total_distance_m, source")
+    .or(`club_id.eq.${S.club.id}`+(S.squads.length?`,squad_id.in.(${S.squads.map(s=>s.id).join(",")})`:"")).not("intended_date","is",null).order("intended_date",{ascending:false}).limit(1000);
+  if(error){app.innerHTML=`<p class="err">${esc(error.message)}</p>`;return;}
+  S.archive.plans=data||[]; renderArchive();
+}
+function renderArchive(){
+  const A=S.archive, inSquad=A.plans.filter(p=>!A.squad||p.squad_id===A.squad);
+  const months=[...new Set(inSquad.map(p=>monthKey(p.intended_date)))].sort().reverse();
+  if(A.month && !months.includes(A.month)) A.month="";
+  const list=inSquad.filter(p=>!A.month||monthKey(p.intended_date)===A.month);
+  const squadsWithPlans=S.squads.filter(s=>A.plans.some(p=>p.squad_id===s.id));
+  app.innerHTML=`
+    <div class="card"><div class="row2">
+      <div><label for="as" style="margin-top:0">Squad</label><select id="as"><option value="">All squads</option>${squadsWithPlans.map(s=>`<option value="${s.id}" ${s.id===A.squad?"selected":""}>${esc(s.name)}</option>`).join("")}</select></div>
+      <div><label for="am" style="margin-top:0">Month</label><select id="am"><option value="">All months</option>${months.map(k=>`<option value="${k}" ${k===A.month?"selected":""}>${monthName(k)}</option>`).join("")}</select></div>
+    </div></div>
+    <p class="muted" style="margin:0 0 10px">${list.length} plan${list.length===1?"":"s"}</p>
+    ${list.map(p=>`<button class="item" data-id="${p.id}"><div class="t">${esc(p.title||"Untitled")}</div>
+      <div class="m">${esc(niceDate(p.intended_date))} · ${esc(squadName(p.squad_id)||"No squad")}${p.session_focus?` · ${esc(p.session_focus)}`:p.training_zone?` · ${esc(p.training_zone)}`:""} · ${m(p.total_distance_m)}</div></button>`).join("")||`<div class="card muted">No plans for this choice yet.</div>`}`;
+  $("#as").onchange=e=>{A.squad=e.target.value;store(ARCH,{squad:A.squad,month:A.month});renderArchive();};
+  $("#am").onchange=e=>{A.month=e.target.value;store(ARCH,{squad:A.squad,month:A.month});renderArchive();};
+  app.querySelectorAll(".item").forEach(b=>b.onclick=()=>openPlan(b.dataset.id));
+}
+function contentToText(content){
+  const out=[];
+  for(const b of content||[]){
+    if(b.type==="heading") out.push((out.length?"\n":"")+b.text);
+    else if(b.type==="note"||b.type==="set") out.push(b.text);
+    else if(b.type==="repeat_group"){ out.push(`${b.reps||1} rounds of:`); (b.children||[]).forEach(c=>out.push("  "+c.text)); }
+  }
+  return out.join("\n");
+}
+async function openPlan(id){
+  app.innerHTML=`<p class="muted">Opening…</p>`;
+  const [{data:p,error},{data:sets}]=await Promise.all([
+    sb.from("session_plans").select("*").eq("id",id).single(),
+    sb.from("session_plan_sets").select("*").eq("session_plan_id",id).order("set_order")]);
+  if(error){app.innerHTML=`<p class="err">${esc(error.message)}</p>`;return;}
+  const text=p.raw_text||contentToText(p.content);
+  const flags=(p.flags||[]).filter(f=>f&&f.text);
+  let rows="", sec=null;
+  for(const s of sets||[]){
+    if(s.section!==sec){sec=s.section;rows+=`<tr class="sec"><td colspan="6">${esc(sec||"")}</td></tr>`;}
+    rows+=`<tr><td>${s.group_reps>1?`<span class="tag">×${s.group_reps}</span> `:""}${esc(s.description||"")}</td><td class="r">${s.reps&&s.distance_m?`${s.reps} × ${s.distance_m}`:""}</td><td>${esc(s.stroke||"")}</td><td>${esc(s.kind||"")}</td><td>${esc(s.interval_text||"")}</td><td class="r">${s.total_m?m(s.total_m):""}</td></tr>`;
+  }
+  app.innerHTML=`
+    <button class="chip" id="bk" style="margin-bottom:12px">‹ Archive</button>
+    <div class="card"><h2>${esc(p.title||"Untitled")}</h2>
+      <p class="muted" style="margin:0">${esc(squadName(p.squad_id))} · ${esc(niceDate(p.intended_date))}${p.pool_size?` · ${esc(p.pool_size)}`:""}${p.coach?` · ${esc(p.coach)}`:""}</p>
+      <div class="stats" style="margin-top:12px"><div><b>${m(p.total_distance_m)}</b>Total</div><div><b>${esc(p.session_focus||p.training_zone||"—")}</b>Focus</div><div><b>${(p.stroke_skills||[]).join(" ")||"—"}</b>Strokes</div></div>
+      ${p.distance_by_stroke?`<h3>By stroke</h3>${breakdown(p.distance_by_stroke)}<h3>By type</h3>${breakdown(p.distance_by_type)}`:""}</div>
+    ${flags.length?`<div class="card"><h3 style="margin-top:0">Checked when saved</h3>${flags.map(f=>`<div class="flag ${f.checked?"ok":""}"><div><b>${esc(f.text)}</b><br>${esc(f.reason)}</div></div>`).join("")}</div>`:""}
+    <div class="card"><h3 style="margin-top:0">${p.raw_text?"As written":"Plan (from Coach Tools)"}</h3><pre class="raw">${esc(text)}</pre></div>
+    ${rows?`<div class="card"><h3 style="margin-top:0">Set by set</h3><div class="scroll"><table class="tbl"><thead><tr><th>Set</th><th class="r">Reps × m</th><th>Stroke</th><th>Type</th><th>Send-off</th><th class="r">Total</th></tr></thead><tbody>${rows}</tbody></table></div></div>`:""}
+    <div class="btnrow"><button class="btn secondary" id="copy">Copy as new plan</button><button class="btn" id="edit">Edit and re-analyse</button></div>`;
+  $("#bk").onclick=renderArchive;
+  const loadInto=(keepId)=>{
+    Object.assign(S.w,{ id:keepId?p.id:null, squad_id:p.squad_id||"", date:keepId?p.intended_date:todayISO(), pool:p.pool_size||"25m",
+      slot:keepId?p.micro_session_id:null, text });
+    saveDraft(); showTab("write");
+  };
+  $("#edit").onclick=()=>loadInto(true); $("#copy").onclick=()=>loadInto(false);
+  window.scrollTo(0,0);
+}
+
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+boot();
+</script>
+</body>
+</html>
