@@ -121,6 +121,7 @@ begin
     'club', (select c.name from public.clubs c where c.id = s.club_id),
     'squad', (select q.name from public.squads q where q.id = s.squad_id),
     'archived_details', (select to_jsonb(a) from public.swimmer_archive a where a.swimmer_id = s.id),
+    'account', (select to_jsonb(a) - 'created_by' - 'updated_by' from public.member_accounts a where s.account_id is not null and a.id = s.account_id),
     'account_holders', coalesce((select jsonb_agg(to_jsonb(g) - 'updated_by') from public.member_guardians g where s.account_id is not null and g.account_id = s.account_id), '[]'),
     'linked_app_users', coalesce((select jsonb_agg(jsonb_build_object('relationship', u.relationship, 'linked_on', u.created_at)) from public.user_swimmers u where u.swimmer_id = s.id), '[]'),
     'squad_memberships', coalesce((select jsonb_agg(to_jsonb(m) || jsonb_build_object('squad_name', (select q.name from public.squads q where q.id = m.squad_id)) order by m.joined_squad_on) from public.squad_memberships m where m.swimmer_id = s.id), '[]'),
