@@ -538,6 +538,11 @@ table.review th[scope=row] { min-width: 120px; }
 .plan-tag.dist { background: var(--navy); border-color: var(--navy); color: #fff; }
 .plan-tag.zone { background: #fff4e0; border-color: #f2d49b; color: #7a4d00; }
 .plan-tag.skill { background: #e8f4fb; border-color: #b9dff2; color: var(--navy); }
+.plan-tag.author { background: #fff; color: var(--text-dim, #555); font-weight: 600; }
+.plan-author { margin: 2px 0 6px; }
+.archive-month { margin: 18px 0 8px; font-size: 1rem; color: var(--navy); border-bottom: 2px solid var(--border); padding-bottom: 4px; display: flex; justify-content: space-between; gap: 8px; }
+.archive-month:first-of-type { margin-top: 4px; }
+.plan-item-when { font-size: .85rem; color: var(--text-dim, #555); margin: 0 0 6px; }
 .plan-tag.none { background: #fdecea; border-color: #f3c2bd; color: var(--red); }
 .micro-line { font-size: .85rem; color: var(--text-dim); margin: 8px 0 0; }
 .micro-card { background: var(--grey-bg); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin: 12px 0; }

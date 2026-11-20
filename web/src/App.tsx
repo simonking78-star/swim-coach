@@ -33,6 +33,7 @@ const CompForm = lazyPage(() => import("./pages/season/CompForm").then(x => ({ d
 const MacroForm = lazyPage(() => import("./pages/season/MacroForm").then(x => ({ default: x.MacroForm })));
 const Micros = lazyPage(() => import("./pages/season/Micros").then(x => ({ default: x.Micros })));
 const PlanList = lazyPage(() => import("./pages/plans/PlanList").then(x => ({ default: x.PlanList })));
+const PlanArchive = lazyPage(() => import("./pages/plans/PlanArchive").then(x => ({ default: x.PlanArchive })));
 const PlanView = lazyPage(() => import("./pages/plans/PlanView").then(x => ({ default: x.PlanView })));
 const PlanEditor = lazyPage(() => import("./pages/plans/PlanEditor").then(x => ({ default: x.PlanEditor })));
 const SessionWriter = lazyPage(() => import("./pages/plans/SessionWriter").then(x => ({ default: x.SessionWriter })));
@@ -89,6 +90,7 @@ function Gate() {
           <Route path="swimmers" element={<Swimmers />} />
           <Route path="swimmers/:id" element={<SwimmerProfile />} />
           <Route path="sessions" element={wait(<PlanList />)} />
+          <Route path="sessions/archive" element={wait(<PlanArchive />)} />
           <Route path="sessions/new" element={wait(<SessionWriter key="new" />)} />
           <Route path="sessions/new/blocks" element={wait(<PlanEditor key="new-blocks" />)} />
           <Route path="sessions/:id" element={wait(<PlanView />)} />

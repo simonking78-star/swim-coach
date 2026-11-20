@@ -74,7 +74,10 @@ export function PlanList() {
           <h1><span aria-hidden="true">📋</span> Session plans</h1>
           <p className="dim">Plans by squad and date, with that week's micro-cycle</p>
         </div>
-        {canEdit(level) && <Link className="btn primary" to="/sessions/new">+ New plan</Link>}
+        <div className="btn-row">
+          <Link className="btn" to="/sessions/archive">🗂️ Archive</Link>
+          {canEdit(level) && <Link className="btn primary" to="/sessions/new">+ New plan</Link>}
+        </div>
       </div>
       {LEVEL_NOTE[level] && <p className="notice">{LEVEL_NOTE[level]}</p>}
 
@@ -132,6 +135,7 @@ export function PlanList() {
                     {p.pool_size && <span className="plan-tag">{p.pool_size}</span>}
                     {!!p.total_distance_m && <span className="plan-tag dist">{p.total_distance_m.toLocaleString("en-GB")}m</span>}
                     <FocusTags skills={p.stroke_skills} zone={p.training_zone} />
+                    {p.coach && <span className="plan-tag author">✍️ {p.coach}</span>}
                   </div>
                   {ctx && <MicroLine ctx={ctx} label="Stroke" />}
                 </article>

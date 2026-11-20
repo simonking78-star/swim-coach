@@ -10,7 +10,7 @@ import { FocusTags, MicroLine, PlanBody } from "../../components/planParts";
 import { DrillInfoModal } from "../../components/drillParts";
 import { NoPlanAccess, usePlanSquads, useSeasonCtx } from "./PlanList";
 
-const BACK: Record<string, string> = { "/timetables": "Timetables", "/season": "Season planner" };
+const BACK: Record<string, string> = { "/timetables": "Timetables", "/season": "Season planner", "/sessions/archive": "Archive" };
 /** Where a plan was opened from (Timetables week plan, Season planner), else the plan list. */
 export const backLink = (from?: string) => (from && BACK[from] ? { to: from, label: BACK[from] } : { to: "/sessions", label: "Session plans" });
 
@@ -53,6 +53,7 @@ export function PlanView() {
           </div>
         </div>
         {meta && <p className="dim plan-meta">{meta}</p>}
+        {p.coach && <p className="dim small plan-author">✍️ Written by <strong>{p.coach}</strong></p>}
         <div className="plan-tags"><FocusTags skills={p.stroke_skills} zone={p.training_zone} /></div>
         {ctx && <div className="micro-card"><MicroLine ctx={ctx} /></div>}
         <PlanBody content={p.content || []} onDrill={setDrillId} />

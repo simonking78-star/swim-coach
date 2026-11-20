@@ -112,6 +112,59 @@ details.more>summary::before{content:"▸";color:var(--brand-2);transition:trans
 details.more[open]>summary::before{transform:rotate(90deg)}
 details.more>summary .muted{font-weight:400;font-size:14px;margin-left:auto}
 details.more>.in{padding:0 16px 16px}
+/* write tab: date + squad, then three layers (Coach Tools session writer model) */
+main.wide{max-width:760px}
+.sm{font-size:14px}
+.pick{position:sticky;top:var(--hh,56px);z-index:15;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.editing{border-color:var(--brand-2)}
+.editing .chip{margin-left:6px}
+.layer{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:14px}
+.layer>h2{margin:0;font-size:inherit}
+.layer>h2 button{width:100%;display:flex;align-items:center;gap:12px;border:0;background:transparent;color:var(--ink);font:inherit;text-align:left;padding:14px 16px;cursor:pointer}
+.layer .ln{flex:none;width:28px;height:28px;border-radius:50%;background:var(--brand-2);color:#fff;display:grid;place-items:center;font-weight:700;font-size:15px}
+.layer .lt{flex:1;font-weight:700;font-size:17px;min-width:0}
+.layer .lnote{display:block;font-weight:400;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.layer .lnote:empty{display:none}
+.layer .lc{color:var(--brand-2);font-size:18px}
+.layer .lb{padding:0 16px 16px}
+.layer .lb.shut{display:none}
+.chips.sm .chip{padding:7px 10px;font-size:14px}
+.chip:disabled{opacity:.4}
+.chip.fx{border-color:var(--brand-2)}
+.chip .n{font-weight:400;opacity:.75}
+.cycles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.cy{background:var(--bg);border-radius:12px;padding:10px;border-top:4px solid var(--brand-2)}
+.cy.meso{border-top-color:#2563eb}.cy.micro{border-top-color:var(--flag)}
+.cy h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.cy p{margin:2px 0;overflow-wrap:anywhere}
+.cy .note{font-size:13px;font-style:italic;margin-top:6px}
+.sess{margin-top:12px;padding:10px 12px;border-left:4px solid var(--brand-2);background:var(--bg);border-radius:0 12px 12px 0}
+.sess p{margin:2px 0}.sess .when{font-weight:700}
+.pre{white-space:pre-wrap}
+.ev{margin:8px 0 0;font-size:15px}.ev .tag{font-weight:600}
+.warnbox{background:var(--flag-bg);border:1px solid var(--flag);border-radius:12px;padding:10px 12px;margin:0 0 10px}
+.result{margin-top:16px;padding-top:12px;border-top:2px solid var(--line)}
+.fbhead{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.seg{display:flex;border:2px solid var(--brand-2);border-radius:12px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--brand-2);font:inherit;font-weight:600;padding:7px 12px}
+.seg button.on{background:var(--brand-2);color:#fff}
+.fbl{list-style:none;margin:10px 0 0;padding:0}
+.fbl li{border-bottom:1px solid var(--line);padding:9px 0}
+.fbl p{margin:3px 0}
+.fbt{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media (max-width:560px){ .row3{grid-template-columns:1fr 1fr} .row3>div:last-child{grid-column:1 / -1} .cycles{grid-template-columns:1fr} }
+.item .by{margin-top:2px}
+@media (min-width:1100px){
+  main.wide{max-width:1480px}
+  .stack{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);grid-template-areas:"pick pick" "write season" "write fb";column-gap:16px;align-items:start}
+  .stack>.pick{grid-area:pick;position:static}
+  #L1{grid-area:season}#L2{grid-area:fb}#L3{grid-area:write}
+  .layer .lb.shut{display:block}
+  .layer>h2 button{cursor:default}
+  .layer .lc{display:none}
+  #L2 .lb{max-height:60vh;overflow:auto}
+}
 </style>
 </head>
 <body>
@@ -129,10 +182,20 @@ const SUPABASE_URL="https://nxlgeykipnvswyeshrbl.supabase.co";
 const SUPABASE_KEY="sb_publishable_BYuKct-F0f4H04Gl_S58uQ_gKzuW_Ff";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
 const POOLS=["25m","17m","50m"];
-const DRAFT="planner.draft.v1", ARCH="planner.archive.v1";
-const S={ user:null, clubs:[], club:null, squads:[], tab:"write",
-  w:{ id:null, squad_id:"", date:todayISO(), pool:"25m", slot:null, slots:[], ctx:null, text:"" },
-  result:null, okFlags:{}, clar:[], clarDirty:false, drills:[], gloss:[], archive:{ squad:"", month:"", plans:[] } };
+const DRAFT="planner.draft.v2", ARCH="planner.archive.v1", LAYERS="planner.layers.v1";
+/* Session focus = the Feedback Stroke/Skills list (as Coach Tools); primary focus = training zone. */
+const FOCUS=["Free","Back","Breast","Fly","Dive","Transition","Touch turn","Tumble turn","Training mindset","Racing mindset"];
+const CATL={Free:"Freestyle",Back:"Backstroke",Breast:"Breaststroke",Fly:"Butterfly"};
+const catLabel=c=>CATL[c]||c||"";
+const PRIMARY=["A1-3","Threshold","V02m","LT/LP","Sprint","Race pace","Technique","Recovery"];
+const CAT_SKILL={Free:"FR",Back:"BK",Breast:"Brs",Fly:"Fly",Dive:"Start",Transition:"Trans.","Touch turn":"Turns","Tumble turn":"Turns"};
+const QES={quality:"Quality",endurance:"Endurance",sprint:"Sprint"};
+const S={ user:null, clubs:[], club:null, squads:[], tab:"write", season:null,
+  w:{ id:null, squad_id:"", date:todayISO(), pool:"25m", slot:null, text:"", title:"", focus:[], primary:"", touched:false, ctx:null },
+  result:null, analysedText:null, okFlags:{}, clar:[], clarDirty:false, drills:[], gloss:[],
+  layers:Object.assign({season:true,feedback:false,write:true},load(LAYERS)||{}),
+  fb:{tab:"swimmers",cat:"",embedded:false,key:"",sw:null,sq:null,err:""},
+  archive:{ squad:"", month:"", author:"", plans:[] }, cols:{created_by:true,focus_categories:true} };
 
 const $=s=>document.querySelector(s), app=$("#app");
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
@@ -191,8 +254,8 @@ async function enterClub(){
   S.squads=data||[];
   const dr=await sb.from("drills_library").select("id, drill_name, stroke").order("drill_name").limit(600);
   S.drills=dr.data||[];
-  const d=load(DRAFT); if(d&&d.club_id===S.club.id) Object.assign(S.w,d.w);
-  const a=load(ARCH); if(a){S.archive.squad=a.squad||"";S.archive.month=a.month||"";}
+  const d=load(DRAFT)||load("planner.draft.v1"); if(d&&d.club_id===S.club.id) Object.assign(S.w,{focus:[],primary:"",title:"",touched:false},d.w,{ctx:null});
+  const a=load(ARCH); if(a){S.archive.squad=a.squad||"";S.archive.month=a.month||"";S.archive.author=a.author||"";}
   $("#tabs").classList.remove("hide"); showTab(S.tab);
 }
 document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.t));
@@ -200,83 +263,203 @@ function showTab(t){
   S.tab=t; document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
   if(S.clubs.length>1) $("#title").innerHTML=`<span style="cursor:pointer" id="clubsw">${esc(S.club.short_name||S.club.name)} ▾</span>`;
   const cs=$("#clubsw"); if(cs) cs.onclick=renderClubs;
+  app.classList.toggle("wide",t==="write");
   t==="write"?renderWrite():t==="archive"?loadArchive():loadShorthand();
 }
 
-/* ---------- write ---------- */
-function saveDraft(){ store(DRAFT,{club_id:S.club.id,w:{...S.w,slots:[],ctx:null}}); const el=$("#drafted"); if(el) el.textContent="Draft kept on this device"; }
-async function loadSlots(){
-  const w=S.w; w.slots=[]; w.ctx=null;
-  if(!w.squad_id||!w.date) return;
-  const {data:ms}=await sb.from("micro_sessions").select("id, micro_id, start_time, end_time, stroke_focus, outline, timetable_session_id").eq("squad_id",w.squad_id).eq("session_date",w.date).eq("is_active",true).order("start_time");
-  let tsPool={};
-  const tsIds=(ms||[]).map(x=>x.timetable_session_id).filter(Boolean);
-  if(tsIds.length){const {data:ts}=await sb.from("timetable_sessions").select("id, pool_size").in("id",tsIds);(ts||[]).forEach(t=>tsPool[t.id]=t.pool_size);}
-  const microIds=[...new Set((ms||[]).map(x=>x.micro_id))]; let micros={}, macros={};
-  if(microIds.length){
-    const {data:mi}=await sb.from("micros").select("id, macro_id, week_no, week_commencing, meso, qes_focus, planned_volume_m").in("id",microIds);
-    (mi||[]).forEach(x=>micros[x.id]=x);
-    const macIds=[...new Set((mi||[]).map(x=>x.macro_id))];
-    if(macIds.length){const {data:ma}=await sb.from("macros").select("id, title").in("id",macIds);(ma||[]).forEach(x=>macros[x.id]=x);}
+/* ---------- write: date + squad, then 1. Season plan  2. Feedback to date  3. Write plan ----------
+   Same model as the session writer in Coach Tools. On a phone the layers stack and
+   fold; on a wide screen (≥1100px) write sits on the left, season plan top right and
+   feedback bottom right. Date and squad control everything below them. */
+function saveDraft(){ store(DRAFT,{club_id:S.club.id,w:{...S.w,ctx:null}}); const el=$("#drafted"); if(el) el.textContent="Draft kept on this device"; }
+const isoAdd=(iso,n)=>{const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
+const ddmm=iso=>iso?new Date(iso+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"";
+const dayShort=iso=>iso?new Date(iso+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}):"";
+const changed=()=>S.analysedText===null||S.analysedText.trim()!==S.w.text.trim();
+
+/* Season plan for the club: seasons, macros (with their squads and weeks), competitions, breaks. Loaded once. */
+async function loadSeason(){
+  if(S.season&&S.season.club===S.club.id) return S.season;
+  const out={club:S.club.id,seasons:[],macros:[],comps:[],breaks:[]};
+  const {data:se}=await sb.from("seasons").select("id, title, start_date, finish_date").eq("club_id",S.club.id).eq("is_active",true);
+  out.seasons=se||[]; const ids=out.seasons.map(s=>s.id);
+  if(ids.length){
+    const [mq,cq,bq]=await Promise.all([
+      sb.from("macros").select("id, title, season_id, head_coach_note, macro_squads(squad_id, is_active), micros(id, week_no, week_commencing, meso, qes_focus, technical_focus, break_days, planned_volume_m, is_active)").in("season_id",ids).eq("is_active",true),
+      sb.from("season_competitions").select("id, season_id, name, date_from, date_to").in("season_id",ids).eq("is_active",true),
+      sb.from("season_breaks").select("season_id, break_start, break_end").in("season_id",ids).eq("is_active",true)]);
+    out.macros=mq.data||[]; out.comps=cq.data||[]; out.breaks=bq.data||[];
   }
-  w.slots=(ms||[]).map(x=>{const mi=micros[x.micro_id]||{};return {id:x.id,micro_id:x.micro_id,start:hm(x.start_time),end:hm(x.end_time),pool:tsPool[x.timetable_session_id]||null,
-    stroke_focus:x.stroke_focus,outline:x.outline,meso:mi.meso,week_no:mi.week_no,week_focus:mi.qes_focus,planned_volume_m:mi.planned_volume_m,macro:macros[mi.macro_id]?.title};});
-  if(w.slot && !w.slots.find(s=>s.id===w.slot)) w.slot=null;
-  if(!w.slot && w.slots.length===1) w.slot=w.slots[0].id;
-  const sl=w.slots.find(s=>s.id===w.slot); if(sl){ w.ctx=sl; if(sl.pool) w.pool=sl.pool; }
+  return S.season=out;
+}
+/* The macro / meso / micro and session(s) for the chosen squad and date. */
+async function loadCtx(){
+  const w=S.w; w.ctx=null;
+  if(!w.squad_id||!w.date) return;
+  const sea=await loadSeason();
+  let macro=null, micro=null;
+  for(const ma of sea.macros){
+    if(micro||!(ma.macro_squads||[]).some(x=>x.squad_id===w.squad_id&&x.is_active)) continue;
+    const hit=(ma.micros||[]).find(mi=>mi.is_active&&mi.week_commencing&&mi.week_commencing<=w.date&&isoAdd(mi.week_commencing,6)>=w.date);
+    if(hit){macro=ma;micro=hit;}
+  }
+  if(!micro) return;
+  const weeks=(macro.micros||[]).filter(x=>x.is_active&&x.week_commencing).sort((a,b)=>a.week_commencing.localeCompare(b.week_commencing));
+  const meso=micro.meso?weeks.filter(x=>x.meso===micro.meso):[];
+  const idx=l=>Math.max(1,l.findIndex(x=>x.id===micro.id)+1), wc=micro.week_commencing;
+  const [msq,wq,pq]=await Promise.all([
+    sb.from("micro_sessions").select("id, start_time, end_time, stroke_focus, outline, timetable_session_id").eq("micro_id",micro.id).eq("squad_id",w.squad_id).eq("session_date",w.date).eq("is_active",true).order("start_time"),
+    sb.from("season_windows").select("id, kind, title, starts_on, ends_on, squad_id, squad_ids").eq("season_id",macro.season_id).eq("is_active",true).lte("starts_on",isoAdd(w.date,14)).gte("ends_on",w.date).order("starts_on"),
+    sb.from("session_plans").select("id, total_distance_m").eq("squad_id",w.squad_id).gte("intended_date",wc).lte("intended_date",isoAdd(wc,6))]);
+  let tsPool={}; const tsIds=(msq.data||[]).map(x=>x.timetable_session_id).filter(Boolean);
+  if(tsIds.length){const {data:ts}=await sb.from("timetable_sessions").select("id, pool_size").in("id",tsIds);(ts||[]).forEach(t=>tsPool[t.id]=t.pool_size);}
+  const sessions=(msq.data||[]).map(x=>({id:x.id,start:hm(x.start_time),end:hm(x.end_time),pool:tsPool[x.timetable_session_id]||null,stroke_focus:x.stroke_focus,outline:x.outline}));
+  if(w.slot&&!sessions.find(s=>s.id===w.slot)) w.slot=null;
+  if(!w.slot&&sessions.length) w.slot=sessions[0].id;
+  const session=sessions.find(s=>s.id===w.slot)||null;
+  if(session&&session.pool&&!w.id) w.pool=session.pool;
+  const plans=(pq.data||[]).filter(p=>p.id!==w.id);
+  const dow=(()=>{const g=new Date(w.date+"T12:00:00").getDay();return g===0?7:g;})();
+  const comps=sea.comps.filter(c=>c.season_id===macro.season_id).sort((a,b)=>a.date_from.localeCompare(b.date_from));
+  w.ctx={ macro_id:macro.id, macro:macro.title, note:macro.head_coach_note, season:sea.seasons.find(s=>s.id===macro.season_id)?.title,
+    micro_id:micro.id, week_no:micro.week_no, wc, meso:micro.meso, qes:micro.qes_focus, technical_focus:micro.technical_focus, planned_volume_m:micro.planned_volume_m,
+    macroWeeks:weeks.length, weekInMacro:idx(weeks), macroFrom:weeks[0]?.week_commencing, macroTo:weeks.length?isoAdd(weeks[weeks.length-1].week_commencing,6):null,
+    mesoWeeks:meso.length, weekInMeso:meso.length?idx(meso):0, mesoFrom:meso[0]?.week_commencing, mesoTo:meso.length?isoAdd(meso[meso.length-1].week_commencing,6):null,
+    sessions, session, id:session?.id||null, stroke_focus:session?.stroke_focus, outline:session?.outline,
+    plansWeek:plans.length, plannedWeek:plans.reduce((a,p)=>a+(p.total_distance_m||0),0),
+    windows:(wq.data||[]).filter(x=>(!x.squad_id&&!(x.squad_ids||[]).length)||x.squad_id===w.squad_id||(x.squad_ids||[]).includes(w.squad_id)),
+    comp:comps.find(c=>c.date_from>=isoAdd(wc,5)&&c.date_from<=isoAdd(wc,7))||null,
+    nextComp:comps.find(c=>c.date_from>=w.date)||null,
+    isBreak:(micro.break_days||[]).map(Number).includes(dow)||sea.breaks.some(b=>b.season_id===macro.season_id&&w.date>=b.break_start&&w.date<=b.break_end) };
+  // Focus comes from the micro-cycle until the coach changes it.
+  if(!w.touched){
+    const t=(session?.stroke_focus||"").toLowerCase(), f=new Set();
+    if(/\b(fr|free|freestyle|front ?crawl|crawl)\b/.test(t)) f.add("Free");
+    if(/\b(bk|back|backstroke)\b/.test(t)) f.add("Back");
+    if(/\b(br|brs|breast|breaststroke)\b/.test(t)) f.add("Breast");
+    if(/\b(fly|butterfly)\b/.test(t)) f.add("Fly");
+    if(/\b(start|starts|dive|dives)\b/.test(t)||Number(micro.technical_focus)===6) f.add("Dive");
+    if(/transition|changeover/.test(t)) f.add("Transition");
+    if(/tumble/.test(t)) f.add("Tumble turn"); else if(/touch/.test(t)) f.add("Touch turn");
+    w.focus=FOCUS.filter(c=>f.has(c));
+    w.primary=micro.qes_focus==="sprint"?"Sprint":micro.qes_focus==="endurance"?"A1-3":"";
+  }
+}
+
+function layer(n,key,title,note,body){
+  const open=S.layers[key];
+  return `<section class="layer" id="L${n}"><h2><button type="button" data-l="${key}" aria-expanded="${open}" aria-controls="LB${n}">
+    <span class="ln" aria-hidden="true">${n}</span><span class="lt">${esc(title)}<span class="lnote" id="LN${n}">${esc(note||"")}</span></span><span class="lc" aria-hidden="true">${open?"▾":"▸"}</span></button></h2>
+    <div class="lb${open?"":" shut"}" id="LB${n}">${body}</div></section>`;
+}
+function seasonHtml(){
+  const w=S.w, c=w.ctx, range=(a,b)=>a&&b?`${ddmm(a)} – ${ddmm(b)}`:"";
+  if(!w.squad_id) return `<p class="muted">Choose a squad to see its macro, meso and micro-cycle for this date.</p>`;
+  if(!c) return `<p class="muted">No micro-cycle covers ${esc(dayShort(w.date))} for ${esc(squadName(w.squad_id))}, so the plan will be saved without a week link. Add one in the Season Planner in Coach Tools.</p>`;
+  return `${c.isBreak?`<p class="warnbox">This day is a break day in the season plan.</p>`:""}
+    <div class="cycles">
+      <div class="cy macro"><h4>Macro</h4><p><b>${esc(c.macro)}</b></p><p class="muted sm">Week ${c.weekInMacro} of ${c.macroWeeks} · ${range(c.macroFrom,c.macroTo)}</p>${c.season?`<p class="muted sm">${esc(c.season)}</p>`:""}${c.note?`<p class="note">${esc(c.note)}</p>`:""}</div>
+      <div class="cy meso"><h4>Meso</h4>${c.meso?`<p><b>Meso ${esc(c.meso)}</b></p>${c.mesoWeeks?`<p class="muted sm">Week ${c.weekInMeso} of ${c.mesoWeeks} · ${range(c.mesoFrom,c.mesoTo)}</p>`:""}`:`<p class="muted">Not set</p>`}</div>
+      <div class="cy micro"><h4>Micro</h4><p><b>Week ${esc(c.week_no)}</b> <span class="muted">· w/c ${ddmm(c.wc)}</span></p>${c.qes?`<p class="sm">${esc(QES[c.qes]||c.qes)} week</p>`:""}
+        ${(c.planned_volume_m||c.plansWeek)?`<p class="muted sm">${c.plansWeek} other plan${c.plansWeek===1?"":"s"} this week${c.plannedWeek?` · ${m(c.plannedWeek)}`:""}${c.planned_volume_m?` of ${m(c.planned_volume_m)} planned`:""}</p>`:""}</div>
+    </div>
+    ${c.sessions.length>1?`<label>Which session</label><div class="chips" id="slots">${c.sessions.map(s=>`<button type="button" class="chip ${s.id===w.slot?"on":""}" data-id="${s.id}">${s.start}${s.end?"–"+s.end:""}</button>`).join("")}</div>`:""}
+    ${c.session?`<div class="sess"><p class="when">${esc(dayShort(w.date))}${c.session.start?` · ${c.session.start}${c.session.end?"–"+c.session.end:""}`:""}</p>
+      ${c.stroke_focus?`<p>Stroke focus: <b>${esc(c.stroke_focus)}</b></p>`:""}${c.outline?`<p class="muted pre">${esc(c.outline)}</p>`:""}</div>`
+      :`<p class="muted sm">No session outlined for this date in the micro-cycle.</p>`}
+    ${c.windows.map(x=>`<p class="ev"><span class="tag">${x.kind==="test_set"?"Test window":x.kind==="squad_move"?"Squad moves":esc(x.kind)}</span>${esc(x.title||"")} <span class="muted">${ddmm(x.starts_on)} – ${ddmm(x.ends_on)}</span></p>`).join("")}
+    ${c.comp?`<p class="ev"><span class="tag">Competition this week</span>${esc(c.comp.name)} <span class="muted">${esc(dayShort(c.comp.date_from))}</span></p>`:""}
+    ${c.nextComp&&c.nextComp.name!==c.comp?.name?`<p class="ev"><span class="tag">Next competition</span>${esc(c.nextComp.name)} <span class="muted">${esc(dayShort(c.nextComp.date_from))} · in ${Math.round((Date.parse(c.nextComp.date_from)-Date.parse(w.date))/864e5)} days</span></p>`:""}`;
+}
+function writeHtml(){
+  const w=S.w;
+  return `<div class="row2"><div><label for="po" style="margin-top:0">Pool</label><select id="po">${POOLS.map(p=>`<option ${p===w.pool?"selected":""}>${p}</option>`).join("")}</select></div>
+      <div><label for="pr" style="margin-top:0">Primary training focus</label><select id="pr"><option value="">— choose —</option>${PRIMARY.map(z=>`<option ${z===w.primary?"selected":""}>${z}</option>`).join("")}</select></div></div>
+    <label>Session focus · Stroke/Skills</label>
+    <div class="chips sm" id="focus">${FOCUS.map(c=>`<button type="button" class="chip ${w.focus.includes(c)?"on":""}" aria-pressed="${w.focus.includes(c)}" data-c="${esc(c)}">${esc(catLabel(c))}</button>`).join("")}</div>
+    <button class="btn" id="go">Analyse with Claude</button>
+    <label for="tx">Write the session your way</label>
+    <textarea id="tx" spellcheck="false" placeholder="Warm up&#10;400 FR fins every 4th length shoulder tap&#10;4 x 50 @1:00 kick&#10;&#10;Main set x3&#10;6 x 100 @1:45 desc&#10;200 pull ez&#10;&#10;Swim down 200 choice">${esc(w.text)}</textarea>
+    <div class="draft" id="drafted"></div>
+    <button class="btn" id="go2">Analyse with Claude</button><div class="err" id="er"></div>
+    <div id="res"></div>
+    <label for="ti">Plan title</label><input id="ti" value="${esc(w.title)}" placeholder="${esc(w.squad_id?`${squadName(w.squad_id)} — ${dayShort(w.date)}`:"e.g. Platinum Mon — aerobic and sprint")}">
+    <button class="btn" id="save">Save plan</button><div class="err" id="sver"></div>`;
 }
 async function renderWrite(){
   const w=S.w;
   if(!w.squad_id && S.squads.length===1) w.squad_id=S.squads[0].id;
-  await loadSlots();
-  const ctx=w.ctx;
+  app.classList.add("wide");
+  if(!$("#wstack")) app.innerHTML=`<p class="muted">Loading the season plan…</p>`;
+  try{ await loadCtx(); }catch(e){ console.warn("season",e); }
+  const c=w.ctx;
   app.innerHTML=`
-    ${w.id?`<div class="card" style="border-color:var(--brand-2)"><b>Editing a saved plan.</b> <span class="muted">Saving updates it.</span> <button class="chip" id="newPlan" style="margin-left:6px">Start a new plan</button></div>`:""}
-    <div class="card">
-      <div class="row2"><div><label for="sq" style="margin-top:0">Squad</label><select id="sq"><option value="">Choose squad</option>${S.squads.map(s=>`<option value="${s.id}" ${s.id===w.squad_id?"selected":""}>${esc(s.name)}</option>`).join("")}</select></div>
-      <div><label for="dt" style="margin-top:0">Date</label><input id="dt" type="date" value="${w.date}"></div></div>
-      ${w.slots.length>1?`<label>Session</label><div class="chips" id="slots">${w.slots.map(s=>`<button class="chip ${s.id===w.slot?"on":""}" data-id="${s.id}">${s.start}${s.end?"–"+s.end:""}</button>`).join("")}<button class="chip ${!w.slot?"on":""}" data-id="">Not in Season Planner</button></div>`:""}
-      <label>Pool</label><div class="chips" id="pools">${POOLS.map(p=>`<button class="chip ${p===w.pool?"on":""}" data-p="${p}">${p}</button>`).join("")}</div>
-    </div>
-    ${ctx?`<div class="card ctx"><h3 style="margin-top:0">This week in the Season Planner</h3>
-      ${ctx.macro?`<p>${esc(ctx.macro)}${ctx.week_no?` · week ${ctx.week_no}`:""}${ctx.meso?` · meso ${esc(ctx.meso)}`:""}</p>`:""}
-      ${ctx.week_focus?`<p><b>Week focus:</b> ${esc(ctx.week_focus)}</p>`:""}
-      ${ctx.stroke_focus?`<p><b>Session focus:</b> ${esc(ctx.stroke_focus)}</p>`:""}
-      ${ctx.outline?`<p><b>Outline:</b> ${esc(ctx.outline)}</p>`:""}
-      ${ctx.planned_volume_m?`<p><b>Planned week volume:</b> ${m(ctx.planned_volume_m)}</p>`:""}</div>`
-      :(w.squad_id?`<p class="muted" style="margin:0 0 12px">No Season Planner session for this squad on this day, so the plan will be saved without a week link.</p>`:"")}
-    <div class="card"><label for="tx" style="margin-top:0">Write the session your way</label>
-      <textarea id="tx" placeholder="Warm up&#10;400 FR fins every 4th length shoulder tap&#10;4 x 50 @1:00 kick&#10;&#10;Main set x3&#10;6 x 100 @1:45 desc&#10;200 pull ez&#10;&#10;Swim down 200 choice">${esc(w.text)}</textarea>
-      <div class="draft" id="drafted"></div>
-      <button class="btn" id="go">Analyse with Claude</button><div class="err" id="er"></div></div>`;
-  if(w.id) $("#newPlan").onclick=()=>{ Object.assign(S.w,{id:null,text:""}); S.clar=[]; saveDraft(); renderWrite(); };
+    ${w.id?`<div class="card editing"><b>Editing a saved plan.</b> <span class="muted">Saving updates it.</span> <button class="chip" id="newPlan">Start a new plan</button></div>`:""}
+    <div class="stack" id="wstack">
+      <section class="card pick" aria-label="Date and squad">
+        <div class="row2"><div><label for="dt" style="margin-top:0">Date</label><input id="dt" type="date" value="${w.date}"></div>
+        <div><label for="sq" style="margin-top:0">Squad</label><select id="sq"><option value="">Choose squad</option>${S.squads.map(s=>`<option value="${s.id}" ${s.id===w.squad_id?"selected":""}>${esc(s.name)}</option>`).join("")}</select></div></div>
+        <p class="muted sm" style="margin:8px 0 0">${w.squad_id?`${esc(squadName(w.squad_id))} · ${esc(dayShort(w.date))}`:"Choose the squad"} — sets the season plan, feedback and plan below.</p>
+      </section>
+      ${layer(1,"season","Season plan",c?`${c.macro}${c.meso?` · Meso ${c.meso}`:""} · Week ${c.week_no}`:"",seasonHtml())}
+      ${layer(2,"feedback","Feedback to date",w.focus.length?`Focus: ${w.focus.map(catLabel).join(", ")}`:"",`<div id="fbx"></div>`)}
+      ${layer(3,"write","Write plan","",writeHtml())}
+    </div>`;
+  if(w.id) $("#newPlan").onclick=()=>{ Object.assign(S.w,{id:null,text:"",title:"",touched:false}); resetAnalysis(); saveDraft(); renderWrite(); };
+  app.querySelectorAll(".layer h2 button").forEach(b=>b.onclick=()=>{
+    const k=b.dataset.l; S.layers[k]=!S.layers[k]; store(LAYERS,S.layers);
+    b.setAttribute("aria-expanded",S.layers[k]); b.querySelector(".lc").textContent=S.layers[k]?"▾":"▸";
+    b.closest(".layer").querySelector(".lb").classList.toggle("shut",!S.layers[k]);
+  });
   $("#sq").onchange=e=>{w.squad_id=e.target.value;w.slot=null;saveDraft();renderWrite();};
   $("#dt").onchange=e=>{w.date=e.target.value||todayISO();w.slot=null;saveDraft();renderWrite();};
-  app.querySelectorAll("#slots .chip").forEach(c=>c.onclick=()=>{w.slot=c.dataset.id||null;saveDraft();renderWrite();});
-  app.querySelectorAll("#pools .chip").forEach(c=>c.onclick=()=>{w.pool=c.dataset.p;app.querySelectorAll("#pools .chip").forEach(x=>x.classList.toggle("on",x===c));saveDraft();});
-  let t; $("#tx").oninput=e=>{w.text=e.target.value;clearTimeout(t);t=setTimeout(saveDraft,500);};
+  app.querySelectorAll("#slots .chip").forEach(x=>x.onclick=()=>{w.slot=x.dataset.id;saveDraft();renderWrite();});
+  $("#po").onchange=e=>{w.pool=e.target.value;saveDraft();};
+  $("#pr").onchange=e=>{w.primary=e.target.value;w.touched=true;saveDraft();};
+  app.querySelectorAll("#focus .chip").forEach(x=>x.onclick=()=>{
+    const k=x.dataset.c; w.touched=true; w.focus=FOCUS.filter(f=>f===k?!w.focus.includes(k):w.focus.includes(f));
+    x.classList.toggle("on",w.focus.includes(k)); x.setAttribute("aria-pressed",w.focus.includes(k));
+    $("#LN2").textContent=w.focus.length?`Focus: ${w.focus.map(catLabel).join(", ")}`:""; S.fb.cat=""; renderFb(); saveDraft();
+  });
+  let t; $("#tx").oninput=e=>{w.text=e.target.value;clearTimeout(t);t=setTimeout(saveDraft,500);markStale();};
+  $("#ti").oninput=e=>{w.title=e.target.value;clearTimeout(t);t=setTimeout(saveDraft,500);};
   $("#go").onclick=()=>analyse($("#go"),$("#er"),"Analyse with Claude");
+  $("#go2").onclick=()=>analyse($("#go2"),$("#er"),"Analyse with Claude");
+  $("#save").onclick=savePlan;
+  setHeaderHeight(); markStale(); renderResult(); loadFb();
+}
+function setHeaderHeight(){ document.documentElement.style.setProperty("--hh",(document.querySelector("header.top")?.offsetHeight||56)+"px"); }
+window.addEventListener("resize",setHeaderHeight);
+function resetAnalysis(){ S.result=null; S.analysedText=null; S.okFlags={}; S.clar=[]; S.clarDirty=false; }
+function markStale(){
+  const n=$("#LN3"); if(n) n.textContent=changed()?(S.w.text.trim()?"Not analysed yet":""):"Analysed ✓";
+  const st=$("#stale"); if(st) st.classList.toggle("hide",!(S.result&&changed()));
 }
 async function analyse(go,er,label){
   const w=S.w;
   if(!w.squad_id){er.textContent="Choose a squad first.";return;}
   if(w.text.trim().length<5){er.textContent="Write the session first.";return;}
   er.textContent=""; go.disabled=true; go.innerHTML=`<span class="spin"></span>Claude is reading your plan…`;
-  const ctx=w.ctx||{};
+  const c=w.ctx||{};
+  const chosen=[w.focus.length?`coach's chosen focus: ${w.focus.join(", ")}`:"",w.primary?`primary training focus: ${w.primary}`:""].filter(Boolean).join("; ");
+  const sent=w.text;
   const {data,error}=await sb.functions.invoke("analyse-session-plan",{body:{
-    text:w.text, club_id:S.club.id, squad_name:squadName(w.squad_id), date:w.date, pool_size:w.pool,
-    context:{meso:ctx.meso,week_focus:ctx.week_focus,stroke_focus:ctx.stroke_focus,outline:ctx.outline},
-    clarifications:S.clar.map(c=>({term:c.term,meaning:c.meaning,drill_id:c.drill_id||null}))}});
+    text:sent, club_id:S.club.id, squad_name:squadName(w.squad_id), date:w.date, pool_size:w.pool,
+    context:w.ctx?{meso:[c.macro,c.meso?`meso ${c.meso}`:"",`week ${c.week_no}`].filter(Boolean).join(", "),week_focus:[c.qes,chosen].filter(Boolean).join("; ")||undefined,stroke_focus:c.stroke_focus||undefined,outline:c.outline||undefined}:(chosen?{week_focus:chosen}:{}),
+    clarifications:S.clar.map(x=>({term:x.term,meaning:x.meaning,drill_id:x.drill_id||null}))}});
   go.disabled=false; go.textContent=label;
-  if(error){
-    let msg=error.message; try{const j=await error.context.json(); if(j.error) msg=j.error;}catch{}
+  if(error||!data?.plan){
+    let msg=error?.message||data?.error||"Claude didn't return a plan. Try again."; try{const j=await error.context.json(); if(j.error) msg=j.error;}catch{}
     er.textContent=msg; return;
   }
-  S.result=data; S.okFlags={}; S.clarDirty=false;
-  renderPreview();
+  S.result=data; S.analysedText=sent; S.okFlags={}; S.clarDirty=false;
+  if(!w.title.trim()&&data.plan.title){ w.title=data.plan.title; const ti=$("#ti"); if(ti) ti.value=w.title; }
+  if(!w.primary&&PRIMARY.includes(data.plan.training_zone)){ w.primary=data.plan.training_zone; const pr=$("#pr"); if(pr) pr.value=w.primary; }
+  saveDraft(); markStale(); renderResult();
+  $("#res")?.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
-/* ---------- preview ---------- */
+/* ---------- analysis (inside Write plan, under the text) ---------- */
 function setLine(s){
   const bits=[]; if(s.reps&&s.distance_m) bits.push(`${s.reps} × ${s.distance_m}`); else if(s.distance_m) bits.push(`${s.distance_m}`);
   return bits.join(" ");
@@ -296,39 +479,76 @@ function breakdown(obj){
   const e=Object.entries(obj||{}).filter(([k,v])=>v).sort((a,b)=>b[1]-a[1]);
   return e.length?e.map(([k,v])=>`<span class="tag">${esc(k)} ${m(v)}</span>`).join(""):`<span class="muted">—</span>`;
 }
-function renderPreview(){
+function renderResult(){
+  const box=$("#res"); if(!box) return;
+  if(!S.result){ box.innerHTML=""; return; }
   const r=S.result, p=r.plan, t=r.totals, flags=p.flags||[];
   const open=()=>flags.filter((f,i)=>!S.okFlags[i]).length;
-  app.innerHTML=`
-    <div class="card"><label for="ti" style="margin-top:0">Title</label><input id="ti" value="${esc(p.title||"")}">
-      <div class="row2"><div><label for="fo">Focus</label><input id="fo" value="${esc(p.focus||"")}"></div>
-      <div><label for="zo">Training zone</label><select id="zo">${["A1-3","Threshold","Sprint","Race pace","Technique","Recovery","Mixed"].map(z=>`<option ${z===p.training_zone?"selected":""}>${z}</option>`).join("")}</select></div></div>
-      ${p.main_set?`<p class="muted" style="margin:10px 0 0">Main set: ${esc(p.main_set)}</p>`:""}</div>
-    <div class="card"><div class="stats"><div><b>${m(t.total_m)}</b>Total</div><div><b>${(p.stroke_skills||[]).join(" ")||"—"}</b>Strokes/skills</div><div><b id="fl">${open()}</b>To check</div></div>
-      <h3>By stroke</h3>${breakdown(t.by_stroke)}<h3>By type</h3>${breakdown(t.by_type)}<h3>By effort</h3>${breakdown(t.by_zone)}</div>
-    ${S.clar.length?`<div class="card"><h3 style="margin-top:0">Your explanations used</h3>${S.clar.map(c=>`<span class="tag"><b>${esc(c.term)}</b> = ${esc(c.meaning||"")}${c.drill_id?` (${esc(drillLabel(c.drill_id))})`:""}</span>`).join("")}</div>`:""}
-    ${flags.length?`<div class="card"><h3 style="margin-top:0">Please check</h3>
-      <p class="muted" style="font-size:14px;margin-top:0">Tap <b>Explain</b> on anything Claude didn't understand. Tell it what it means, then re-analyse.</p>
-      ${flags.map((f,i)=>`<div class="flag wrap" data-i="${i}"><div><b>${esc(f.term||f.text)}</b>${f.term&&f.text&&f.text!==f.term?`<br><span class="muted" style="font-size:14px">in “${esc(f.text)}”</span>`:""}<br>${esc(f.reason)}</div>
-        <div class="acts"><button class="ex">Explain</button><button class="lr">Looks right</button></div><div class="explain hide"></div></div>`).join("")}
-      <p class="muted" style="font-size:14px">To change a set yourself, go back, edit your text and analyse again.</p></div>`:""}
-    <div class="card"><h3 style="margin-top:0">How it reads</h3>${planHtml(layoutPlan(S.w.text,(p.blocks||[]).filter(b=>b.type==="heading").map(b=>b.text),totalsFromBlocks(p.blocks),(p.blocks||[]).filter(b=>b.type==="note").map(b=>b.text)))}</div>
+  box.innerHTML=`<div class="result">
+    <p class="warnbox ${changed()?"":"hide"}" id="stale">The text has changed since the last analysis — analyse again before saving.</p>
+    <div class="stats"><div><b>${m(t.total_m)}</b>Total</div><div><b>${esc((p.stroke_skills||[]).join(" ")||"—")}</b>Strokes/skills</div><div><b id="fl">${open()}</b>To check</div></div>
+    ${p.focus?`<p class="sm" style="margin:10px 0 0"><b>Claude read the focus as:</b> ${esc(p.focus)}${p.main_set?` · <b>Main set:</b> ${esc(p.main_set)}`:""}</p>`:""}
+    <h3>By stroke</h3>${breakdown(t.by_stroke)}<h3>By type</h3>${breakdown(t.by_type)}<h3>By effort</h3>${breakdown(t.by_zone)}
+    ${S.clar.length?`<h3>Your explanations used</h3>${S.clar.map(c=>`<span class="tag"><b>${esc(c.term)}</b> = ${esc(c.meaning||"")}${c.drill_id?` (${esc(drillLabel(c.drill_id))})`:""}</span>`).join("")}`:""}
+    ${flags.length?`<h3>Please check</h3>
+      <p class="muted sm" style="margin-top:0">Tap <b>Explain</b> on anything Claude didn't understand. Tell it what it means, then re-analyse.</p>
+      ${flags.map((f,i)=>`<div class="flag wrap ${S.okFlags[i]?"ok":""}" data-i="${i}"><div><b>${esc(f.term||f.text)}</b>${f.term&&f.text&&f.text!==f.term?`<br><span class="muted sm">in “${esc(f.text)}”</span>`:""}<br>${esc(f.reason)}</div>
+        <div class="acts"><button class="ex">Explain</button><button class="lr">Looks right</button></div><div class="explain hide"></div></div>`).join("")}`:""}
+    <div id="rerunAt"></div>
+    <details class="more"><summary>How it reads<span class="muted">your text, laid out</span></summary><div class="in">${planHtml(layoutPlan(S.analysedText,(p.blocks||[]).filter(b=>b.type==="heading").map(b=>b.text),totalsFromBlocks(p.blocks),(p.blocks||[]).filter(b=>b.type==="note").map(b=>b.text)))}</div></details>
     <details class="more"><summary>Set by set<span class="muted">what Claude logged</span></summary><div class="in">${setsTable(p.blocks)}</div></details>
-    <div class="btnrow"><button class="btn secondary" id="back">Edit text</button><button class="btn" id="save">Save plan</button></div>
-    <div class="err" id="er"></div>`;
-  app.querySelectorAll(".flag").forEach(el=>{
+  </div>`;
+  box.querySelectorAll(".flag").forEach(el=>{
     const i=+el.dataset.i;
     el.querySelector(".lr").onclick=()=>{S.okFlags[i]=!S.okFlags[i];el.classList.toggle("ok",!!S.okFlags[i]);$("#fl").textContent=open();};
     el.querySelector(".ex").onclick=()=>openExplain(el,flags[i],i,()=>{$("#fl").textContent=open();});
   });
   if(S.clarDirty) showRerun();
-  $("#back").onclick=renderWrite;
-  $("#save").onclick=async()=>{
-    if(open() && !confirm(`${open()} item${open()===1?"":"s"} still to check. Save anyway? They'll be kept with the plan.`)) return;
-    p.title=$("#ti").value.trim()||p.title; p.focus=$("#fo").value.trim(); p.training_zone=$("#zo").value;
-    await savePlan();
-  };
-  window.scrollTo(0,0);
+}
+
+/* ---------- feedback to date (latest entry of each feedback string up to the date) ---------- */
+function latestFb(rows,emb){ const seen=new Set(), out=[]; for(const r of rows){ if(seen.has(r.thread_id)) continue; seen.add(r.thread_id); out.push(r);} return out.filter(r=>emb||r.status!=="Embedded"); }
+async function loadFb(){
+  const w=S.w, F=S.fb, key=`${w.squad_id}|${w.date}|${F.embedded}`;
+  if(!w.squad_id){ F.key=""; F.sw=F.sq=null; renderFb(); return; }
+  if(F.key===key&&F.sw){ renderFb(); return; }
+  F.key=key; F.sw=F.sq=null; F.err=""; renderFb();
+  try{
+    const sw=await sb.from("swimmers").select("id, full_name").eq("squad_id",w.squad_id).eq("active",true);
+    if(sw.error) throw sw.error;
+    const names=new Map((sw.data||[]).map(s=>[s.id,s.full_name]));
+    const [a,b]=await Promise.all([
+      names.size?sb.from("swimmer_feedback").select("thread_id, swimmer_id, category, criterion, status, observation, remedial_action, note, session_date, created_at")
+        .in("swimmer_id",[...names.keys()]).lte("session_date",w.date).order("session_date",{ascending:false}).order("created_at",{ascending:false}).limit(2000):Promise.resolve({data:[]}),
+      sb.from("squad_feedback").select("thread_id, category, criterion, status, observation, remedial_action, note, session_date, created_at, drills_library(drill_name)")
+        .eq("squad_id",w.squad_id).eq("is_active",true).lte("session_date",w.date).order("session_date",{ascending:false}).order("created_at",{ascending:false}).limit(500)]);
+    if(a.error) throw a.error; if(b.error) throw b.error;
+    if(F.key!==key) return;
+    F.sw=latestFb(a.data||[],F.embedded).map(r=>({...r,who:names.get(r.swimmer_id)||"Swimmer"})).sort((x,y)=>x.who.localeCompare(y.who)||y.session_date.localeCompare(x.session_date));
+    F.sq=latestFb(b.data||[],F.embedded).map(r=>({...r,who:"Squad",drill_name:r.drills_library?.drill_name||null}));
+  }catch(e){ F.err=e.message||String(e); F.sw=F.sq=[]; }
+  renderFb();
+}
+function renderFb(){
+  const box=$("#fbx"); if(!box) return;
+  const w=S.w, F=S.fb;
+  if(!w.squad_id){ box.innerHTML=`<p class="muted">Choose a squad to see its feedback.</p>`; return; }
+  if(!F.sw){ box.innerHTML=`<p class="muted">Loading feedback…</p>`; return; }
+  const counts=new Map(); for(const r of F.sw) counts.set(r.category,(counts.get(r.category)||0)+1);
+  const shown=F.cat||w.focus.find(c=>counts.get(c))||"";
+  const cats=[...FOCUS,...[...counts.keys()].filter(c=>!FOCUS.includes(c))];
+  const list=(rows,squad)=>rows.length?`<ul class="fbl">${rows.map(r=>`<li><div class="fbt"><b>${esc(squad?catLabel(r.category):r.who)}</b>${!squad&&!shown?`<span class="tag">${esc(catLabel(r.category))}</span>`:""}${r.status?`<span class="tag st">${esc(r.status)}</span>`:""}<span class="muted sm" style="margin-left:auto">${ddmm(r.session_date)}</span></div>
+    ${r.criterion?`<p class="sm"><b>${esc(r.criterion)}</b></p>`:""}${(r.observation||r.note)?`<p class="sm">${esc(r.observation||r.note)}</p>`:""}${r.remedial_action?`<p class="sm muted">→ ${esc(r.remedial_action)}</p>`:""}${r.drill_name?`<p class="sm"><span class="tag">${esc(r.drill_name)}</span></p>`:""}</li>`).join("")}</ul>`:"";
+  const swRows=F.sw.filter(r=>!shown||r.category===shown);
+  box.innerHTML=`${F.err?`<p class="err">Couldn't load all the feedback: ${esc(F.err)}</p>`:""}
+    <div class="fbhead"><div class="seg"><button type="button" class="${F.tab==="swimmers"?"on":""}" data-t="swimmers">Swimmers (${F.sw.length})</button><button type="button" class="${F.tab==="squad"?"on":""}" data-t="squad">Squad (${F.sq.length})</button></div>
+      <label class="chk" style="margin:0"><input type="checkbox" id="emb" ${F.embedded?"checked":""}> Include embedded</label></div>
+    ${F.tab==="swimmers"?`<div class="chips sm" id="fcats"><button type="button" class="chip ${!shown?"on":""}" data-c="">All</button>${cats.map(c=>`<button type="button" class="chip ${shown===c?"on":""} ${w.focus.includes(c)?"fx":""}" data-c="${esc(c)}" ${counts.get(c)?"":"disabled"}>${esc(catLabel(c))} <span class="n">${counts.get(c)||0}</span></button>`).join("")}</div>
+      ${list(swRows,false)||`<p class="muted">No current feedback${shown?` for ${esc(catLabel(shown))}`:""}.</p>`}`
+      :(list(F.sq,true)||`<p class="muted">No current squad feedback.</p>`)}`;
+  box.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{F.tab=b.dataset.t;renderFb();});
+  box.querySelectorAll("#fcats .chip").forEach(b=>b.onclick=()=>{F.cat=b.dataset.c===shown?"":b.dataset.c; if(!b.dataset.c) F.cat=""; renderFb();});
+  $("#emb").onchange=e=>{F.embedded=e.target.checked;loadFb();};
 }
 
 /* ---------- save ---------- */
@@ -357,30 +577,51 @@ function toSetRows(planId, blocks){
   }
   return rows;
 }
+/* Write a row, leaving out any column this database doesn't have yet (created_by, focus_categories). */
+async function writePlan(id,row){
+  for(let i=0;i<3;i++){
+    for(const k of Object.keys(S.cols)) if(!S.cols[k]) delete row[k];
+    const res=id?await sb.from("session_plans").update(row).eq("id",id).select("id").single()
+                :await sb.from("session_plans").insert(row).select("id").single();
+    const miss=res.error&&Object.keys(S.cols).find(k=>S.cols[k]&&(res.error.message||"").includes(k));
+    if(!miss) return res;
+    S.cols[miss]=false;
+  }
+}
 async function savePlan(){
-  const w=S.w, r=S.result, p=r.plan, t=r.totals, ctx=w.ctx||{}, er=$("#er"), btn=$("#save");
-  btn.disabled=true; btn.textContent="Saving…"; er.textContent="";
+  const w=S.w, er=$("#sver"), btn=$("#save");
+  er.textContent="";
+  if(!w.squad_id){er.textContent="Choose the squad this plan is for.";return;}
+  if(!S.result){er.textContent="Analyse the session before saving, so its distances and sets are recorded.";return;}
+  if(changed()){er.textContent="The text has changed since the last analysis — analyse again before saving.";return;}
+  const r=S.result, p=r.plan, t=r.totals, c=w.ctx||{};
+  const openN=(p.flags||[]).filter((f,i)=>!S.okFlags[i]).length;
+  if(openN && !confirm(`${openN} item${openN===1?"":"s"} still to check. Save anyway? They'll be kept with the plan.`)) return;
+  btn.disabled=true; btn.textContent="Saving…";
   const flags=(p.flags||[]).map((f,i)=>({...f,checked:!!S.okFlags[i]}));
-  for(const c of S.clar) flags.push({term:c.term,text:c.term,reason:`Explained by coach: ${c.meaning||""}${c.drill_id?" ("+drillLabel(c.drill_id)+")":""}`,checked:true,explained:true});
-  const row={ title:p.title, content:toContent(p.blocks), total_distance_m:t.total_m||null, squad_id:w.squad_id, club_id:S.club.id,
-    intended_date:w.date, pool_size:w.pool, training_zone:p.training_zone, stroke_skills:p.stroke_skills||[],
-    micro_id:ctx.micro_id||null, micro_session_id:ctx.id||null, macro:ctx.macro||null, meso:ctx.meso!=null?String(ctx.meso):null,
-    coach:coachName(), source:"freetext", raw_text:w.text, parsed_at:new Date().toISOString(), parser_version:r.parser_version,
+  for(const x of S.clar) flags.push({term:x.term,text:x.term,reason:`Explained by coach: ${x.meaning||""}${x.drill_id?" ("+drillLabel(x.drill_id)+")":""}`,checked:true,explained:true});
+  const title=w.title.trim()||p.title||`${squadName(w.squad_id)} — ${dayShort(w.date)}`;
+  const row={ title, content:toContent(p.blocks), total_distance_m:t.total_m||null, squad_id:w.squad_id, club_id:S.club.id,
+    intended_date:w.date, pool_size:w.pool, training_zone:w.primary||p.training_zone||null,
+    stroke_skills:w.focus.length?[...new Set(w.focus.map(x=>CAT_SKILL[x]).filter(Boolean))]:(p.stroke_skills||[]), focus_categories:w.focus,
+    micro_id:c.micro_id||null, micro_session_id:c.id||null, macro:c.macro||null, meso:c.meso!=null?String(c.meso):null,
+    source:"freetext", raw_text:w.text, parsed_at:new Date().toISOString(), parser_version:r.parser_version,
     session_focus:p.focus, main_set:p.main_set||null, distance_by_stroke:t.by_stroke, distance_by_zone:t.by_zone, distance_by_type:t.by_type,
     flags, updated_at:new Date().toISOString() };
-  let id=w.id, res;
-  if(id) res=await sb.from("session_plans").update(row).eq("id",id).select("id").single();
-  else res=await sb.from("session_plans").insert(row).select("id").single();
+  // The author is whoever first saved it: set on a new plan only, never changed by an edit.
+  if(!w.id) Object.assign(row,{coach:coachName(),created_by:S.user.id});
+  const res=await writePlan(w.id,row);
   if(res.error){ er.textContent=res.error.message; btn.disabled=false; btn.textContent="Save plan"; return; }
-  id=res.data.id;
+  const id=res.data.id;
   const del=await sb.from("session_plan_sets").delete().eq("session_plan_id",id);
   const ins=del.error?del:await sb.from("session_plan_sets").insert(toSetRows(id,p.blocks));
   const link=await sb.rpc("link_attendance_to_plan",{p_plan:id});
   const linked=link.data||0;
-  Object.assign(S.w,{id:null,text:""}); S.clar=[]; S.clarDirty=false; saveDraft();
-  app.innerHTML=`<div class="card"><h2>Plan saved</h2><p><b>${esc(p.title)}</b><br>${esc(squadName(w.squad_id))} · ${esc(niceDate(w.date))} · ${m(t.total_m)}</p>
+  Object.assign(S.w,{id:null,text:"",title:"",touched:false}); resetAnalysis(); saveDraft();
+  app.classList.remove("wide");
+  app.innerHTML=`<div class="card"><h2>Plan saved</h2><p><b>${esc(title)}</b><br>${esc(squadName(w.squad_id))} · ${esc(niceDate(w.date))} · ${m(t.total_m)}</p>
     ${ins.error?`<p class="err">The plan saved, but the set-by-set rows didn't: ${esc(ins.error.message)}. Open it from the archive and save again.</p>`:""}
-    ${ctx.id?`<p class="muted">Linked to the Season Planner session.</p>`:""}
+    ${c.id?`<p class="muted">Linked to the Season Planner session.</p>`:""}
     ${linked?`<p class="muted">${linked} attendance mark${linked===1?"":"s"} for this session now credit this plan's distance.</p>`:""}
     <button class="btn" id="another">Write another</button><button class="btn secondary" id="toArch">Open archive</button></div>`;
   $("#another").onclick=()=>showTab("write"); $("#toArch").onclick=()=>{S.archive.squad=w.squad_id;S.archive.month=monthKey(w.date);showTab("archive");};
@@ -428,8 +669,8 @@ function showRerun(){
   if($("#rerun")) return;
   const b=document.createElement("button"); b.id="rerun"; b.className="btn rerun"; b.textContent="Re-analyse with your explanations";
   const er=document.createElement("div"); er.className="err";
-  const anchor=$("#back")?.parentElement; if(!anchor) return;
-  anchor.parentElement.insertBefore(b,anchor); anchor.parentElement.insertBefore(er,anchor);
+  const at=$("#rerunAt"); if(!at) return;
+  at.append(b,er);
   b.onclick=()=>analyse(b,er,"Re-analyse with your explanations");
 }
 
@@ -606,29 +847,47 @@ async function sharePlanPdf(p, items, btn){
 }
 
 /* ---------- archive ---------- */
+const ARCH_COLS="id, title, intended_date, squad_id, session_focus, training_zone, total_distance_m, source, coach";
 async function loadArchive(){
   app.innerHTML=`<p class="muted">Loading plans…</p>`;
-  const {data,error}=await sb.from("session_plans").select("id, title, intended_date, squad_id, session_focus, training_zone, total_distance_m, source")
+  const q=cols=>sb.from("session_plans").select(cols)
     .or(`club_id.eq.${S.club.id}`+(S.squads.length?`,squad_id.in.(${S.squads.map(s=>s.id).join(",")})`:"")).not("intended_date","is",null).order("intended_date",{ascending:false}).limit(1000);
-  if(error){app.innerHTML=`<p class="err">${esc(error.message)}</p>`;return;}
-  S.archive.plans=data||[]; renderArchive();
+  let res=S.cols.created_by?await q(ARCH_COLS+", created_by"):{error:{message:"created_by"}};
+  if(res.error&&/created_by/.test(res.error.message||"")){ S.cols.created_by=false; res=await q(ARCH_COLS); }
+  if(res.error){app.innerHTML=`<p class="err">${esc(res.error.message)}</p>`;return;}
+  S.archive.plans=res.data||[]; renderArchive();
+}
+/* Each plan's author: the coach user who wrote it (or, for older plans, the name it was saved with). */
+const authorKey=p=>p.created_by||(p.coach?"name:"+p.coach.trim().toLowerCase():"");
+function authors(plans){
+  const map=new Map(); // key -> latest name used
+  for(const p of plans){ const k=authorKey(p); if(k&&!map.has(k)) map.set(k,(p.coach||"").trim()||"Unknown coach"); }
+  const me=S.user?.id;
+  return [...map].map(([key,name])=>({key,name,me:key===me})).sort((a,b)=>(b.me-a.me)||a.name.localeCompare(b.name));
 }
 function renderArchive(){
-  const A=S.archive, inSquad=A.plans.filter(p=>!A.squad||p.squad_id===A.squad);
+  const A=S.archive, au=authors(A.plans);
+  if(A.author && !au.some(a=>a.key===A.author)) A.author="";
+  const byAuthor=A.plans.filter(p=>!A.author||authorKey(p)===A.author);
+  const inSquad=byAuthor.filter(p=>!A.squad||p.squad_id===A.squad);
   const months=[...new Set(inSquad.map(p=>monthKey(p.intended_date)))].sort().reverse();
   if(A.month && !months.includes(A.month)) A.month="";
   const list=inSquad.filter(p=>!A.month||monthKey(p.intended_date)===A.month);
-  const squadsWithPlans=S.squads.filter(s=>A.plans.some(p=>p.squad_id===s.id));
+  const squadsWithPlans=S.squads.filter(s=>byAuthor.some(p=>p.squad_id===s.id));
+  const keep=()=>store(ARCH,{squad:A.squad,month:A.month,author:A.author});
   app.innerHTML=`
-    <div class="card"><div class="row2">
+    <div class="card"><div class="row3">
       <div><label for="as" style="margin-top:0">Squad</label><select id="as"><option value="">All squads</option>${squadsWithPlans.map(s=>`<option value="${s.id}" ${s.id===A.squad?"selected":""}>${esc(s.name)}</option>`).join("")}</select></div>
       <div><label for="am" style="margin-top:0">Month</label><select id="am"><option value="">All months</option>${months.map(k=>`<option value="${k}" ${k===A.month?"selected":""}>${monthName(k)}</option>`).join("")}</select></div>
+      <div><label for="aa" style="margin-top:0">Author</label><select id="aa"><option value="">All coaches</option>${au.map(a=>`<option value="${esc(a.key)}" ${a.key===A.author?"selected":""}>${esc(a.name)}${a.me?" (me)":""}</option>`).join("")}</select></div>
     </div></div>
     <p class="muted" style="margin:0 0 10px">${list.length} plan${list.length===1?"":"s"}</p>
     ${list.map(p=>`<button class="item" data-id="${p.id}"><div class="t">${esc(p.title||"Untitled")}</div>
-      <div class="m">${esc(niceDate(p.intended_date))} · ${esc(squadName(p.squad_id)||"No squad")}${p.session_focus?` · ${esc(p.session_focus)}`:p.training_zone?` · ${esc(p.training_zone)}`:""} · ${m(p.total_distance_m)}</div></button>`).join("")||`<div class="card muted">No plans for this choice yet.</div>`}`;
-  $("#as").onchange=e=>{A.squad=e.target.value;store(ARCH,{squad:A.squad,month:A.month});renderArchive();};
-  $("#am").onchange=e=>{A.month=e.target.value;store(ARCH,{squad:A.squad,month:A.month});renderArchive();};
+      <div class="m">${esc(niceDate(p.intended_date))} · ${esc(squadName(p.squad_id)||"No squad")}${p.session_focus?` · ${esc(p.session_focus)}`:p.training_zone?` · ${esc(p.training_zone)}`:""} · ${m(p.total_distance_m)}</div>
+      <div class="m by">✍️ ${esc(p.coach||"Unknown coach")}</div></button>`).join("")||`<div class="card muted">No plans for this choice yet.</div>`}`;
+  $("#as").onchange=e=>{A.squad=e.target.value;keep();renderArchive();};
+  $("#am").onchange=e=>{A.month=e.target.value;keep();renderArchive();};
+  $("#aa").onchange=e=>{A.author=e.target.value;keep();renderArchive();};
   app.querySelectorAll(".item").forEach(b=>b.onclick=()=>openPlan(b.dataset.id));
 }
 function contentToText(content){
@@ -660,7 +919,7 @@ async function openPlan(id){
   app.innerHTML=`
     <div class="topbar"><button class="chip" id="bk">‹ Archive</button><button class="pdfbtn" id="pdf">PDF</button></div>
     <div class="card"><h2 style="margin-bottom:4px">${esc(p.title||"Untitled")}</h2>
-      <p class="muted" style="margin:0">${esc(squadName(p.squad_id))} · ${esc(niceDate(p.intended_date))}${p.pool_size?` · ${esc(p.pool_size)}`:""}${p.coach?` · ${esc(p.coach)}`:""}</p>
+      <p class="muted" style="margin:0">${esc(squadName(p.squad_id))} · ${esc(niceDate(p.intended_date))}${p.pool_size?` · ${esc(p.pool_size)}`:""}</p>${p.coach?`<p class="muted sm" style="margin:4px 0 0">✍️ Written by <b>${esc(p.coach)}</b></p>`:""}
       <div class="sumrow"><span class="tag"><b>${m(p.total_distance_m)}</b></span>${focus?`<span class="tag">${esc(focus)}</span>`:""}${(p.stroke_skills||[]).length?`<span class="tag">${esc(p.stroke_skills.join(" "))}</span>`:""}</div></div>
     <div class="card">${items.length?planHtml(items):`<p class="muted" style="margin:0">No plan text saved.</p>`}</div>
     <details class="more"><summary>Analysis<span class="muted">${flags.length?`${flags.length} checked · `:""}${(sets||[]).length} set${(sets||[]).length===1?"":"s"}</span></summary><div class="in">
@@ -674,8 +933,9 @@ async function openPlan(id){
   $("#pdf").onclick=e=>sharePlanPdf(p,items,e.currentTarget);
   const loadInto=(keepId)=>{
     Object.assign(S.w,{ id:keepId?p.id:null, squad_id:p.squad_id||"", date:keepId?p.intended_date:todayISO(), pool:p.pool_size||"25m",
-      slot:keepId?p.micro_session_id:null, text });
-    saveDraft(); showTab("write");
+      slot:keepId?p.micro_session_id:null, text, title:keepId?(p.title||""):"",
+      focus:(p.focus_categories||[]).filter(c=>FOCUS.includes(c)), primary:PRIMARY.includes(p.training_zone)?p.training_zone:"", touched:true });
+    resetAnalysis(); S.layers.write=true; store(LAYERS,S.layers); saveDraft(); showTab("write");
   };
   $("#edit").onclick=()=>loadInto(true); $("#copy").onclick=()=>loadInto(false);
   window.scrollTo(0,0);
