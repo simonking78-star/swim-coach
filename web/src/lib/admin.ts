@@ -22,6 +22,23 @@ export async function renameSquad(id: string, name: string) {
   forgetSquadIds();
 }
 
+/** Removes a squad that nobody is in and that nothing refers to (plans, timetables, history). */
+export async function deleteSquad(id: string) {
+  // Squad feedback and the monthly squad review figures would be deleted along with the squad,
+  // so a squad with any of that history is never removed.
+  const kept = ["squad_feedback", "squad_month_snapshots", "squad_drill_weeks"];
+  for (const t of kept) {
+    const { count, error } = await sb.from(t as never).select("squad_id", { count: "exact", head: true }).eq("squad_id", id);
+    if (error) throw new Error("Remove failed — " + error.message);
+    if (count) throw new Error("That squad has feedback or monthly review history, so it can't be removed. Rename it instead, for example \"Old – Silver\".");
+  }
+  const { error } = await sb.from("squads").delete().eq("id", id);
+  if (error) throw new Error(error.code === "23503" || /foreign key/i.test(error.message)
+    ? "That squad still has history (past members, timetables, plans or season plans), so it can't be removed. Rename it instead, for example \"Old – Silver\"."
+    : "Remove failed — " + error.message);
+  forgetSquadIds();
+}
+
 export interface PickSwimmer { id: string; full_name: string; squad: string | null; squad_id: string | null; club: string; }
 export async function loadActiveSwimmers(club: string): Promise<PickSwimmer[]> {
   const { data, error } = await sb.from("swimmers").select(`id, full_name, squad_id, club_id, ${SWIMMER_SQUAD}`).eq("active", true).eq("club_id", clubIdOf(club)).order("full_name");
@@ -31,26 +48,50 @@ export async function loadActiveSwimmers(club: string): Promise<PickSwimmer[]> {
 }
 
 export const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-export interface MemberDraft { full_name: string; dob: string; seId: string; squadId: string; joined: string; parentName: string; parentPhone: string; parentEmail: string; }
+export interface MemberDraft {
+  full_name: string; dob: string; seId: string; squadId: string; joined: string;
+  /** "existing" links to an account already in Membership; "new" creates one. */
+  accountMode: "existing" | "new"; accountId: string;
+  parentFirst: string; parentLast: string; parentPhone: string; parentEmail: string; relationship: string;
+}
 export function validateMember(m: MemberDraft): string | null {
   if (!m.full_name.trim()) return "Enter the swimmer's full name.";
   if (!m.dob) return "Enter the date of birth.";
   if (!m.squadId) return "Choose a squad.";
   if (!m.joined) return "Set the date joined club.";
+  if (m.accountMode === "existing") { if (!m.accountId) return "Choose the parent's account, or switch to New account."; return null; }
+  if (!m.parentFirst.trim() || !m.parentLast.trim()) return "Enter the parent or guardian's first and last name.";
+  if (!m.parentPhone.trim() && !m.parentEmail.trim()) return "Add a phone number or email for the parent.";
   if (m.parentEmail.trim() && !validEmail(m.parentEmail.trim())) return "That email address doesn't look right.";
   return null;
 }
-/** Inserts the swimmer (a trigger fills the squad name) and opens a squad membership from today. */
+
+/** Adds a swimmer linked to a Membership account (existing, or created here with its first guardian),
+ *  and opens their first squad membership from the date they joined. Parent details live on the account only. */
 export async function addMember(club: string, m: MemberDraft): Promise<string> {
+  let accountId = m.accountMode === "existing" ? m.accountId : null;
+  if (!accountId) {
+    const t = (v: string) => v.trim() || null;
+    const { data: acc, error: ae } = await sb.from("member_accounts" as never).insert({
+      club_id: clubIdOf(club), first_name: m.parentFirst.trim(), last_name: m.parentLast.trim(),
+      email: t(m.parentEmail), phone_mobile: t(m.parentPhone), status: "live", applied_on: m.joined, joined_on: m.joined
+    } as never).select("id").single();
+    if (ae) throw ae;
+    accountId = (acc as unknown as { id: string }).id;
+    const { error: ge } = await sb.from("member_guardians" as never).insert({
+      account_id: accountId, club_id: clubIdOf(club), full_name: `${m.parentFirst.trim()} ${m.parentLast.trim()}`,
+      relationship: t(m.relationship), phone: t(m.parentPhone), email: t(m.parentEmail), is_primary: true
+    } as never);
+    if (ge) throw ge;
+  }
   const { data, error } = await sb.from("swimmers").insert({
     full_name: m.full_name.trim(), date_of_birth: m.dob, squad_id: m.squadId, ...clubCols(club), swim_england_id: m.seId.trim() || null,
-    joined_club_on: m.joined, parent_name: m.parentName.trim() || null, parent_phone: m.parentPhone.trim() || null,
-    parent_email: m.parentEmail.trim() || null, active: true
+    joined_club_on: m.joined, account_id: accountId, active: true
   } as never).select("id").single();
   if (error) throw error;
   const id = (data as { id: string }).id;
-  const { error: me } = await sb.from("squad_memberships").insert({ swimmer_id: id, squad_id: m.squadId, joined_squad_on: todayLocal().date } as never);
-  if (me) console.error(me);
+  const { error: me } = await sb.from("squad_memberships").insert({ swimmer_id: id, squad_id: m.squadId, joined_squad_on: m.joined } as never);
+  if (me) throw new Error("The swimmer was added, but their squad history couldn't be started — use Move a swimmer's squad to set it. (" + me.message + ")");
   return id;
 }
 
@@ -75,15 +116,21 @@ export async function moveToClub(swimmerId: string, club: string, squadId: strin
   if (error) throw error;
 }
 
-export interface SwimmerDetail { full_name: string; date_of_birth: string | null; swim_england_id: string | null; squad: string | null; joined_club_on: string | null; parent_name: string | null; parent_phone: string | null; parent_email: string | null; since: string | null; }
+export interface SwimmerDetail { full_name: string; date_of_birth: string | null; swim_england_id: string | null; squad: string | null; joined_club_on: string | null; parent_name: string | null; parent_phone: string | null; parent_email: string | null; since: string | null; from_account: boolean; }
 export async function loadSwimmerDetail(id: string): Promise<SwimmerDetail> {
   const [s, m] = await Promise.all([
-    sb.from("swimmers").select(`full_name, date_of_birth, swim_england_id, joined_club_on, parent_name, parent_phone, parent_email, ${SWIMMER_SQUAD}`).eq("id", id).single(),
+    sb.from("swimmers").select(`full_name, date_of_birth, swim_england_id, joined_club_on, parent_name, parent_phone, parent_email, acct:member_accounts(first_name, last_name, title, phone_mobile, phone_other, email), ${SWIMMER_SQUAD}`).eq("id", id).single(),
     sb.from("squad_memberships").select("joined_squad_on").eq("swimmer_id", id).is("ended_on", null).order("joined_squad_on", { ascending: false }).limit(1)
   ]);
   if (s.error) throw s.error;
-  const [d] = flatSquad([s.data as unknown as Omit<SwimmerDetail, "since" | "squad"> & { sq: { name: string } | null }]);
-  return { ...d, since: ((m.data ?? []) as { joined_squad_on: string }[])[0]?.joined_squad_on ?? null };
+  type Acct = { first_name: string; last_name: string; title: string | null; phone_mobile: string | null; phone_other: string | null; email: string | null } | null;
+  const [d] = flatSquad([s.data as unknown as Omit<SwimmerDetail, "since" | "squad" | "from_account"> & { sq: { name: string } | null; acct: Acct }]);
+  const { acct, ...rest } = d as typeof d & { acct: Acct };
+  const since = ((m.data ?? []) as { joined_squad_on: string }[])[0]?.joined_squad_on ?? null;
+  // The Membership account is the master record; the old parent columns are only a fallback.
+  if (acct) return { ...rest, since, from_account: true, parent_name: [acct.title, acct.first_name, acct.last_name].filter(Boolean).join(" "),
+    parent_phone: acct.phone_mobile || acct.phone_other, parent_email: acct.email };
+  return { ...rest, since, from_account: false };
 }
 export function timeIn(since: string | null, today = todayLocal().date): string {
   if (!since) return "";
@@ -280,4 +327,30 @@ export async function saveTask(id: string, t: DevTask) {
 export async function setTaskStatus(id: string, status: string) {
   const { error } = await sb.from("app_dev_tasks").update({ status } as never).eq("id", id);
   if (error) throw error;
+}
+
+// ---- Data protection (A-034 / A-035): club admin RPCs ----
+type Rpc = (f: string, a: object) => ReturnType<typeof sb.rpc>;
+const rpc = (f: string, a: object) => (sb.rpc as unknown as Rpc)(f, a);
+
+/** Everything the app holds on one swimmer, for a subject access request. */
+export async function dsarExport(swimmerId: string): Promise<Record<string, unknown>> {
+  const { data, error } = await rpc("dsar_export", { p_swimmer: swimmerId });
+  if (error) throw error;
+  return data as Record<string, unknown>;
+}
+export interface EraseResult { done: boolean; counts: Record<string, number>; free_text_to_review: { table: string; id: string; dated: string | null; matched: string }[]; note: string | null; account_has_other_swimmers: boolean; }
+/** Anonymise-then-delete. confirmName must be the swimmer's real full name. */
+export async function eraseSwimmer(swimmerId: string, reason: string, confirmName: string, requestedOn: string | null): Promise<EraseResult> {
+  const { data, error } = await rpc("erase_swimmer", { p_swimmer: swimmerId, p_reason: reason.trim() || null, p_confirm_name: confirmName, p_requested_on: requestedOn || null });
+  if (error) throw error;
+  return data as unknown as EraseResult;
+}
+export interface RetentionDue { checked_at: string; medical_to_delete: number; swimmers_to_erase: number; deactivated_without_date: number; fees_to_delete: number; parent_accounts_to_delete: number; other_club_swimmers_no_swim_3y: number | null; app_accounts_without_role_1y: number | null; }
+export interface RetentionRun { dry_run: boolean; due?: RetentionDue; due_before?: RetentionDue; medical_rows_deleted?: number; swimmers_erased?: number; fees_deleted?: number; parent_accounts_deleted?: number; }
+/** Dry run by default: counts only, nothing changes. */
+export async function runRetention(club: string, dryRun: boolean): Promise<RetentionRun> {
+  const { data, error } = await rpc("apply_retention", { p_club: clubIdOf(club), p_dry_run: dryRun });
+  if (error) throw error;
+  return data as unknown as RetentionRun;
 }

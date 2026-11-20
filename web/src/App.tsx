@@ -55,6 +55,7 @@ const AddMember = lazy(() => import("./pages/admin/Admin").then(x => ({ default:
 const MoveSquad = lazy(() => import("./pages/admin/Admin").then(x => ({ default: x.MoveSquad })));
 const MoveClub = lazy(() => import("./pages/admin/Admin").then(x => ({ default: x.MoveClub })));
 const Deactivate = lazy(() => import("./pages/admin/Admin").then(x => ({ default: x.Deactivate })));
+const DataProtection = lazy(() => import("./pages/admin/DataProtection").then(x => ({ default: x.DataProtection })));
 const wait = (el: React.ReactNode) => <Suspense fallback={<p className="dim">Loading…</p>}>{el}</Suspense>;
 
 /** Old /v2/... links (the preview address) open the same screen at the root. Netlify redirects them too,
@@ -108,6 +109,7 @@ function Gate() {
           <Route path="admin/move-club" element={wait(<MoveClub />)} />
           <Route path="admin/deactivate" element={wait(<Deactivate />)} />
           <Route path="admin/users" element={wait(<Users />)} />
+          <Route path="admin/data-protection" element={wait(<DataProtection />)} />
           <Route path="appdev" element={wait(<AppDev />)} />
           <Route path="measures" element={wait(<MeasuresHub />)} />
           <Route path="measures/library" element={wait(<Library />)} />

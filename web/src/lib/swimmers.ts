@@ -16,15 +16,22 @@ export interface RosterSwimmer {
   age: number | null;
 }
 
-const ROSTER_COLS = `id, full_name, date_of_birth, gender, swim_england_id, joined_club_on, parent_name, parent_phone, parent_email, ${SWIMMER_SQUAD}`;
-type RawRoster = Omit<RosterSwimmer, "age" | "squad"> & { sq: { name: string } | null };
+// Parent details come from the Membership account when the user can see it (the master record);
+// the old columns on the swimmer are the fallback for swimmers added before accounts existed.
+const ROSTER_COLS = `id, full_name, date_of_birth, gender, swim_england_id, joined_club_on, parent_name, parent_phone, parent_email, acct:member_accounts(first_name, last_name, title, phone_mobile, phone_other, email), ${SWIMMER_SQUAD}`;
+type Acct = { first_name: string; last_name: string; title: string | null; phone_mobile: string | null; phone_other: string | null; email: string | null } | null;
+type RawRoster = Omit<RosterSwimmer, "age" | "squad"> & { sq: { name: string } | null; acct?: Acct };
+type Flat = Omit<RawRoster, "sq"> & { squad: string | null };
+const withAccount = ({ acct, ...s }: Flat): Omit<RosterSwimmer, "age"> => acct
+  ? { ...s, parent_name: [acct.title, acct.first_name, acct.last_name].filter(Boolean).join(" "), parent_phone: acct.phone_mobile || acct.phone_other || s.parent_phone, parent_email: acct.email || s.parent_email }
+  : s;
 
 export async function loadRoster(club: string): Promise<RosterSwimmer[]> {
   const { data, error } = await sb.from("swimmers")
     .select(ROSTER_COLS)
     .eq("club_id", clubIdOf(club)).eq("active", true).order("full_name");
   if (error) throw error;
-  return flatSquad((data ?? []) as unknown as RawRoster[]).map(s => ({ ...s, age: calcAge(s.date_of_birth) }));
+  return flatSquad((data ?? []) as unknown as RawRoster[]).map(withAccount).map(s => ({ ...s, age: calcAge(s.date_of_birth) }));
 }
 
 export async function loadSwimmer(id: string): Promise<RosterSwimmer | null> {
@@ -33,7 +40,7 @@ export async function loadSwimmer(id: string): Promise<RosterSwimmer | null> {
     .eq("id", id).maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  const [s] = flatSquad([data as unknown as RawRoster]);
+  const [s] = flatSquad([data as unknown as RawRoster]).map(withAccount);
   return { ...s, age: calcAge(s.date_of_birth) };
 }
 
