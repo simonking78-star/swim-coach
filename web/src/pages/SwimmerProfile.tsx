@@ -1,4 +1,5 @@
-import { Suspense, lazy, useMemo, useState } from "react";
+import { lazyPage } from "../lib/lazyPage";
+import { Suspense, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthProvider";
@@ -14,9 +15,9 @@ import { fmtDate } from "../lib/util";
 import { fmtSessions } from "../lib/attendance";
 import { EntryBody } from "../components/feedbackParts";
 
-const EventChart = lazy(() => import("../components/EventChart"));
-const TestSetCard = lazy(() => import("../components/TestSetCard"));
-const MedicalCard = lazy(() => import("./membership/AthleteProfile").then(x => ({ default: x.MedicalCard })));
+const EventChart = lazyPage(() => import("../components/EventChart"));
+const TestSetCard = lazyPage(() => import("../components/TestSetCard"));
+const MedicalCard = lazyPage(() => import("./membership/AthleteProfile").then(x => ({ default: x.MedicalCard })));
 
 export function SwimmerProfile() {
   const { id } = useParams();

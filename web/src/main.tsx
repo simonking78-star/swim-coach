@@ -5,8 +5,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./App";
 import "./styles.css";
 import { applyDensity, readDensity } from "./lib/device";
+import { reloadForNewRelease } from "./lib/lazyPage";
 
 applyDensity(readDensity());
+
+// A screen's supporting file was replaced by a newer release while the app was open: reload once.
+window.addEventListener("vite:preloadError", e => { if (reloadForNewRelease()) e.preventDefault(); });
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } }

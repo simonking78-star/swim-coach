@@ -1,4 +1,5 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { lazyPage } from "../../lib/lazyPage";
+import { Suspense, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Modal } from "../../components/Modal";
 import { StepTabs } from "../../components/feedbackParts";
@@ -15,7 +16,7 @@ import { EventDetail, PbList } from "../SwimmerProfile";
 import { FeesEditor } from "./FeesEditor";
 import { Area, Fieldset, ProfileFooter, ReadOnly, Sel, Txt } from "./parts";
 
-const TestSetCard = lazy(() => import("../../components/TestSetCard"));
+const TestSetCard = lazyPage(() => import("../../components/TestSetCard"));
 
 type Tab = "details" | "attendance" | "pbs" | "tests";
 const blankMedical = (id: string): Medical => ({ swimmer_id: id, conditions: null, medication: null, allergies: null, other_notes: null, gp_name: null, gp_phone: null, consent_emergency_treatment: null, reviewed_on: null });
