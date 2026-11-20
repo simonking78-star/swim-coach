@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
 
   const key = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!key) return json({ error: "The Claude API key hasn't been added to Supabase yet (secret ANTHROPIC_API_KEY)." }, 503);
+  if (!key) return json({ error: "The AI API key hasn't been added to Supabase yet (secret ANTHROPIC_API_KEY)." }, 503);
 
   const auth = req.headers.get("Authorization") ?? "";
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
@@ -257,11 +257,11 @@ Deno.serve(async (req) => {
   if (!res.ok) {
     const detail = await res.text();
     console.error("Claude API error", res.status, detail.slice(0, 500));
-    return json({ error: `Claude couldn't analyse the plan (${res.status}). Try again in a moment.` }, 502);
+    return json({ error: `The AI couldn't analyse the plan (${res.status}). Try again in a moment.` }, 502);
   }
   const out = await res.json();
   const use = (out.content ?? []).find((c: any) => c.type === "tool_use");
-  if (!use) return json({ error: "Claude didn't return a plan. Try again." }, 502);
+  if (!use) return json({ error: "The AI didn't return a plan. Try again." }, 502);
   const plan = red.restore(use.input);
 
   // Keep only real ids; resolve merged terms; add drill_id (old library id) for the app's drill links.
