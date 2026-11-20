@@ -1,6 +1,6 @@
 // Keeps the app shell available poolside when the signal drops.
 // Supabase requests always go to the network; drafts are kept by the page itself.
-const CACHE = "session-planner-v5";
+const CACHE = "session-planner-v6";
 const SHELL = ["./", "index.html", "manifest.json", "icon.svg", "icon-192.png",
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
   "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"];
