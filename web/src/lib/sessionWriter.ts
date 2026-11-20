@@ -64,7 +64,7 @@ export async function analysePlan(args: {
     try { const body = await (error as { context?: Response }).context?.json(); if (body?.error) msg = body.error; } catch { /* keep message */ }
     throw new Error(msg);
   }
-  if (!data?.plan) throw new Error((data as { error?: string })?.error || "Claude didn't return a plan. Try again.");
+  if (!data?.plan) throw new Error((data as { error?: string })?.error || "The AI didn't return a plan. Try again.");
   return data as Analysis;
 }
 

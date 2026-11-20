@@ -73,7 +73,7 @@ export function VocabReview() {
       {queue.error && <p className="msg error">Couldn't load the review list. <button type="button" className="link-btn" onClick={() => queue.refetch()}>Try again</button></p>}
       {queue.data && !items.length && <p className="notice">Nothing to review. New terms from coaches will appear here.</p>}
       {unchecked > 0 && (
-        <p className="hint">{unchecked} {unchecked === 1 ? "entry hasn't" : "entries haven't"} been checked by Claude yet. <button type="button" className="link-btn" onClick={() => { requestReview(club!); setTimeout(() => queue.refetch(), 8000); }}>Check now</button></p>
+        <p className="hint">{unchecked} {unchecked === 1 ? "entry hasn't" : "entries haven't"} been checked by the AI yet. <button type="button" className="link-btn" onClick={() => { requestReview(club!); setTimeout(() => queue.refetch(), 8000); }}>Check now</button></p>
       )}
 
       {pending.length > 0 && (
@@ -86,7 +86,7 @@ export function VocabReview() {
       {merged.length > 0 && (
         <section aria-labelledby="rv-merged" className="gap-top">
           <h2 id="rv-merged" className="section-title">Merged automatically <span className="dim">({merged.length})</span></h2>
-          <p className="hint">Claude was sure these meant the same as an existing entry, so they now count as that entry. Keep the merge, or undo it.</p>
+          <p className="hint">The AI was sure these meant the same as an existing entry, so they now count as that entry. Keep the merge, or undo it.</p>
           {merged.map(i => (
             <section key={i.id} className="card review-card">
               <h3 className="card-title">{i.term} <span className="dim">→ merged into</span> {i.merged_into_term ?? "an existing entry"}</h3>
@@ -123,10 +123,10 @@ function PendingCard({ item: i, club, busy, run }: {
       </div>
       <p className="dim small">Added {fmtDate(i.created_at.slice(0, 10))}</p>
       {v ? <p><span className={"chip " + v.cls}>{v.label}</span>{i.match_term && <> — compared with <strong>{i.match_term}</strong>{i.match_meaning ? `: ${i.match_meaning}` : ""}</>}</p>
-         : <p className="hint">Not checked by Claude yet.</p>}
+         : <p className="hint">Not checked by the AI yet.</p>}
       {i.claude_reason && <p className="hint">{i.claude_reason}</p>}
       {!!i.suggested_targets.length && (
-        <p className="small"><span className="dim">Claude suggests it develops:</span> {i.suggested_targets.map(t => t.target + (t.weight === "secondary" ? " (also)" : "")).join(", ")}</p>
+        <p className="small"><span className="dim">AI suggests it develops:</span> {i.suggested_targets.map(t => t.target + (t.weight === "secondary" ? " (also)" : "")).join(", ")}</p>
       )}
       <label htmlFor={`rv-m-${i.id}`}>Meaning</label>
       <textarea id={`rv-m-${i.id}`} rows={2} value={meaning} onChange={e => setMeaning(e.target.value)} />
