@@ -23,32 +23,33 @@ header.top{position:sticky;top:0;z-index:20;background:linear-gradient(135deg,va
 header.top .logo{flex:none;width:34px;height:34px;border-radius:9px;display:block}
 header.top h1{font-size:1.1rem;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
 header.top h1 small{display:block;font-size:.72rem;font-weight:500;opacity:.75}
-header.top button{min-height:40px;background:rgba(255,255,255,.14);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:10px;padding:6px 12px;font:inherit;font-size:.9rem;font-weight:700;cursor:pointer}
-nav.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:var(--navy-light);padding:8px 16px 10px;border-bottom:4px solid var(--accent)}
-nav.tabs button{min-height:42px;border-radius:10px;border:1.5px solid rgba(255,255,255,.3);padding:6px;font:inherit;font-weight:700;font-size:.92rem;background:transparent;color:#fff;cursor:pointer}
+header.top button{min-height:34px;background:rgba(255,255,255,.14);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:10px;padding:4px 10px;font:inherit;font-size:.9rem;font-weight:700;cursor:pointer}
+nav.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;background:var(--navy-light);padding:8px 16px 10px;border-bottom:4px solid var(--accent)}
+nav.tabs button{min-height:36px;border-radius:10px;border:1.5px solid rgba(255,255,255,.3);padding:4px 6px;font:inherit;font-weight:700;font-size:.92rem;background:transparent;color:#fff;cursor:pointer}
 nav.tabs button.on{background:#fff;border-color:#fff;color:var(--navy)}
 main{max-width:760px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}
 .muted{color:var(--muted)}
 .sm{font-size:.88rem}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
 label{display:block;font-size:.85rem;font-weight:600;color:var(--ink);margin:12px 0 0}
-input,select,textarea{width:100%;font:inherit;font-size:16px;margin-top:6px;padding:10px 12px;min-height:44px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+input,select,textarea{width:100%;max-width:100%;min-width:0;font:inherit;font-size:16px;margin-top:4px;padding:6px 10px;min-height:40px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+input[type=date],input[type=time],input[type=month],input[type=week],input[type=datetime-local]{-webkit-appearance:none;appearance:none;display:block;line-height:1.2}input::-webkit-date-and-time-value{text-align:left;margin:0}input::-webkit-datetime-edit{padding:0}select{padding-right:28px;text-overflow:ellipsis}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
 textarea{font-family:var(--mono);font-size:.95rem;line-height:1.55;min-height:46vh;resize:vertical;tab-size:2}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:1px solid var(--navy);border-radius:10px;padding:10px 18px;font:inherit;font-size:1rem;font-weight:700;background:var(--navy);color:#fff;margin-top:14px;cursor:pointer}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:40px;border:1px solid var(--navy);border-radius:10px;padding:6px 14px;font:inherit;font-size:1rem;font-weight:700;background:var(--navy);color:#fff;margin-top:10px;cursor:pointer}
 .btn.secondary{background:#fff;color:var(--navy);border-color:var(--line)}
 .btn:disabled{opacity:.6;cursor:default}
-.btnrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btnrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
 .err{color:var(--red);margin-top:10px;font-size:.9rem}
 .err:empty{display:none}
 h2{font-size:1.15rem;margin:0 0 10px;color:var(--navy)}
 h3{font-size:.75rem;margin:16px 0 6px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.chip{min-height:38px;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
+.chip{min-height:32px;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:4px 10px;font:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
 .chip.on{border-color:var(--navy);background:var(--navy);color:#fff}
-.chips.sm .chip{min-height:34px;padding:4px 10px;font-size:.8rem}
+.chips.sm .chip{min-height:30px;padding:3px 9px;font-size:.8rem}
 .chip:disabled{opacity:.45;cursor:default}
 .chip.fx:not(.on){border-color:var(--accent)}
 .chip .n{font-weight:600;opacity:.75}
@@ -64,7 +65,7 @@ h3{font-size:.75rem;margin:16px 0 6px;text-transform:uppercase;letter-spacing:.0
 .tag.st-not-discussed{color:var(--muted)}
 .flag{background:#fff7e6;border:1px solid #f3d9a4;border-radius:10px;padding:8px 10px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;font-size:.92rem}
 .flag b{color:var(--flag)}
-.flag button{margin-left:auto;min-height:36px;border:1.5px solid var(--line);background:#fff;color:var(--navy);border-radius:10px;padding:4px 10px;font:inherit;font-weight:700;font-size:.85rem;white-space:nowrap;cursor:pointer}
+.flag button{margin-left:auto;min-height:32px;border:1.5px solid var(--line);background:#fff;color:var(--navy);border-radius:10px;padding:4px 10px;font:inherit;font-weight:700;font-size:.85rem;white-space:nowrap;cursor:pointer}
 .flag.ok{opacity:.55}
 .flag.done{background:#eef7ef;border-color:#cfe6d1}
 .flag.done b{color:var(--green)}
@@ -115,7 +116,7 @@ h3{font-size:.75rem;margin:16px 0 6px;text-transform:uppercase;letter-spacing:.0
 .sumrow{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
 .topbar{display:flex;gap:10px;align-items:center;margin-bottom:12px}
 .topbar .chip{background:transparent;border:0;color:var(--navy-light);padding:6px 0}
-.pdfbtn{margin-left:auto;min-height:40px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:6px 14px;font:inherit;font-weight:700;cursor:pointer}
+.pdfbtn{margin-left:auto;min-height:34px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:4px 12px;font:inherit;font-weight:700;cursor:pointer}
 .pdfbtn:disabled{opacity:.55}
 .planh{font-size:1.2rem;color:var(--navy);margin:0 0 4px;overflow-wrap:anywhere}
 details.more{background:#fff;border:1px solid var(--line);border-radius:12px;margin:10px 0 0}
@@ -131,7 +132,7 @@ main.wide{max-width:760px}
 .pick{position:sticky;top:var(--hh,56px);z-index:15;padding-top:10px;padding-bottom:10px}
 .pick p{margin:6px 0 0}
 .editing{border-color:var(--accent);background:#f5fbfe}
-.editing .chip{margin-left:6px;min-height:34px}
+.editing .chip{margin-left:6px;min-height:30px}
 .stack{display:grid;gap:14px}
 .layer{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
 .layer>h2{margin:0;font-size:1rem}
@@ -162,8 +163,8 @@ main.wide{max-width:760px}
 .result{margin:12px 0 4px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
 .result h3:first-of-type{margin-top:12px}
 .fbhead{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
-.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;min-width:220px}
-.seg button{min-height:44px;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+.seg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;flex:1;min-width:220px}
+.seg button{min-height:36px;padding:4px 8px;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
 .seg button.on{background:var(--navy);border-color:var(--navy);color:#fff}
 .fbl{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
 .fbl li{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
@@ -408,11 +409,11 @@ function writeHtml(){
       <div><label for="pr" style="margin-top:0">Primary training focus</label><select id="pr"><option value="">— choose —</option>${PRIMARY.map(z=>`<option ${z===w.primary?"selected":""}>${z}</option>`).join("")}</select></div></div>
     <label>Session focus · Stroke/Skills</label>
     <div class="chips sm" id="focus">${FOCUS.map(c=>`<button type="button" class="chip ${w.focus.includes(c)?"on":""}" aria-pressed="${w.focus.includes(c)}" data-c="${esc(c)}">${esc(catLabel(c))}</button>`).join("")}</div>
-    <button class="btn" id="go">Analyse with Claude</button>
+    <button class="btn" id="go">Analyse with AI</button>
     <label for="tx">Write the session your way</label>
     <textarea id="tx" spellcheck="false" placeholder="Warm up&#10;400 FR fins every 4th length shoulder tap&#10;4 x 50 @1:00 kick&#10;&#10;Main set x3&#10;6 x 100 @1:45 desc&#10;200 pull ez&#10;&#10;Swim down 200 choice">${esc(w.text)}</textarea>
     <div class="draft" id="drafted"></div>
-    <button class="btn" id="go2">Analyse with Claude</button><div class="err" id="er"></div>
+    <button class="btn" id="go2">Analyse with AI</button><div class="err" id="er"></div>
     <div id="res"></div>
     <label for="ti">Plan title</label><input id="ti" value="${esc(w.title)}" placeholder="${esc(w.squad_id?`${squadName(w.squad_id)} — ${dayShort(w.date)}`:"e.g. Platinum Mon — aerobic and sprint")}">
     <button class="btn" id="save">Save plan</button><div class="err" id="sver"></div>`;
@@ -454,8 +455,8 @@ async function renderWrite(){
   });
   let t; $("#tx").oninput=e=>{w.text=e.target.value;clearTimeout(t);t=setTimeout(saveDraft,500);markStale();};
   $("#ti").oninput=e=>{w.title=e.target.value;clearTimeout(t);t=setTimeout(saveDraft,500);};
-  $("#go").onclick=()=>analyse($("#go"),$("#er"),"Analyse with Claude");
-  $("#go2").onclick=()=>analyse($("#go2"),$("#er"),"Analyse with Claude");
+  $("#go").onclick=()=>analyse($("#go"),$("#er"),"Analyse with AI");
+  $("#go2").onclick=()=>analyse($("#go2"),$("#er"),"Analyse with AI");
   $("#save").onclick=savePlan;
   setHeaderHeight(); markStale(); renderResult(); loadFb();
 }
@@ -470,7 +471,7 @@ async function analyse(go,er,label){
   const w=S.w;
   if(!w.squad_id){er.textContent="Choose a squad first.";return;}
   if(w.text.trim().length<5){er.textContent="Write the session first.";return;}
-  er.textContent=""; go.disabled=true; go.innerHTML=`<span class="spin"></span>Claude is reading your plan…`;
+  er.textContent=""; go.disabled=true; go.innerHTML=`<span class="spin"></span>AI is reading your plan…`;
   const c=w.ctx||{};
   const chosen=[w.focus.length?`coach's chosen focus: ${w.focus.join(", ")}`:"",w.primary?`primary training focus: ${w.primary}`:""].filter(Boolean).join("; ");
   const sent=w.text;
@@ -480,7 +481,7 @@ async function analyse(go,er,label){
     clarifications:S.clar.map(x=>({term:x.term,meaning:x.meaning,drill_id:x.drill_id||null}))}});
   go.disabled=false; go.textContent=label;
   if(error||!data?.plan){
-    let msg=error?.message||data?.error||"Claude didn't return a plan. Try again."; try{const j=await error.context.json(); if(j.error) msg=j.error;}catch{}
+    let msg=error?.message||data?.error||"The AI didn't return a plan. Try again."; try{const j=await error.context.json(); if(j.error) msg=j.error;}catch{}
     er.textContent=msg; return;
   }
   S.result=data; S.analysedText=sent; S.okFlags={}; S.clarDirty=false;
@@ -518,16 +519,16 @@ function renderResult(){
   box.innerHTML=`<div class="result">
     <p class="warnbox ${changed()?"":"hide"}" id="stale">The text has changed since the last analysis — analyse again before saving.</p>
     <div class="stats"><div><b>${m(t.total_m)}</b>Total</div><div><b>${esc((p.stroke_skills||[]).join(" ")||"—")}</b>Strokes/skills</div><div><b id="fl">${open()}</b>To check</div></div>
-    ${p.focus?`<p class="sm" style="margin:10px 0 0"><b>Claude read the focus as:</b> ${esc(p.focus)}${p.main_set?` · <b>Main set:</b> ${esc(p.main_set)}`:""}</p>`:""}
+    ${p.focus?`<p class="sm" style="margin:10px 0 0"><b>AI read the focus as:</b> ${esc(p.focus)}${p.main_set?` · <b>Main set:</b> ${esc(p.main_set)}`:""}</p>`:""}
     <h3>By stroke</h3>${breakdown(t.by_stroke)}<h3>By type</h3>${breakdown(t.by_type)}<h3>By effort</h3>${breakdown(t.by_zone)}
     ${S.clar.length?`<h3>Your explanations used</h3>${S.clar.map(c=>`<span class="tag"><b>${esc(c.term)}</b> = ${esc(c.meaning||"")}${c.drill_id?` (${esc(drillLabel(c.drill_id))})`:""}</span>`).join("")}`:""}
     ${flags.length?`<h3>Please check</h3>
-      <p class="muted sm" style="margin-top:0">Tap <b>Explain</b> on anything Claude didn't understand. Tell it what it means, then re-analyse.</p>
+      <p class="muted sm" style="margin-top:0">Tap <b>Explain</b> on anything the AI didn't understand. Tell it what it means, then re-analyse.</p>
       ${flags.map((f,i)=>`<div class="flag wrap ${S.okFlags[i]?"ok":""}" data-i="${i}"><div><b>${esc(f.term||f.text)}</b>${f.term&&f.text&&f.text!==f.term?`<br><span class="muted sm">in “${esc(f.text)}”</span>`:""}<br>${esc(f.reason)}</div>
         <div class="acts"><button class="ex">Explain</button><button class="lr">Looks right</button></div><div class="explain hide"></div></div>`).join("")}`:""}
     <div id="rerunAt"></div>
     <details class="more"><summary>How it reads<span class="muted">your text, laid out</span></summary><div class="in">${planHtml(layoutPlan(S.analysedText,(p.blocks||[]).filter(b=>b.type==="heading").map(b=>b.text),totalsFromBlocks(p.blocks),(p.blocks||[]).filter(b=>b.type==="note").map(b=>b.text)))}</div></details>
-    <details class="more"><summary>Set by set<span class="muted">what Claude logged</span></summary><div class="in">${setsTable(p.blocks)}</div></details>
+    <details class="more"><summary>Set by set<span class="muted">what the AI logged</span></summary><div class="in">${setsTable(p.blocks)}</div></details>
   </div>`;
   box.querySelectorAll(".flag").forEach(el=>{
     const i=+el.dataset.i;
@@ -667,11 +668,11 @@ function openExplain(el,f,i,after){
   const box=el.querySelector(".explain"); if(!box.classList.contains("hide")){box.classList.add("hide");return;}
   const term=(f.term||"").trim(), prev=S.clar.find(c=>c.term.toLowerCase()===(term||f.text).toLowerCase());
   box.classList.remove("hide");
-  box.innerHTML=`<label>${term?`What does “${esc(term)}” mean?`:"Add the detail Claude needs"}</label>
+  box.innerHTML=`<label>${term?`What does “${esc(term)}” mean?`:"Add the detail the AI needs"}</label>
     <input class="mean" placeholder="${term?"e.g. vertical catch-up drill, 25 m each arm":"e.g. 5 mins is about 250 m"}" value="${esc(prev?.meaning||"")}">
     <label>Is it a drill from the library? (optional)</label><select class="dr">${drillOptions(prev?.drill_id)}</select>
-    ${term?`<label class="chk"><input type="checkbox" class="rem" checked> Remember “${esc(term)}” for the club, so Claude knows it next time</label>`:""}
-    <button class="btn" style="margin-top:10px;padding:12px">Save explanation</button><div class="err"></div>`;
+    ${term?`<label class="chk"><input type="checkbox" class="rem" checked> Remember “${esc(term)}” for the club, so the AI knows it next time</label>`:""}
+    <button class="btn" style="margin-top:10px;padding:8px 14px">Save explanation</button><div class="err"></div>`;
   box.querySelector(".mean").focus();
   box.querySelector(".btn").onclick=async()=>{
     const meaning=box.querySelector(".mean").value.trim(), drill_id=box.querySelector(".dr").value||null, err=box.querySelector(".err");
@@ -715,7 +716,7 @@ async function loadShorthand(){
 function renderShorthand(){
   app.innerHTML=`
     <div class="card"><h2 style="margin-top:0">Club shorthand</h2>
-      <p class="muted" style="margin-top:0">Claude reads this list every time it analyses a ${esc(S.club.short_name||S.club.name)} plan. Coaches add to it by explaining terms in “Please check”, or here.</p>
+      <p class="muted" style="margin-top:0">The AI reads this list every time it analyses a ${esc(S.club.short_name||S.club.name)} plan. Coaches add to it by explaining terms in “Please check”, or here.</p>
       <div class="row2"><div><label>Shorthand</label><input id="gt" placeholder="e.g. VCUP"></div><div><label>Means</label><input id="gm" placeholder="e.g. vertical catch-up"></div></div>
       <label>Drill from the library (optional)</label><select id="gd">${drillOptions(null)}</select>
       <button class="btn" id="gadd">Add to the list</button><div class="err" id="ger"></div></div>
@@ -730,7 +731,7 @@ function renderShorthand(){
   };
   app.querySelectorAll(".del").forEach(b=>b.onclick=async()=>{
     const g=S.gloss.find(x=>x.id===b.dataset.id);
-    if(!confirm(`Remove “${g.term}” from the club shorthand? Claude will ask about it again next time.`)) return;
+    if(!confirm(`Remove “${g.term}” from the club shorthand? The AI will ask about it again next time.`)) return;
     const {error}=await sb.from("planner_glossary").delete().eq("id",g.id);
     if(error){alert(error.message);return;} loadShorthand();
   });
