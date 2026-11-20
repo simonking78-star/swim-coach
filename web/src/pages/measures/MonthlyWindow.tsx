@@ -1,4 +1,5 @@
-import { Suspense, lazy, useEffect, useMemo } from "react";
+import { lazyPage } from "../../lib/lazyPage";
+import { Suspense, useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useClub } from "../../club/ClubProvider";
@@ -10,7 +11,7 @@ import { fmtDate } from "../../lib/util";
 import { MBack, NoAccess, useMeasuresAccess } from "./Measures";
 import { StatsBack } from "../stats/StatsHub";
 
-const WindowChart = lazy(() => import("../../components/TestWindowCharts"));
+const WindowChart = lazyPage(() => import("../../components/TestWindowCharts"));
 
 // Monthly testing window: every swimmer tested on a graded repeat set in one
 // calendar month (their latest result that month), as in the RRSC Test Set
