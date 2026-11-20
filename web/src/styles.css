@@ -786,6 +786,21 @@ details.mi-outs > summary { font-size: .85rem; }
 .rename-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0; }
 .rename-list input { flex: 1 1 160px; margin: 0; min-width: 0; }
 .rename-list .full, .arch-list .full { flex-basis: 100%; margin: 0; }
+/* Rename/remove squads: name + Save on one line, count + Remove under it, the same for every row. */
+.rename-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; }
+.rename-list li input { width: 100%; }
+.rename-list .sq-count { grid-column: 1; }
+.rename-list .sq-remove { grid-column: 2; justify-self: end; white-space: nowrap; }
+.rename-list .full { grid-column: 1 / -1; }
+/* Two fields side by side, one above the other on a phone (stops dropdowns being cut off). */
+@media (max-width: 480px) { .field-pair.stack-narrow { grid-template-columns: 1fr; } }
+.radio-choice { display: grid; gap: 6px; margin: 4px 0 12px; }
+.radio-choice label { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-weight: 600; cursor: pointer; margin: 0; }
+.radio-choice label.on { border-color: var(--navy); background: #eef3fb; }
+.radio-choice input { width: auto; margin: 0; flex: 0 0 auto; }
+.dp-counts { width: 100%; }
+.dp-counts td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+
 .detail-list { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 12px 0 0; font-size: .92rem; }
 .detail-list > div { display: contents; }
 .detail-list dt { font-weight: 700; color: var(--text-dim); }

@@ -57,6 +57,7 @@ const AddMember = lazyPage(() => import("./pages/admin/Admin").then(x => ({ defa
 const MoveSquad = lazyPage(() => import("./pages/admin/Admin").then(x => ({ default: x.MoveSquad })));
 const MoveClub = lazyPage(() => import("./pages/admin/Admin").then(x => ({ default: x.MoveClub })));
 const Deactivate = lazyPage(() => import("./pages/admin/Admin").then(x => ({ default: x.Deactivate })));
+const DataProtection = lazyPage(() => import("./pages/admin/DataProtection").then(x => ({ default: x.DataProtection })));
 function PageWait({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
   return <PageErrorBoundary resetKey={pathname}><Suspense fallback={<p className="dim">Loading…</p>}>{children}</Suspense></PageErrorBoundary>;
@@ -114,6 +115,7 @@ function Gate() {
           <Route path="admin/move-club" element={wait(<MoveClub />)} />
           <Route path="admin/deactivate" element={wait(<Deactivate />)} />
           <Route path="admin/users" element={wait(<Users />)} />
+          <Route path="admin/data-protection" element={wait(<DataProtection />)} />
           <Route path="appdev" element={wait(<AppDev />)} />
           <Route path="measures" element={wait(<MeasuresHub />)} />
           <Route path="measures/library" element={wait(<Library />)} />
