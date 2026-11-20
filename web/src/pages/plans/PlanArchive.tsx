@@ -5,6 +5,7 @@ import { useClub } from "../../club/ClubProvider";
 import { ClubPicker } from "../../club/ClubPicker";
 import { canEdit, LEVEL_NOTE, sectionLevel } from "../../lib/access";
 import { authorKey, planAuthors, type Plan } from "../../lib/plans";
+import { contentToText } from "../../lib/sessionWriter";
 import { FocusTags } from "../../components/planParts";
 import { NoPlanAccess, planPdf, usePlanSquads, usePlans } from "./PlanList";
 
@@ -46,7 +47,7 @@ export function PlanArchive() {
   const t = f.q.trim().toLowerCase();
   const shown = inSquad
     .filter(p => !month || p.intended_date?.startsWith(month))
-    .filter(p => !t || [p.title, p.session_focus, p.training_zone, p.coach, squadName(p.squad_id)].some(x => (x || "").toLowerCase().includes(t)))
+    .filter(p => !t || [p.title, p.session_focus, p.training_zone, p.coach, squadName(p.squad_id), contentToText(p.content), (p.stroke_skills || []).join(" ")].some(x => (x || "").toLowerCase().includes(t)))
     .sort((a, b) => (b.intended_date || "").localeCompare(a.intended_date || "") || (a.title || "").localeCompare(b.title || ""));
   const squadsWithPlans = (squads.data ?? []).filter(s => byAuthor.some(p => p.squad_id === s.id));
 
@@ -108,7 +109,7 @@ export function PlanArchive() {
             </div>
             <div>
               <label htmlFor="pa-search">Search</label>
-              <input id="pa-search" type="search" placeholder="Title, focus or coach…" autoComplete="off" value={f.q} onChange={e => set("q", e.target.value)} />
+              <input id="pa-search" type="search" placeholder="Title, focus, coach or anything in the plan…" autoComplete="off" value={f.q} onChange={e => set("q", e.target.value)} />
             </div>
           </div>
         </div>
