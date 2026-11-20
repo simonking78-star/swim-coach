@@ -96,13 +96,32 @@ export interface Plan {
   micro_id: string | null; micro_session_id: string | null; pool_size: string | null; intended_date: string | null;
   updated_at: string | null; stroke_skills: string[] | null; training_zone: string | null; notes?: string | null;
   macro?: string | null; meso?: string | null; club?: string | null;
+  /** Author: the coach user who first saved the plan (null on older plans / before the column exists), and their name. */
+  created_by?: string | null; coach?: string | null; session_focus?: string | null; source?: string | null;
 }
-const LIST_COLS = "id, title, total_distance_m, squad_scope, squad_id, micro_id, micro_session_id, pool_size, intended_date, updated_at, content, stroke_skills, training_zone";
+const LIST_COLS = "id, title, total_distance_m, squad_scope, squad_id, micro_id, micro_session_id, pool_size, intended_date, updated_at, content, stroke_skills, training_zone, coach, session_focus, source";
+let hasAuthorCol = true;
 
 export async function loadPlans(club: string): Promise<Plan[]> {
-  const { data, error } = await sb.from("session_plans").select(LIST_COLS).eq("club_id", clubIdOf(club)).order("intended_date", { ascending: true, nullsFirst: false });
-  if (error) throw error;
-  return (data ?? []) as unknown as Plan[];
+  const q = (cols: string) => sb.from("session_plans").select(cols).eq("club_id", clubIdOf(club)).order("intended_date", { ascending: true, nullsFirst: false });
+  let res = hasAuthorCol ? await q(LIST_COLS + ", created_by") : await q(LIST_COLS);
+  // Until the session_plan_author migration is applied, plans are grouped by the saved coach name.
+  if (hasAuthorCol && res.error && /created_by/.test(res.error.message || "")) { hasAuthorCol = false; res = await q(LIST_COLS); }
+  if (res.error) throw res.error;
+  return (res.data ?? []) as unknown as Plan[];
+}
+
+/** Archive "Author" filter: the user who wrote the plan, or the saved coach name for older plans. */
+export const authorKey = (p: Pick<Plan, "created_by" | "coach">) => p.created_by || (p.coach?.trim() ? "name:" + p.coach.trim().toLowerCase() : "");
+export function planAuthors(plans: Plan[], me?: string | null): { key: string; name: string; me: boolean; count: number }[] {
+  const map = new Map<string, { name: string; count: number }>();
+  for (const p of plans) {
+    const k = authorKey(p); if (!k) continue;
+    const e = map.get(k);
+    if (e) e.count++; else map.set(k, { name: p.coach?.trim() || "Unknown coach", count: 1 });
+  }
+  return [...map].map(([key, v]) => ({ key, ...v, me: !!me && key === me }))
+    .sort((a, b) => Number(b.me) - Number(a.me) || a.name.localeCompare(b.name));
 }
 export async function loadPlan(id: string): Promise<Plan | null> {
   const { data, error } = await sb.from("session_plans").select("*").eq("id", id).maybeSingle();
