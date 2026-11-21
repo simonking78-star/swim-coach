@@ -13,7 +13,7 @@ import {
 import { useMinWidth } from "../../lib/device";
 import { fmtDdMm, logEvent, todayLocal, useCoachName } from "../../lib/util";
 import { MicroTags } from "../../components/planParts";
-import { NoPlanAccess, usePlanSquads, useSeasonCtx } from "./PlanList";
+import { NoPlanAccess, usePlanSquads, useSeasonCtx, useWritablePlanSquads, writableOptions } from "./PlanList";
 import { backLink } from "./PlanView";
 
 // Session writer (/sessions/new, /sessions/:id/edit). Free-form planning, as in the
@@ -48,6 +48,7 @@ export function SessionWriter() {
   const existing = useQuery({ queryKey: ["plan", id], enabled: !!id, queryFn: () => loadPlan(id!) });
   const planClub = id ? existing.data?.club ?? null : club;
   const squads = usePlanSquads(planClub);
+  const writable = useWritablePlanSquads(planClub);
   const season = useSeasonCtx(planClub);
 
   // A new-plan draft comes back only when it is for the same squad and date (or none was asked for).
@@ -199,7 +200,7 @@ export function SessionWriter() {
         <label htmlFor="sw-squad">Squad</label>
         <select id="sw-squad" value={squadId} onChange={e => { setSquadId(e.target.value); setSessionId(null); }}>
           <option value="">Choose a squad…</option>
-          {(squads.data ?? []).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          {writableOptions(squads.data, writable.data, squadId).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
       </div>
     </>

@@ -13,7 +13,7 @@ import type { FullDrill } from "../../lib/drills";
 import { logEvent, uuid, useCoachName } from "../../lib/util";
 import { MicroTags, SetLineInput } from "../../components/planParts";
 import { DrillPickModal, useDrills } from "../../components/drillParts";
-import { NoPlanAccess, usePlanSquads, useSeasonCtx } from "./PlanList";
+import { NoPlanAccess, usePlanSquads, useSeasonCtx, useWritablePlanSquads, writableOptions } from "./PlanList";
 import { backLink } from "./PlanView";
 
 // Session plan editor — new (/sessions/new?squad=&date=&session=) or edit (/sessions/:id/edit).
@@ -38,6 +38,7 @@ export function PlanEditor() {
   const existing = useQuery({ queryKey: ["plan", id], enabled: !!id, queryFn: () => loadPlan(id!) });
   const planClub = id ? existing.data?.club ?? null : club;
   const squads = usePlanSquads(planClub);
+  const writable = useWritablePlanSquads(planClub);
   const season = useSeasonCtx(planClub);
   const drills = useDrills(planClub);
 
@@ -168,7 +169,7 @@ export function PlanEditor() {
             <label htmlFor="pe-squad">Squad</label>
             <select id="pe-squad" value={squadId} onChange={e => { setSquadId(e.target.value); setSessionId(null); }}>
               <option value="">Choose a squad…</option>
-              {(squads.data ?? []).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              {writableOptions(squads.data, writable.data, squadId).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
           <div>

@@ -5395,6 +5395,7 @@ export type Database = {
           feature: string
         }[]
       }
+      my_plan_squads: { Args: { p_club: string }; Returns: string[] }
       reactivate_swimmer: {
         Args: { p_squad?: string; p_swimmer: string }
         Returns: Json
