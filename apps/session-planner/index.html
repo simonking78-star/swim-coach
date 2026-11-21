@@ -297,8 +297,12 @@ function renderClubs(){
 }
 async function enterClub(){
   $("#title").textContent=S.club.short_name||S.club.name;
-  const {data}=await sb.from("squads").select("id, name").eq("club_id",S.club.id).order("name");
-  S.squads=data||[];
+  const [{data},ws]=await Promise.all([
+    sb.from("squads").select("id, name").eq("club_id",S.club.id).order("name"),
+    sb.rpc("my_plan_squads",{p_club:S.club.id})]);
+  /* Only squads this person may write plans for (coaches: their own squads). */
+  const can=new Set(ws.data||[]);
+  S.squads=(data||[]).filter(s=>ws.error||can.has(s.id));
   const dr=await sb.from("drills_library").select("id, drill_name, stroke").order("drill_name").limit(600);
   S.drills=dr.data||[];
   const d=load(DRAFT)||load("planner.draft.v1"); if(d&&d.club_id===S.club.id) Object.assign(S.w,{focus:[],primary:"",title:"",touched:false},d.w,{ctx:null});

@@ -7,12 +7,27 @@ import { ClubPicker } from "../../club/ClubPicker";
 import { canEdit, LEVEL_NOTE, sectionLevel } from "../../lib/access";
 import { fmtDayLong, isoMonday, loadPlan, loadPlans, loadSeasonCtx, loadSquadsWithIds, microFor, type Plan } from "../../lib/plans";
 import { sharePlanPdf } from "../../lib/planPdf";
+import { sb } from "../../lib/supabase";
+import { clubIdOf } from "../../lib/clubs";
 import { todayLocal } from "../../lib/util";
 import { FocusTags, MicroLine } from "../../components/planParts";
 
 // Shared queries for the Session plans screens.
 export const usePlans = (club: string | null) => useQuery({ queryKey: ["plans", club], enabled: !!club, queryFn: () => loadPlans(club!) });
 export const usePlanSquads = (club: string | null) => useQuery({ queryKey: ["plan_squads", club], enabled: !!club, staleTime: 10 * 60 * 1000, queryFn: () => loadSquadsWithIds(club!) });
+/** Squads this person may write plans for at the club (public.my_plan_squads). Coaches: their own squads. */
+export const useWritablePlanSquads = (club: string | null) => useQuery({
+  queryKey: ["plan_squads_writable", club], enabled: !!club, staleTime: 5 * 60 * 1000,
+  queryFn: async () => {
+    const { data, error } = await sb.rpc("my_plan_squads", { p_club: clubIdOf(club!) });
+    if (error) throw error;
+    return new Set((data ?? []) as string[]);
+  }
+});
+/** Squad options for a plan's squad picker: writable squads, plus the plan's current squad so it still shows. */
+export function writableOptions(all: { id: string; name: string }[] | undefined, writable: Set<string> | undefined, current: string) {
+  return (all ?? []).filter(s => !writable || writable.has(s.id) || s.id === current);
+}
 export const useSeasonCtx = (club: string | null) => useQuery({ queryKey: ["season_ctx", club], enabled: !!club, staleTime: 60 * 1000, queryFn: () => loadSeasonCtx(club!) });
 
 export async function planPdf(plan: Plan, squadName: string | undefined) {
