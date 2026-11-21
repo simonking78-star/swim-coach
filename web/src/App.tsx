@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { SetPassword, SignIn } from "./auth/SignIn";
+import { AppNotIncluded } from "./auth/AppNotIncluded";
+import { COACH_TOOLS } from "./lib/apps";
 import { ClubProvider } from "./club/ClubProvider";
 import { Layout } from "./components/Layout";
 import { PageErrorBoundary } from "./components/PageErrorBoundary";
@@ -73,11 +75,13 @@ function FromV2() {
 }
 
 function Gate() {
-  const { ready, session, recovery, accessLoading } = useAuth();
+  const { ready, session, recovery, accessLoading, clubsWith, featuresError } = useAuth();
   if (!ready) return <div className="loading">Loading…</div>;
   if (session && recovery) return <SetPassword />;
   if (!session) return <SignIn />;
   if (accessLoading) return <div className="loading">Loading your access…</div>;
+  const tools = clubsWith(COACH_TOOLS);
+  if (featuresError || (tools !== "all" && tools.size === 0)) return <AppNotIncluded />;
   return (
     <ClubProvider>
       <Routes>

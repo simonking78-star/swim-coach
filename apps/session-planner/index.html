@@ -214,6 +214,7 @@ const SUPABASE_URL="https://nxlgeykipnvswyeshrbl.supabase.co";
 const SUPABASE_KEY="sb_publishable_BYuKct-F0f4H04Gl_S58uQ_gKzuW_Ff";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
 const FEATURE="session_planner"; /* public.app_features key this app is gated on */
+const COACH_TOOLS_URL="https://swimmers-gb.netlify.app/";
 const POOLS=["25m","17m","50m"];
 const DRAFT="planner.draft.v2", ARCH="planner.archive.v1", LAYERS="planner.layers.v1";
 /* Session focus = the Feedback Stroke/Skills list (as Coach Tools); primary focus = training zone. */
@@ -276,16 +277,17 @@ async function afterLogin(){
   const anyClub=(fg.data||[]).some(x=>x.all_features);
   const on=new Set((fg.data||[]).filter(x=>x.feature===FEATURE).map(x=>x.club_id));
   S.clubs=(clubs||[]).filter(c=>(all||r.some(x=>x.club_id===c.id))&&(anyClub||on.has(c.id)));
-  if(!S.clubs.length){renderNotYet();return;}
+  if(!S.clubs.length){renderNotYet((fg.data||[]).some(x=>x.feature==="coach_tools"));return;}
   S.club=S.clubs.find(c=>c.id===localStorage.getItem("planner.club"))||(S.clubs.length===1?S.clubs[0]:null);
   $("#outBtn").classList.remove("hide");
   S.club?enterClub():renderClubs();
 }
-function renderNotYet(){
+function renderNotYet(hasTools){
   $("#tabs").classList.add("hide");$("#outBtn").classList.remove("hide");$("#title").textContent="Session Planner";
   app.innerHTML=`<div class="card"><h2>Not available for your club yet</h2>
-    <p class="muted">The Session Planner is being tried out with a small group of coaches first. Your account works in Coach Tools as normal.</p>
-    <p class="muted">If you think you should have access, ask your head coach.</p></div>`;
+    <p class="muted">The Session Planner is being tried out with a small group of coaches first. </p>
+    <p class="muted">If you think you should have access, ask your head coach.</p>
+    ${hasTools?`<a class="btn" href="${COACH_TOOLS_URL}">Open Coach Tools</a>`:""}</div>`;
 }
 $("#outBtn").onclick=()=>sb.auth.signOut();
 function renderClubs(){
