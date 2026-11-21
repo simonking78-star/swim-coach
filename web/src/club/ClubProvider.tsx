@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { allowedClubs } from "../lib/access";
 import { loadClubs, rememberClubs, clubIdOf } from "../lib/clubs";
 import { useAuth } from "../auth/AuthProvider";
+import { COACH_TOOLS } from "../lib/apps";
 
 // Same localStorage key as the classic app, so both remember the same club (by name,
 // until the classic app is retired in Phase 6).
@@ -24,7 +25,8 @@ function readStored(): string | null {
 }
 
 export function ClubProvider({ children }: { children: ReactNode }) {
-  const { access, session } = useAuth();
+  const { access, session, clubsWith } = useAuth();
+  const tools = clubsWith(COACH_TOOLS);
   const [club, setClubState] = useState<string | null>(readStored);
 
   // Coaching clubs = clubs that run squads in the app. An all-clubs account (superadmin) also sees
@@ -41,14 +43,18 @@ export function ClubProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  // Feature gate: only clubs where this person has the Coach Tools app ("all" for a superadmin).
+  const toolsKey = tools === "all" ? "all" : [...tools].sort().join(",");
   const coachingClubs = useMemo(() => (q.data ?? []).filter(c => c.is_coaching).map(c => c.name), [q.data]);
   const clubs = useMemo(() => {
     if (!q.data) return [];
+    const ok = (name: string) => tools === "all" || q.data!.some(c => c.name === name && tools.has(c.id));
     const limit = allowedClubs(access);
-    if (limit) return limit.filter(n => q.data!.some(c => c.name === n)).sort();
+    if (limit) return limit.filter(n => q.data!.some(c => c.name === n)).filter(ok).sort();
     const other = allClubs ? q.data.filter(c => !c.is_coaching).map(c => c.name) : [];
-    return [...coachingClubs, ...other];
-  }, [q.data, access, allClubs, coachingClubs]);
+    return [...coachingClubs, ...other].filter(ok);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q.data, access, allClubs, coachingClubs, toolsKey]);
 
   useEffect(() => {
     if (clubs.length && (!club || !clubs.includes(club))) setClubState(clubs[0]);

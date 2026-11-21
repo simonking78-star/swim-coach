@@ -9,10 +9,17 @@ interface AuthState {
   session: Session | null;
   access: Access | null;       // null until signed in and loaded
   accessLoading: boolean;
+  /** App features per club from public.my_features(); null while loading. */
+  features: Feature[] | null;
+  featuresError: string | null;
+  /** Club ids where the caller may use this app/feature, or "all" (superadmin). */
+  clubsWith: (feature: string) => Set<string> | "all";
   recovery: boolean;           // arrived from a password-reset link
   clearRecovery: () => void;
   signOut: () => Promise<void>;
 }
+
+export interface Feature { club_id: string; feature: string; all_features: boolean; }
 
 const AuthContext = createContext<AuthState | null>(null);
 
@@ -47,11 +54,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  const featuresQ = useQuery({
+    queryKey: ["my_features", userId],
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await sb.rpc("my_features");
+      if (error) throw error;
+      return (data ?? []) as Feature[];
+    }
+  });
+  const features = userId ? featuresQ.data ?? null : null;
+
   const value: AuthState = {
     ready,
     session,
     access: userId ? accessQ.data ?? (accessQ.isError ? { roles: [] } : null) : null,
-    accessLoading: !!userId && accessQ.isLoading,
+    accessLoading: !!userId && (accessQ.isLoading || featuresQ.isLoading),
+    features,
+    featuresError: featuresQ.isError ? String((featuresQ.error as Error)?.message ?? featuresQ.error) : null,
+    clubsWith: (feature: string) => {
+      if (features?.some(f => f.all_features)) return "all";
+      return new Set((features ?? []).filter(f => f.feature === feature).map(f => f.club_id));
+    },
     recovery,
     clearRecovery: () => setRecovery(false),
     signOut: async () => { await sb.auth.signOut(); }
