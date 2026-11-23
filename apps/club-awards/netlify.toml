@@ -1,0 +1,11 @@
+# Netlify site for this app only. In the site's settings, set
+# Base directory = apps/club-awards (Netlify then reads this file).
+# Static app: no build step, publish the folder as it is.
+
+[build]
+  publish = "."
+  command = ""
+  # Skip the deploy unless something in this folder changed.
+  # (The path is relative to the base directory.) The first deploy,
+  # with no earlier one to compare against, always builds.
+  ignore = "test \"$CACHED_COMMIT_REF\" != \"$COMMIT_REF\" && git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- ."

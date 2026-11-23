@@ -22,6 +22,7 @@ export const SECTIONS: NavSection[] = [
   { key: "sessions",     label: "Session plans",    icon: "📋", blurb: "Plan and archive sessions",            section: "plans",      legacyGo: "session",      migrated: true  },
   { key: "drills",       label: "Drills & Skills",  icon: "🧩", blurb: "Drills library",                       section: "plans",      legacyGo: "drills",       migrated: true  },
   { key: "measures",     label: "Metrics & Measures", icon: "📏", blurb: "Fixed test protocols, results vs own baseline", section: "stopwatch", legacyGo: "stopwatch", migrated: true  },
+  { key: "awards",       label: "Club Awards",      icon: "🎖️", blurb: "Swim England Club Awards 1–6",         section: "awards",     legacyGo: "awards",       migrated: true  },
   { key: "statistics",   label: "Statistics",       icon: "📈", blurb: "Comparison, regression, squad review", section: "stats",      legacyGo: "mi",           migrated: true  },
   { key: "swimmers",     label: "Swimmers",         icon: "🏊", blurb: "Roster and swimmer profiles",          section: "roster",     legacyGo: "swimmer",      migrated: true  },
   { key: "stopwatch",    label: "Stopwatch",        icon: "⏱️", blurb: "Time reps and post to profiles",        section: "stopwatch",  legacyGo: "stopwatch",    migrated: true  },
@@ -34,7 +35,7 @@ export const SECTIONS: NavSection[] = [
 export const NAV_GROUPS: { label: string; keys: string[] }[] = [
   { label: "Daily",           keys: ["attendance", "feedback", "stopwatch"] },
   { label: "Planning",        keys: ["season", "timetables", "sessions", "drills", "competitions"] },
-  { label: "Swimmers & data", keys: ["swimmers", "measures", "statistics"] },
+  { label: "Swimmers & data", keys: ["swimmers", "awards", "measures", "statistics"] },
   { label: "Admin",           keys: ["membership", "admin", "appdev"] }
 ];
 

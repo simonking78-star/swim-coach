@@ -10,7 +10,7 @@ import { clubIdOf, SWIMMER_SQUAD, flatSquad } from "./clubs";
 // (a coach only their squads, a parent only their child).
 
 export interface RosterSwimmer {
-  id: string; full_name: string; squad: string | null; date_of_birth: string | null; gender: string | null;
+  id: string; full_name: string; squad: string | null; squad_id?: string | null; date_of_birth: string | null; gender: string | null;
   swim_england_id: string | null; joined_club_on: string | null;
   parent_name: string | null; parent_phone: string | null; parent_email: string | null;
   age: number | null;
@@ -18,7 +18,7 @@ export interface RosterSwimmer {
 
 // Parent details come from the Membership account when the user can see it (the master record);
 // the old columns on the swimmer are the fallback for swimmers added before accounts existed.
-const ROSTER_COLS = `id, full_name, date_of_birth, gender, swim_england_id, joined_club_on, parent_name, parent_phone, parent_email, acct:member_accounts(first_name, last_name, title, phone_mobile, phone_other, email), ${SWIMMER_SQUAD}`;
+const ROSTER_COLS = `id, full_name, squad_id, date_of_birth, gender, swim_england_id, joined_club_on, parent_name, parent_phone, parent_email, acct:member_accounts(first_name, last_name, title, phone_mobile, phone_other, email), ${SWIMMER_SQUAD}`;
 type Acct = { first_name: string; last_name: string; title: string | null; phone_mobile: string | null; phone_other: string | null; email: string | null } | null;
 type RawRoster = Omit<RosterSwimmer, "age" | "squad"> & { sq: { name: string } | null; acct?: Acct };
 type Flat = Omit<RawRoster, "sq"> & { squad: string | null };

@@ -750,6 +750,153 @@ export type Database = {
           },
         ]
       }
+      club_award_levels: {
+        Row: {
+          award: number
+          colour: string
+          icon: string
+          title: string
+        }
+        Insert: {
+          award: number
+          colour: string
+          icon?: string
+          title: string
+        }
+        Update: {
+          award?: number
+          colour?: string
+          icon?: string
+          title?: string
+        }
+        Relationships: [
+
+        ]
+      }
+      club_award_outcomes: {
+        Row: {
+          area: string
+          award: number
+          outcome: string
+          outcome_id: string
+          outcome_no: number
+        }
+        Insert: {
+          area: string
+          award: number
+          outcome: string
+          outcome_id: string
+          outcome_no: number
+        }
+        Update: {
+          area?: string
+          award?: number
+          outcome?: string
+          outcome_id?: string
+          outcome_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_award_outcomes_award_fkey"
+            columns: ["award"]
+            isOneToOne: false
+            referencedRelation: "club_award_levels"
+            referencedColumns: ["award"]
+          }
+        ]
+      }
+      swimmer_award_outcomes: {
+        Row: {
+          assessed_by: string | null
+          assessed_on: string
+          award: number
+          club_id: string
+          notes: string | null
+          outcome_id: string
+          score: number
+          swimmer_id: string
+          updated_at: string
+        }
+        Insert: {
+          assessed_by?: string | null
+          assessed_on?: string
+          award?: number
+          club_id?: string
+          notes?: string | null
+          outcome_id: string
+          score: number
+          swimmer_id: string
+          updated_at?: string
+        }
+        Update: {
+          assessed_by?: string | null
+          assessed_on?: string
+          award?: number
+          club_id?: string
+          notes?: string | null
+          outcome_id?: string
+          score?: number
+          swimmer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "swimmer_award_outcomes_outcome_id_fkey"
+            columns: ["outcome_id"]
+            isOneToOne: false
+            referencedRelation: "club_award_outcomes"
+            referencedColumns: ["outcome_id"]
+          },
+          {
+            foreignKeyName: "swimmer_award_outcomes_swimmer_id_fkey"
+            columns: ["swimmer_id"]
+            isOneToOne: false
+            referencedRelation: "swimmers"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      swimmer_club_awards: {
+        Row: {
+          achieved_on: string | null
+          activated_by: string | null
+          activated_on: string
+          award: number
+          club_id: string
+          signed_off_by: string | null
+          swimmer_id: string
+          updated_at: string
+        }
+        Insert: {
+          achieved_on?: string | null
+          activated_by?: string | null
+          activated_on?: string
+          award: number
+          club_id?: string
+          signed_off_by?: string | null
+          swimmer_id: string
+          updated_at?: string
+        }
+        Update: {
+          achieved_on?: string | null
+          activated_by?: string | null
+          activated_on?: string
+          award?: number
+          club_id?: string
+          signed_off_by?: string | null
+          swimmer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "swimmer_club_awards_swimmer_id_fkey"
+            columns: ["swimmer_id"]
+            isOneToOne: false
+            referencedRelation: "swimmers"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       club_features: {
         Row: {
           club_id: string
