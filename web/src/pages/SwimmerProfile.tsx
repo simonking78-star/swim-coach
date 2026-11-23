@@ -14,6 +14,7 @@ import { shareSwimmerPdf } from "../lib/swimmerPdf";
 import { fmtDate } from "../lib/util";
 import { fmtSessions } from "../lib/attendance";
 import { EntryBody } from "../components/feedbackParts";
+import { AwardsProfileCard, ProfileAwardTokens } from "../components/awardParts";
 
 const EventChart = lazyPage(() => import("../components/EventChart"));
 const TestSetCard = lazyPage(() => import("../components/TestSetCard"));
@@ -55,6 +56,7 @@ export function SwimmerProfile() {
           <>
             <div className="profile-head">
               <div>
+                {sectionLevel(access, "awards") !== "N" && <ProfileAwardTokens swimmerId={sw.id} />}
                 <h1 className="profile-name">{sw.full_name}</h1>
                 <p className="dim">{[sw.squad, sw.age != null ? `Age ${sw.age}` : null, sw.date_of_birth ? `Born ${sw.date_of_birth.slice(0, 4)}` : null].filter(Boolean).join(" · ")}</p>
               </div>
@@ -105,6 +107,7 @@ export function SwimmerProfile() {
               : <PbList rows={results.data ?? []} loading={results.isLoading} error={!!results.error} onOpen={setEvent} />}
           </section>
 
+          {sectionLevel(access, "awards") !== "N" && <AwardsProfileCard swimmerId={sw.id} squadId={sw.squad_id ?? null} canAssess={canEdit(sectionLevel(access, "awards"))} />}
           <Suspense fallback={<section className="card"><h2 className="card-title">Test sets</h2><p className="dim">Loading…</p></section>}><TestSetCard swimmerId={sw.id} /></Suspense>
           {sectionLevel(access, "medical") !== "N" && <Suspense fallback={null}><MedicalCard swimmerId={sw.id} /></Suspense>}
           <StopwatchCard swimmerId={sw.id} canDelete={canEdit(sectionLevel(access, "stopwatch"))} />

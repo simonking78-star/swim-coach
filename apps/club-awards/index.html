@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b2545">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Club Awards</title>
+<style>
+:root{
+  --bg:#f4f6f9; --card:#fff; --ink:#1a2332; --muted:#5b6b7f; --line:#dde3ea; --brand:#0b2545; --brand-ink:#fff;
+  --red:#c62828; --amber:#e08e00; --green:#43a047; --done:#2e7d32; --radius:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{min-height:100vh;padding-bottom:env(safe-area-inset-bottom)}
+header.top{position:sticky;top:0;z-index:20;background:var(--brand);color:var(--brand-ink);padding:calc(10px + env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;gap:10px}
+header.top h1{font-size:18px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header.top button{background:rgba(255,255,255,.18);color:inherit;border:0;border-radius:10px;padding:6px 10px;font-size:15px;cursor:pointer}
+main{max-width:760px;margin:0 auto;padding:14px}
+.muted{color:var(--muted)} .small{font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.card.framed{border-top:5px solid}
+h2{font-size:19px;margin:2px 0 10px} h3{font-size:16px;margin:0 0 6px}
+label{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
+input,select{width:100%;font-size:16px;padding:8px 10px;min-height:42px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:10px;padding:8px 14px;font:inherit;font-weight:700;background:#fff;color:var(--ink);cursor:pointer;min-height:40px}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.block{display:flex;width:100%;margin-top:10px}
+.btn.small{min-height:32px;padding:4px 10px;font-size:14px}
+.btn:disabled{opacity:.5;cursor:default}
+.err{color:var(--red);margin-top:10px;font-size:15px}
+.ok{color:var(--done);font-size:15px;margin:6px 0}
+.notice{background:#e8f4fb;border:1px solid #b9dff2;border-radius:10px;padding:10px 12px;font-size:14px;margin:0 0 12px}
+.notice.warn{background:#fdf3e1;border-color:#f2d49b}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.tile{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:14px 8px;background:#fff;border:1px solid var(--line);border-radius:14px;font:inherit;color:inherit;cursor:pointer}
+.tile.award{border:3px solid}
+.tile.empty{opacity:.5}
+.bar{height:10px;border-radius:99px;background:#e6ebf1;overflow:hidden;margin:6px 0 2px}
+.bar>span{display:block;height:100%;border-radius:99px;transition:width .3s}
+.token{display:inline-grid;place-items:center;border-radius:50%;color:#fff;font-weight:800;box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(0,0,0,.12);flex:0 0 auto;line-height:1}
+.tokens{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 6px}
+.num{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;color:#fff;font-weight:800;flex:0 0 auto}
+.row{display:flex;align-items:center;gap:10px}
+.sumrow{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}
+.sumrow:first-of-type{border-top:0}
+.grow{flex:1;min-width:0}
+.pct{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:12px 0}
+.seg button{min-height:40px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font:inherit;font-weight:700;cursor:pointer;color:var(--ink)}
+.seg button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.list{list-style:none;margin:0;padding:0}
+.list>li>button{display:flex;flex-wrap:wrap;align-items:center;gap:10px;width:100%;padding:10px 0;border:0;border-top:1px solid var(--line);background:none;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.list>li:first-child>button{border-top:0}
+.name{flex:1 1 150px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mini{flex:2 1 220px;display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.mini>span{border-radius:6px;padding:0 2px}
+.mini>span.on{outline:2px solid;outline-offset:1px}
+.mini .bar{height:8px;margin:3px 0}
+.chip{font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--bg);color:var(--muted);white-space:nowrap}
+.dot{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;border:2px solid var(--line);background:#fff;flex:0 0 auto;font-size:12px;font-weight:900;color:#fff}
+.dot.red{background:var(--red);border-color:var(--red)} .dot.amber{background:var(--amber);border-color:var(--amber)}
+.dot.green{background:var(--green);border-color:var(--green)} .dot.done{background:var(--done);border-color:var(--done)}
+.crit{list-style:none;margin:8px 0 0;padding:0}
+.crit>li{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line);font-size:15px}
+.crit>li.link{cursor:pointer}
+.area{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
+.block{border:2px solid var(--line);border-radius:12px;padding:8px 10px;margin:8px 0;background:#fff}
+.block.active{border-width:3px}
+.block>.head{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.mark{background:#fff;border:1px solid var(--line);border-left:5px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 8px}
+.mark.changed{box-shadow:0 0 0 2px #ffcf4a}
+.mark .who{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;font-size:15px}
+.scale{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.scale button{min-height:38px;border-radius:8px;border:2px solid var(--line);background:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--ink)}
+.scale button.on{color:#fff}
+.scale button.on.red{background:var(--red);border-color:var(--red)} .scale button.on.amber{background:var(--amber);border-color:var(--amber)}
+.scale button.on.green{background:var(--green);border-color:var(--green)} .scale button.on.done{background:var(--done);border-color:var(--done)}
+.savebar{position:sticky;bottom:0;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding:10px 0 calc(10px + env(safe-area-inset-bottom));background:var(--bg);z-index:5}
+.savebar .err{flex-basis:100%;margin:0}
+.tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin:0 0 8px}
+.tabs button{display:flex;flex-direction:column;align-items:center;padding:4px 2px;border:2px solid;border-radius:10px;background:#fff;font:inherit;font-weight:800;cursor:pointer;color:var(--ink)}
+.tabs button small{font-weight:600;font-size:12px}
+.tabs button.on{color:#fff}
+.key{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin:10px 0 0}
+.key span{display:inline-flex;align-items:center;gap:5px}
+.key .dot{width:14px;height:14px;font-size:9px}
+.check{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--ink);margin:6px 0 0}
+.check input{width:auto;min-height:0}
+.hide{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<header class="top">
+  <button id="backBtn" class="hide" aria-label="Back">‹ Back</button>
+  <h1 id="title">Club Awards</h1>
+  <button id="outBtn" class="hide">Sign out</button>
+</header>
+<main id="app"><p class="muted">Loading…</p></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+"use strict";
+/* Club-Awards-app — Swim England Swimming Club Awards 1-6. Spec: claude/specs/club-awards.md
+   Same Supabase project and tables as the Club Awards section of Coach Tools:
+   club_award_levels, club_award_outcomes, swimmer_club_awards, swimmer_award_outcomes.
+   Coaches mark criteria (5-point scale, 20% each); parents and swimmers see their own records, read only.
+   The database keeps the rules (RLS); this page only hides what a role can't change. */
+const SUPABASE_URL = "https://nxlgeykipnvswyeshrbl.supabase.co";
+const SUPABASE_KEY = "sb_publishable_BYuKct-F0f4H04Gl_S58uQ_gKzuW_Ff";
+const FEATURE = "club_awards";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+/* Copy of the 'awards' row of the role matrix (app_private.level). */
+const LEVEL = { superadmin:"E", club_admin:"E", head_coach:"E", coach:"SE", helper:"SR", parent:"CR", swimmer:"CR" };
+const RANK = { N:0, CR:1, SR:2, R:3, SE:4, E:5 };
+const STATUS = { none:"Not started", red:"Started (0-25%)", amber:"Developing (26-75%)", green:"Nearly there (76-99%)", done:"Complete" };
+
+const S = { user:null, roles:[], clubs:[], club:null, ref:null, squads:[], squad:null, swimmers:[], idx:null, draft:{}, stack:[] };
+const $ = s => document.querySelector(s);
+const app = $("#app");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const today = () => { const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
+const missing = e => !!e && (e.code==="42P01" || e.code==="PGRST205" || /club_award/.test(e.message||""));
+
+/* ---------- status and percentages ---------- */
+function statusOf(p){ if(p==null) return "none"; if(p>=100) return "done"; if(p>=76) return "green"; if(p>=26) return "amber"; return "red"; }
+function dot(p){ const st=statusOf(p); return `<span class="dot ${st}" title="${STATUS[st]}${p!=null?" · "+p+"%":""}">${st==="done"?"✓":""}<span class="sr">${STATUS[st]}</span></span>`; }
+function bar(level,p){ return `<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${p}" aria-label="${esc(level.title)} ${p}%"><span style="width:${p}%;background:${level.colour}"></span></div>`; }
+function token(level,size=38,title){ return `<span class="token" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.42)}px;background:${level.colour}" title="${esc(title||level.title+" achieved")}">${level.award}</span>`; }
+function key(){ return `<p class="key">${Object.keys(STATUS).map(s=>`<span><span class="dot ${s}">${s==="done"?"✓":""}</span>${STATUS[s]}</span>`).join("")}</p>`; }
+
+class Index {
+  constructor(ref, marks, acts){
+    this.ref=ref; this.m=new Map(); this.a=new Map();
+    for(const r of marks) this.m.set(r.swimmer_id+"|"+r.outcome_id, r.score);
+    for(const r of acts) this.a.set(r.swimmer_id+"|"+r.award, r);
+  }
+  score(s,o){ return this.m.has(s+"|"+o) ? this.m.get(s+"|"+o) : null; }
+  act(s,a){ return this.a.get(s+"|"+a) || null; }
+  active(s,a){ return this.a.has(s+"|"+a); }
+  achieved(s,a){ return !!this.a.get(s+"|"+a)?.achieved_on; }
+  awardPct(s,a){ const l=this.ref.by[a]||[]; if(!l.length) return 0; return Math.round(l.reduce((t,o)=>t+(this.score(s,o.outcome_id)??0)*20,0)/l.length); }
+  squadPct(ids,a){ return ids.length ? Math.round(ids.reduce((t,id)=>t+this.awardPct(id,a),0)/ids.length) : 0; }
+  critPct(ids,o){ return ids.length ? Math.round(ids.reduce((t,id)=>t+(this.score(id,o)??0)*20,0)/ids.length) : 0; }
+}
+
+/* ---------- data ---------- */
+async function loadRef(){
+  if(S.ref) return S.ref;
+  const [lv, oc] = await Promise.all([
+    sb.from("club_award_levels").select("award, title, colour, icon").order("award"),
+    sb.from("club_award_outcomes").select("outcome_id, award, outcome_no, area, outcome").order("award").order("outcome_no")
+  ]);
+  if(lv.error) throw lv.error; if(oc.error) throw oc.error;
+  const by={}; for(const o of oc.data){ (by[o.award] ||= []).push(o); }
+  return S.ref = { levels: lv.data, outcomes: oc.data, by };
+}
+async function loadIndex(ids){
+  const marks=[], acts=[];
+  for(let i=0;i<ids.length;i+=150){
+    const part=ids.slice(i,i+150);
+    const [m,a] = await Promise.all([
+      sb.from("swimmer_award_outcomes").select("swimmer_id, outcome_id, award, score").eq("club_id", S.club.id).in("swimmer_id", part),
+      sb.from("swimmer_club_awards").select("swimmer_id, award, activated_on, achieved_on").eq("club_id", S.club.id).in("swimmer_id", part)
+    ]);
+    if(m.error) throw m.error; if(a.error) throw a.error;
+    marks.push(...m.data); acts.push(...a.data);
+  }
+  return S.idx = new Index(S.ref, marks, acts);
+}
+async function loadSwimmers(squadId){
+  let q = sb.from("swimmers").select("id, full_name, squad_id").eq("club_id", S.club.id).eq("active", true).order("full_name");
+  if(squadId) q = q.eq("squad_id", squadId);
+  const { data, error } = await q; if(error) throw error; return data;
+}
+function level(){ let b="N"; for(const r of S.roles){ if(r.club_id && r.club_id!==S.club?.id) continue; const lv=LEVEL[r.role]||"N"; if(RANK[lv]>RANK[b]) b=lv; } return b; }
+const canEdit = () => ["E","SE"].includes(level());
+const isCoach = () => RANK[level()] >= RANK.SR;
+
+/* ---------- navigation: a simple stack, so Save returns to the previous screen ---------- */
+function header(t){ $("#title").textContent=t; $("#backBtn").classList.toggle("hide", S.stack.length<2); $("#outBtn").classList.toggle("hide", !S.user); }
+function go(view, args={}){ S.stack.push({view,args}); scrollTo(0,0); run(); }
+function back(){ if(S.stack.length>1){ S.stack.pop(); scrollTo(0,0); run(); } }
+function reset(view,args={}){ S.stack=[{view,args}]; run(); }
+$("#backBtn").onclick = () => { if(Object.keys(S.draft).length && !confirm("Leave without saving your marks?")) return; S.draft={}; back(); };
+$("#outBtn").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+async function run(){
+  const top=S.stack[S.stack.length-1]; S.draft={};
+  try{ await VIEWS[top.view](top.args); }
+  catch(e){ app.innerHTML = missing(e)
+    ? `<div class="notice warn">Club Awards need the latest database update (migration <code>club_awards</code>).</div>`
+    : `<div class="card"><p class="err">Something went wrong: ${esc(e.message||e)}</p><button class="btn" onclick="location.reload()">Reload</button></div>`; }
+}
+
+/* ---------- sign in ---------- */
+async function boot(){
+  const { data } = await sb.auth.getSession();
+  if(data.session){ S.user=data.session.user; await afterLogin(); } else renderLogin();
+  sb.auth.onAuthStateChange(ev => { if(ev==="SIGNED_OUT"){ S.user=null; renderLogin(); } });
+}
+function renderLogin(msg){
+  S.stack=[]; header("Club Awards");
+  app.innerHTML = `<div class="card"><h2>Sign in</h2>
+    <p class="muted">Use the same email and password as Coach Tools. Parents see their own swimmer's awards.</p>
+    <label for="em">Email</label><input id="em" type="email" autocomplete="username" inputmode="email">
+    <label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password">
+    <button class="btn primary block" id="go">Sign in</button>
+    <button class="btn block" id="link">Email me a sign-in link</button>
+    <div class="err" id="er">${esc(msg||"")}</div></div>`;
+  $("#go").onclick = async () => {
+    $("#er").textContent=""; $("#go").disabled=true;
+    const { data, error } = await sb.auth.signInWithPassword({ email:$("#em").value.trim(), password:$("#pw").value });
+    $("#go").disabled=false; if(error){ $("#er").textContent=error.message; return; }
+    S.user=data.user; afterLogin();
+  };
+  $("#link").onclick = async () => {
+    const email=$("#em").value.trim(); if(!email){ $("#er").textContent="Enter your email first."; return; }
+    const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: location.origin+location.pathname, shouldCreateUser:false } });
+    $("#er").textContent = error ? error.message : "Check your email for the sign-in link.";
+  };
+}
+async function afterLogin(){
+  app.innerHTML=`<p class="muted">Loading…</p>`; header("Club Awards");
+  const { data: roles, error } = await sb.from("user_roles").select("role, club_id").eq("user_id", S.user.id);
+  if(error){ renderLogin(error.message); return; }
+  S.roles = roles||[];
+  /* Feature gate: only clubs with the Club Awards app switched on for this person. */
+  const fg = await sb.rpc("my_features");
+  const ok = new Set((fg.data||[]).filter(x=>x.feature===FEATURE || x.all_features).map(x=>x.club_id));
+  const { data: clubs } = await sb.from("clubs").select("id, name, short_name").order("name");
+  const all = S.roles.some(r=>!r.club_id);
+  S.clubs = (clubs||[]).filter(c => ok.has(c.id) && (all || S.roles.some(r=>r.club_id===c.id)));
+  if(!S.clubs.length){
+    app.innerHTML=`<div class="card"><h2>Not available yet</h2><p class="muted">The Club Awards app isn't switched on for your club, or your account has no role there yet. Ask your club admin.</p><button class="btn" id="so">Sign out</button></div>`;
+    $("#so").onclick=()=>sb.auth.signOut(); $("#outBtn").classList.remove("hide"); return;
+  }
+  const saved = localStorage.getItem("clubAwards.club");
+  S.club = S.clubs.find(c=>c.id===saved) || (S.clubs.length===1 ? S.clubs[0] : null);
+  S.club ? reset("home") : reset("clubs");
+}
+
+/* ---------- views ---------- */
+const VIEWS = {
+  clubs(){
+    header("Choose club");
+    app.innerHTML=`<div class="grid">${S.clubs.map(c=>`<button class="tile" data-id="${c.id}"><strong>${esc(c.short_name||c.name)}</strong></button>`).join("")}</div>`;
+    app.querySelectorAll(".tile").forEach(b=>b.onclick=()=>{ S.club=S.clubs.find(c=>c.id===b.dataset.id); localStorage.setItem("clubAwards.club", S.club.id); reset("home"); });
+  },
+
+  async home(){
+    header(S.club.short_name||S.club.name);
+    await loadRef();
+    const clubSwitch = S.clubs.length>1 ? `<button class="btn small" id="clubBtn">Change club</button>` : "";
+    if(!isCoach()){
+      /* Parent / swimmer: their own swimmer(s), read only. */
+      const sw = await loadSwimmers(); await loadIndex(sw.map(s=>s.id));
+      if(sw.length===1){ S.stack=[]; go("swimmer",{ id:sw[0].id, name:sw[0].full_name, readOnly:true }); return; }
+      app.innerHTML = `<div class="row" style="justify-content:space-between"><h2>My swimmers</h2>${clubSwitch}</div>
+        ${sw.length? "" : `<p class="notice">No swimmers are linked to your account at this club yet.</p>`}
+        <div class="card"><ul class="list">${sw.map(s=>swimmerRow(s)).join("")}</ul></div>`;
+      bindSwimmerRows(true);
+    } else {
+      S.squads = (await sb.from("squads").select("id, name").eq("club_id", S.club.id).order("name")).data||[];
+      const all = await loadSwimmers();
+      const n = id => all.filter(s=>s.squad_id===id).length;
+      app.innerHTML = `<div class="row" style="justify-content:space-between"><h2>Choose a squad to assess</h2>${clubSwitch}</div>
+        ${canEdit()? "" : `<p class="notice">Read only for your role.</p>`}
+        <div class="grid">${S.squads.map(q=>`<button class="tile ${n(q.id)?"":"empty"}" data-id="${q.id}"><strong>${esc(q.name)}</strong><span class="muted small">${n(q.id)} swimmers</span></button>`).join("")}</div>`;
+      app.querySelectorAll(".tile").forEach(b=>b.onclick=()=>{ S.squad=S.squads.find(q=>q.id===b.dataset.id); go("squad",{by:"award"}); });
+    }
+    const cb=$("#clubBtn"); if(cb) cb.onclick=()=>reset("clubs");
+  },
+
+  async squad(args){
+    header(S.squad.name);
+    S.swimmers = await loadSwimmers(S.squad.id); const ids=S.swimmers.map(s=>s.id);
+    const ix = await loadIndex(ids);
+    const sum = ix.ref.levels.map(l=>{
+      const p=ix.squadPct(ids,l.award), act=ids.filter(id=>ix.active(id,l.award)).length, got=ids.filter(id=>ix.achieved(id,l.award)).length;
+      return `<div class="sumrow"><span class="num" style="background:${l.colour}">${l.award}</span><div class="grow">
+        <div class="row" style="justify-content:space-between"><strong>${esc(l.title)}</strong><span class="pct">${p}%</span></div>${bar(l,p)}
+        <span class="muted small">${act} active · ${got} achieved</span></div></div>`;
+    }).join("");
+    const byAward = args.by!=="swimmer";
+    app.innerHTML = `<div class="card"><h2>Squad completion</h2><p class="muted small">${ids.length} swimmers · average across the squad</p>${sum}</div>
+      <div class="seg" role="tablist"><button id="pA" class="${byAward?"on":""}">By award criteria</button><button id="pS" class="${byAward?"":"on"}">By swimmer</button></div>
+      ${byAward
+        ? `<div class="grid">${ix.ref.levels.map(l=>`<button class="tile award" style="border-color:${l.colour}" data-aw="${l.award}">${token(l,38,l.title)}<strong>Award ${l.award}</strong><span class="muted small">${(ix.ref.by[l.award]||[]).length} criteria · ${ix.squadPct(ids,l.award)}%</span></button>`).join("")}</div>`
+        : `<div class="card"><ul class="list">${S.swimmers.map(s=>swimmerRow(s,true)).join("")||`<p class="muted">No swimmers in this squad.</p>`}</ul></div>`}`;
+    $("#pA").onclick=()=>{ S.stack[S.stack.length-1].args={by:"award"}; run(); };
+    $("#pS").onclick=()=>{ S.stack[S.stack.length-1].args={by:"swimmer"}; run(); };
+    app.querySelectorAll("[data-aw]").forEach(b=>b.onclick=()=>go("award",{award:+b.dataset.aw}));
+    bindSwimmerRows(false);
+  },
+
+  async award({award}){
+    const ids=S.swimmers.map(s=>s.id); const ix=await loadIndex(ids); const l=ix.ref.levels.find(x=>x.award===award);
+    header(`${S.squad.name} · Award ${award}`);
+    const inactive=ids.filter(id=>!ix.active(id,award));
+    app.innerHTML = `<div class="row" style="justify-content:space-between;margin-bottom:8px"><div><h2 style="margin:0">${esc(l.title)}</h2><span class="muted">Squad ${ix.squadPct(ids,award)}%</span></div>${token(l,44,l.title)}</div>
+      <div class="card framed" style="border-top-color:${l.colour}"><div class="row" style="justify-content:space-between"><h3>Swimmers</h3>
+        ${canEdit()&&inactive.length?`<button class="btn small" id="actAll">Activate for all (${inactive.length})</button>`:""}</div><div id="msg"></div>
+        <ul class="list">${S.swimmers.map(s=>{ const p=ix.awardPct(s.id,award); return `<li><button data-sw="${s.id}"><span class="name">${esc(s.full_name)}${ix.achieved(s.id,award)?token(l,22):""}</span><span class="grow" style="flex:1 1 110px">${bar(l,p)}</span><span class="pct">${p}%</span>${ix.active(s.id,award)?"":`<span class="chip">not active</span>`}</button></li>`; }).join("")}</ul></div>
+      <div class="card framed" style="border-top-color:${l.colour}"><h3>Criteria <span class="muted small">(squad completion — tap to assess)</span></h3>
+        <ul class="crit">${(ix.ref.by[award]||[]).map(o=>{ const p=ix.critPct(ids,o.outcome_id), any=ids.some(id=>ix.score(id,o.outcome_id)!=null), done=ids.filter(id=>ix.score(id,o.outcome_id)===5).length;
+          return `<li class="link" data-o="${o.outcome_id}" tabindex="0">${dot(any?p:null)}<span class="grow"><span class="area">${o.award}.${o.outcome_no} · ${esc(o.area)}</span>${esc(o.outcome)}</span><span class="pct">${p}%<br><span class="muted small">${done}/${ids.length} done</span></span></li>`; }).join("")}</ul>${key()}</div>`;
+    app.querySelectorAll("[data-sw]").forEach(b=>b.onclick=()=>go("swimmer",{id:b.dataset.sw, award}));
+    app.querySelectorAll("[data-o]").forEach(b=>{ b.onclick=()=>go("criterion",{award, outcome:b.dataset.o}); b.onkeydown=e=>{ if(e.key==="Enter") b.click(); }; });
+    const aa=$("#actAll"); if(aa) aa.onclick=async()=>{
+      aa.disabled=true;
+      const { error } = await sb.from("swimmer_club_awards").upsert(inactive.map(id=>({club_id:S.club.id, swimmer_id:id, award})), { onConflict:"club_id,swimmer_id,award", ignoreDuplicates:true });
+      if(error){ $("#msg").innerHTML=`<p class="err">${esc(error.message)}</p>`; aa.disabled=false; } else run();
+    };
+  },
+
+  async criterion({award, outcome}){
+    const ids=S.swimmers.map(s=>s.id); const ix=await loadIndex(ids); const l=ix.ref.levels.find(x=>x.award===award);
+    const o=ix.ref.outcomes.find(x=>x.outcome_id===outcome);
+    header(`Award ${award} · ${o.award}.${o.outcome_no}`);
+    const outstanding=new Set(S.swimmers.filter(s=>ix.score(s.id,outcome)!==5).map(s=>s.id));
+    let showAll=false;
+    const draw=()=>{
+      const list=S.swimmers.filter(s=>showAll||outstanding.has(s.id));
+      app.innerHTML = `<div class="card framed" style="border-top-color:${l.colour}"><span class="area">${esc(l.title)} · ${o.award}.${o.outcome_no} · ${esc(o.area)}</span>
+          <h3 style="margin-top:4px">${esc(o.outcome)}</h3><p class="muted small">${esc(S.squad.name)}. Each step is 20% of this criterion; tap a selected step again to clear it.</p></div>
+        ${canEdit()?"":`<p class="notice warn">Read only for your role.</p>`}
+        <div class="row" style="justify-content:space-between;margin:6px 0"><span class="muted">${list.length} ${showAll?"swimmers":"outstanding"}</span>
+          <label class="check"><input type="checkbox" id="all" ${showAll?"checked":""}> Show completed too</label></div>
+        ${list.length?"":`<p class="notice">Every swimmer in the squad has completed this criterion.</p>`}
+        <div>${list.map(s=>markCard(s.id, esc(s.full_name)+(ix.active(s.id,award)?"":` <span class="chip">not active</span>`), outcome, l, ix, s.id)).join("")}</div>
+        ${saveBar()}`;
+      $("#all").onchange=e=>{ showAll=e.target.checked; draw(); };
+      bindMarks(ix, l, (k)=>({swimmer_id:k, outcome_id:outcome}));
+    };
+    draw();
+  },
+
+  async swimmer({id, name, award, readOnly}){
+    const sw = (S.swimmers||[]).find(s=>s.id===id) || { id, full_name:name };
+    const index = await loadIndex(S.swimmers?.length && !readOnly ? S.swimmers.map(s=>s.id) : [id]);
+    header(sw.full_name);
+    const edit = canEdit() && !readOnly;
+    const a = award || (index.ref.levels.find(l=>index.active(id,l.award)&&!index.achieved(id,l.award))?.award) || 1;
+    const got = index.ref.levels.filter(l=>index.achieved(id,l.award));
+    const tokens = got.length ? `<div class="tokens">${got.map(l=>token(l,34,`${l.title} achieved ${index.act(id,l.award).achieved_on}`)).join("")}</div>` : "";
+    if(!edit){
+      /* Read-only profile: all six awards with bars; tap one to see its criteria. */
+      app.innerHTML = `${tokens}<div id="blocks">${index.ref.levels.map(l=>awardBlock(index,id,l,false)).join("")}</div>${key()}`;
+      app.querySelectorAll(".block>.head").forEach(h=>h.onclick=()=>{ const aw=+h.dataset.aw; const b=h.parentElement; const open=b.querySelector(".crit");
+        if(open){ open.remove(); h.setAttribute("aria-expanded","false"); } else { b.insertAdjacentHTML("beforeend", critList(index,id,aw)); h.setAttribute("aria-expanded","true"); } });
+      return;
+    }
+    const l=index.ref.levels.find(x=>x.award===a);
+    app.innerHTML = `${tokens}
+      <div class="tabs" role="tablist">${index.ref.levels.map(x=>`<button data-aw="${x.award}" class="${x.award===a?"on":""}" style="border-color:${x.colour};${x.award===a?`background:${x.colour}`:""}"><span>${x.award}</span><small>${index.awardPct(id,x.award)}%</small></button>`).join("")}</div>
+      ${awardBlock(index,id,l,true)}
+      <label class="check"><input type="checkbox" id="act" ${index.active(id,a)?"checked":""}> Award activated for this swimmer</label>
+      <p class="muted small" style="margin:4px 0 10px">With unsaved marks: <strong id="live">${index.awardPct(id,a)}%</strong></p>
+      <div id="msg"></div>
+      <div>${(index.ref.by[a]||[]).map(o=>markCard(o.outcome_id, `<span class="grow"><span class="area">${o.award}.${o.outcome_no} · ${esc(o.area)}</span>${esc(o.outcome)}</span>`, o.outcome_id, l, index, id, index.active(id,a))).join("")}</div>
+      ${saveBar()}${key()}`;
+    app.querySelectorAll(".tabs [data-aw]").forEach(b=>b.onclick=()=>{
+      if(Object.keys(S.draft).length && !confirm("Switch award? Unsaved marks on this award will be lost.")) return;
+      S.stack[S.stack.length-1].args={id, name, award:+b.dataset.aw}; run(); });
+    $("#act").onchange=async e=>{
+      const on=e.target.checked;
+      if(Object.keys(S.draft).length && !confirm("Save or cancel your marks first? Changing activation now drops unsaved marks.")){ e.target.checked=!on; return; }
+      const r = on ? await sb.from("swimmer_club_awards").upsert([{club_id:S.club.id, swimmer_id:id, award:a}], { onConflict:"club_id,swimmer_id,award", ignoreDuplicates:true })
+                   : await sb.from("swimmer_club_awards").delete().eq("club_id",S.club.id).eq("swimmer_id",id).eq("award",a);
+      if(r.error){ $("#msg").innerHTML=`<p class="err">${esc(r.error.message)}</p>`; e.target.checked=!on; } else run();
+    };
+    const list=index.ref.by[a]||[];
+    bindMarks(index, l, k=>({swimmer_id:id, outcome_id:k}), () => {
+      const p=Math.round(list.reduce((t,o)=>t+((o.outcome_id in S.draft ? S.draft[o.outcome_id] : index.score(id,o.outcome_id))??0)*20,0)/list.length);
+      $("#live").textContent=p+"%";
+    });
+  }
+};
+
+/* ---------- pieces ---------- */
+function swimmerRow(s, coach){
+  const ix=S.idx;
+  return `<li><button data-swr="${s.id}" data-name="${esc(s.full_name)}"><span class="name">${esc(s.full_name)}${ix.ref.levels.filter(l=>ix.achieved(s.id,l.award)).map(l=>token(l,20)).join("")}</span>
+    <span class="mini">${ix.ref.levels.map(l=>{ const p=ix.awardPct(s.id,l.award), on=ix.active(s.id,l.award); return `<span class="${on?"on":""}" style="${on?`outline-color:${l.colour}`:""}" title="${esc(l.title)}: ${p}%">${bar(l,p)}</span>`; }).join("")}</span></button></li>`;
+}
+function bindSwimmerRows(readOnly){ app.querySelectorAll("[data-swr]").forEach(b=>b.onclick=()=>go("swimmer",{id:b.dataset.swr, name:b.dataset.name, readOnly})); }
+function awardBlock(ix,id,l,open){
+  const p=ix.awardPct(id,l.award), active=ix.active(id,l.award), got=ix.achieved(id,l.award), list=ix.ref.by[l.award]||[];
+  const done=list.filter(o=>ix.score(id,o.outcome_id)===5).length;
+  const sub = got ? `Achieved ${ix.act(id,l.award).achieved_on}` : active ? `Active · ${done}/${list.length} criteria complete` : p>0 ? "Not active" : "Not started";
+  return `<div class="block ${active?"active":""}" style="${active?`border-color:${l.colour}`:""}">
+    <button class="head" data-aw="${l.award}" aria-expanded="${open}"><span class="num" style="background:${l.colour}">${l.award}</span>
+      <span class="grow"><strong>${esc(l.title)}</strong><br><span class="muted small">${sub}</span></span><span class="pct">${p}%</span>${got?token(l,28):""}</button>${bar(l,p)}</div>`;
+}
+function critList(ix,id,aw){
+  return `<ul class="crit">${(ix.ref.by[aw]||[]).map(o=>{ const s=ix.score(id,o.outcome_id); return `<li>${dot(s==null?null:s*20)}<span class="grow"><span class="area">${o.award}.${o.outcome_no} · ${esc(o.area)}</span>${esc(o.outcome)}</span><span class="pct">${s==null?"–":s*20+"%"}</span></li>`; }).join("")}</ul>`;
+}
+function markCard(k, label, outcome, l, ix, swimmerId, framed=true){
+  const v = ix.score(swimmerId, outcome);
+  return `<div class="mark" data-k="${k}" data-orig="${v??""}" style="${framed?`border-left-color:${l.colour}`:""}">
+    <div class="who"><span class="dslot">${dot(v==null?null:v*20)}</span><strong style="font-weight:600">${label}</strong></div>
+    ${canEdit()? `<div class="scale" role="group">${[1,2,3,4,5].map(n=>`<button data-n="${n}" aria-pressed="${v===n}" class="${v===n?"on "+statusOf(n*20):""}" style="${v!=null&&n<v?`border-color:${l.colour}`:""}">${n*20}%</button>`).join("")}</div>`
+      : `<span class="pct">${v==null?"–":v*20+"%"}</span>`}</div>`;
+}
+function saveBar(){ return canEdit() ? `<div class="savebar"><div class="err" id="saveErr"></div><button class="btn" id="cancel">Cancel</button><button class="btn primary" id="save" disabled>Save</button></div>` : ""; }
+function bindMarks(ix, l, toRow, onChange){
+  app.querySelectorAll(".mark").forEach(card=>{
+    const k=card.dataset.k, orig=card.dataset.orig==="" ? null : +card.dataset.orig;
+    card.querySelectorAll(".scale button").forEach(b=>b.onclick=()=>{
+      const n=+b.dataset.n; const cur = k in S.draft ? S.draft[k] : orig; const v = cur===n ? null : n;
+      if(v===orig) delete S.draft[k]; else S.draft[k]=v;
+      card.classList.toggle("changed", k in S.draft);
+      card.querySelectorAll(".scale button").forEach(x=>{ const m=+x.dataset.n; x.className = m===v ? "on "+statusOf(m*20) : ""; x.setAttribute("aria-pressed", m===v); x.style.borderColor = (v!=null && m<v) ? l.colour : ""; });
+      card.querySelector(".dslot").innerHTML = dot(v==null?null:v*20);
+      const n2=Object.keys(S.draft).length; $("#save").disabled=!n2; $("#save").textContent = n2 ? `Save (${n2})` : "Save";
+      onChange && onChange();
+    });
+  });
+  const c=$("#cancel"); if(c) c.onclick=()=>{ S.draft={}; back(); };
+  const s=$("#save"); if(s) s.onclick=async()=>{
+    s.disabled=true; s.textContent="Saving…"; $("#saveErr").textContent="";
+    try{
+      const ups=[], dels=[];
+      for(const [k,v] of Object.entries(S.draft)){ const r=toRow(k); (v==null?dels:ups).push(v==null?r:{...r, club_id:S.club.id, score:v, assessed_on:today()}); }
+      if(ups.length){ const { error } = await sb.from("swimmer_award_outcomes").upsert(ups, { onConflict:"club_id,swimmer_id,outcome_id" }); if(error) throw error; }
+      for(const r of dels){ const { error } = await sb.from("swimmer_award_outcomes").delete().eq("club_id",S.club.id).eq("swimmer_id",r.swimmer_id).eq("outcome_id",r.outcome_id); if(error) throw error; }
+      S.draft={}; back();
+    }catch(e){ $("#saveErr").textContent="Couldn't save: "+(e.message||e); s.disabled=false; s.textContent="Save"; }
+  };
+}
+
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+boot();
+</script>
+</body>
+</html>

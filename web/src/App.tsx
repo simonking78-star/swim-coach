@@ -51,6 +51,11 @@ const MmResults = lazyPage(() => import("./pages/measures/Results").then(x => ({
 const MonthlyWindow = lazyPage(() => import("./pages/measures/MonthlyWindow").then(x => ({ default: x.MonthlyWindow })));
 const StatsMonthlyWindow = lazyPage(() => import("./pages/measures/MonthlyWindow").then(x => ({ default: x.StatsMonthlyWindow })));
 const RunTest = lazyPage(() => import("./pages/tests/RunTest").then(x => ({ default: x.RunTest })));
+const AwardsHome = lazyPage(() => import("./pages/awards/Awards").then(x => ({ default: x.AwardsHome })));
+const SquadAwards = lazyPage(() => import("./pages/awards/Awards").then(x => ({ default: x.SquadAwards })));
+const AwardSquadDetail = lazyPage(() => import("./pages/awards/Awards").then(x => ({ default: x.AwardSquadDetail })));
+const CriterionMark = lazyPage(() => import("./pages/awards/Awards").then(x => ({ default: x.CriterionMark })));
+const SwimmerMark = lazyPage(() => import("./pages/awards/Awards").then(x => ({ default: x.SwimmerMark })));
 const Membership = lazyPage(() => import("./pages/membership/Membership").then(x => ({ default: x.Membership })));
 const Users = lazyPage(() => import("./pages/admin/Users").then(x => ({ default: x.Users })));
 const AppDev = lazyPage(() => import("./pages/AppDev").then(x => ({ default: x.AppDev })));
@@ -113,6 +118,11 @@ function Gate() {
           <Route path="season/macro/new" element={wait(<MacroForm key="new" />)} />
           <Route path="season/macro/:id" element={wait(<MacroForm />)} />
           <Route path="season/macro/:id/weeks" element={wait(<Micros />)} />
+          <Route path="awards" element={wait(<AwardsHome />)} />
+          <Route path="awards/squad/:sq" element={wait(<SquadAwards />)} />
+          <Route path="awards/squad/:sq/award/:aw" element={wait(<AwardSquadDetail />)} />
+          <Route path="awards/squad/:sq/award/:aw/c/:outcome" element={wait(<CriterionMark />)} />
+          <Route path="awards/squad/:sq/swimmer/:sw" element={wait(<SwimmerMark />)} />
           <Route path="membership" element={wait(<Membership />)} />
           <Route path="admin" element={wait(<Admin />)} />
           <Route path="admin/squads" element={wait(<ManageSquads />)} />
