@@ -2,6 +2,11 @@
 -- Written by the ai-assist edge function with the service role; read by admins in the app.
 -- Raw prompts and answers are NOT stored here (only ids, counts and status).
 
+-- Prompt templates are platform-wide (no club data): register before creating (tenancy guard).
+insert into app_private.tenancy_scope (relname, scope, note)
+values ('ai_prompts', 'platform', 'AI prompt templates; superadmin only, no club data')
+on conflict do nothing;
+
 create table if not exists public.ai_prompts (
   purpose     text    not null,               -- 'feedback_digest', later 'race_review', 'coach_report_monthly' ...
   version     integer not null,

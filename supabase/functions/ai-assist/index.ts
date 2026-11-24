@@ -86,7 +86,11 @@ Deno.serve(async (req) => {
     n.measure_code && `Measure ${clip(n.measure_code, 20)} = ${clip(n.measure_value, 20)}`,
   ].filter(Boolean).join(" | "));
 
-  const msg = `Swimmer's first name: ${red.redact(firstName)}\nPeriod: ${from} to ${to}\nNumber of notes: ${notes.length}\n\n<notes>\n${red.redact(lines.join("\n"))}\n</notes>`;
+  // The swimmer's own first name is always hidden, even when it is also an everyday word (Max, Will)
+  // that the shared redactor leaves alone.
+  const ownRe = new RegExp(`(?<![\\p{L}])${firstName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}])`, "giu");
+  const hideOwn = (s: string) => s.replace(ownRe, "[Swimmer 0]");
+  const msg = hideOwn(`Swimmer's first name: ${red.redact(firstName)}\nPeriod: ${from} to ${to}\nNumber of notes: ${notes.length}\n\n<notes>\n${red.redact(lines.join("\n"))}\n</notes>`);
 
   const r = await callAI({
     admin, clubId: sw.club_id, userId: u.user.id, purpose: "feedback_digest",
@@ -95,8 +99,10 @@ Deno.serve(async (req) => {
   });
   if (!r.ok) return json({ error: r.message, status: r.status }, r.status === "over_budget" ? 429 : r.status === "refused" ? 403 : 502);
 
+  const showOwn = (v: any): any => typeof v === "string" ? v.replace(/\[\s*Swimmer\s+0\s*\]/gi, firstName)
+    : Array.isArray(v) ? v.map(showOwn) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, showOwn(x)])) : v;
   return json({
-    draft: r.output, source_ids: notes.map((n: any) => n.id),
+    draft: showOwn(r.output), source_ids: notes.map((n: any) => n.id),
     prompt_version: r.promptVersion, model: r.model, ai_run_id: r.runId, names_hidden: r.namesHidden,
     note: "Draft only. A coach must edit and approve before anything reaches a parent.",
   });
