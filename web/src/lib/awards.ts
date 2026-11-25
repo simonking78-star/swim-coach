@@ -4,6 +4,7 @@
 // The database activates an award when a criterion is marked and sets achieved_on when every
 // criterion is at 100%; this file only reads, writes marks and works out the percentages.
 import { sb } from "./supabase";
+import { loadClubSquads } from "./squadOrder";
 
 export interface AwardLevel { award: number; title: string; colour: string; icon: string; }
 export interface AwardOutcome { outcome_id: string; award: number; outcome_no: number; area: string; outcome: string; }
@@ -135,11 +136,11 @@ export async function setActivated(clubId: string, swimmerIds: string[], award: 
   }
 }
 
-export interface AwardSquad { id: string; name: string; }
+/** club_awards: the squad uses the Club Awards scheme (chosen by a head coach or above). */
+export interface AwardSquad { id: string; name: string; club_awards: boolean; }
+/** Every squad of the club in the club's order, each flagged in or out of the scheme. */
 export async function loadAwardSquads(clubId: string): Promise<AwardSquad[]> {
-  const { data, error } = await sb.from("squads").select("id, name").eq("club_id", clubId).order("name");
-  if (error) throw error;
-  return (data ?? []) as AwardSquad[];
+  return (await loadClubSquads<{ id: string; name: string }>(clubId, "id, name")).map(({ id, name, club_awards }) => ({ id, name, club_awards }));
 }
 export interface AwardSwimmer { id: string; full_name: string; squad_id: string | null; }
 export async function loadAwardSwimmers(clubId: string, squadId?: string): Promise<AwardSwimmer[]> {

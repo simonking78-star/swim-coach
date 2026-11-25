@@ -2,6 +2,7 @@ import { sb } from "./supabase";
 import { QES } from "./feedback";
 import { isoAdd } from "./util";
 import { clubIdOf, clubCols, clubNameOf } from "./clubs";
+import { loadClubSquads } from "./squadOrder";
 
 // Session plans — same data, parser and rules as the current app's
 // viewSession / viewPlanEditor / viewPlanView.
@@ -305,7 +306,5 @@ export async function loadWeekDrills(microId: string, squadId: string): Promise<
 }
 
 export async function loadSquadsWithIds(club: string): Promise<{ id: string; name: string }[]> {
-  const { data, error } = await sb.from("squads").select("id, name").eq("club_id", clubIdOf(club)).order("name");
-  if (error) throw error;
-  return (data ?? []) as { id: string; name: string }[];
+  return (await loadClubSquads<{ id: string; name: string }>(clubIdOf(club), "id, name")).map(({ id, name }) => ({ id, name }));
 }

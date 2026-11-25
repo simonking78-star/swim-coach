@@ -1,6 +1,7 @@
 import { sb } from "./supabase";
 import { looksOffline, queueWrite } from "./offline";
 import { clubIdOf, clubCols, clubNameOf, SWIMMER_SQUAD, flatSquad } from "./clubs";
+import { loadClubSquads } from "./squadOrder";
 
 // Test & Assess (claude/specs/test-and-assess.md).
 // A template is a model of one or more rounds. Each round has distance,
@@ -236,9 +237,7 @@ export async function loadSwimmersByIds(ids: string[]): Promise<TestSwimmer[]> {
   return out.sort((a, b) => a.full_name.localeCompare(b.full_name));
 }
 export async function loadSquads(club: string): Promise<{ id: string; name: string }[]> {
-  const { data, error } = await sb.from("squads").select("id, name").eq("club_id", clubIdOf(club)).order("name");
-  if (error) throw error;
-  return data ?? [];
+  return (await loadClubSquads<{ id: string; name: string }>(clubIdOf(club), "id, name")).map(({ id, name }) => ({ id, name }));
 }
 
 /** Fills in a missing year of birth (never overwrites a known one). */

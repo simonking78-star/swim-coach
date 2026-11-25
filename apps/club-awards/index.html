@@ -271,11 +271,16 @@ const VIEWS = {
         <div class="card"><ul class="list">${sw.map(s=>swimmerRow(s)).join("")}</ul></div>`;
       bindSwimmerRows(true);
     } else {
-      S.squads = (await sb.from("squads").select("id, name").eq("club_id", S.club.id).order("name")).data||[];
+      /* Squads in the club's order, only those in the Club Awards scheme (set in Coach Tools by a head coach).
+         Falls back to every squad by name until the database has sort_order / club_awards. */
+      let sq = await sb.from("squads").select("id, name, sort_order, club_awards").eq("club_id", S.club.id).order("sort_order",{ascending:true,nullsFirst:false}).order("name");
+      if(sq.error) sq = await sb.from("squads").select("id, name").eq("club_id", S.club.id).order("name");
+      S.squads = (sq.data||[]).filter(q=>q.club_awards!==false);
       const all = await loadSwimmers();
       const n = id => all.filter(s=>s.squad_id===id).length;
       app.innerHTML = `<div class="row" style="justify-content:space-between"><h2>Choose a squad to assess</h2>${clubSwitch}</div>
         ${canEdit()? "" : `<p class="notice">Read only for your role.</p>`}
+        ${S.squads.length? "" : `<p class="notice">No squads are in the Club Awards scheme yet. A head coach chooses them in Coach Tools → Club Awards.</p>`}
         <div class="grid">${S.squads.map(q=>`<button class="tile ${n(q.id)?"":"empty"}" data-id="${q.id}"><strong>${esc(q.name)}</strong><span class="muted small">${n(q.id)} swimmers</span></button>`).join("")}</div>`;
       app.querySelectorAll(".tile").forEach(b=>b.onclick=()=>{ S.squad=S.squads.find(q=>q.id===b.dataset.id); go("squad",{by:"award"}); });
     }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
-import { ROLE_LABEL, roleSummary, sectionLevel } from "../lib/access";
+import { ROLE_LABEL, roleSummary, sectionOpen } from "../lib/access";
 import { NAV_GROUPS, SECTIONS } from "../sections";
 import { usePendingWrites } from "../lib/offline";
 import { stopRoleTest } from "../lib/admin";
@@ -42,7 +42,7 @@ export function Layout() {
     return () => removeEventListener("keydown", onKey);
   }, [menuOpen]);
 
-  const visible = SECTIONS.filter(s => sectionLevel(access, s.section) !== "N");
+  const visible = SECTIONS.filter(s => sectionOpen(access, s.section));
   const grouped = NAV_GROUPS
     .map(g => ({ label: g.label, items: g.keys.map(k => visible.find(s => s.key === k)).filter((s): s is typeof visible[number] => !!s) }))
     .filter(g => g.items.length);

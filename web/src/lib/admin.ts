@@ -2,15 +2,15 @@ import { sb } from "./supabase";
 import type { Role } from "./access";
 import { todayLocal } from "./util";
 import { clubIdOf, clubIdOrNull, clubCols, clubNameOf, forgetSquadIds, SWIMMER_SQUAD, flatSquad } from "./clubs";
+import { loadClubSquads } from "./squadOrder";
 
 // Admin: squads, members, squad and club moves, deactivate/reactivate, users & roles.
 // Same tables, RPCs and rules as the current app.
 
-export interface SquadRow { id: string; name: string; n: number; }
+export interface SquadRow { id: string; name: string; n: number; sort_order: number | null; }
 export async function loadSquadCounts(club: string): Promise<SquadRow[]> {
-  const { data, error } = await sb.from("squads").select("id, name, swimmers(count)").eq("club_id", clubIdOf(club)).order("name");
-  if (error) throw error;
-  return ((data ?? []) as unknown as { id: string; name: string; swimmers: { count: number }[] }[]).map(q => ({ id: q.id, name: q.name, n: q.swimmers?.[0]?.count ?? 0 }));
+  const data = await loadClubSquads<{ id: string; name: string; swimmers: { count: number }[] }>(clubIdOf(club), "id, name, swimmers(count)");
+  return data.map(q => ({ id: q.id, name: q.name, n: q.swimmers?.[0]?.count ?? 0, sort_order: q.sort_order }));
 }
 export async function addSquad(club: string, name: string) {
   const { error } = await sb.from("squads").insert({ name, ...clubCols(club) } as never);

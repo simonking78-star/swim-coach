@@ -3,6 +3,7 @@ import { looksOffline, queueWrite } from "./offline";
 import { fmtDay } from "./util";
 import { clubIdOf, squadIdOf } from "./clubs";
 import { effectiveSession, loadOverrides } from "./season";
+import { loadClubSquads } from "./squadOrder";
 export { coachName, fmtDay, logEvent, todayLocal } from "./util";
 
 // Attendance register — same behaviour and data as the current app's
@@ -156,9 +157,8 @@ export function nextTickStatus(cur: AttStatus | null): AttStatus {
 // Loading
 // ---------------------------------------------------------------------------
 export async function loadSquadNames(club: string): Promise<string[]> {
-  const { data, error } = await sb.from("squads").select("name").eq("club_id", clubIdOf(club)).order("name");
-  if (error) throw error;
-  return [...new Set((data ?? []).map(r => r.name as string))];
+  const data = await loadClubSquads<{ name: string }>(clubIdOf(club), "name");
+  return [...new Set(data.map(r => r.name))];
 }
 
 export interface PlanOption { id: string; label: string; }

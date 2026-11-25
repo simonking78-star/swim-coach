@@ -1397,7 +1397,7 @@ dialog.modal.wide { width: min(1040px, calc(100vw - 16px)); }
 .sw-pick p { margin: 6px 0 0; }
 .sw-head.pool-only { grid-template-columns: 1fr; }
 .sw-head.pool-only > div { grid-column: auto; max-width: 180px; }
-.sw-layer { background: var(--card, #fff); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.sw-layer { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
 .sw-layer-h { margin: 0; font-size: 1rem; }
 .sw-layer-h button {
   width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px 14px; min-height: 52px;
@@ -1575,3 +1575,22 @@ fieldset.cf-squads legend { font-weight: 700; padding: 0; margin-bottom: 8px; }
 .aw-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
 .aw-allbtn { background: var(--green); border-color: var(--green); color: #fff; }
 .aw-allbtn:disabled { background: #fff; color: var(--text-dim); border-color: var(--border); }
+
+/* Squad order (Admin → Manage squads) and Club Awards scheme squads. Phone: one row per squad.
+   Desktop: the order list stays a narrow column; scheme ticks spread into columns. */
+.sq-order-list { list-style: none; margin: 0 0 10px; padding: 0; }
+.sq-order-list li { display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-bottom: 1px solid var(--border); background: var(--card); }
+.sq-order-list li.dragging { opacity: .5; }
+.sq-order-n { width: 1.6em; text-align: right; font-variant-numeric: tabular-nums; }
+.sq-order-name { flex: 1 1 auto; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.sq-order-btns { display: inline-flex; gap: 4px; }
+.sq-order-btns .btn { padding: 2px 8px; min-height: 0; }
+.aw-scheme-list { list-style: none; margin: 0 0 10px; padding: 0; display: grid; grid-template-columns: 1fr; gap: 0 16px; }
+.aw-scheme-list .aw-check { margin: 4px 0; font-weight: 400; }
+.aw-scheme-list .aw-check span:first-of-type { font-weight: 600; }
+@media (min-width: 760px) {
+  .sq-order-list { max-width: 520px; }
+  .sq-order-list li { cursor: grab; }
+  .aw-scheme-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1100px) { .aw-scheme-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

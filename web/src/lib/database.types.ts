@@ -3912,21 +3912,27 @@ export type Database = {
           club_id: string | null
           created_at: string
           id: string
+          club_awards: boolean
           name: string
+          sort_order: number | null
           updated_at: string
         }
         Insert: {
           club_id?: string | null
           created_at?: string
           id?: string
+          club_awards?: boolean
           name: string
+          sort_order?: number | null
           updated_at?: string
         }
         Update: {
           club_id?: string | null
           created_at?: string
           id?: string
+          club_awards?: boolean
           name?: string
+          sort_order?: number | null
           updated_at?: string
         }
         Relationships: [
