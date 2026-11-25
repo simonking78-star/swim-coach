@@ -23,6 +23,7 @@ const Regression = lazyPage(() => import("./pages/stats/Regression"));
 const Compare = lazyPage(() => import("./pages/stats/Compare"));
 const SquadReview = lazyPage(() => import("./pages/stats/SquadReview"));
 const TestResults = lazyPage(() => import("./pages/stats/TestResults"));
+const AwardsProgress = lazyPage(() => import("./pages/stats/AwardsProgress"));
 // Less-used sections load when first opened, keeping the first download small.
 const Drills = lazyPage(() => import("./pages/Drills").then(x => ({ default: x.Drills })));
 const VocabReview = lazyPage(() => import("./pages/vocab/Review").then(x => ({ default: x.VocabReview })));
@@ -157,6 +158,7 @@ function Gate() {
           <Route path="statistics/test-window" element={wait(<StatsMonthlyWindow />)} />
           <Route path="statistics/regression" element={wait(<Regression />)} />
           <Route path="statistics/compare" element={wait(<Compare />)} />
+          <Route path="statistics/awards" element={wait(<AwardsProgress />)} />
           <Route path="statistics/squad-review" element={<SquadReviewGate>{wait(<SquadReview />)}</SquadReviewGate>} />
           <Route path="v2/*" element={<FromV2 />} />
           <Route path=":key" element={<SectionPage />} />

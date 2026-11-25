@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { LEVEL_NOTE, sectionLevel } from "../../lib/access";
 
-// Statistics landing: the three tools. Monthly Squad Review is squad totals,
+// Statistics landing: the tools. Club Awards progression ranks swimmers, so not for parents/swimmers. Monthly Squad Review is squad totals,
 // so it needs Statistics and Feedback read for squads (not parents/swimmers).
 
 export function StatsBack() {
@@ -13,6 +13,8 @@ export function StatsHub() {
   const { access } = useAuth();
   const st = sectionLevel(access, "stats"), fb = sectionLevel(access, "feedback");
   const squadReview = !(st === "N" || st === "CR" || fb === "N" || fb === "CR");
+  const aw = sectionLevel(access, "awards");
+  const awardsRank = !(st === "N" || st === "CR" || aw === "N");
   if (st === "N") return <><div className="page-head"><h1>Statistics</h1></div><p className="notice warn">Your role doesn't have access to statistics.</p></>;
   const tiles = [
     { to: "regression", icon: "📈", title: "Regression Analysis", sub: "Swimmer & event trend vs county qualifying times" },
@@ -20,6 +22,7 @@ export function StatsHub() {
     { to: "measures", icon: "📏", title: "Metrics & Measures", sub: "Each swimmer against their own baseline, change against test noise" },
     { to: "tests", icon: "🗄️", title: "Legacy test sets", sub: "Test & Assess archive from before Metrics & Measures" },
     { to: "compare", icon: "⚖️", title: "Swimmer Comparison", sub: "A swimmer vs another swimmer, their birth-year average or a squad average" },
+    ...(awardsRank ? [{ to: "awards", icon: "🎖️", title: "Club Awards progression", sub: "Every swimmer ranked on Club Awards 1–6, and progress in six skill segments, by squad" }] : []),
     ...(squadReview ? [{ to: "squad-review", icon: "📅", title: "Monthly Squad Review", sub: "Attendance, race times, skills & feedback by squad, month on month" }] : [])
   ];
   return (

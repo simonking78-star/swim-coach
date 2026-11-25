@@ -2,6 +2,13 @@
 
 The version shown in the app footer comes from `package.json`. Bump it when a release goes out and add a line here.
 
+## Unreleased — Club Awards progression (Statistics)
+- New Statistics tool **Club Awards progression** (head coach, club admin, coaches; not parents or swimmers).
+- **Ranking**: every active swimmer in the club ranked by Club Awards points (award number × % complete, added up; 2,100 max, as Club Standing part 4). Squad filter shows squad rank with club rank alongside. Per-award bars, achieved tokens, the award being worked on.
+- **Skill segments**: the 80 criteria regrouped into six skills (Water skills, Stroke technique, Starts/relays/finishes, Turns, Training & pace, Athlete preparation), each a ladder of stages (one per award it appears in). Squad % per stage, swimmers by highest stage secured, criteria per stage, and a swimmer-by-skill grid; pick one skill to see every stage per swimmer. ⚠ flags an earlier stage left incomplete.
+- **Hide completed levels** drops awards / stages every listed swimmer has finished and blanks finished cells.
+- Phones: cards per swimmer; from 760px wide: tables.
+
 ## Unreleased — Test sets linked to the Season Plan
 - One list of test windows for both sections: test windows are set on the Season Plan (**Test windows**) with the tests in them, the kind of window (baseline, mid, end…) and the squads on the plan they cover. Metrics & Measures → Testing windows now shows that list (A-146, A-148).
 - Each test run is linked to the test window that covers it automatically, including runs done before the window was added (A-146).
