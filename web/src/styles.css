@@ -1572,3 +1572,6 @@ fieldset.cf-squads legend { font-weight: 700; padding: 0; margin-bottom: 8px; }
 .ap-stagecell .aw-dot { width: 16px; height: 16px; font-size: 10px; }
 .ap-stagechips { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 8px; }
 .ap-stagechips > span { display: inline-flex; align-items: center; gap: 4px; }
+.aw-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
+.aw-allbtn { background: var(--green); border-color: var(--green); color: #fff; }
+.aw-allbtn:disabled { background: #fff; color: var(--text-dim); border-color: var(--border); }
