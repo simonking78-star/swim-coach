@@ -43,19 +43,32 @@ export async function loadAwardRef(): Promise<AwardRef> {
 
 export interface AwardData { marks: AwardMark[]; activations: AwardActivation[]; }
 
-/** Marks and activations at one club for a list of swimmers. */
+/** Supabase returns at most 1,000 rows per request, so read in pages until a short page comes back. */
+const PAGE = 1000;
+export async function readAll<T>(page: (from: number, to: number) => PromiseLike<{ data: unknown; error: unknown }>): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await page(from, from + PAGE - 1);
+    if (error) throw error;
+    const rows = (data ?? []) as T[];
+    out.push(...rows);
+    if (rows.length < PAGE) return out;
+  }
+}
+
+/** Marks and activations at one club for a list of swimmers (every row, however many). */
 export async function loadAwardData(clubId: string, swimmerIds: string[]): Promise<AwardData> {
   const out: AwardData = { marks: [], activations: [] };
   for (let i = 0; i < swimmerIds.length; i += 150) {
     const ids = swimmerIds.slice(i, i + 150);
     const [m, a] = await Promise.all([
-      sb.from("swimmer_award_outcomes").select("swimmer_id, outcome_id, award, score, assessed_on").eq("club_id", clubId).in("swimmer_id", ids),
-      sb.from("swimmer_club_awards").select("swimmer_id, award, activated_on, achieved_on").eq("club_id", clubId).in("swimmer_id", ids)
+      readAll<AwardMark>((f, t) => sb.from("swimmer_award_outcomes").select("swimmer_id, outcome_id, award, score, assessed_on")
+        .eq("club_id", clubId).in("swimmer_id", ids).order("swimmer_id").order("outcome_id").range(f, t)),
+      readAll<AwardActivation>((f, t) => sb.from("swimmer_club_awards").select("swimmer_id, award, activated_on, achieved_on")
+        .eq("club_id", clubId).in("swimmer_id", ids).order("swimmer_id").order("award").range(f, t))
     ]);
-    if (m.error) throw m.error;
-    if (a.error) throw a.error;
-    out.marks.push(...((m.data ?? []) as AwardMark[]));
-    out.activations.push(...((a.data ?? []) as AwardActivation[]));
+    out.marks.push(...m);
+    out.activations.push(...a);
   }
   return out;
 }

@@ -162,16 +162,20 @@ async function loadRef(){
   const by={}; for(const o of oc.data){ (by[o.award] ||= []).push(o); }
   return S.ref = { levels: lv.data, outcomes: oc.data, by };
 }
+/* Supabase returns at most 1,000 rows per request: read in pages until a short page comes back. */
+async function readAll(page){
+  const out=[];
+  for(let f=0;;f+=1000){ const { data, error } = await page(f, f+999); if(error) throw error; out.push(...(data||[])); if(!data || data.length<1000) return out; }
+}
 async function loadIndex(ids){
   const marks=[], acts=[];
   for(let i=0;i<ids.length;i+=150){
     const part=ids.slice(i,i+150);
     const [m,a] = await Promise.all([
-      sb.from("swimmer_award_outcomes").select("swimmer_id, outcome_id, award, score").eq("club_id", S.club.id).in("swimmer_id", part),
-      sb.from("swimmer_club_awards").select("swimmer_id, award, activated_on, achieved_on").eq("club_id", S.club.id).in("swimmer_id", part)
+      readAll((f,t)=>sb.from("swimmer_award_outcomes").select("swimmer_id, outcome_id, award, score").eq("club_id", S.club.id).in("swimmer_id", part).order("swimmer_id").order("outcome_id").range(f,t)),
+      readAll((f,t)=>sb.from("swimmer_club_awards").select("swimmer_id, award, activated_on, achieved_on").eq("club_id", S.club.id).in("swimmer_id", part).order("swimmer_id").order("award").range(f,t))
     ]);
-    if(m.error) throw m.error; if(a.error) throw a.error;
-    marks.push(...m.data); acts.push(...a.data);
+    marks.push(...m); acts.push(...a);
   }
   return S.idx = new Index(S.ref, marks, acts);
 }
