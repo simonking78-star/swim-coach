@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { sb } from "../lib/supabase";
-import { sectionLevel, type Access } from "../lib/access";
+import { sectionLevel, sectionOpen, type Access } from "../lib/access";
 import { SECTIONS } from "../sections";
 import { useAuth } from "../auth/AuthProvider";
 
@@ -89,7 +89,7 @@ export function allowedItems(layout: HomeLayout, access: Access | null) {
   const panels = layout.panels.filter(p => PANELS.find(d => d.id === p.id)?.available(access));
   const buttons = layout.buttons.filter(b => {
     const s = SECTIONS.find(x => x.key === b.id);
-    return s && sectionLevel(access, s.section) !== "N";
+    return s && sectionOpen(access, s.section);
   });
   return { panels, buttons };
 }

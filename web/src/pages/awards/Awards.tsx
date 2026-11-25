@@ -4,7 +4,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/AuthProvider";
 import { useClub } from "../../club/ClubProvider";
 import { ClubPicker } from "../../club/ClubPicker";
-import { canEdit, LEVEL_NOTE, sectionLevel } from "../../lib/access";
+import { canEdit, isHeadCoachUp, LEVEL_NOTE, sectionLevel } from "../../lib/access";
+import { saveAwardSquads } from "../../lib/squadOrder";
+import type { AwardSquad } from "../../lib/awards";
+import { StatusMsg } from "../../components/seasonParts";
 import {
   AwardIndex, awardsMissing, loadAwardData, loadAwardSquads, loadAwardSwimmers, saveMarks, setActivated,
   type AwardLevel, type MarkChange
@@ -56,7 +59,9 @@ function useInvalidate() {
 // ---------- 1. Pick a squad ----------
 export function AwardsHome() {
   const { clubId } = useClub();
+  const { access } = useAuth();
   const { lv } = useAwardsAccess();
+  const chooser = isHeadCoachUp(access, clubId);
   const squads = useQuery({ queryKey: ["aw_squads", clubId], enabled: !!clubId, queryFn: () => loadAwardSquads(clubId!) });
   const swimmers = useQuery({ queryKey: ["aw_swimmers", clubId, undefined], enabled: !!clubId, queryFn: () => loadAwardSwimmers(clubId!) });
   const count = (id: string) => (swimmers.data ?? []).filter(s => s.squad_id === id).length;
@@ -71,8 +76,9 @@ export function AwardsHome() {
       {LEVEL_NOTE[lv] && <p className="notice">{LEVEL_NOTE[lv]}</p>}
       {squads.error && <p className="msg error">Couldn't load squads.</p>}
       {!squads.data && !squads.error && <p className="dim">Loading…</p>}
+      {squads.data && !squads.data.some(s => s.club_awards) && <p className="notice">No squads are in the Club Awards scheme yet.{chooser ? " Choose them below." : " A head coach chooses which squads use it."}</p>}
       <div className="aw-squads">
-        {squads.data?.map(s => {
+        {squads.data?.filter(s => s.club_awards).map(s => {
           const n = count(s.id);
           return (
             <Link key={s.id} to={`/awards/squad/${s.id}`} className={"aw-squad" + (n ? "" : " empty")}>
@@ -81,7 +87,52 @@ export function AwardsHome() {
           );
         })}
       </div>
+      {chooser && squads.data && clubId && <SchemeSquads clubId={clubId} squads={squads.data} count={count} />}
     </>
+  );
+}
+
+/** Head coach or above: which squads use the Club Awards scheme. Phone: one tick row per squad;
+ *  desktop: the same ticks in two or three columns below the squad tiles. */
+function SchemeSquads({ clubId, squads, count }: { clubId: string; squads: AwardSquad[]; count: (id: string) => number }) {
+  const qc = useQueryClient();
+  const saved = useMemo(() => new Set(squads.filter(s => s.club_awards).map(s => s.id)), [squads]);
+  const [on, setOn] = useState<Set<string> | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ text: string; error?: boolean } | null>(null);
+  const cur = on ?? saved;
+  const changed = cur.size !== saved.size || [...cur].some(id => !saved.has(id));
+  const toggle = (id: string) => { const n = new Set(cur); if (n.has(id)) n.delete(id); else n.add(id); setOn(n); setMsg(null); };
+  const save = async () => {
+    setBusy(true); setMsg(null);
+    try {
+      await saveAwardSquads(clubId, squads.filter(s => cur.has(s.id)).map(s => s.id));
+      await qc.invalidateQueries({ queryKey: ["aw_squads"] });
+      qc.invalidateQueries({ queryKey: ["award_progress"] });
+      setOn(null); setMsg({ text: "Saved. Only the ticked squads show in Club Awards." });
+    } catch (e) { setMsg({ text: "Save failed — " + (e as Error).message, error: true }); }
+    finally { setBusy(false); }
+  };
+  return (
+    <section className="card gap-top aw-scheme">
+      <h2 className="card-title">Squads in the Club Awards scheme</h2>
+      <p className="hint top">Tick the squads that use Club Awards. Unticked squads are hidden from Club Awards and its statistics; their swimmers' marks are kept if you add the squad back.</p>
+      <ul className="aw-scheme-list">
+        {squads.map(s => (
+          <li key={s.id}>
+            <label className="aw-check">
+              <input type="checkbox" checked={cur.has(s.id)} disabled={busy} onChange={() => toggle(s.id)} />
+              <span>{s.name}</span> <span className="dim small">{count(s.id)} swimmer{count(s.id) === 1 ? "" : "s"}</span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      <div className="btn-row">
+        <button type="button" className="btn primary" disabled={busy || !changed} onClick={save}>{busy ? "Saving…" : "Save"}</button>
+        {changed && <button type="button" className="link-btn" disabled={busy} onClick={() => { setOn(null); setMsg(null); }}>Undo changes</button>}
+      </div>
+      <StatusMsg msg={msg} />
+    </section>
   );
 }
 
@@ -95,6 +146,7 @@ export function SquadAwards() {
     <>
       <p className="crumb"><Link to="/awards">‹ Club Awards</Link></p>
       <div className="page-head"><h1>{squad?.name ?? "Squad"} · Club Awards</h1><p className="dim">{swimmers.length} swimmers. Squad figures are the average across every swimmer in the squad.</p></div>
+      {squad && !squad.club_awards && <p className="notice warn">{squad.name} isn't in the Club Awards scheme. Its swimmers' marks are kept; a head coach can add the squad back on the Club Awards page.</p>}
       <Status error={error} loading={loading} />
       {index && (
         <>

@@ -43,19 +43,26 @@ export default function AwardsProgress() {
   const ref = useAwardRef();
   const squads = useQuery({ queryKey: ["aw_squads", clubId], enabled: !!clubId && !blocked, queryFn: () => loadAwardSquads(clubId!) });
   const swimmers = useQuery({ queryKey: ["aw_rank_swimmers", clubId], enabled: !!clubId && !blocked, queryFn: () => loadRankSwimmers(clubId!) });
-  const allIds = useMemo(() => (swimmers.data ?? []).map(s => s.id), [swimmers.data]);
+  // Only squads in the Club Awards scheme (chosen by a head coach on the Club Awards page).
+  const scheme = useMemo(() => (squads.data ?? []).filter(s => s.club_awards), [squads.data]);
+  const inScheme = useMemo(() => {
+    if (!swimmers.data || !squads.data) return undefined;
+    const ids = new Set(scheme.map(s => s.id));
+    return swimmers.data.filter(s => s.squad_id && ids.has(s.squad_id));
+  }, [swimmers.data, squads.data, scheme]);
+  const allIds = useMemo(() => (inScheme ?? []).map(s => s.id), [inScheme]);
   // Ranking: scores worked out in the database. Segments (and the fallback) need every mark.
   const prog = useQuery({ queryKey: ["award_progress", clubId], enabled: !!clubId && !blocked, queryFn: () => loadClubProgress(clubId!) });
   const needMarks = view === "segments" || prog.data === null;
-  const data = useQuery({ queryKey: ["award_data", clubId, "club", allIds.join(",")], enabled: !!clubId && !!swimmers.data && needMarks, queryFn: () => loadAwardData(clubId!, allIds) });
+  const data = useQuery({ queryKey: ["award_data", clubId, "club", allIds.join(",")], enabled: !!clubId && !!inScheme && needMarks, queryFn: () => loadAwardData(clubId!, allIds) });
   const index = useMemo(() => (ref.data && data.data ? new AwardIndex(ref.data, data.data) : null), [ref.data, data.data]);
   const squadName = useMemo(() => { const m = new Map((squads.data ?? []).map(s => [s.id, s.name])); return (id: string | null) => (id ? m.get(id) ?? "–" : "No squad"); }, [squads.data]);
   const ranked = useMemo(() => {
-    if (!swimmers.data || !ref.data) return null;
-    if (prog.data) return rankFromProgress(prog.data, ref.data.levels, swimmers.data, squadName);
-    if (prog.data === null && index) return rankSwimmers(index, swimmers.data, squadName);
+    if (!inScheme || !ref.data) return null;
+    if (prog.data) return rankFromProgress(prog.data, ref.data.levels, inScheme, squadName);
+    if (prog.data === null && index) return rankSwimmers(index, inScheme, squadName);
     return null;
-  }, [prog.data, index, ref.data, swimmers.data, squadName]);
+  }, [prog.data, index, ref.data, inScheme, squadName]);
   const segments = useMemo(() => (ref.data ? buildSegments(ref.data.outcomes) : []), [ref.data]);
 
   if (blocked) return <><StatsBack /><p className="notice warn">Club Awards progression isn't available for your role.</p></>;
@@ -64,7 +71,7 @@ export default function AwardsProgress() {
   const rows = squadId ? all.filter(r => r.squadId === squadId) : all;
   const error = ref.error || squads.error || swimmers.error || prog.error || data.error;
   const ready = !!ranked && (view === "rank" || !!index);
-  const squadLabel = squadId ? squadName(squadId) : "Whole club";
+  const squadLabel = squadId ? squadName(squadId) : scheme.length < (squads.data ?? []).length ? "Club Awards squads" : "Whole club";
 
   return (
     <>
@@ -81,8 +88,8 @@ export default function AwardsProgress() {
 
       <div className="ap-filters">
         <label>Squad<select value={squadId} onChange={e => set("squad", e.target.value)}>
-          <option value="">All squads</option>
-          {(squads.data ?? []).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          <option value="">All Club Awards squads</option>
+          {scheme.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select></label>
         {view === "segments" && (
           <label>Segment<select value={segKey} onChange={e => set("seg", e.target.value)}>

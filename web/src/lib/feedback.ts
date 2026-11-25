@@ -4,6 +4,7 @@ import { loadAllDrills } from "./drills";
 import { looksOffline, queueWrite } from "./offline";
 import { isoAdd, uuid } from "./util";
 import { clubIdOf, clubCols, squadIdOf, SWIMMER_SQUAD, flatSquad } from "./clubs";
+import { loadClubSquads } from "./squadOrder";
 
 // Feedback — swimmer and squad. Same tables, values and rules as the current
 // app's viewFeedback (fbSwimmerMode / fbSquadMode).
@@ -239,13 +240,12 @@ export interface SquadLite { id: string; name: string; entries: number; }
 
 export async function loadFbSquads(club: string): Promise<SquadLite[]> {
   const [sq, fb] = await Promise.all([
-    sb.from("squads").select("id, name").eq("club_id", clubIdOf(club)).order("name"),
+    loadClubSquads<{ id: string; name: string }>(clubIdOf(club), "id, name"),
     sb.from("squad_feedback").select("squad_id").eq("club_id", clubIdOf(club)).eq("is_active", true)
   ]);
-  if (sq.error) throw sq.error;
   const counts = new Map<string, number>();
   for (const r of fb.data ?? []) counts.set(r.squad_id as string, (counts.get(r.squad_id as string) ?? 0) + 1);
-  return (sq.data ?? []).map(s => ({ id: s.id as string, name: s.name as string, entries: counts.get(s.id as string) ?? 0 }));
+  return sq.map(s => ({ id: s.id as string, name: s.name as string, entries: counts.get(s.id as string) ?? 0 }));
 }
 
 export interface Drill { id: string; drill_name: string; stroke: string | null; pseudonyms?: string[] | null; }

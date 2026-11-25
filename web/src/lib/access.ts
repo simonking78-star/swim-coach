@@ -66,6 +66,17 @@ export function sectionLevel(access: Access | null, section: Section): Level {
 
 export const canEdit = (lv: Level) => lv === "E" || lv === "SE";
 
+/** Head coach, club admin or development admin (at this club, when one is given). Sets the squad order
+ *  (Admin → Manage squads) and chooses the Club Awards squads; the database checks the same rule. */
+export function isHeadCoachUp(access: Access | null, clubId?: string | null): boolean {
+  return (access?.roles || []).some(r => (r.role === "superadmin" || r.role === "club_admin" || r.role === "head_coach")
+    && (!r.club_id || !clubId || r.club_id === clubId));
+}
+
+/** Whether a section shows in the menu. Admin also opens for head coaches, who see only Manage squads (squad order). */
+export const sectionOpen = (access: Access | null, section: Section) =>
+  sectionLevel(access, section) !== "N" || (section === "admin" && isHeadCoachUp(access));
+
 export function roleSummary(access: Access | null): string {
   if (!access || !access.roles?.length) return "no role yet";
   return access.roles

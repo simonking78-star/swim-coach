@@ -4,10 +4,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/AuthProvider";
 import { useClub } from "../../club/ClubProvider";
 import { ClubPicker } from "../../club/ClubPicker";
-import { canEdit, sectionLevel } from "../../lib/access";
+import { canEdit, isHeadCoachUp, sectionLevel } from "../../lib/access";
+import { saveSquadOrder } from "../../lib/squadOrder";
 import {
   addMember, addSquad, deactivateSwimmer, deleteSquad, loadActiveSwimmers, loadDeactivated, loadSquadCounts, loadSwimmerDetail, loadUnassigned,
-  moveToClub, moveToSquad, reactivateSwimmer, renameSquad, timeIn, validateMember, type MemberDraft, type PickSwimmer
+  moveToClub, moveToSquad, reactivateSwimmer, renameSquad, timeIn, validateMember, type MemberDraft, type PickSwimmer, type SquadRow
 } from "../../lib/admin";
 import { fmtDate, todayLocal } from "../../lib/util";
 import { usePlanSquads } from "../plans/PlanList";
@@ -20,12 +21,12 @@ const errText = (e: unknown, prefix: string) => (e as Error).message?.startsWith
 /** Everything that lists swimmers or squads, so the rest of the app shows changes at once. */
 function useRefreshSwimmers() {
   const qc = useQueryClient();
-  return () => ["roster", "swimmer", "fb_squads", "fb_swimmers", "sqf_squads", "att_squads", "plan_squads", "admin_squads", "admin_swimmers", "admin_unassigned", "admin_deact", "admin_detail", "reg_swimmers", "cmp_swimmers", "home_stats", "coaching_clubs"]
+  return () => ["roster", "swimmer", "fb_squads", "fb_swimmers", "sqf_squads", "att_squads", "plan_squads", "admin_squads", "admin_swimmers", "admin_unassigned", "admin_deact", "admin_detail", "reg_swimmers", "cmp_swimmers", "home_stats", "coaching_clubs", "aw_squads"]
     .forEach(k => qc.invalidateQueries({ queryKey: [k] }));
 }
 
 const TILES = [
-  { to: "/admin/squads", icon: "🏷️", title: "Manage squads", sub: "Rename squads · add a new squad" },
+  { to: "/admin/squads", icon: "🏷️", title: "Manage squads", sub: "Squad order · rename · add a new squad" },
   { to: "/admin/add-member", icon: "➕", title: "Add new member", sub: "Register a swimmer & parent contact" },
   { to: "/admin/move-squad", icon: "🔄", title: "Move a swimmer's squad", sub: "Date-stamped — tracks time in each squad" },
   { to: "/admin/move-club", icon: "🔀", title: "Move a swimmer's club", sub: "Transfer to a different club & squad" },
@@ -37,13 +38,16 @@ const TILES = [
 export function Admin() {
   const { access } = useAuth();
   const level = sectionLevel(access, "admin");
-  if (!canEdit(level)) return <><div className="page-head"><h1>Admin</h1></div><p className="notice warn">Your role doesn't have access to Admin.</p></>;
+  const admin = canEdit(level);
+  // Head coaches see Admin for the squad order only.
+  if (!admin && !isHeadCoachUp(access)) return <><div className="page-head"><h1>Admin</h1></div><p className="notice warn">Your role doesn't have access to Admin.</p></>;
+  const tiles = admin ? TILES : TILES.filter(t => t.to === "/admin/squads").map(t => ({ ...t, sub: "Set the order of squads" }));
   return (
     <>
       <div className="page-head"><h1><span aria-hidden="true">⚙️</span> Admin</h1><p className="dim">Squads, members and users</p></div>
       <ClubPicker />
       <div className="tile-grid gap-top">
-        {TILES.map(t => (
+        {tiles.map(t => (
           <Link key={t.to} to={t.to} className="tile">
             <span className="tile-icon" aria-hidden="true">{t.icon}</span>
             <span className="tile-text"><strong>{t.title}</strong><span className="dim">{t.sub}</span></span>
@@ -56,7 +60,10 @@ export function Admin() {
 
 // ---------------------------------------------------------------------------
 export function ManageSquads() {
-  const { club } = useClub();
+  const { club, clubId } = useClub();
+  const { access } = useAuth();
+  const admin = canEdit(sectionLevel(access, "admin"));
+  const orderer = isHeadCoachUp(access, clubId);
   const refresh = useRefreshSwimmers();
   const q = useQuery({ queryKey: ["admin_squads", club], enabled: !!club, queryFn: () => loadSquadCounts(club!) });
   const [name, setName] = useState("");
@@ -90,9 +97,20 @@ export function ManageSquads() {
     finally { setBusy(null); setRemoving(null); }
   };
 
+  if (!admin) return (
+    <>
+      <p className="crumb"><Link to="/admin">‹ Admin</Link></p>
+      <div className="page-head"><h1>Manage squads</h1></div>
+      {orderer
+        ? <><ClubPicker /><SquadOrder clubId={clubId} rows={q.data} loading={q.isLoading} error={!!q.error} onSaved={refresh} /></>
+        : <p className="notice warn">Your role doesn't have access to Admin.</p>}
+    </>
+  );
+
   return (
     <AdminGate title="Manage squads">
       <ClubPicker />
+      {orderer && <SquadOrder clubId={clubId} rows={q.data} loading={q.isLoading} error={!!q.error} onSaved={refresh} />}
       <section className="card">
         <h2 className="card-title">Add a new squad</h2>
         <label htmlFor="sq-new" className="sr-only">New squad name</label>
@@ -104,7 +122,7 @@ export function ManageSquads() {
       </section>
       <section className="card">
         <h2 className="card-title">Rename or remove squads</h2>
-        <p className="hint top">A new name shows everywhere straight away. An empty squad with no history can be removed; otherwise rename it.</p>
+        <p className="hint top">A new name shows everywhere straight away. An empty squad with no history can be removed; otherwise rename it. A new squad goes to the end of the squad order.</p>
         {q.isLoading && <p className="dim">Loading…</p>}
         {q.error && <p className="msg error">Couldn't load squads.</p>}
         {q.data && !q.data.length && <p className="dim">No squads yet — add one above.</p>}
@@ -123,6 +141,69 @@ export function ManageSquads() {
         </ul>
       </section>
     </AdminGate>
+  );
+}
+
+// ---------------------------------------------------------------------------
+/** Squad order: head coach, club admin or development admin. Every squad list in the app follows it.
+ *  Phone: ▲ ▼ buttons beside each squad. Desktop: the same list, narrower, with drag to reorder too. */
+function SquadOrder({ clubId, rows, loading, error, onSaved }: {
+  clubId: string | null; rows: SquadRow[] | undefined; loading: boolean; error: boolean; onSaved: () => void;
+}) {
+  const [order, setOrder] = useState<string[] | null>(null);
+  const [msg, setMsg] = useState<Msg>(null);
+  const [busy, setBusy] = useState(false);
+  const [drag, setDrag] = useState<string | null>(null);
+  const byId = new Map((rows ?? []).map(r => [r.id, r]));
+  const saved = (rows ?? []).map(r => r.id);
+  // Keep any squads added meanwhile at the end of a pending order.
+  const ids = order ? [...order.filter(id => byId.has(id)), ...saved.filter(id => !order.includes(id))] : saved;
+  const changed = ids.join() !== saved.join();
+  const move = (from: number, to: number) => {
+    if (to < 0 || to >= ids.length || from === to) return;
+    const next = [...ids]; const [x] = next.splice(from, 1); next.splice(to, 0, x);
+    setOrder(next); setMsg(null);
+  };
+  const save = async () => {
+    if (!clubId) return;
+    setBusy(true); setMsg(null);
+    try { await saveSquadOrder(clubId, ids); setOrder(null); setMsg({ text: "Squad order saved. Every squad list now follows it." }); onSaved(); }
+    catch (e) { setMsg({ text: errText(e, "Save failed"), error: true }); }
+    finally { setBusy(false); }
+  };
+  return (
+    <section className="card sq-order">
+      <h2 className="card-title">Squad order</h2>
+      <p className="hint top">Set the order squads appear in across the app — first at the top. Use the arrows (or drag on a computer), then Save.</p>
+      {loading && <p className="dim">Loading…</p>}
+      {error && <p className="msg error">Couldn't load squads.</p>}
+      {rows && !rows.length && <p className="dim">No squads yet.</p>}
+      <ol className="sq-order-list">
+        {ids.map((id, i) => {
+          const r = byId.get(id)!;
+          return (
+            <li key={id} draggable onDragStart={() => setDrag(id)} onDragEnd={() => setDrag(null)}
+              onDragOver={e => { e.preventDefault(); if (drag && drag !== id) move(ids.indexOf(drag), i); }}
+              className={drag === id ? "dragging" : ""}>
+              <span className="sq-order-n dim" aria-hidden="true">{i + 1}</span>
+              <span className="sq-order-name">{r.name}</span>
+              <span className="dim small">{r.n} swimmer{r.n === 1 ? "" : "s"}</span>
+              <span className="sq-order-btns">
+                <button type="button" className="btn small" disabled={busy || i === 0} onClick={() => move(i, i - 1)} aria-label={`Move ${r.name} up`}>▲</button>
+                <button type="button" className="btn small" disabled={busy || i === ids.length - 1} onClick={() => move(i, i + 1)} aria-label={`Move ${r.name} down`}>▼</button>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      {rows && rows.length > 1 && (
+        <div className="btn-row">
+          <button type="button" className="btn primary" disabled={busy || !changed} onClick={save}>{busy ? "Saving…" : "Save order"}</button>
+          {changed && <button type="button" className="link-btn" disabled={busy} onClick={() => { setOrder(null); setMsg(null); }}>Undo changes</button>}
+        </div>
+      )}
+      <StatusMsg msg={msg} />
+    </section>
   );
 }
 
