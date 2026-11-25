@@ -49,7 +49,7 @@ function Status({ error, loading }: { error: unknown; loading: boolean }) {
 
 function useInvalidate() {
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({ queryKey: ["award_data"] });
+  return () => { qc.invalidateQueries({ queryKey: ["award_data"] }); qc.invalidateQueries({ queryKey: ["award_progress"] }); };
 }
 
 

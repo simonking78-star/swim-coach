@@ -5,7 +5,8 @@
 //  2. Skill segments: the 80 Swim England outcomes regrouped into six skill
 //     segments, each a short ladder of stages (one stage per award the segment
 //     appears in), so a coach can see where a swimmer or squad is in each skill.
-import { AwardIndex, scorePct, type AwardLevel, type AwardOutcome } from "./awards";
+import { sb } from "./supabase";
+import { AwardIndex, readAll, scorePct, type AwardLevel, type AwardOutcome } from "./awards";
 
 // ---------- Ranking ----------
 
@@ -38,13 +39,54 @@ function assignRanks<T>(rows: T[], points: (r: T) => number, set: (r: T, rank: n
 
 export interface RankSwimmer { id: string; full_name: string; squad_id: string | null; date_of_birth: string | null; }
 
+// Scoring is done in the database (views swimmer_award_progress / swimmer_award_points,
+// migration 20261125140000_club_award_points.sql): one row per swimmer per award and one per swimmer.
+export interface ProgressRow { swimmer_id: string; award: number; pct: number; achieved: boolean; }
+export interface PointsRow { swimmer_id: string; points: number; }
+export interface ClubProgress { progress: ProgressRow[]; points: PointsRow[]; }
+
+/** Scores from the database, or null if the views aren't there yet (the page then adds up the marks itself). */
+export async function loadClubProgress(clubId: string): Promise<ClubProgress | null> {
+  try {
+    const [progress, points] = await Promise.all([
+      readAll<ProgressRow>((f, t) => sb.from("swimmer_award_progress").select("swimmer_id, award, pct, achieved")
+        .eq("club_id", clubId).order("swimmer_id").order("award").range(f, t)),
+      readAll<PointsRow>((f, t) => sb.from("swimmer_award_points").select("swimmer_id, points")
+        .eq("club_id", clubId).order("swimmer_id").range(f, t))
+    ]);
+    return { progress, points };
+  } catch (e) {
+    const x = e as { code?: string; message?: string };
+    if (x?.code === "42P01" || x?.code === "PGRST205" || /swimmer_award_(progress|points)/.test(x?.message ?? "")) return null;
+    throw e;
+  }
+}
+
+/** Ranking from the database scores. Swimmers with no marks score 0. */
+export function rankFromProgress(cp: ClubProgress, levels: AwardLevel[], swimmers: RankSwimmer[], squadName: (id: string | null) => string): RankRow[] {
+  const prog = new Map(cp.progress.map(r => [r.swimmer_id + "|" + r.award, r]));
+  const pts = new Map(cp.points.map(r => [r.swimmer_id, r.points]));
+  return buildRanking(levels, swimmers, squadName,
+    (id, a) => prog.get(id + "|" + a)?.pct ?? 0,
+    (id, a) => !!prog.get(id + "|" + a)?.achieved,
+    id => pts.get(id) ?? 0);
+}
+
+/** Ranking added up in the browser from every mark (fallback before the database views exist). */
 export function rankSwimmers(index: AwardIndex, swimmers: RankSwimmer[], squadName: (id: string | null) => string): RankRow[] {
-  const levels = index.ref.levels;
+  return buildRanking(index.ref.levels, swimmers, squadName,
+    (id, a) => index.awardPct(id, a),
+    (id, a) => index.achieved(id, a),
+    null);
+}
+
+function buildRanking(levels: AwardLevel[], swimmers: RankSwimmer[], squadName: (id: string | null) => string,
+  pctOf: (id: string, award: number) => number, achievedOf: (id: string, award: number) => boolean, pointsOf: ((id: string) => number) | null): RankRow[] {
   const rows: RankRow[] = swimmers.map(s => {
-    const pcts = levels.map(l => index.awardPct(s.id, l.award));
+    const pcts = levels.map(l => pctOf(s.id, l.award));
     // An award counts as achieved when the database says so, or every criterion is at 100%.
-    const achieved = levels.map((l, i) => index.achieved(s.id, l.award) || pcts[i] >= 100);
-    const points = levels.reduce((t, l, i) => t + l.award * pcts[i], 0);
+    const achieved = levels.map((l, i) => achievedOf(s.id, l.award) || pcts[i] >= 100);
+    const points = pointsOf ? pointsOf(s.id) : levels.reduce((t, l, i) => t + l.award * pcts[i], 0);
     const got = levels.filter((_, i) => achieved[i]).map(l => l.award);
     const notYet = levels.filter((_, i) => !achieved[i]).map(l => l.award);
     return {

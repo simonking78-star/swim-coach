@@ -5214,6 +5214,40 @@ export type Database = {
       }
     }
     Views: {
+      swimmer_award_points: {
+        Row: {
+          award_1_pct: number | null
+          award_2_pct: number | null
+          award_3_pct: number | null
+          award_4_pct: number | null
+          award_5_pct: number | null
+          award_6_pct: number | null
+          awards_achieved: number | null
+          club_id: string | null
+          highest_achieved: number | null
+          last_assessed: string | null
+          points: number | null
+          swimmer_id: string | null
+        }
+        Relationships: []
+      }
+      swimmer_award_progress: {
+        Row: {
+          achieved: boolean | null
+          achieved_on: string | null
+          activated: boolean | null
+          activated_on: string | null
+          award: number | null
+          club_id: string | null
+          criteria_complete: number | null
+          criteria_marked: number | null
+          criteria_total: number | null
+          last_assessed: string | null
+          pct: number | null
+          swimmer_id: string | null
+        }
+        Relationships: []
+      }
       competitions_with_files: {
         Row: {
           course: string | null

@@ -45,7 +45,7 @@ export interface AwardData { marks: AwardMark[]; activations: AwardActivation[];
 
 /** Supabase returns at most 1,000 rows per request, so read in pages until a short page comes back. */
 const PAGE = 1000;
-async function readAll<T>(page: (from: number, to: number) => PromiseLike<{ data: unknown; error: unknown }>): Promise<T[]> {
+export async function readAll<T>(page: (from: number, to: number) => PromiseLike<{ data: unknown; error: unknown }>): Promise<T[]> {
   const out: T[] = [];
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await page(from, from + PAGE - 1);

@@ -8,7 +8,7 @@ import { canEdit, sectionLevel } from "../../lib/access";
 import { sb } from "../../lib/supabase";
 import { AwardIndex, awardsMissing, loadAwardData, loadAwardSquads, type AwardLevel } from "../../lib/awards";
 import {
-  MAX_POINTS, buildSegments, levelOf, rankSwimmers, segmentPosition, segmentSummary,
+  MAX_POINTS, buildSegments, levelOf, loadClubProgress, rankFromProgress, rankSwimmers, segmentPosition, segmentSummary,
   type RankRow, type RankSwimmer, type Segment, type SegmentPosition
 } from "../../lib/awardStats";
 import { AwardBar, AwardToken, CritDot, useAwardRef } from "../../components/awardParts";
@@ -44,16 +44,26 @@ export default function AwardsProgress() {
   const squads = useQuery({ queryKey: ["aw_squads", clubId], enabled: !!clubId && !blocked, queryFn: () => loadAwardSquads(clubId!) });
   const swimmers = useQuery({ queryKey: ["aw_rank_swimmers", clubId], enabled: !!clubId && !blocked, queryFn: () => loadRankSwimmers(clubId!) });
   const allIds = useMemo(() => (swimmers.data ?? []).map(s => s.id), [swimmers.data]);
-  const data = useQuery({ queryKey: ["award_data", clubId, "club", allIds.join(",")], enabled: !!clubId && !!swimmers.data, queryFn: () => loadAwardData(clubId!, allIds) });
+  // Ranking: scores worked out in the database. Segments (and the fallback) need every mark.
+  const prog = useQuery({ queryKey: ["award_progress", clubId], enabled: !!clubId && !blocked, queryFn: () => loadClubProgress(clubId!) });
+  const needMarks = view === "segments" || prog.data === null;
+  const data = useQuery({ queryKey: ["award_data", clubId, "club", allIds.join(",")], enabled: !!clubId && !!swimmers.data && needMarks, queryFn: () => loadAwardData(clubId!, allIds) });
   const index = useMemo(() => (ref.data && data.data ? new AwardIndex(ref.data, data.data) : null), [ref.data, data.data]);
   const squadName = useMemo(() => { const m = new Map((squads.data ?? []).map(s => [s.id, s.name])); return (id: string | null) => (id ? m.get(id) ?? "–" : "No squad"); }, [squads.data]);
-  const ranked = useMemo(() => (index && swimmers.data ? rankSwimmers(index, swimmers.data, squadName) : []), [index, swimmers.data, squadName]);
+  const ranked = useMemo(() => {
+    if (!swimmers.data || !ref.data) return null;
+    if (prog.data) return rankFromProgress(prog.data, ref.data.levels, swimmers.data, squadName);
+    if (prog.data === null && index) return rankSwimmers(index, swimmers.data, squadName);
+    return null;
+  }, [prog.data, index, ref.data, swimmers.data, squadName]);
   const segments = useMemo(() => (ref.data ? buildSegments(ref.data.outcomes) : []), [ref.data]);
 
   if (blocked) return <><StatsBack /><p className="notice warn">Club Awards progression isn't available for your role.</p></>;
 
-  const rows = squadId ? ranked.filter(r => r.squadId === squadId) : ranked;
-  const error = ref.error || squads.error || swimmers.error || data.error;
+  const all = ranked ?? [];
+  const rows = squadId ? all.filter(r => r.squadId === squadId) : all;
+  const error = ref.error || squads.error || swimmers.error || prog.error || data.error;
+  const ready = !!ranked && (view === "rank" || !!index);
   const squadLabel = squadId ? squadName(squadId) : "Whole club";
 
   return (
@@ -86,11 +96,11 @@ export default function AwardsProgress() {
 
       {awardsMissing(error) ? <p className="notice warn">Club Awards need the latest database update (migration <code>club_awards</code>) first.</p>
         : error ? <p className="msg error">Couldn't load Club Awards: {(error as Error).message}</p>
-        : !index ? <p className="dim">Loading…</p>
+        : !ready || !ref.data ? <p className="dim">Loading…</p>
         : rows.length === 0 ? <p className="dim">No active swimmers in {squadLabel}.</p>
         : view === "rank"
-          ? <Ranking rows={rows} levels={index.ref.levels} hide={hide} squadFiltered={!!squadId} editAwards={editAwards} squadLabel={squadLabel} />
-          : <Segments index={index} rows={rows} segments={segments} segKey={segKey} hide={hide} editAwards={editAwards} squadLabel={squadLabel} />}
+          ? <Ranking rows={rows} levels={ref.data.levels} hide={hide} squadFiltered={!!squadId} editAwards={editAwards} squadLabel={squadLabel} />
+          : <Segments index={index!} rows={rows} segments={segments} segKey={segKey} hide={hide} editAwards={editAwards} squadLabel={squadLabel} />}
     </>
   );
 }
