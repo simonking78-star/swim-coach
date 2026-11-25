@@ -88,6 +88,9 @@ input,select{width:100%;font-size:16px;padding:8px 10px;min-height:42px;border-r
 .key{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin:10px 0 0}
 .key span{display:inline-flex;align-items:center;gap:5px}
 .key .dot{width:14px;height:14px;font-size:9px}
+.bulk{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0}
+.btn.all{background:var(--done);border-color:var(--done);color:#fff}
+.btn.all:disabled{background:#fff;color:var(--muted);border-color:var(--line)}
 .check{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--ink);margin:6px 0 0}
 .check input{width:auto;min-height:0}
 .hide{display:none!important}
@@ -301,15 +304,24 @@ const VIEWS = {
     const ids=S.swimmers.map(s=>s.id); const ix=await loadIndex(ids); const l=ix.ref.levels.find(x=>x.award===award);
     header(`${S.squad.name} · Award ${award}`);
     const inactive=ids.filter(id=>!ix.active(id,award));
+    const outstandingAll=ids.flatMap(id=>(ix.ref.by[award]||[]).filter(o=>ix.score(id,o.outcome_id)!==5).map(o=>({club_id:S.club.id, swimmer_id:id, outcome_id:o.outcome_id, score:5, assessed_on:today()})));
     app.innerHTML = `<div class="row" style="justify-content:space-between;margin-bottom:8px"><div><h2 style="margin:0">${esc(l.title)}</h2><span class="muted">Squad ${ix.squadPct(ids,award)}%</span></div>${token(l,44,l.title)}</div>
       <div class="card framed" style="border-top-color:${l.colour}"><div class="row" style="justify-content:space-between"><h3>Swimmers</h3>
         ${canEdit()&&inactive.length?`<button class="btn small" id="actAll">Activate for all (${inactive.length})</button>`:""}</div><div id="msg"></div>
         <ul class="list">${S.swimmers.map(s=>{ const p=ix.awardPct(s.id,award); return `<li><button data-sw="${s.id}"><span class="name">${esc(s.full_name)}${ix.achieved(s.id,award)?token(l,22):""}</span><span class="grow" style="flex:1 1 110px">${bar(l,p)}</span><span class="pct">${p}%</span>${ix.active(s.id,award)?"":`<span class="chip">not active</span>`}</button></li>`; }).join("")}</ul></div>
-      <div class="card framed" style="border-top-color:${l.colour}"><h3>Criteria <span class="muted small">(squad completion — tap to assess)</span></h3>
+      <div class="card framed" style="border-top-color:${l.colour}"><div class="row" style="justify-content:space-between;align-items:flex-start"><h3>Criteria <span class="muted small">(squad completion — tap to assess)</span></h3>
+        ${canEdit()&&outstandingAll.length?`<button class="btn small all" id="allDone">✓ All complete</button>`:""}</div><div id="msg2"></div>
         <ul class="crit">${(ix.ref.by[award]||[]).map(o=>{ const p=ix.critPct(ids,o.outcome_id), any=ids.some(id=>ix.score(id,o.outcome_id)!=null), done=ids.filter(id=>ix.score(id,o.outcome_id)===5).length;
           return `<li class="link" data-o="${o.outcome_id}" tabindex="0">${dot(any?p:null)}<span class="grow"><span class="area">${o.award}.${o.outcome_no} · ${esc(o.area)}</span>${esc(o.outcome)}</span><span class="pct">${p}%<br><span class="muted small">${done}/${ids.length} done</span></span></li>`; }).join("")}</ul>${key()}</div>`;
     app.querySelectorAll("[data-sw]").forEach(b=>b.onclick=()=>go("swimmer",{id:b.dataset.sw, award}));
     app.querySelectorAll("[data-o]").forEach(b=>{ b.onclick=()=>go("criterion",{award, outcome:b.dataset.o}); b.onkeydown=e=>{ if(e.key==="Enter") b.click(); }; });
+    const ad=$("#allDone"); if(ad) ad.onclick=async()=>{
+      const who=new Set(outstandingAll.map(r=>r.swimmer_id)).size, n=(ix.ref.by[award]||[]).length;
+      if(!confirm(`Mark all ${n} criteria of ${l.title} as complete (100%) for ${who} swimmer(s) in ${S.squad.name}?\n\n${outstandingAll.length} marks will be saved and the award will be achieved for each of them.`)) return;
+      ad.disabled=true;
+      const { error } = await sb.from("swimmer_award_outcomes").upsert(outstandingAll, { onConflict:"club_id,swimmer_id,outcome_id" });
+      if(error){ $("#msg2").innerHTML=`<p class="err">${esc(error.message)}</p>`; ad.disabled=false; } else run();
+    };
     const aa=$("#actAll"); if(aa) aa.onclick=async()=>{
       aa.disabled=true;
       const { error } = await sb.from("swimmer_club_awards").upsert(inactive.map(id=>({club_id:S.club.id, swimmer_id:id, award})), { onConflict:"club_id,swimmer_id,award", ignoreDuplicates:true });
@@ -328,6 +340,7 @@ const VIEWS = {
       app.innerHTML = `<div class="card framed" style="border-top-color:${l.colour}"><span class="area">${esc(l.title)} · ${o.award}.${o.outcome_no} · ${esc(o.area)}</span>
           <h3 style="margin-top:4px">${esc(o.outcome)}</h3><p class="muted small">${esc(S.squad.name)}. Each step is 20% of this criterion; tap a selected step again to clear it.</p></div>
         ${canEdit()?"":`<p class="notice warn">Read only for your role.</p>`}
+        ${list.length?bulkBar("anyone"):""}
         <div class="row" style="justify-content:space-between;margin:6px 0"><span class="muted">${list.length} ${showAll?"swimmers":"outstanding"}</span>
           <label class="check"><input type="checkbox" id="all" ${showAll?"checked":""}> Show completed too</label></div>
         ${list.length?"":`<p class="notice">Every swimmer in the squad has completed this criterion.</p>`}
@@ -361,6 +374,7 @@ const VIEWS = {
       <label class="check"><input type="checkbox" id="act" ${index.active(id,a)?"checked":""}> Award activated for this swimmer</label>
       <p class="muted small" style="margin:4px 0 10px">With unsaved marks: <strong id="live">${index.awardPct(id,a)}%</strong></p>
       <div id="msg"></div>
+      ${bulkBar("any criterion")}
       <div>${(index.ref.by[a]||[]).map(o=>markCard(o.outcome_id, `<span class="grow"><span class="area">${o.award}.${o.outcome_no} · ${esc(o.area)}</span>${esc(o.outcome)}</span>`, o.outcome_id, l, index, id, index.active(id,a))).join("")}</div>
       ${saveBar()}${key()}`;
     app.querySelectorAll(".tabs [data-aw]").forEach(b=>b.onclick=()=>{
@@ -400,26 +414,37 @@ function critList(ix,id,aw){
   return `<ul class="crit">${(ix.ref.by[aw]||[]).map(o=>{ const s=ix.score(id,o.outcome_id); return `<li>${dot(s==null?null:s*20)}<span class="grow"><span class="area">${o.award}.${o.outcome_no} · ${esc(o.area)}</span>${esc(o.outcome)}</span><span class="pct">${s==null?"–":s*20+"%"}</span></li>`; }).join("")}</ul>`;
 }
 function markCard(k, label, outcome, l, ix, swimmerId, framed=true){
-  const v = ix.score(swimmerId, outcome);
-  return `<div class="mark" data-k="${k}" data-orig="${v??""}" style="${framed?`border-left-color:${l.colour}`:""}">
+  const o = ix.score(swimmerId, outcome), v = k in S.draft ? S.draft[k] : o;
+  return `<div class="mark${k in S.draft?" changed":""}" data-k="${k}" data-orig="${o??""}" style="${framed?`border-left-color:${l.colour}`:""}">
     <div class="who"><span class="dslot">${dot(v==null?null:v*20)}</span><strong style="font-weight:600">${label}</strong></div>
     ${canEdit()? `<div class="scale" role="group">${[1,2,3,4,5].map(n=>`<button data-n="${n}" aria-pressed="${v===n}" class="${v===n?"on "+statusOf(n*20):""}" style="${v!=null&&n<v?`border-color:${l.colour}`:""}">${n*20}%</button>`).join("")}</div>`
       : `<span class="pct">${v==null?"–":v*20+"%"}</span>`}</div>`;
 }
 function saveBar(){ return canEdit() ? `<div class="savebar"><div class="err" id="saveErr"></div><button class="btn" id="cancel">Cancel</button><button class="btn primary" id="save" disabled>Save</button></div>` : ""; }
+function bulkBar(what){ return canEdit() ? `<div class="bulk"><button class="btn small all" id="bulkAll">✓ All complete (100%)</button><button class="btn small hide" id="bulkReset">Reset</button><span class="muted small">Then adjust ${what} that isn't there yet, and Save.</span></div>` : ""; }
 function bindMarks(ix, l, toRow, onChange){
   app.querySelectorAll(".mark").forEach(card=>{
     const k=card.dataset.k, orig=card.dataset.orig==="" ? null : +card.dataset.orig;
-    card.querySelectorAll(".scale button").forEach(b=>b.onclick=()=>{
-      const n=+b.dataset.n; const cur = k in S.draft ? S.draft[k] : orig; const v = cur===n ? null : n;
+    card.setTo = v => {
       if(v===orig) delete S.draft[k]; else S.draft[k]=v;
       card.classList.toggle("changed", k in S.draft);
       card.querySelectorAll(".scale button").forEach(x=>{ const m=+x.dataset.n; x.className = m===v ? "on "+statusOf(m*20) : ""; x.setAttribute("aria-pressed", m===v); x.style.borderColor = (v!=null && m<v) ? l.colour : ""; });
       card.querySelector(".dslot").innerHTML = dot(v==null?null:v*20);
-      const n2=Object.keys(S.draft).length; $("#save").disabled=!n2; $("#save").textContent = n2 ? `Save (${n2})` : "Save";
-      onChange && onChange();
-    });
+    };
+    card.cur = () => k in S.draft ? S.draft[k] : orig;
+    card.querySelectorAll(".scale button").forEach(b=>b.onclick=()=>{ const n=+b.dataset.n; card.setTo(card.cur()===n ? null : n); refresh(); });
   });
+  const cards=[...app.querySelectorAll(".mark")];
+  function refresh(){
+    const n2=Object.keys(S.draft).length; const sv=$("#save"); if(sv){ sv.disabled=!n2; sv.textContent = n2 ? `Save (${n2})` : "Save"; }
+    const ba=$("#bulkAll"), br=$("#bulkReset");
+    if(ba) ba.disabled = cards.every(c=>c.cur()===5);
+    if(br) br.classList.toggle("hide", !n2);
+    onChange && onChange();
+  }
+  const ba=$("#bulkAll"); if(ba) ba.onclick=()=>{ cards.forEach(c=>c.setTo(5)); refresh(); };
+  const br=$("#bulkReset"); if(br) br.onclick=()=>{ cards.forEach(c=>c.setTo(c.dataset.orig==="" ? null : +c.dataset.orig)); refresh(); };
+  refresh();
   const c=$("#cancel"); if(c) c.onclick=()=>{ S.draft={}; back(); };
   const s=$("#save"); if(s) s.onclick=async()=>{
     s.disabled=true; s.textContent="Saving…"; $("#saveErr").textContent="";

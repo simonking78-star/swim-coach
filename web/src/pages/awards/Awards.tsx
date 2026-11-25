@@ -179,6 +179,20 @@ export function AwardSquadDetail() {
     setBusy(false);
   };
 
+  // Every criterion of this award at 100% for every swimmer in the squad (only rows not already 100%).
+  const outstanding: MarkChange[] = index
+    ? ids.flatMap(id => outcomes.filter(o => index.score(id, o.outcome_id) !== 5).map(o => ({ swimmer_id: id, outcome_id: o.outcome_id, score: 5 })))
+    : [];
+  const completeAll = async () => {
+    if (!level || !outstanding.length) return;
+    const who = new Set(outstanding.map(c => c.swimmer_id)).size;
+    if (!confirm(`Mark all ${outcomes.length} criteria of ${level.title} as complete (100%) for ${who} swimmer(s) in ${squad?.name ?? "this squad"}?\n\n${outstanding.length} marks will be saved and the award will be achieved for each of them.`)) return;
+    setBusy(true); setMsg(null);
+    try { await saveMarks(clubId!, outstanding, todayLocal().date); invalidate(); setMsg(`Saved ${outstanding.length} marks. ${level.title} is complete for the squad.`); }
+    catch (e) { setMsg("Couldn't save: " + (e as Error).message); }
+    setBusy(false);
+  };
+
   return (
     <>
       <p className="crumb"><Link to={`/awards/squad/${sq}`}>‹ {squad?.name ?? "Squad"}</Link></p>
@@ -212,7 +226,10 @@ export function AwardSquadDetail() {
             </ul>
           </section>
           <section className="card aw-framed" style={{ borderColor: level.colour }}>
-            <h2 className="card-title">Criteria <span className="dim">(squad completion — tap to assess)</span></h2>
+            <div className="card-head top">
+              <h2 className="card-title">Criteria <span className="dim">(squad completion — tap to assess)</span></h2>
+              {edit && outstanding.length > 0 && <button type="button" className="btn small aw-allbtn" disabled={busy} onClick={completeAll}>✓ All complete</button>}
+            </div>
             <ul className="aw-crit linked">
               {outcomes.map(o => {
                 const pct = index.squadCritPct(ids, o.outcome_id);
@@ -280,6 +297,16 @@ export function CriterionMark() {
             <p className="dim small">{squad?.name}. Each step is 20% of this criterion; tap a selected step again to clear it.</p>
           </section>
           {!edit && <p className="notice warn">{LEVEL_NOTE[lv] ?? "Read only."}</p>}
+          {edit && list.length > 0 && (
+            <div className="aw-bulk">
+              <button type="button" className="btn small aw-allbtn" disabled={saving || list.every(s => value(s.id) === 5)}
+                onClick={() => setDraft(d => { const n = { ...d }; for (const s of list) { if (index.score(s.id, o.outcome_id) === 5) delete n[s.id]; else n[s.id] = 5; } return n; })}>
+                ✓ All complete (100%)
+              </button>
+              {changes > 0 && <button type="button" className="btn small" disabled={saving} onClick={() => setDraft({})}>Reset</button>}
+              <span className="dim small">Then adjust anyone who isn't there yet, and Save.</span>
+            </div>
+          )}
           <div className="aw-toolbar">
             <span className="dim">{list.length} {showAll ? "swimmers" : "outstanding"}</span>
             <label className="aw-check"><input type="checkbox" checked={showAll} onChange={e => setShowAll(e.target.checked)} /> Show completed too</label>
@@ -379,6 +406,16 @@ export function SwimmerMark() {
             )}
           </AwardBlock>
           {!edit && <p className="notice warn">{LEVEL_NOTE[lv] ?? "Read only."}</p>}
+          {edit && outcomes.length > 0 && (
+            <div className="aw-bulk">
+              <button type="button" className="btn small aw-allbtn" disabled={saving || outcomes.every(o => value(o.outcome_id) === 5)}
+                onClick={() => setDraft(d => { const n = { ...d }; for (const o of outcomes) { if (index.score(swimmer.id, o.outcome_id) === 5) delete n[o.outcome_id]; else n[o.outcome_id] = 5; } return n; })}>
+                ✓ All complete (100%)
+              </button>
+              {changes > 0 && <button type="button" className="btn small" disabled={saving} onClick={() => setDraft({})}>Reset</button>}
+              <span className="dim small">Then adjust any criterion that isn't there yet, and Save.</span>
+            </div>
+          )}
           <ul className="aw-mark-list">
             {outcomes.map(o => (
               <li key={o.outcome_id} className={o.outcome_id in draft ? "changed" : ""} style={index.active(swimmer.id, award) ? { borderLeftColor: level.colour } : undefined}>
