@@ -2,7 +2,7 @@ import { Chart } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import "../lib/chartSetup";
 import { C } from "../lib/chartSetup";
-import { fmt2, type WindowRow } from "../lib/measures";
+import { fmt2, fmtSecs, type GapRow, type Variant, type WindowRow } from "../lib/measures";
 
 // Charts for the graded repeat set (RRSC Test Set Timings workbook):
 //  • WindowChart — one month's testing window, as in the workbook's "Points per
@@ -75,6 +75,55 @@ export function CompareBars({ bars, unit = "Points per age year" }: { bars: Comp
     plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmt2(c.parsed.x) } } }
   };
   return <div style={{ height: 40 + shown.length * 38 }}><Chart type="bar" data={data} options={options} role="img" aria-label={`${unit}: ` + shown.map(b => `${b.label} ${fmt2(b.value)}`).join(", ")} /></div>;
+}
+
+// Paired timed test (e.g. KCK-50 50m Kick): for each swimmer, a bar for each
+// time (with fins, without fins), the gap between them as a line, and the
+// target gap as a dashed line. Grouped by age, then name — never by result.
+export function GapWindowChart({ rows, variants, target }: { rows: GapRow[]; variants: Variant[]; target: number | null }) {
+  const sorted = [...rows].sort((a, b) => (a.age ?? 99) - (b.age ?? 99) || a.full_name.localeCompare(b.full_name));
+  const labels = sorted.map((r, i) => (i === 0 || sorted[i - 1].age !== r.age ? [r.full_name, `Age ${r.age ?? "?"}`] : [r.full_name]));
+  const barColours = [C.a, C.pb, C.lc, C.b];
+  const data = {
+    labels,
+    datasets: [
+      ...(target != null ? [{
+        type: "line" as const, label: `Target gap (${target} s)`, data: sorted.map(() => target),
+        borderColor: C.lc, borderDash: [6, 4], borderWidth: 2, pointRadius: 0, order: 0
+      }] : []),
+      {
+        type: "line" as const, label: "Gap (no fins − fins)", data: sorted.map(r => r.gap),
+        borderColor: C.navy, backgroundColor: C.navy, borderWidth: 2, pointRadius: 4, showLine: false, order: 0
+      },
+      ...variants.map((vr, i) => ({
+        type: "bar" as const, label: vr.label, data: sorted.map(r => r.times[vr.key] ?? null),
+        backgroundColor: barColours[i % barColours.length], borderRadius: 3, order: 1
+      }))
+    ]
+  } as unknown as ChartData<"bar">;
+  const options: ChartOptions<"bar"> = {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    scales: {
+      y: { beginAtZero: true, title: { display: true, text: "Seconds" }, grid: { color: C.grid } },
+      x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 70, minRotation: 50, font: { size: 10 } } }
+    },
+    plugins: {
+      legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
+      tooltip: {
+        callbacks: {
+          title: items => sorted[items[0].dataIndex].full_name,
+          label: c => `${c.dataset.label}: ${fmtSecs(c.parsed.y as number)}`
+        }
+      }
+    }
+  };
+  const w = Math.max(320, sorted.length * 40);
+  return (
+    <div className="chart-scroll" style={{ overflowX: "auto" }}>
+      <div style={{ height: 340, minWidth: w }}><Chart type="bar" data={data} options={options} role="img"
+        aria-label={"Times with and without fins for each swimmer, with the gap and the target gap: " + sorted.map(r => `${r.full_name} gap ${fmtSecs(r.gap)}`).join(", ")} /></div>
+    </div>
+  );
 }
 
 export default WindowChart;

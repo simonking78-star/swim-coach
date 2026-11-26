@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../auth/AuthProvider";
 import { clockable, loadClubSwimmers, loadSwimmersByIds, mmss, phaseAt, valuesFor, roundLabel, type TestSwimmer } from "../../lib/tests";
 import {
-  CAUTION_LABEL, CYCLE_LABEL, FLAG_LABEL, NOT_TESTED, TIMING, clubOfSession, defaultLevelKey, fmtValue, levelSummary, loadSession, loadSessionResults,
+  CAUTION_LABEL, CYCLE_LABEL, FLAG_LABEL, NOT_TESTED, TIMING, clubOfSession, defaultLevelKey, fmtSecs, fmtValue, gapValue, isGapTest, levelSummary, roundTo, loadSession, loadSessionResults,
   loadSessionTrials, loadVersion, parseSeconds, removeResult, repsModel, saveResult, saveTrial, trialValue, unitOf, updateSession, versionLabel,
   type Level, type MmResult, type MmSession, type Protocol, type Trial, type Version
 } from "../../lib/measures";
@@ -99,7 +99,7 @@ export function RunSession() {
     if (!rid) return;
     const tr = { ...t, result_id: rid };
     touched.current["t" + rid] = Date.now();
-    setTrials(m => ({ ...m, [rid!]: [...(m[rid!] ?? []).filter(y => y.trial_no !== tr.trial_no), tr].sort((a, b) => a.trial_no - b.trial_no) }));
+    setTrials(m => ({ ...m, [rid!]: [...(m[rid!] ?? []).filter(y => !(y.trial_no === tr.trial_no && (y.variant ?? "") === (tr.variant ?? ""))), tr].sort((a, b) => a.trial_no - b.trial_no) }));
     try { const r = await saveTrial(tr); setSaveState({ text: r === "queued" ? "Offline — saved on this device, will sync" : "Saved" }); }
     catch (e) { setSaveState({ text: "Couldn't save the trial: " + (e as Error).message, error: true }); }
   };
@@ -161,7 +161,9 @@ export function RunSession() {
           const row = rowFor(x);
           const lv = levelOf(row.level_key);
           const ts = row.id ? trials[row.id] ?? [] : [];
-          const value = p.kind === "timed" ? trialValue(ts, v.measure.counts, p.better)
+          const gapTest = isGapTest(v);
+          const value = gapTest ? gapValue(ts, v.measure.variants!).gap
+            : p.kind === "timed" ? trialValue(ts, v.measure.counts === "gap" ? "best" : v.measure.counts, p.better)
             : p.kind === "reps" ? Object.values(row.raw as Record<string, { done: number | null }>).reduce((a, r) => a + (r?.done ?? 0), 0)
             : Object.values(row.raw as Record<string, number>).reduce((a, n) => a + (typeof n === "number" ? n : 0), 0);
           return (
@@ -189,7 +191,10 @@ export function RunSession() {
                 <RepsCapture lv={lv} row={row} editable={editable} running={running} elapsed={elapsed} name={x.full_name}
                   onChange={raw => commit({ ...row, raw })} />
               )}
-              {row.status === "recorded" && lv && p.kind === "timed" && (
+              {row.status === "recorded" && lv && p.kind === "timed" && gapTest && (
+                <PairedCapture v={v} trials={ts} editable={editable} name={x.full_name} onTrial={tr => setTrial(x, tr)} />
+              )}
+              {row.status === "recorded" && lv && p.kind === "timed" && !gapTest && (
                 <TimedCapture v={v} trials={ts} editable={editable} name={x.full_name} onTrial={tr => setTrial(x, tr)} />
               )}
               {row.status === "recorded" && lv && p.kind === "checklist" && (
@@ -202,7 +207,9 @@ export function RunSession() {
                       onChange={e => commit({ ...row, conditions: { ...row.conditions, [k]: e.target.checked } })} /> {k === "illness" ? "Recently ill" : "Missed training last week"}</label>))}
                 </div>
               )}
-              <div className="tc-foot"><span>Result <strong className="tc-score">{row.status === "not_tested" || (p.kind !== "timed" && !Object.keys(row.raw).length) ? "–" : fmtValue(value, unit)}</strong></span>
+              <div className="tc-foot"><span>{gapTest ? "Gap" : "Result"} <strong className="tc-score">{row.status === "not_tested" || (p.kind !== "timed" && !Object.keys(row.raw).length) ? "–" : gapTest ? fmtSecs(value, v.measure.precision) : fmtValue(value, unit)}</strong>
+                {gapTest && value != null && v.measure.target_gap_s != null && <span className={"chip mm-flag " + (value <= v.measure.target_gap_s ? "mm-improved" : "mm-caution")} style={{ marginLeft: 6 }}>
+                  {value <= v.measure.target_gap_s ? `within ${v.measure.target_gap_s} s target` : `${fmtSecs(value - v.measure.target_gap_s, v.measure.precision)} over target`}</span>}</span>
                 {!live && row.flag && <span className={"chip mm-flag mm-" + row.flag}>{FLAG_LABEL[row.flag]}</span>}</div>
               {!live && !!row.caution?.length && <p className="hint">{row.caution.map(c => CAUTION_LABEL[c] ?? c).join("; ")}</p>}
             </article>
@@ -310,6 +317,29 @@ function TimedCapture({ v, trials, editable, name, onTrial }: { v: Version; tria
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/** Paired timed test: one time per variant (e.g. With fins, Without fins), to the protocol's precision. */
+function PairedCapture({ v, trials, editable, name, onTrial }: { v: Version; trials: Trial[]; editable: boolean; name: string; onTrial: (t: Trial) => void }) {
+  const dp = v.measure.precision;
+  return (
+    <div className="mm-trials">
+      {v.measure.variants!.map((vr, i) => {
+        const t = trials.find(x => x.variant === vr.key && x.trial_no === 1) ?? { result_id: "", trial_no: 1, variant: vr.key, time_s: null, splits: {}, legal: true };
+        return (
+          <div key={vr.key} className="mm-trial">
+            <div className="mm-trial-main">
+              <span className="mm-tno">{i + 1}. {vr.label}</span>
+              <TimeInput label={`${vr.label} time for ${name}`} value={t.time_s} disabled={!editable} placeholder={dp === 0 ? "secs" : undefined}
+                onSave={val => onTrial({ ...t, variant: vr.key, time_s: val == null ? null : roundTo(val, dp) })} />
+              {t.time_s != null && <span className="dim">{fmtSecs(t.time_s, dp)}</span>}
+            </div>
+          </div>
+        );
+      })}
+      {v.measure.interval_s && <p className="hint">On a {Math.floor(v.measure.interval_s / 60)}:{String(v.measure.interval_s % 60).padStart(2, "0")} cycle. Type seconds (e.g. 48) or m:ss (1:05); times are kept to the nearest {dp === 0 ? "second" : `${dp} dp`}.</p>}
     </div>
   );
 }

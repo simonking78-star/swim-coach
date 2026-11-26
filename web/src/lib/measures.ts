@@ -28,7 +28,14 @@ export interface Level {
   stroke?: string; distance_m?: number; start?: "push" | "dive"; setup?: string; // timed
   criteria?: { key: string; label: string }[];            // checklist
 }
-export interface MeasureRule { unit?: "s" | "reps" | "points"; counts?: "best" | "mean_best_two" | "mean" | "single"; trials?: number; rest_s?: number; splits?: string[]; }
+export interface Variant { key: string; label: string; }
+export interface MeasureRule {
+  unit?: "s" | "reps" | "points"; counts?: "best" | "mean_best_two" | "mean" | "single" | "gap"; trials?: number; rest_s?: number; splits?: string[];
+  /** Paired timed test: one time per variant; value = last variant − first (e.g. no fins − fins). */
+  variants?: Variant[]; target_gap_s?: number; interval_s?: number;
+  /** Decimal places a time is recorded to (0 = nearest second). */
+  precision?: number;
+}
 export interface Sheet { equipment?: string; pool_setup?: string; warm_up?: string; position?: string; procedure?: string; script?: string; safety?: string; recorded?: string; }
 
 export interface Determinant { code: string; name: string; sort: number; }
@@ -64,7 +71,7 @@ export interface Trial { id?: string; result_id: string; trial_no: number; varia
 // ---------------------------------------------------------------------------
 export const STATUS_LABEL: Record<Status, string> = { draft: "Draft", pilot: "Pilot", live: "Live", retired: "Retired" };
 export const KIND_LABEL: Record<Kind, string> = { reps: "Repeat set (reps completed)", timed: "Timed trials", checklist: "Skills checklist" };
-export const COUNTS_LABEL: Record<string, string> = { best: "Best trial", mean_best_two: "Mean of the best two", mean: "Mean of all trials", single: "Single trial" };
+export const COUNTS_LABEL: Record<string, string> = { best: "Best trial", mean_best_two: "Mean of the best two", mean: "Mean of all trials", single: "Single trial", gap: "Gap between the paired times" };
 export const CYCLE_LABEL: Record<string, string> = { quality: "Quality", endurance: "Endurance", sprint: "Sprint" };
 export const FLAG_LABEL: Record<Flag, string> = {
   baseline: "Baseline", improved: "Real improvement", noise: "Within noise", declined: "Real decline",
@@ -98,6 +105,23 @@ export function defaultLevelKey(levels: Level[], squad: string | null): string |
   const hit = levels.find(l => l.streams?.some(st => s.includes(st.toLowerCase())));
   return hit?.key ?? null;
 }
+
+/** A paired timed test (e.g. 50m Kick: fins, then no fins), scored on the gap between the times. */
+export const isGapTest = (v: Pick<Version, "measure">) => v.measure.counts === "gap" && (v.measure.variants?.length ?? 0) >= 2;
+
+/** Each variant's legal time and the gap (last − first), as the database works it out. */
+export function gapValue(trials: Pick<Trial, "time_s" | "legal" | "variant">[], variants: Variant[]): { times: Record<string, number | null>; gap: number | null } {
+  const times: Record<string, number | null> = {};
+  for (const vr of variants) {
+    const t = trials.filter(x => x.variant === vr.key && x.legal && x.time_s != null).map(x => x.time_s as number);
+    times[vr.key] = t.length ? Math.min(...t) : null;
+  }
+  const a = times[variants[0].key], b = times[variants[variants.length - 1].key];
+  return { times, gap: a != null && b != null ? Math.round((b - a) * 1000) / 1000 : null };
+}
+
+/** Round a typed time to the protocol's precision (0 = nearest second). */
+export const roundTo = (x: number, dp: number | undefined) => (dp == null ? x : Math.round(x * 10 ** dp) / 10 ** dp);
 
 /** Same rule as the database, for live display while trials are being entered. */
 export function trialValue(trials: Pick<Trial, "time_s" | "legal">[], counts: MeasureRule["counts"] = "best", better: Better = "lower"): number | null {
@@ -530,4 +554,45 @@ export function vsAverage(mine: number | null | undefined, avg: number | null | 
   const pct = avg ? Math.round((d / avg) * 100) : null;
   if (Math.abs(d) < 0.5 * 10 ** -dp) return { text: same, dir: "same" };
   return { text: `${d > 0 ? "+" : "−"}${f(d)}${pct != null ? ` (${d > 0 ? "+" : "−"}${Math.abs(pct)}%)` : ""}`, dir: d > 0 ? "up" : "down" };
+}
+
+// ---------------------------------------------------------------------------
+// Monthly window for paired timed tests (e.g. KCK-50, 50m Kick fins / no fins):
+// each swimmer's latest result in the month, with both times and the gap.
+// ---------------------------------------------------------------------------
+export interface GapRow {
+  result_id: string; swimmer_id: string; full_name: string; squad_id: string | null; squad_name: string | null; session_date: string;
+  age: number | null; times: Record<string, number | null>; gap: number | null; change_prev: number | null; flag: Flag | null;
+}
+export async function loadGapWindowRows(protocolId: string, month: string): Promise<GapRow[]> {
+  const { from, to } = monthRange(month);
+  const { data, error } = await db.rpc("mm_variant_window_rows", { p_protocol: protocolId, p_from: from, p_to: to });
+  fail(error);
+  return ((data ?? []) as (Omit<GapRow, "times"> & { variant_times: Record<string, number> | null })[]).map(r => ({
+    result_id: r.result_id, swimmer_id: r.swimmer_id, full_name: r.full_name, squad_id: r.squad_id, squad_name: r.squad_name,
+    session_date: r.session_date, age: r.age, flag: r.flag,
+    times: Object.fromEntries(Object.entries(r.variant_times ?? {}).map(([k, x]) => [k, num(x)])), gap: num(r.gap), change_prev: num(r.change_prev)
+  }));
+}
+/** Whole seconds as m:ss when a minute or more, else "34 s". */
+export function fmtSecs(x: number | null | undefined, dp = 0): string {
+  if (x == null) return "–";
+  const r = roundTo(x, dp);
+  if (Math.abs(r) >= 60) { const m = Math.floor(Math.abs(r) / 60); const s = (Math.abs(r) % 60).toFixed(dp).padStart(dp ? dp + 3 : 2, "0"); return `${r < 0 ? "−" : ""}${m}:${s}`; }
+  return `${r.toFixed(dp)} s`;
+}
+
+/** Paired (gap) protocols in the club, with the measure of their newest published version. */
+export async function loadGapProtocols(club: string): Promise<{ protocol: Protocol; measure: MeasureRule }[]> {
+  const ps = (await loadProtocols(club)).filter(p => p.kind === "timed" && p.status !== "draft");
+  if (!ps.length) return [];
+  const { data, error } = await db.from("mm_protocol_versions").select("protocol_id, major, minor, measure").in("protocol_id", ps.map(p => p.id))
+    .not("published_at", "is", null).order("major", { ascending: false }).order("minor", { ascending: false });
+  fail(error);
+  const out: { protocol: Protocol; measure: MeasureRule }[] = [];
+  for (const p of ps) {
+    const v = (data as { protocol_id: string; measure: MeasureRule }[]).find(x => x.protocol_id === p.id);
+    if (v && isGapTest({ measure: v.measure })) out.push({ protocol: p, measure: v.measure });
+  }
+  return out;
 }
