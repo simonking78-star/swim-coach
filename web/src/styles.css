@@ -1594,3 +1594,27 @@ fieldset.cf-squads legend { font-weight: 700; padding: 0; margin-bottom: 8px; }
   .aw-scheme-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (min-width: 1100px) { .aw-scheme-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* A-159 Parent update (Feedback → swimmer). Phone: one column. Desktop: editor | notes used. */
+.pu .pu-period { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; margin: 8px 0; }
+.pu .pu-period label { display: flex; flex-direction: column; gap: 2px; margin: 0; }
+.pu .pu-period input[type="date"] { width: auto; }
+.pu .pu-count { align-self: center; }
+.pu .pu-layout { display: grid; gap: 16px; margin-top: 8px; }
+.pu textarea { width: 100%; min-height: 200px; font: inherit; line-height: 1.45; }
+.pu .pu-sources { border-top: 1px solid var(--border); padding-top: 8px; }
+.pu .pu-sources .recent-item { margin-bottom: 8px; }
+.pu .notice.warn ul { margin: 4px 0 0 18px; padding: 0; }
+.pu .pu-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.pu .pu-item { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+.pu .pu-item.withdrawn { opacity: .6; }
+.pu .pu-item-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pu .pu-text { white-space: pre-wrap; margin: 6px 0; }
+.pu .badge.draft { margin-left: 0; background: #fff4d6; color: #7a5a00; }
+.pu .badge.approved { margin-left: 0; background: #dff3e6; color: #0f6a37; }
+.pu .badge.withdrawn { margin-left: 0; background: #eceff3; color: #5a6675; }
+@media (min-width: 900px) {
+  .pu .pu-layout { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; }
+  .pu .pu-sources { border-top: 0; border-left: 1px solid var(--border); padding: 0 0 0 16px; max-height: 70vh; overflow: auto; position: sticky; top: 72px; }
+  .pu .pu-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

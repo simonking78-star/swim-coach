@@ -22,6 +22,10 @@ export function compareLines(c: SwimmerCompare) {
 /** Squads other than the swimmer's own that sat the same test set that month (name order). */
 export const otherSquads = (c: SwimmerCompare) => c.squads.filter(g => !g.own);
 
+/** Why an average isn't shown: nobody else, or fewer than 3 others (A-179: a small average could reveal one swimmer's score). */
+export const fewer = (n: number, who: string) =>
+  n ? `only ${n} other${n === 1 ? "" : "s"} ${who} tested that month, so no average is shown (needs 3)` : `no one else ${who} was tested that month`;
+
 function Dir({ v }: { v: { text: string; dir: string | null } }) {
   return <span className={v.dir === "up" ? "up" : v.dir === "down" ? "down" : ""}><strong>{v.text}</strong></span>;
 }
@@ -49,8 +53,8 @@ function OneProtocol({ c }: { c: SwimmerCompare }) {
         { label: "At-age benchmark", value: c.benchmark, colour: C.navy }
       ]} />
       <ul className="compare-list">
-        <li>Against the rest of {c.squad_name ?? "their squad"}: {c.squad_n ? <><Dir v={squad} /> points per age year (squad average {fmt2(c.squad_avg_ppa)}, {c.squad_n} swimmer{c.squad_n === 1 ? "" : "s"}; average points {c.squad_avg_points ?? "–"})</> : <span className="dim">no one else in the squad was tested that month</span>}</li>
-        <li>Against other {c.age ?? "?"}-year-olds: {c.age_n ? <><Dir v={age} /> points per age year (age-group average {fmt2(c.age_avg_ppa)}, {c.age_n} swimmer{c.age_n === 1 ? "" : "s"}, all squads; average points {c.age_avg_points ?? "–"})</> : <span className="dim">no one else of that age was tested that month</span>}</li>
+        <li>Against the rest of {c.squad_name ?? "their squad"}: {c.squad_avg_ppa != null ? <><Dir v={squad} /> points per age year (squad average {fmt2(c.squad_avg_ppa)}, {c.squad_n} swimmers; average points {c.squad_avg_points ?? "–"})</> : <span className="dim">{fewer(c.squad_n, "in the squad")}</span>}</li>
+        <li>Against other {c.age ?? "?"}-year-olds: {c.age_avg_ppa != null ? <><Dir v={age} /> points per age year (age-group average {fmt2(c.age_avg_ppa)}, {c.age_n} swimmers, all squads; average points {c.age_avg_points ?? "–"})</> : <span className="dim">{fewer(c.age_n, "of that age")}</span>}</li>
       </ul>
       {c.squads.length > 0 && (
         <div className="table-wrap">
@@ -58,7 +62,7 @@ function OneProtocol({ c }: { c: SwimmerCompare }) {
             <caption className="sr-only">Squads tested in {monthLabel(c.month)}</caption>
             <thead><tr><th>Squads tested in {monthLabel(c.month)}</th><th className="num">Swimmers</th><th className="num">Avg pts / age yr</th><th className="num">Avg points</th></tr></thead>
             <tbody>{c.squads.map(g => (
-              <tr key={g.name}><td>{g.own ? `${g.name} (rest of squad)` : g.name}</td><td className="num">{g.n}</td><td className="num">{fmt2(g.avg_ppa)}</td><td className="num">{g.avg_points ?? "–"}</td></tr>
+              <tr key={g.name}><td>{g.own ? `${g.name} (rest of squad)` : g.name}</td><td className="num">{g.n}</td><td className="num">{g.avg_ppa == null ? "fewer than 3" : fmt2(g.avg_ppa)}</td><td className="num">{g.avg_points ?? "–"}</td></tr>
             ))}</tbody>
           </table>
         </div>
@@ -96,7 +100,7 @@ export default function TestSetCard({ swimmerId }: { swimmerId: string }) {
         : q.error ? <p className="msg error">Couldn't load test sets.</p>
         : !q.data?.length ? <p className="dim">No graded test set on record yet.</p>
         : q.data.map(c => <OneProtocol key={c.protocol_id} c={c} />)}
-      <p className="hint">Points per age year = level × reps completed ÷ age. Squad averages are given for every squad that sat the set that month, in name order. Squad and age-group averages leave this swimmer out and use each swimmer's latest test in the same month.</p>
+      <p className="hint">Points per age year = level × reps completed ÷ age. Squad averages are given for every squad that sat the set that month, in name order. Squad and age-group averages leave this swimmer out, use each swimmer's latest test in the same month, and are shown only when at least 3 other swimmers were tested.</p>
     </section>
   );
 }

@@ -17,6 +17,8 @@ import { shareFeedbackPdf } from "../lib/feedbackPdf";
 import { fmtDate, logEvent, todayLocal, useCoachName } from "../lib/util";
 import { EntryBody, StatusBadge, StatusPicker, StepTabs, StrokeChips, ThreadCard, TypeToggle } from "../components/feedbackParts";
 import { SquadFeedback } from "./SquadFeedback";
+import { ParentUpdates } from "../components/ParentUpdates";
+import { clubIdOf } from "../lib/clubs";
 
 type Mode = "swimmers" | "squads";
 
@@ -56,10 +58,13 @@ export function Feedback() {
 // ===========================================================================
 // Swimmer feedback
 // ===========================================================================
-type Tab = "pick" | "history" | "form";
+type Tab = "pick" | "history" | "form" | "update";
 
 function SwimmerFeedback({ editable }: { editable: boolean }) {
   const { club } = useClub();
+  const { features } = useAuth();
+  // A-159: AI parent updates — coaches who can write feedback, in clubs with the feature switched on.
+  const aiUpdates = editable && !!club && !!features?.some(f => f.feature === "ai_parent_updates" && (f.all_features || f.club_id === clubIdOf(club)));
   const [params] = useSearchParams();
   const [squad, setSquad] = useState<string>("");
   const [swimmer, setSwimmer] = useState<SwimmerLite | null>(null);
@@ -100,7 +105,8 @@ function SwimmerFeedback({ editable }: { editable: boolean }) {
         tabs={[
           { key: "pick", label: "Swimmer", num: 1 },
           { key: "history", label: "History", badge: rows.length, disabled: !swimmer },
-          ...(editable ? [{ key: "form" as Tab, label: "Stroke / skill", num: 2, disabled: !swimmer }] : [])
+          ...(editable ? [{ key: "form" as Tab, label: "Stroke / skill", num: 2, disabled: !swimmer }] : []),
+          ...(aiUpdates ? [{ key: "update" as Tab, label: "Parent update", disabled: !swimmer }] : [])
         ]}
       />
 
@@ -126,6 +132,8 @@ function SwimmerFeedback({ editable }: { editable: boolean }) {
         <SwimmerHistory swimmer={swimmer} rows={rows} loading={history.isLoading} error={history.error as Error | null}
           flash={flash} onClear={clearSwimmer} onUpdate={editable ? startUpdate : undefined} />
       )}
+
+      {tab === "update" && swimmer && aiUpdates && <ParentUpdates key={swimmer.id} swimmer={swimmer} history={rows} />}
 
       {tab === "form" && swimmer && editable && (
         <SwimmerForm key={swimmer.id + (updating?.id ?? "")} swimmer={swimmer} history={rows} updating={updating}

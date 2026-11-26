@@ -136,8 +136,8 @@ export async function buildSwimmerPdf(sw: Who, club: string, att: AttRow[], resu
       table(
         [{ h: "Compared with", w: W * 0.36 }, { h: "Swimmers", w: W * 0.13, align: "right" }, { h: "Pts per age yr", w: W * 0.17, align: "right" }, { h: "Avg points", w: W * 0.14, align: "right" }, { h: "Difference", w: W * 0.2, align: "right" }],
         [
-          [`Rest of ${c.squad_name ?? "squad"}`, c.squad_n, c.squad_n ? fmt2(c.squad_avg_ppa) : "-", c.squad_avg_points ?? "-", c.squad_n ? sq.text : "-"],
-          [`Age ${c.age ?? "?"} (all squads)`, c.age_n, c.age_n ? fmt2(c.age_avg_ppa) : "-", c.age_avg_points ?? "-", c.age_n ? ag.text : "-"],
+          [`Rest of ${c.squad_name ?? "squad"}`, c.squad_n, c.squad_avg_ppa != null ? fmt2(c.squad_avg_ppa) : (c.squad_n ? "fewer than 3" : "-"), c.squad_avg_points ?? "-", c.squad_avg_ppa != null ? sq.text : "-"],
+          [`Age ${c.age ?? "?"} (all squads)`, c.age_n, c.age_avg_ppa != null ? fmt2(c.age_avg_ppa) : (c.age_n ? "fewer than 3" : "-"), c.age_avg_points ?? "-", c.age_avg_ppa != null ? ag.text : "-"],
           ["At-age benchmark", "", fmt2(c.benchmark), "", bm.text]
         ]
       );
@@ -146,7 +146,7 @@ export async function buildSwimmerPdf(sw: Who, club: string, att: AttRow[], resu
         y += 4;
         table(
           [{ h: "Squad", w: W * 0.4 }, { h: "Swimmers", w: W * 0.2, align: "right" }, { h: "Avg pts per age yr", w: W * 0.22, align: "right" }, { h: "Avg points", w: W * 0.18, align: "right" }],
-          c.squads.map(g => [g.own ? `${g.name} (rest of squad)` : g.name, g.n, fmt2(g.avg_ppa), g.avg_points ?? "-"])
+          c.squads.map(g => [g.own ? `${g.name} (rest of squad)` : g.name, g.n, g.avg_ppa == null ? "fewer than 3" : fmt2(g.avg_ppa), g.avg_points ?? "-"])
         );
       }
       // Bars: this swimmer, squad, age group, benchmark (same scale).
